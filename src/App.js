@@ -1,17 +1,22 @@
 // App.js
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './components/Login/Login';
+import FormContainer from './components/UserDetailsForm/FormContainer';
 import UserLandingPage from './components/LandingPages/UserLandingPage';
 import AdminLandingPage from './components/LandingPages/AdminLandingPage';
+import './App.css';
+import './styles/form.css';
 
 function App() {
   const isAuthenticated = localStorage.getItem('user');
-
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
+    <Router>
+        <Routes>
+          <Route exact path="/" element={<LoginPage />} />
+          <Route path="/form" element={<FormContainer />} />
+          <Route path="/dashboard" element={<Navigate to="/form" />} />
+          <Route path="/login" element={<LoginPage />} />
         {/* Protect the landing pages */}
         <Route
           path="/user"
@@ -23,8 +28,9 @@ function App() {
         />
         {/* Redirect root to login */}
         <Route path="*" element={<Navigate to="/login" />} />
-      </Routes>
-    </BrowserRouter>
+        </Routes>
+
+    </Router>
   );
 }
 
