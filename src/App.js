@@ -6,6 +6,7 @@ import FormContainer from './components/UserDetailsForm/FormContainer';
 import UserLandingPage from './components/LandingPages/UserLandingPage';
 import AdminLandingPage from './components/LandingPages/AdminLandingPage';
 import UserDashboard from './components/Dashboard/UserDashboard';
+import InventoryPage from './components/Admin/Inventory/InventoryPage';
 import './App.css';
 import './styles/form.css';
 
@@ -75,6 +76,11 @@ function Main({ isAuthenticated, userRole, login, logout }) {
         <Route path="/admin" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <AdminLandingPage onLogout={logout} />
+          </ProtectedRoute>
+        } />
+        <Route path="/inventory" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <InventoryPage />
           </ProtectedRoute>
         } />
         
