@@ -1,20 +1,15 @@
 // components/UserLandingPage.js
 import React, { useState } from 'react';
-import { AppBar, Toolbar, Typography, Button, Container, TextField, Box, Card, CardContent, Snackbar, Alert } from '@mui/material';
+import { Container, TextField, Box, Card, CardContent, Snackbar, Alert, Button, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import LogoutIcon from '@mui/icons-material/Logout';
+import Navbar from '../shared/Navbar/Navbar';
 import { validateSurveyCode } from '../../services/survey/surveyService';
 const UserLandingPage = () => {
   const [surveyCode, setSurveyCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const logoImage = process.env.PUBLIC_URL + '/assets/Bosko_Partners_logo.jpg';
-
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    navigate('/login');
-  };
+  const logoImage = process.env.PUBLIC_URL + '/assets/SAURARA_logo.jpg';
 
   const handleEnterSurvey = async () => {
     if (!surveyCode.trim()) {
@@ -26,9 +21,9 @@ const UserLandingPage = () => {
     setError('');
 
     try {
-      const response = await validateSurveyCode(surveyCode);
-      // If validation successful, navigate to survey page
-      navigate(`/survey/${surveyCode}`);
+      const {survey} = await validateSurveyCode(surveyCode);
+      // pass the code (or entire survey) via location state
+      navigate('/form', { state: { survey } });
     } catch (err) {
       setError(err.message || 'Invalid survey code');
     } finally {
@@ -38,28 +33,27 @@ const UserLandingPage = () => {
 
   return (
     <>
-      <AppBar position="static" sx={{ backgroundColor: '#633394'}}>
-        <Toolbar>
-          <Box sx={{flexGrow: 1 , mb: 0.5, mt: 0.5}}>
-            <img src={logoImage} alt="Bosko Partners Logo" style={{ maxWidth: '150px' }}/>
-          </Box>
-          <Button color="inherit" onClick={handleLogout} startIcon={<LogoutIcon/>}>Logout</Button>
-        </Toolbar>
-      </AppBar>
+      <Navbar />
       <Container 
         sx={{ 
           mt: 4,
-          width: '400px',
-          height: '400px',
-          display: 'flex'
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
         }}
       >
-        <Card sx={{width: '100%', height: '100%'}}>
-          <CardContent>
-            <Typography variant="h4" align="center" gutterBottom>
+        <Card sx={{
+          width: '500px',
+          minHeight: '450px',
+          backgroundColor: '#f5f5f5',
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+          borderRadius: '8px'
+        }}>
+          <CardContent sx={{ padding: '2rem' }}>
+            <Typography variant="h4" align="center" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
               Welcome!
             </Typography>
-            <Typography variant="subtitle1" align="center" gutterBottom>
+            <Typography variant="h6" align="center" gutterBottom sx={{ mb: 3 }}>
               Enter your survey code
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 2 }}>
@@ -68,12 +62,35 @@ const UserLandingPage = () => {
                 variant="outlined"
                 value={surveyCode}
                 onChange={(e) => setSurveyCode(e.target.value)}
-                sx={{ mb: 2, width: '300px' }}
+                sx={{ 
+                  mb: 3, 
+                  width: '100%',
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: '#633394',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#967CB2',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#633394',
+                    },
+                  },
+                }}
               />
               <Button 
                 variant="contained" 
                 onClick={handleEnterSurvey}
                 disabled={loading}
+                sx={{
+                  backgroundColor: '#633394',
+                  '&:hover': {
+                    backgroundColor: '#967CB2',
+                  },
+                  padding: '10px 24px',
+                  fontSize: '1rem',
+                  width: '200px'
+                }}
               >
                 {loading ? 'Validating...' : 'Enter Survey'}
               </Button>

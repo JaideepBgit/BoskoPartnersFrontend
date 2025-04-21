@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="64" viewBox="0 0 200 64">
+  <!-- White background -->
+  <rect width="200" height="64" fill="white"/>
+  
+  <!-- Logo image (positioned on the left) -->
+  <image href="./saurara-high-resolution-logo-transparent.svg" width="48" height="48" x="8" y="8"/>
+  
+  <!-- Text "Saurara" (positioned to the right of the logo) -->
+  <text x="64" y="40" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#333">
+    Saurara
+  </text>
+</svg>

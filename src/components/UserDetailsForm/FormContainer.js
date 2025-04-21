@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState,} from 'react';
+import Navbar from '../shared/Navbar/Navbar';
 import PersonalDetailsPage from './PersonalDetailsPage';
 import OrganizationalDetailsPage from './OrganizationalDetailsPage';
 import SubmitPage from './SubmitPage';
 import { Paper, Box, Typography, LinearProgress, Container } from '@mui/material';
 import { saveUserDetails, submitUserDetails } from '../../services/UserDetails/UserDetailsService';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const FormContainer = () => {
   // Form state
@@ -24,20 +26,25 @@ const FormContainer = () => {
   
   // Current page state
   const [currentPage, setCurrentPage] = useState(1);
-  
   // Form errors
   const [formErrors, setFormErrors] = useState({});
-  
   // Loading state
   const [isSaving, setIsSaving] = useState(false);
-  
   // Progress state
   const [formProgress, setFormProgress] = useState(0);
-  
+  const { state } = useLocation();
   // User and organization IDs (would come from authentication in a real app)
-  const userId = 1;
-  const organizationId = 1;
+  const userId = 1; {/*LOOK HERE*/}
+  const organizationId = 1; {/*LOOK HERE*/}
   
+  const survey = state?.survey; //we are passing the entire survey object
+  const navigate = useNavigate();
+
+  if (!survey){
+    navigate('/', {replace: true});
+    return null;
+  }
+
   // Update form data
   const updateFormData = (section, fieldName, value) => {
     setFormData(prevData => {
@@ -238,7 +245,9 @@ const FormContainer = () => {
   };
   
   return (
-    <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
+    <>
+      <Navbar />
+      <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
       <Paper elevation={3} sx={{ p: 3, backgroundColor: '#f5f5f5' }}>
         <Box sx={{ width: '100%', mb: 4 }}>
           <LinearProgress 
@@ -262,6 +271,7 @@ const FormContainer = () => {
         {renderPage()}
       </Paper>
     </Container>
+    </>
   );
 };
 

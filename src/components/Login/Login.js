@@ -1,18 +1,28 @@
-// In LoginPage.js
+// src/pages/Login/LoginPage.js
+
 import React, { useState } from 'react';
-import { Container, TextField, Button, Typography, Box, Link, Alert } from '@mui/material';
+import {
+  Container,
+  TextField,
+  Button,
+  Typography,
+  Box,
+  Link,
+  Alert
+} from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import UserService from '../../services/Login/UserService';
 
-const LoginPage = () => {
-  const [email, setEmail] = useState('');
+const LoginPage = ({ onLogin }) => {
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const navigate = useNavigate();
+  const [error, setError]       = useState('');
+  const [success, setSuccess]   = useState('');
+  const navigate                = useNavigate();
 
   const backgroundImage = process.env.PUBLIC_URL + '/assets/chruch_school.jpg';
-  const logoImage = process.env.PUBLIC_URL + '/assets/Bosko_Partners_logo.jpg';
+  const logoImage       = process.env.PUBLIC_URL + '/assets/saurara-high-resolution-logo-transparent.png';
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -25,19 +35,41 @@ const LoginPage = () => {
 
     try {
       const response = await UserService.loginUser(email, password);
-      console.log('Login Successful:', response);
-      setSuccess('Login Successful');
-      // Save the user information (including role) to localStorage
-      localStorage.setItem('user', JSON.stringify(response.data));
+      // axios-style: response.data is your payload
+      const userData = response.data;
 
-      // Conditionally navigate based on role
-      if (response.data.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/user');
+      console.log('Login Successful - userData:', userData);
+      setSuccess('Login Successful');
+
+      // 1️⃣ mark as authenticated
+      localStorage.setItem('isAuthenticated', 'true');
+
+      // 2️⃣ store entire user object
+      localStorage.setItem('user', JSON.stringify(userData));
+
+      // 3️⃣ optionally store role separately if you like
+      if (userData.role) {
+        localStorage.setItem('userRole', userData.role);
       }
+
+      // notify parent (so Navbar can re-check user)
+      if (onLogin) onLogin();
+
+      // 4️⃣ navigate based on role
+      switch (userData.role) {
+        case 'admin':
+          navigate('/admin');
+          break;
+        case 'user':
+          navigate('/user');
+          break;
+        default:
+          console.warn('Unknown role, defaulting to /');
+          navigate('/');
+      }
+
     } catch (err) {
-      console.error(err);
+      console.error('Login error:', err);
       setError('Invalid email or password');
     }
   };
@@ -55,13 +87,22 @@ const LoginPage = () => {
       }}
     >
       <Container maxWidth="xs" sx={{ display: 'flex', alignItems: 'center', height: '100vh' }}>
-        <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%', bgcolor: 'white', p: 4, boxShadow: 3, borderRadius: 2 }}>
-
-          <Box sx={{display: 'flex', justifyContent:'center', mb: 2}}>
-            <img src={logoImage} alt="Bosko Partners Logo" style={{ maxWidth: '150px' }}/>
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{
+            width: '100%',
+            bgcolor: 'white',
+            p: 4,
+            boxShadow: 3,
+            borderRadius: 2
+          }}
+        >
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
+            <img src={logoImage} alt="Saurara Logo" style={{ maxWidth: '180px', height: 'auto' }} />
           </Box>
 
-          <Typography variant="h5" component="h1" gutterBottom align="center">
+          <Typography variant="h5" align="center" gutterBottom>
             Login
           </Typography>
 
@@ -79,7 +120,6 @@ const LoginPage = () => {
 
           <TextField
             label="Username or Email"
-            type="text"
             variant="outlined"
             fullWidth
             margin="normal"
@@ -99,14 +139,25 @@ const LoginPage = () => {
             required
           />
 
-          <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            sx={{
+              mt: 2,
+              backgroundColor: '#633394',
+              '&:hover': { backgroundColor: '#967CB2' },
+              py: 1.25,
+              fontSize: '1rem',
+            }}
+          >
             Log In
           </Button>
 
           <Typography variant="body2" align="center" sx={{ mt: 2 }}>
             Forgot your password?{' '}
             <Link href="#" underline="hover">
-              Please Click Here
+              Click here
             </Link>
           </Typography>
         </Box>
