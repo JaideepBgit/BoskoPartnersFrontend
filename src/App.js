@@ -1,10 +1,11 @@
 // App.js
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import LoginPage from './components/Login/Login';
 import FormContainer from './components/UserDetailsForm/FormContainer';
 import UserLandingPage from './components/LandingPages/UserLandingPage';
 import AdminLandingPage from './components/LandingPages/AdminLandingPage';
+import UserDashboard from './components/Dashboard/UserDashboard';
 import './App.css';
 import './styles/form.css';
 
@@ -59,16 +60,20 @@ function Main({ isAuthenticated, userRole, login, logout }) {
             <FormContainer onLogout={logout} />
           </ProtectedRoute>
         } />
-        <Route path="/dashboard" element={<Navigate to="/form" />} />
+        <Route path="/dashboard" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <UserDashboard />
+          </ProtectedRoute>
+        } />
         
         {/* Protect the landing pages */}
         <Route path="/user" element={
-          <ProtectedRoute isAuthenticated={isAuthenticated}> {/*&& userRole === 'user'*/}
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
             <UserLandingPage onLogout={logout} />
           </ProtectedRoute>
         } />
         <Route path="/admin" element={
-          <ProtectedRoute isAuthenticated={isAuthenticated}> {/*&& userRole === 'admin'*/}
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
             <AdminLandingPage onLogout={logout} />
           </ProtectedRoute>
         } />

@@ -7,12 +7,14 @@ import Inventory2Icon from '@mui/icons-material/Inventory2';
 import PeopleIcon from '@mui/icons-material/People';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import SettingsIcon from '@mui/icons-material/Settings';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 
 const Navbar = () => {
   const navigate  = useNavigate();
   const location  = useLocation();
   const [user, setUser]       = useState(null);
   const [tabValue, setTabValue] = useState(0);
+  const [userTabValue, setUserTabValue] = useState(0);
 
   const logoImage = process.env.PUBLIC_URL + '/assets/saurara-high-resolution-logo-transparent.png';
 
@@ -24,15 +26,22 @@ const Navbar = () => {
 
   // sync tab value when route or user changes
   useEffect(() => {
-    if (user?.role !== 'admin') return;
-
-    const p = location.pathname.toLowerCase();
-    if (p.includes('/dashboard'))    setTabValue(0);
-    else if (p.includes('/inventory')) setTabValue(1);
-    else if (p.includes('/users'))     setTabValue(2);
-    else if (p.includes('/reports'))   setTabValue(3);
-    else if (p.includes('/settings'))  setTabValue(4);
-    else                                setTabValue(0);
+    if (user?.role === 'admin') {
+      const p = location.pathname.toLowerCase();
+      if (p.includes('/dashboard'))    setTabValue(0);
+      else if (p.includes('/inventory')) setTabValue(1);
+      else if (p.includes('/users'))     setTabValue(2);
+      else if (p.includes('/reports'))   setTabValue(3);
+      else if (p.includes('/settings'))  setTabValue(4);
+      else                                setTabValue(0);
+    } else {
+      // For regular users
+      const p = location.pathname.toLowerCase();
+      if (p.includes('/dashboard'))    setUserTabValue(0);
+      else if (p.includes('/surveys')) setUserTabValue(1);
+      else if (p.includes('/reports')) setUserTabValue(2);
+      else                             setUserTabValue(0);
+    }
   }, [location, user]);
 
   const handleTabChange = (_, v) => {
@@ -43,6 +52,16 @@ const Navbar = () => {
       case 2: navigate('/users');     break;
       case 3: navigate('/reports');   break;
       case 4: navigate('/settings');  break;
+      default: navigate('/dashboard');
+    }
+  };
+
+  const handleUserTabChange = (_, v) => {
+    setUserTabValue(v);
+    switch (v) {
+      case 0: navigate('/dashboard'); break;
+      case 1: navigate('/surveys');   break;
+      case 2: navigate('/reports');   break;
       default: navigate('/dashboard');
     }
   };
@@ -88,6 +107,28 @@ const Navbar = () => {
             <Tab icon={<PeopleIcon />} label="Users Management" iconPosition="start" />
             <Tab icon={<BarChartIcon />} label="Reports Page" iconPosition="start" />
             <Tab icon={<SettingsIcon />} label="Settings" iconPosition="start" />
+          </Tabs>
+        )}
+
+        {/* User tabs */}
+        {(!user || user?.role === 'user') && (
+          <Tabs
+            value={userTabValue}
+            onChange={handleUserTabChange}
+            sx={{
+              '& .MuiTab-root': {
+                color: '#633394',
+                fontWeight: 500,
+                '&.Mui-selected': { fontWeight: 700 },
+              },
+              '& .MuiTabs-indicator': {
+                backgroundColor: '#633394',
+              },
+            }}
+          >
+            <Tab icon={<DashboardIcon />} label="Dashboard" iconPosition="start" />
+            <Tab icon={<AssignmentIcon />} label="Surveys" iconPosition="start" />
+            <Tab icon={<BarChartIcon />} label="Reports" iconPosition="start" />
           </Tabs>
         )}
 

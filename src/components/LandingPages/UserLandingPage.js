@@ -1,15 +1,26 @@
 // components/UserLandingPage.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, TextField, Box, Card, CardContent, Snackbar, Alert, Button, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../shared/Navbar/Navbar';
 import { validateSurveyCode } from '../../services/survey/surveyService';
+
 const UserLandingPage = () => {
   const [surveyCode, setSurveyCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const logoImage = process.env.PUBLIC_URL + '/assets/SAURARA_logo.jpg';
+
+  // Check if user already has a survey code in localStorage
+  useEffect(() => {
+    const existingSurveyCode = localStorage.getItem('surveyCode');
+    const userId = localStorage.getItem('userId');
+    
+    if (existingSurveyCode && userId) {
+      // Redirect to dashboard if user already has a survey code
+      navigate('/dashboard');
+    }
+  }, [navigate]);
 
   const handleEnterSurvey = async () => {
     if (!surveyCode.trim()) {

@@ -1,4 +1,4 @@
-import React, { useState,} from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '../shared/Navbar/Navbar';
 import PersonalDetailsPage from './PersonalDetailsPage';
 import OrganizationalDetailsPage from './OrganizationalDetailsPage';
@@ -34,11 +34,19 @@ const FormContainer = () => {
   const [formProgress, setFormProgress] = useState(0);
   const { state } = useLocation();
   // User and organization IDs (would come from authentication in a real app)
-  const userId = 1; {/*LOOK HERE*/}
-  const organizationId = 1; {/*LOOK HERE*/}
+  const userId = 1; 
+  const organizationId = 1; 
   
   const survey = state?.survey; //we are passing the entire survey object
   const navigate = useNavigate();
+
+  // Store survey code in localStorage for dashboard access
+  useEffect(() => {
+    if (survey && survey.survey_code) {
+      localStorage.setItem('surveyCode', survey.survey_code);
+      localStorage.setItem('userId', survey.user_id || userId);
+    }
+  }, [survey, userId]);
 
   if (!survey){
     navigate('/', {replace: true});
@@ -165,8 +173,8 @@ const FormContainer = () => {
       });
       
       alert('Form data saved successfully! Redirecting to dashboard...');
-      // Uncomment this when dashboard is implemented
-      // window.location.href = '/dashboard';
+      // Redirect to dashboard
+      navigate('/dashboard');
     } catch (error) {
       console.error('Error saving form data:', error);
       alert('Failed to save form data. Your data has been saved locally.');
@@ -192,9 +200,9 @@ const FormContainer = () => {
           form_data: formData
         });
         
-        alert('Form submitted successfully! Redirecting to success page...');
-        // Uncomment this when success page is implemented
-        // window.location.href = '/submission-success';
+        alert('Form submitted successfully! Redirecting to dashboard...');
+        // Redirect to dashboard after successful submission
+        navigate('/dashboard');
       } catch (error) {
         console.error('Error submitting form:', error);
         alert('Failed to submit form. Your data has been saved locally.');

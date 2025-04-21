@@ -56,6 +56,41 @@ export const getUserDetails = async (userId) => {
   }
 };
 
+// Get user details status for dashboard
+export const getUserDetailsStatus = async (userId) => {
+  try {
+    const response = await axios.get(`${API_URL}/api/user-details/status/${userId}`);
+    console.log('User details status retrieved successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error getting user details status:', error);
+    
+    // Try to get from localStorage if API call fails
+    const localData = getFromLocalStorage();
+    if (localData) {
+      // Create a status object from local data
+      const personal = localData.form_data?.personal || {};
+      const organizational = localData.form_data?.organizational || {};
+      
+      return {
+        user_id: localData.user_id,
+        personal_details_filled: !!(personal.firstName && personal.lastName),
+        organizational_details_filled: !!(
+          organizational.country && 
+          organizational.region && 
+          organizational.church && 
+          organizational.school
+        ),
+        is_submitted: localData.is_submitted || false,
+        last_page: localData.last_page || 1,
+        form_data: localData.form_data
+      };
+    }
+    
+    throw error;
+  }
+};
+
 // Fallback method to save to localStorage
 export const saveToLocalStorage = (data) => {
   try {
