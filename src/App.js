@@ -7,6 +7,7 @@ import UserLandingPage from './components/LandingPages/UserLandingPage';
 import AdminLandingPage from './components/LandingPages/AdminLandingPage';
 import UserDashboard from './components/Dashboard/UserDashboard';
 import InventoryPage from './components/Admin/Inventory/InventoryPage';
+import UserManagementMain from './components/UserManagement/UserManagementMain';
 import './App.css';
 import './styles/form.css';
 
@@ -81,6 +82,13 @@ function Main({ isAuthenticated, userRole, login, logout }) {
         <Route path="/inventory" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <InventoryPage />
+          </ProtectedRoute>
+        } />
+        
+        {/* User Management Route */}
+        <Route path="/users" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <UserManagementMain onLogout={logout} />
           </ProtectedRoute>
         } />
         

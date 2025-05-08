@@ -33,9 +33,10 @@ const FormContainer = () => {
   // Progress state
   const [formProgress, setFormProgress] = useState(0);
   const { state } = useLocation();
-  // User and organization IDs (would come from authentication in a real app)
-  const userId = 1; 
-  const organizationId = 1; 
+  // Get user and organization IDs from localStorage (set during login)
+  // Convert to numbers since the backend expects numeric values
+  const userId = parseInt(localStorage.getItem('userId') || '0', 10);
+  const organizationId = parseInt(localStorage.getItem('organizationId') || '0', 10); // Default to 1 if not found
   
   const survey = state?.survey; //we are passing the entire survey object
   const navigate = useNavigate();
@@ -44,7 +45,7 @@ const FormContainer = () => {
   useEffect(() => {
     if (survey && survey.survey_code) {
       localStorage.setItem('surveyCode', survey.survey_code);
-      localStorage.setItem('userId', survey.user_id || userId);
+      localStorage.setItem('userId', survey.id || userId);
     }
   }, [survey, userId]);
 

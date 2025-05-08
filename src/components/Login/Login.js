@@ -47,9 +47,15 @@ const LoginPage = ({ onLogin }) => {
       // 2️⃣ store entire user object
       localStorage.setItem('user', JSON.stringify(userData));
 
-      // 3️⃣ optionally store role separately if you like
+      // 3️⃣ store user ID and role separately for easy access
+      if (userData.id) {
+        localStorage.setItem('userId', userData.id);
+      }
       if (userData.role) {
         localStorage.setItem('userRole', userData.role);
+      }
+      if (userData.organization_id) {
+        localStorage.setItem('organizationId', userData.organization_id);
       }
 
       // notify parent (so Navbar can re-check user)

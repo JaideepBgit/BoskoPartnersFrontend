@@ -6,7 +6,7 @@ export const validateSurveyCode = async (surveyCode) => {
   try {
     const response = await axios.post(
       `${BASE_URL}/surveys/validate`,
-      {survey_code: surveyCode }, // <-- to be matched with backend key
+      {survey_code: surveyCode }, // Survey code is now stored in users table
       {headers: {"Content-Type": "application/json"}}
     );
     return response.data;
