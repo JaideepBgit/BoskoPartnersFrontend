@@ -28,7 +28,7 @@ const Navbar = () => {
   useEffect(() => {
     if (user?.role === 'admin') {
       const p = location.pathname.toLowerCase();
-      if (p.includes('/dashboard'))    setTabValue(0);
+      if (p.includes('/admin'))       setTabValue(0); // Admin landing page is the dashboard for admins
       else if (p.includes('/inventory')) setTabValue(1);
       else if (p.includes('/users'))     setTabValue(2);
       else if (p.includes('/reports'))   setTabValue(3);
@@ -47,12 +47,12 @@ const Navbar = () => {
   const handleTabChange = (_, v) => {
     setTabValue(v);
     switch (v) {
-      case 0: navigate('/dashboard'); break;
+      case 0: navigate('/admin'); break; // Navigate to admin landing page for admins
       case 1: navigate('/inventory'); break;
       case 2: navigate('/users');     break;
       case 3: navigate('/reports');   break;
       case 4: navigate('/settings');  break;
-      default: navigate('/dashboard');
+      default: navigate('/admin');
     }
   };
 

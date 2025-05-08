@@ -25,8 +25,10 @@ const UserDashboard = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   
-  // Get user ID from localStorage (in a real app, this would come from authentication)
-  const userId = localStorage.getItem('userId') || 1; // Default to 1 for testing
+  // Get user ID from localStorage (set during login)
+  // Convert to a number since the backend expects numeric values
+  const userId = parseInt(localStorage.getItem('userId') || '0', 10); // Default to 0 if not found
+  console.log('User ID:', userId);
   const surveyCode = localStorage.getItem('surveyCode');
 
   useEffect(() => {
@@ -34,6 +36,7 @@ const UserDashboard = () => {
       try {
         setLoading(true);
         const response = await getUserDetailsStatus(userId);
+        console.log(response);
         setUserDetails(response);
         setLoading(false);
       } catch (err) {

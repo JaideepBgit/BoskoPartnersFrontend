@@ -27,8 +27,8 @@ export const FormProvider = ({ children }) => {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [userId, setUserId] = useState(1); // Default user ID for testing
-  const [organizationId, setOrganizationId] = useState(1); // Default organization ID for testing
+  const [userId, setUserId] = useState(parseInt(localStorage.getItem('userId') || '0', 10));
+  const [organizationId, setOrganizationId] = useState(parseInt(localStorage.getItem('organizationId') || '1', 10));
   const [formErrors, setFormErrors] = useState({});
   const [formProgress, setFormProgress] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
