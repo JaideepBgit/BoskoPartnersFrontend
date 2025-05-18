@@ -9,7 +9,9 @@ import {
   Grid, 
   CircularProgress,
   Divider,
-  Chip
+  Chip,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../shared/Navbar/Navbar';
@@ -24,6 +26,8 @@ const UserDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
   // Get user ID from localStorage (set during login)
   // Convert to a number since the backend expects numeric values
@@ -80,7 +84,7 @@ const UserDashboard = () => {
     return (
       <>
         <Navbar />
-        <Container sx={{ mt: 4, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+        <Container sx={{ mt: 2, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
           <CircularProgress />
         </Container>
       </>
@@ -90,8 +94,13 @@ const UserDashboard = () => {
   return (
     <>
       <Navbar />
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
+      <Container maxWidth="lg" sx={{ mt: isMobile ? 2 : 4, mb: isMobile ? 2 : 4, px: isMobile ? 2 : 3 }}>
+        <Typography 
+          variant={isMobile ? "h5" : "h4"} 
+          component="h1" 
+          gutterBottom 
+          sx={{ fontWeight: 'bold', mb: isMobile ? 2 : 3 }}
+        >
           {userDetails && userDetails.form_data && userDetails.form_data.personal && 
            userDetails.form_data.personal.firstName ? 
             `Welcome ${userDetails.form_data.personal.firstName}!` : 
@@ -99,12 +108,12 @@ const UserDashboard = () => {
         </Typography>
         
         {error && (
-          <Box sx={{ mb: 3 }}>
+          <Box sx={{ mb: isMobile ? 2 : 3 }}>
             <Typography color="error">{error}</Typography>
           </Box>
         )}
 
-        <Grid container spacing={3}>
+        <Grid container spacing={isMobile ? 2 : 3}>
           <Grid item xs={12} md={6}>
             <Card sx={{ 
               height: '100%', 
@@ -112,9 +121,15 @@ const UserDashboard = () => {
               boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
               borderRadius: '8px'
             }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
+              <CardContent sx={{ p: isMobile ? 2 : 3 }}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: isMobile ? 'column' : 'row',
+                  justifyContent: isMobile ? 'flex-start' : 'space-between', 
+                  alignItems: isMobile ? 'flex-start' : 'center', 
+                  mb: 2 
+                }}>
+                  <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', mb: isMobile ? 1 : 0 }}>
                     Personal Details
                   </Typography>
                   <Chip 
@@ -122,6 +137,7 @@ const UserDashboard = () => {
                     label={isPersonalDetailsFilled() ? "Completed" : "Not Completed"} 
                     color={isPersonalDetailsFilled() ? "success" : "error"}
                     variant="outlined"
+                    size={isMobile ? "small" : "medium"}
                   />
                 </Box>
                 
@@ -130,21 +146,29 @@ const UserDashboard = () => {
                 {userDetails && userDetails.form_data && userDetails.form_data.personal ? (
                   <Box>
                     <Grid container spacing={2}>
-                      <Grid item xs={6}>
+                      <Grid item xs={isMobile ? 12 : 6}>
                         <Typography variant="body2" color="text.secondary">First Name</Typography>
-                        <Typography variant="body1">{userDetails.form_data.personal.firstName || 'Not provided'}</Typography>
+                        <Typography variant="body1" sx={{ wordBreak: 'break-word' }}>
+                          {userDetails.form_data.personal.firstName || 'Not provided'}
+                        </Typography>
                       </Grid>
-                      <Grid item xs={6}>
+                      <Grid item xs={isMobile ? 12 : 6}>
                         <Typography variant="body2" color="text.secondary">Last Name</Typography>
-                        <Typography variant="body1">{userDetails.form_data.personal.lastName || 'Not provided'}</Typography>
+                        <Typography variant="body1" sx={{ wordBreak: 'break-word' }}>
+                          {userDetails.form_data.personal.lastName || 'Not provided'}
+                        </Typography>
                       </Grid>
-                      <Grid item xs={6}>
+                      <Grid item xs={isMobile ? 12 : 6}>
                         <Typography variant="body2" color="text.secondary">Email</Typography>
-                        <Typography variant="body1">{userDetails.form_data.personal.email || 'Not provided'}</Typography>
+                        <Typography variant="body1" sx={{ wordBreak: 'break-word' }}>
+                          {userDetails.form_data.personal.email || 'Not provided'}
+                        </Typography>
                       </Grid>
-                      <Grid item xs={6}>
+                      <Grid item xs={isMobile ? 12 : 6}>
                         <Typography variant="body2" color="text.secondary">Phone</Typography>
-                        <Typography variant="body1">{userDetails.form_data.personal.phone || 'Not provided'}</Typography>
+                        <Typography variant="body1" sx={{ wordBreak: 'break-word' }}>
+                          {userDetails.form_data.personal.phone || 'Not provided'}
+                        </Typography>
                       </Grid>
                     </Grid>
                   </Box>
@@ -154,9 +178,10 @@ const UserDashboard = () => {
                   </Typography>
                 )}
                 
-                <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
+                <Box sx={{ mt: 3, display: 'flex', justifyContent: isMobile ? 'center' : 'flex-end' }}>
                   <Button 
                     variant="contained" 
+                    fullWidth={isMobile}
                     startIcon={isPersonalDetailsFilled() ? <EditIcon /> : <AddIcon />}
                     onClick={handleEditDetails}
                     sx={{

@@ -1,19 +1,22 @@
 import React from 'react';
-import { TextField, Button, Typography, Box, Grid, IconButton, CircularProgress } from '@mui/material';
+import { TextField, Button, Typography, Box, Grid, IconButton, CircularProgress, useMediaQuery, useTheme } from '@mui/material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
 const PersonalDetailsPage = ({ formData, updateFormData, saveAndContinue, saveAndExit, formErrors, isSaving }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   const handleChange = (e) => {
     updateFormData('personal', e.target.name, e.target.value);
   };
 
   return (
-    <Box>
+    <Box sx={{ px: isMobile ? 1 : 2 }}>
       <Typography variant="h5" component="h2" gutterBottom>
         Personal Details
       </Typography>
       
-      <Grid container spacing={3} direction="column">
+      <Grid container spacing={isMobile ? 2 : 3} direction="column">
         <Grid item xs={12}>
           <TextField
             fullWidth
@@ -25,6 +28,7 @@ const PersonalDetailsPage = ({ formData, updateFormData, saveAndContinue, saveAn
             required
             error={!!formErrors.firstName}
             helperText={formErrors.firstName}
+            size={isMobile ? "small" : "medium"}
             sx={{ 
               backgroundColor: 'white',
               '& .MuiOutlinedInput-root': {
@@ -47,6 +51,7 @@ const PersonalDetailsPage = ({ formData, updateFormData, saveAndContinue, saveAn
             required
             error={!!formErrors.lastName}
             helperText={formErrors.lastName}
+            size={isMobile ? "small" : "medium"}
             sx={{ 
               backgroundColor: 'white',
               '& .MuiOutlinedInput-root': {
@@ -69,6 +74,7 @@ const PersonalDetailsPage = ({ formData, updateFormData, saveAndContinue, saveAn
             onChange={handleChange}
             error={!!formErrors.email}
             helperText={formErrors.email}
+            size={isMobile ? "small" : "medium"}
             sx={{ 
               backgroundColor: 'white',
               '& .MuiOutlinedInput-root': {
@@ -91,6 +97,7 @@ const PersonalDetailsPage = ({ formData, updateFormData, saveAndContinue, saveAn
             onChange={handleChange}
             error={!!formErrors.phone}
             helperText={formErrors.phone}
+            size={isMobile ? "small" : "medium"}
             sx={{ 
               backgroundColor: 'white',
               '& .MuiOutlinedInput-root': {
@@ -103,12 +110,20 @@ const PersonalDetailsPage = ({ formData, updateFormData, saveAndContinue, saveAn
         </Grid>
         
         <Grid item xs={12}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-            <Box sx={{ width: 40 }} />
+          <Box sx={{
+            display: 'flex', 
+            flexDirection: isMobile ? 'column' : 'row',
+            justifyContent: isMobile ? 'center' : 'space-between', 
+            alignItems: 'center',
+            mt: 2,
+            gap: isMobile ? 2 : 0
+          }}>
+            {!isMobile && <Box sx={{ width: 40 }} />}
 
             <Button 
               variant="outlined"
               disabled={isSaving}
+              fullWidth={isMobile}
               sx={{
                 color: 'black',
                 borderColor: '#ccc',
@@ -118,7 +133,8 @@ const PersonalDetailsPage = ({ formData, updateFormData, saveAndContinue, saveAn
                   borderColor: '#999',
                 },
                 borderRadius: '4px',
-                padding: '10px 20px',
+                padding: isMobile ? '8px 16px' : '10px 20px',
+                order: isMobile ? 2 : 1
               }}
               onClick={saveAndExit}
             >
@@ -142,9 +158,19 @@ const PersonalDetailsPage = ({ formData, updateFormData, saveAndContinue, saveAn
                 '&:hover': {
                   backgroundColor: '#6a74c3',
                 },
+                order: isMobile ? 1 : 2,
+                width: isMobile ? '100%' : 'auto',
+                borderRadius: isMobile ? '4px' : '50%',
+                padding: isMobile ? '8px' : '12px'
               }}
             >
-              {isSaving ? <CircularProgress size={24} color="inherit" /> : <ArrowForwardIcon />}
+              {isSaving ? 
+                <CircularProgress size={24} color="inherit" /> : 
+                <>
+                  {isMobile && "Continue"}
+                  <ArrowForwardIcon />
+                </>
+              }
             </IconButton>
           </Box>
         </Grid>

@@ -3,11 +3,13 @@ import Navbar from '../shared/Navbar/Navbar';
 import PersonalDetailsPage from './PersonalDetailsPage';
 import OrganizationalDetailsPage from './OrganizationalDetailsPage';
 import SubmitPage from './SubmitPage';
-import { Paper, Box, Typography, LinearProgress, Container } from '@mui/material';
+import { Paper, Box, Typography, LinearProgress, Container, useMediaQuery, useTheme } from '@mui/material';
 import { saveUserDetails, submitUserDetails } from '../../services/UserDetails/UserDetailsService';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const FormContainer = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   // Form state
   const [formData, setFormData] = useState({
     personal: {
@@ -206,80 +208,76 @@ const FormContainer = () => {
         navigate('/dashboard');
       } catch (error) {
         console.error('Error submitting form:', error);
-        alert('Failed to submit form. Your data has been saved locally.');
+        alert('Failed to submit form. Please try again.');
       } finally {
         setIsSaving(false);
       }
     }
   };
-  
-  // Render the appropriate page based on currentPage
-  const renderPage = () => {
-    switch (currentPage) {
-      case 1:
-        return (
-          <PersonalDetailsPage 
-            formData={formData}
-            updateFormData={updateFormData}
-            saveAndContinue={saveAndContinue}
-            saveAndExit={saveAndExit}
-            formErrors={formErrors}
-            isSaving={isSaving}
-          />
-        );
-      case 2:
-        return (
-          <OrganizationalDetailsPage 
-            formData={formData}
-            updateFormData={updateFormData}
-            saveAndContinue={saveAndContinue}
-            saveAndExit={saveAndExit}
-            formErrors={formErrors}
-            setCurrentPage={setCurrentPage}
-            isSaving={isSaving}
-          />
-        );
-      case 3:
-        return (
-          <SubmitPage 
-            formData={formData}
-            submitForm={submitForm}
-            setCurrentPage={setCurrentPage}
-            isSaving={isSaving}
-          />
-        );
-      default:
-        return <PersonalDetailsPage />;
-    }
-  };
-  
+
   return (
     <>
       <Navbar />
-      <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-      <Paper elevation={3} sx={{ p: 3, backgroundColor: '#f5f5f5' }}>
-        <Box sx={{ width: '100%', mb: 4 }}>
-          <LinearProgress 
-            variant="determinate" 
-            value={formProgress} 
-            sx={{ 
-              height: 10, 
-              borderRadius: 5,
-              backgroundColor: '#e0e0e0',
-              '& .MuiLinearProgress-bar': {
-                backgroundColor: '#8a94e3',
-              }
-            }} 
-          />
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-            <Typography variant="body2" color="text.secondary">0%</Typography>
-            <Typography variant="body2" color="text.secondary">100%</Typography>
+      <Container maxWidth="md" sx={{ mt: isMobile ? 2 : 4, mb: isMobile ? 2 : 4, px: isMobile ? 2 : 3 }}>
+        <Paper elevation={3} sx={{ p: isMobile ? 2 : 4, borderRadius: '8px', backgroundColor: '#f5f5f5' }}>
+          {/* Progress bar */}
+          <Box sx={{ width: '100%', mb: isMobile ? 2 : 4 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                Step {currentPage} of 3
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {formProgress}% Complete
+              </Typography>
+            </Box>
+            <LinearProgress 
+              variant="determinate" 
+              value={formProgress} 
+              sx={{ 
+                height: isMobile ? 8 : 10, 
+                borderRadius: 5,
+                backgroundColor: '#e0e0e0',
+                '& .MuiLinearProgress-bar': {
+                  backgroundColor: '#633394',
+                }
+              }} 
+            />
           </Box>
-        </Box>
-        
-        {renderPage()}
-      </Paper>
-    </Container>
+          
+          {/* Form pages */}
+          {currentPage === 1 && (
+            <PersonalDetailsPage 
+              formData={formData}
+              updateFormData={updateFormData}
+              saveAndContinue={saveAndContinue}
+              saveAndExit={saveAndExit}
+              formErrors={formErrors}
+              isSaving={isSaving}
+            />
+          )}
+          
+          {currentPage === 2 && (
+            <OrganizationalDetailsPage 
+              formData={formData}
+              updateFormData={updateFormData}
+              saveAndContinue={saveAndContinue}
+              goBack={() => setCurrentPage(1)}
+              saveAndExit={saveAndExit}
+              formErrors={formErrors}
+              isSaving={isSaving}
+            />
+          )}
+          
+          {currentPage === 3 && (
+            <SubmitPage 
+              formData={formData}
+              goBack={() => setCurrentPage(2)}
+              submitForm={submitForm}
+              isSaving={isSaving}
+            />
+          )}
+        </Paper>
+      </Container>
     </>
   );
 };
