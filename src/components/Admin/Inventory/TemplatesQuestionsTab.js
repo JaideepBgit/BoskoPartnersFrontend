@@ -67,6 +67,7 @@ const TemplatesQuestionsTab = () => {
   const [questionData, setQuestionData] = useState({
     question_text: '',
     question_type_id: '',
+    section: '',
     order: 0,
     is_required: false,
     config: null
@@ -151,6 +152,7 @@ const TemplatesQuestionsTab = () => {
     setQuestionData({
       question_text: '',
       question_type_id: '',
+      section: '',
       order: selectedTemplate?.questions?.length || 0,
       is_required: false,
       config: null
@@ -167,6 +169,7 @@ const TemplatesQuestionsTab = () => {
     setQuestionData({
       question_text: q.question_text,
       question_type_id: q.question_type_id,
+      section: q.section || '',
       order: q.order,
       is_required: q.is_required,
       config: q.config || null
@@ -220,6 +223,7 @@ const TemplatesQuestionsTab = () => {
     const payload = {
       question_text: questionData.question_text,
       question_type_id: questionData.question_type_id,
+      section: questionData.section,
       order: questionData.order,
       is_required: questionData.is_required,
       config: config
@@ -473,189 +477,196 @@ const TemplatesQuestionsTab = () => {
       <Dialog open={openQDialog} onClose={handleCloseDialog} fullWidth maxWidth="sm">
         <DialogTitle>{editingQuestion ? 'Edit Question' : 'Add Question'}</DialogTitle>
         <DialogContent>
-          <TextField 
-            label="Question Text" 
-            fullWidth 
-            multiline
-            rows={3}
-            margin="normal" 
-            value={questionData.question_text} 
-            onChange={e => setQuestionData(prev => ({ ...prev, question_text: e.target.value }))} 
-          />
-          
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Question Type</InputLabel>
-            <Select
-              value={questionData.question_type_id}
-              label="Question Type"
-              onChange={e => setQuestionData(prev => ({ ...prev, question_type_id: e.target.value }))}
-            >
-              {questionTypes.map(type => (
-                <MenuItem key={type.id} value={type.id}>
-                  {type.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          
-          {/* Dynamic fields based on question type */}
-          {questionData.question_type_id === 3 || questionData.question_type_id === 4 ? (
-            // Single choice or Multi choice
-            <Box sx={{ mt: 2, mb: 2 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                Options
-              </Typography>
-              {choiceOptions.map((option, index) => (
-                <Box key={index} sx={{ display: 'flex', mb: 1 }}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label={`Option ${index + 1}`}
-                    value={option}
-                    onChange={(e) => {
-                      const newOptions = [...choiceOptions];
-                      newOptions[index] = e.target.value;
-                      setChoiceOptions(newOptions);
-                    }}
-                  />
-                  <IconButton 
-                    color="error" 
-                    onClick={() => setChoiceOptions(choiceOptions.filter((_, i) => i !== index))}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </Box>
-              ))}
-              <Button
-                startIcon={<AddIcon />}
-                onClick={() => setChoiceOptions([...choiceOptions, ''])}
-                sx={{ mt: 1 }}
+          <Box sx={{ mt: 2 }}>
+            <TextField
+              fullWidth
+              label="Question Text"
+              value={questionData.question_text}
+              onChange={(e) => setQuestionData({ ...questionData, question_text: e.target.value })}
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              label="Section"
+              value={questionData.section}
+              onChange={(e) => setQuestionData({ ...questionData, section: e.target.value })}
+              margin="normal"
+              placeholder="Enter section name (e.g., Personal Information, Education, etc.)"
+            />
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Question Type</InputLabel>
+              <Select
+                value={questionData.question_type_id}
+                onChange={(e) => setQuestionData({ ...questionData, question_type_id: e.target.value })}
+                label="Question Type"
               >
-                Add Option
-              </Button>
-            </Box>
-          ) : questionData.question_type_id === 5 ? (
-            // Rating
-            <Box sx={{ mt: 2, mb: 2 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                Rating Configuration
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={4}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="Min"
-                    value={ratingConfig.min}
-                    onChange={(e) => setRatingConfig({ ...ratingConfig, min: parseInt(e.target.value) || 0 })}
-                  />
+                {questionTypes.map((type) => (
+                  <MenuItem key={type.id} value={type.id}>
+                    {type.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            
+            {/* Dynamic fields based on question type */}
+            {questionData.question_type_id === 3 || questionData.question_type_id === 4 ? (
+              // Single choice or Multi choice
+              <Box sx={{ mt: 2, mb: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Options
+                </Typography>
+                {choiceOptions.map((option, index) => (
+                  <Box key={index} sx={{ display: 'flex', mb: 1 }}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label={`Option ${index + 1}`}
+                      value={option}
+                      onChange={(e) => {
+                        const newOptions = [...choiceOptions];
+                        newOptions[index] = e.target.value;
+                        setChoiceOptions(newOptions);
+                      }}
+                    />
+                    <IconButton 
+                      color="error" 
+                      onClick={() => setChoiceOptions(choiceOptions.filter((_, i) => i !== index))}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
+                ))}
+                <Button
+                  startIcon={<AddIcon />}
+                  onClick={() => setChoiceOptions([...choiceOptions, ''])}
+                  sx={{ mt: 1 }}
+                >
+                  Add Option
+                </Button>
+              </Box>
+            ) : questionData.question_type_id === 5 ? (
+              // Rating
+              <Box sx={{ mt: 2, mb: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Rating Configuration
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={4}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Min"
+                      value={ratingConfig.min}
+                      onChange={(e) => setRatingConfig({ ...ratingConfig, min: parseInt(e.target.value) || 0 })}
+                    />
+                  </Grid>
+                  <Grid item xs={4}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Max"
+                      value={ratingConfig.max}
+                      onChange={(e) => setRatingConfig({ ...ratingConfig, max: parseInt(e.target.value) || 5 })}
+                    />
+                  </Grid>
+                  <Grid item xs={4}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Step"
+                      value={ratingConfig.step}
+                      onChange={(e) => setRatingConfig({ ...ratingConfig, step: parseInt(e.target.value) || 1 })}
+                    />
+                  </Grid>
                 </Grid>
-                <Grid item xs={4}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="Max"
-                    value={ratingConfig.max}
-                    onChange={(e) => setRatingConfig({ ...ratingConfig, max: parseInt(e.target.value) || 5 })}
-                  />
-                </Grid>
-                <Grid item xs={4}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="Step"
-                    value={ratingConfig.step}
-                    onChange={(e) => setRatingConfig({ ...ratingConfig, step: parseInt(e.target.value) || 1 })}
-                  />
-                </Grid>
-              </Grid>
-            </Box>
-          ) : questionData.question_type_id === 6 ? (
-            // Date
-            <Box sx={{ mt: 2, mb: 2 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                Date Configuration
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Users will be presented with a date picker
-              </Typography>
-            </Box>
-          ) : questionData.question_type_id === 9 ? (
-            // Dropdown
-            <Box sx={{ mt: 2, mb: 2 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                Dropdown Options
-              </Typography>
-              {dropdownOptions.map((option, index) => (
-                <Box key={index} sx={{ display: 'flex', mb: 1 }}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label={`Option ${index + 1}`}
-                    value={option}
-                    onChange={(e) => {
-                      const newOptions = [...dropdownOptions];
-                      newOptions[index] = e.target.value;
-                      setDropdownOptions(newOptions);
-                    }}
-                  />
-                  <IconButton 
-                    color="error" 
-                    onClick={() => setDropdownOptions(dropdownOptions.filter((_, i) => i !== index))}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </Box>
-              ))}
-              <Button
-                startIcon={<AddIcon />}
-                onClick={() => setDropdownOptions([...dropdownOptions, ''])}
-                sx={{ mt: 1 }}
-              >
-                Add Option
-              </Button>
-            </Box>
-          ) : questionData.question_type_id === 12 ? (
-            // Matrix
-            <Box sx={{ mt: 2, mb: 2 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                Matrix Configuration
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Matrix configuration will be implemented in a future update
-              </Typography>
-            </Box>
-          ) : questionData.question_type_id === 13 ? (
-            // Ranking
-            <Box sx={{ mt: 2, mb: 2 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                Ranking Configuration
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Ranking configuration will be implemented in a future update
-              </Typography>
-            </Box>
-          ) : null}
-          
-          <TextField 
-            label="Order" 
-            type="number" 
-            fullWidth 
-            margin="normal" 
-            value={questionData.order} 
-            onChange={e => setQuestionData(prev => ({ ...prev, order: parseInt(e.target.value) || 0 }))} 
-          />
-          
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={questionData.is_required}
-                onChange={e => setQuestionData(prev => ({ ...prev, is_required: e.target.checked }))}
-              />
-            }
-            label="Required"
-            sx={{ mt: 1 }}
-          />
+              </Box>
+            ) : questionData.question_type_id === 6 ? (
+              // Date
+              <Box sx={{ mt: 2, mb: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Date Configuration
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Users will be presented with a date picker
+                </Typography>
+              </Box>
+            ) : questionData.question_type_id === 9 ? (
+              // Dropdown
+              <Box sx={{ mt: 2, mb: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Dropdown Options
+                </Typography>
+                {dropdownOptions.map((option, index) => (
+                  <Box key={index} sx={{ display: 'flex', mb: 1 }}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label={`Option ${index + 1}`}
+                      value={option}
+                      onChange={(e) => {
+                        const newOptions = [...dropdownOptions];
+                        newOptions[index] = e.target.value;
+                        setDropdownOptions(newOptions);
+                      }}
+                    />
+                    <IconButton 
+                      color="error" 
+                      onClick={() => setDropdownOptions(dropdownOptions.filter((_, i) => i !== index))}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
+                ))}
+                <Button
+                  startIcon={<AddIcon />}
+                  onClick={() => setDropdownOptions([...dropdownOptions, ''])}
+                  sx={{ mt: 1 }}
+                >
+                  Add Option
+                </Button>
+              </Box>
+            ) : questionData.question_type_id === 12 ? (
+              // Matrix
+              <Box sx={{ mt: 2, mb: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Matrix Configuration
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Matrix configuration will be implemented in a future update
+                </Typography>
+              </Box>
+            ) : questionData.question_type_id === 13 ? (
+              // Ranking
+              <Box sx={{ mt: 2, mb: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Ranking Configuration
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Ranking configuration will be implemented in a future update
+                </Typography>
+              </Box>
+            ) : null}
+            
+            <TextField 
+              label="Order" 
+              type="number" 
+              fullWidth 
+              margin="normal" 
+              value={questionData.order} 
+              onChange={e => setQuestionData(prev => ({ ...prev, order: parseInt(e.target.value) || 0 }))} 
+            />
+            
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={questionData.is_required}
+                  onChange={e => setQuestionData(prev => ({ ...prev, is_required: e.target.checked }))}
+                />
+              }
+              label="Required"
+              sx={{ mt: 1 }}
+            />
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
