@@ -11,7 +11,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { 
-    fetchUsers, addUser, updateUser, deleteUser, 
+    fetchUsersWithRoleUser, addUser, updateUser, deleteUser, 
     fetchOrganizations, fetchRoles, uploadUserFile, addRole
 } from '../../../services/UserManagement/UserManagementService';
 
@@ -62,7 +62,8 @@ function UsersManagement() {
     // Load users from API
     const loadUsers = async () => {
         try {
-            const data = await fetchUsers();
+            const data = await fetchUsersWithRoleUser();
+            console.log(data);
             setUsers(data);
             setTotalUsers(data.length);
         } catch (error) {
@@ -305,68 +306,49 @@ function UsersManagement() {
 
     // Render the users table
     const renderUsersTable = () => {
-        const startIndex = page * rowsPerPage;
-        const endIndex = startIndex + rowsPerPage;
-        const displayedUsers = users.slice(startIndex, endIndex);
-
         return (
-            <TableContainer component={Paper} sx={{ boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
+            <TableContainer component={Paper}>
                 <Table>
                     <TableHead sx={{ backgroundColor: '#633394' }}>
                         <TableRow>
                             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Username</TableCell>
                             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Email</TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Name</TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Role</TableCell>
+                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>First Name</TableCell>
+                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Last Name</TableCell>
                             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Organization</TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Roles</TableCell>
+                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Organization Type</TableCell>
+                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Organization Address</TableCell>
                             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Actions</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {displayedUsers.map((user) => (
-                            <TableRow key={user.id} sx={{ '&:nth-of-type(odd)': { backgroundColor: theme.palette.action.hover } }}>
-                                <TableCell>{user.username}</TableCell>
-                                <TableCell>{user.email}</TableCell>
-                                <TableCell>{`${user.firstname || ''} ${user.lastname || ''}`}</TableCell>
-                                <TableCell>
-                                    <Chip 
-                                        label={user.ui_role} 
-                                        color={
-                                            user.ui_role === 'admin' ? 'primary' : 
-                                            user.ui_role === 'manager' ? 'secondary' : 
-                                            'default'
-                                        }
-                                        size="small"
-                                    />
-                                </TableCell>
-                                <TableCell>{getOrganizationName(user.organization_id)}</TableCell>
-                                <TableCell>
-                                    {user.roles && user.roles.map((role, index) => (
-                                        <Chip 
-                                            key={index}
-                                            label={`${getRoleName(role.role_id)} at ${getOrganizationName(role.organization_id)}`}
-                                            size="small"
-                                            sx={{ m: 0.5, backgroundColor: theme.palette.secondary.light }}
-                                        />
-                                    ))}
-                                </TableCell>
-                                <TableCell>
-                                    <IconButton 
-                                        onClick={() => handleOpenEditDialog(user)}
-                                        color="primary"
-                                    >
-                                        <EditIcon />
-                                    </IconButton>
-                                    <IconButton 
-                                        onClick={() => handleOpenDeleteDialog(user)}
-                                        color="error"
-                                    >
-                                        <DeleteIcon />
-                                    </IconButton>
-                                </TableCell>
-                            </TableRow>
-                        ))}
+                        {users
+                            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                            .map((user) => (
+                                <TableRow key={user.id}>
+                                    <TableCell>{user.username}</TableCell>
+                                    <TableCell>{user.email}</TableCell>
+                                    <TableCell>{user.firstname}</TableCell>
+                                    <TableCell>{user.lastname}</TableCell>
+                                    <TableCell>{user.organization?.name || 'N/A'}</TableCell>
+                                    <TableCell>{user.organization?.type || 'N/A'}</TableCell>
+                                    <TableCell>{user.organization?.address || 'N/A'}</TableCell>
+                                    <TableCell>
+                                        <IconButton 
+                                            onClick={() => handleOpenEditDialog(user)}
+                                            color="primary"
+                                        >
+                                            <EditIcon />
+                                        </IconButton>
+                                        <IconButton 
+                                            onClick={() => handleOpenDeleteDialog(user)}
+                                            color="error"
+                                        >
+                                            <DeleteIcon />
+                                        </IconButton>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
                     </TableBody>
                 </Table>
                 <TablePagination
@@ -377,11 +359,6 @@ function UsersManagement() {
                     page={page}
                     onPageChange={handleChangePage}
                     onRowsPerPageChange={handleChangeRowsPerPage}
-                    sx={{ 
-                        '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
-                            margin: 0
-                        }
-                    }}
                 />
             </TableContainer>
         );

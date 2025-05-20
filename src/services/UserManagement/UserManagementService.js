@@ -196,3 +196,14 @@ export const fetchUmbrellaAssociations = async () => {
         throw error;
     }
 };
+
+// Fetch users with role "user" and their organizational details
+export const fetchUsersWithRoleUser = async () => {
+    try {
+        const response = await axios.get(`${API_BASE_URL}/users/role/user`);
+        return response.data;
+    } catch (error) {
+        console.error('Failed to fetch users with role "user":', error);
+        throw error;
+    }
+};

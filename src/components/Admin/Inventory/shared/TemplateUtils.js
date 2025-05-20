@@ -86,7 +86,7 @@ const TemplateUtils = {
   },
 
   // Group questions by section
-  groupQuestionsBySection: (questions) => {
+  /*groupQuestionsBySection: (questions) => {
     const sections = questions?.reduce((acc, question) => {
       // Assuming section is stored in question.config.section or similar
       const sectionId = question.config?.section || 1;
@@ -98,7 +98,18 @@ const TemplateUtils = {
     }, {}) || {};
     
     return sections;
+  },*/
+
+  groupQuestionsBySection: (questions) => {
+    return (questions || []).reduce((acc, q) => {
+      // use q.section (string) rather than config.section
+      const sec = q.section || 'Uncategorized';
+      if (!acc[sec]) acc[sec] = [];
+      acc[sec].push(q);
+      return acc;
+    }, {});
   },
+  
 
   // Calculate survey statistics
   calculateSurveyStats: (questions) => {
