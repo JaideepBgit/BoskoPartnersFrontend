@@ -5,6 +5,7 @@ import { Container, Typography, Box, Select, MenuItem, FormControl,
 import IconButton from '@mui/material/IconButton';
 import SendIcon from '@mui/icons-material/Send';
 import { useNavigate } from 'react-router-dom';
+import Navbar from '../shared/Navbar/Navbar';
 
 // Register Chart.js components
 
@@ -26,7 +27,7 @@ const adminColors = {
 function AdminDashboard({ onLogout }) {
     const tabs = [
         { label: 'Home', path: '/home'},
-        { label: 'Dashboard', path: '/admin-dashboard' },
+        { label: 'Dashboard', path: '/dashboard' },
         { label: 'Assessment Overview', path: '/root-dashboard' },
         { label: '360 Degree Assessment', path: '/edit-assessments' },
         { label: 'Users Management', path: '/users' },
@@ -39,10 +40,8 @@ function AdminDashboard({ onLogout }) {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [uniqueCompanies, setUniqueCompanies] = useState([]);
-    const [filters, setFilters] = useState({ company: '', coach: '', leader: '', observer: '', status: '', urgency: '' });
-    const [availableCoaches, setAvailableCoaches] = useState([]);
-    const [availableLeaders, setAvailableLeaders] = useState([]);
-    const [availableObservers, setAvailableObservers] = useState([]);
+    const [filters, setFilters] = useState({ organization: '', users: '', status: '', urgency: '' });
+    const [availableUsers, setAvailableUsers] = useState([]);
     const [openReminderDialog, setOpenReminderDialog] = useState(false);
     const [selectedRecipient, setSelectedRecipient] = useState(null);
     const [selectedRole, setSelectedRole] = useState('');
@@ -67,7 +66,7 @@ function AdminDashboard({ onLogout }) {
                 setData(dashboardData);
                 setIsDataLoaded(true);
                 setUniqueCompanies(Array.from(new Set(dashboardData.companies.map(company => company.name).filter(company => company))));
-                setAvailableLeaders(dashboardData.users.filter(user => user.role === 'leader'));
+                setAvailableUsers(dashboardData.users);
             } catch (error) {
                 console.error('Failed to fetch dashboard data:', error);
             }
@@ -87,48 +86,18 @@ function AdminDashboard({ onLogout }) {
     const observers = useMemo(() => data.observers, [data]);
 
     useEffect(() => {
-        if (filters.company) {
-            // Filter coaches based on selected company
-            const selectedCompanyCoaches = companyCoachDetails
-                .filter(detail => detail.company_name === filters.company)
-                .map(detail => ({ id: detail.coach_id, name: detail.coach_name }));
-            setAvailableCoaches(selectedCompanyCoaches);
-
-            // Ensure leaders and observers are filtered based on company
-            const selectedCompany = data.companies.find(company => company.name === filters.company);
-            const leadersForCompany = data.users.filter(user => user.role === 'leader' && user.company_id === selectedCompany.id);
-            setAvailableLeaders(leadersForCompany);
-            const observersForCompany = data.observers.filter(observer =>
-                leadersForCompany.some(leader => leader.id === observer.leader_id)
-            );
-            setAvailableObservers(observersForCompany);
-        } else if (filters.coach) {
-            // Filter companies based on selected coach
-            const selectedCoachCompanies = companyCoachDetails
-                .filter(detail => detail.coach_name === filters.coach)
-                .map(detail => detail.company_name);
-            setUniqueCompanies([...new Set(selectedCoachCompanies)]);
-
-            // Ensure leaders and observers are filtered based on coach
-            const leadersForCoach = data.users.filter(user =>
-                user.role === 'leader' &&
-                companyCoachDetails.some(detail =>
-                    detail.coach_id === user.supervisor_id && detail.coach_name === filters.coach
-                )
-            );
-            setAvailableLeaders(leadersForCoach);
-            const observersForCoach = data.observers.filter(observer =>
-                leadersForCoach.some(leader => leader.id === observer.leader_id)
-            );
-            setAvailableObservers(observersForCoach);
+        if (filters.organization) {
+            // Filter users based on selected organization
+            const selectedCompany = data.companies.find(company => company.name === filters.organization);
+            if (selectedCompany) {
+                const usersForCompany = data.users.filter(user => user.company_id === selectedCompany.id);
+                setAvailableUsers(usersForCompany);
+            }
         } else {
-            // Reset to show all options if no filter is applied
-            setAvailableCoaches(data.users.filter(user => user.role === 'coach'));
-            setUniqueCompanies(Array.from(new Set(data.companies.map(company => company.name))));
-            setAvailableLeaders(data.users.filter(user => user.role === 'leader'));
-            setAvailableObservers(data.observers);
+            // Reset to show all users if no organization filter is applied
+            setAvailableUsers(data.users);
         }
-    }, [filters.company, filters.coach, data, companyCoachDetails]);
+    }, [filters.organization, data]);
 
     useEffect(() => {
         if (isDataLoaded && responses.length > 0 && assessments.length > 0) {
@@ -289,35 +258,22 @@ function AdminDashboard({ onLogout }) {
     // Filtered data based on selected filters
     const filteredAssessments = data.assessments.filter((assessment) => {
         const leader = data.users.find(u => u.id === assessment.leader_id && u.role === 'leader');
-        const coach = data.users.find(u => u.role === 'coach' && data.users.some(l => l.id === assessment.leader_id && l.role === 'leader' && l.supervisor_id === u.id));
         const observer = data.observers.find(o => o.assessment_id === assessment.id);
         const company = data.companies.find(c => leader && c.id === leader.company_id);
-        const isCompanyMatch = !filters.company || (company && company.name === filters.company);
+        const isCompanyMatch = !filters.organization || (company && company.name === filters.organization);
 
-        // Get status based on who we're filtering
-        let status;
-        let urgencyColor;
+        // Get status based on assessment
+        const { status, urgencyColor } = getStatusAndUrgency(assessment);
+        
+        // Check if user matches filter (could be leader or observer)
+        const userMatch = !filters.users || 
+            (leader && leader.name.includes(filters.users)) ||
+            (observer && observer.name.includes(filters.users));
 
-        if (filters.leader && !filters.observer) {
-            // If filtering by leader only
-            ({ status, urgencyColor } = getStatusAndUrgencyforLO(assessment, true));
-        } else if (!filters.leader && filters.observer) {
-            // If filtering by observer only
-            ({ status, urgencyColor } = getStatusAndUrgencyforLO(assessment, false));
-        } else {
-            if(assessment.role === null){
-                ({ status, urgencyColor } = getStatusAndUrgencyforLO(assessment, false));
-            }
-            if(assessment.role === 'leader'){
-                ({ status, urgencyColor } = getStatusAndUrgencyforLO(assessment, true));
-            }
-        }
         return isCompanyMatch &&
-            (!filters.coach || (coach && coach.name.includes(filters.coach))) &&
-            (!filters.leader || (leader && leader.name.includes(filters.leader))) &&
-            (!filters.observer || (observer && observer.name.includes(filters.observer))) &&
+            userMatch &&
             (!filters.status || filters.status === status) &&
-            (!filters.urgency || getStatusAndUrgency(assessment).urgencyColor.includes(filters.urgency));
+            (!filters.urgency || urgencyColor.includes(filters.urgency));
     });
 
     const handleDateClick = (assessment) => {
@@ -359,7 +315,8 @@ function AdminDashboard({ onLogout }) {
     };
 
     return (
-        <div>
+        <>
+            <Navbar />
             <Container maxWidth="xl" sx={{ mt: 4, flexGrow: 1, overflow: 'auto' }}>
                 <Typography variant="h4" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
                     Admin Dashboard
@@ -373,8 +330,8 @@ function AdminDashboard({ onLogout }) {
                             </Typography>
                             <Box sx={{ display: 'flex',gap: 2 }}>
                                 <FormControl variant="outlined" size="small" sx={{ minWidth: 120 }}>
-                                    <InputLabel>Company</InputLabel>
-                                    <Select name="company" value={filters.company} onChange={handleFilterChange} label="Company">
+                                    <InputLabel>Organization</InputLabel>
+                                    <Select name="organization" value={filters.organization} onChange={handleFilterChange} label="Organization">
                                         <MenuItem value=""><em>None</em></MenuItem>
                                         {uniqueCompanies.map((company, index) => (
                                             <MenuItem key={index} value={company}>{company}</MenuItem>
@@ -382,29 +339,11 @@ function AdminDashboard({ onLogout }) {
                                     </Select>
                                 </FormControl>
                                 <FormControl variant="outlined" size="small" sx={{ minWidth: 120 }}>
-                                    <InputLabel>Coach</InputLabel>
-                                    <Select name="coach" value={filters.coach} onChange={handleFilterChange} label="Coach">
+                                    <InputLabel>Users</InputLabel>
+                                    <Select name="users" value={filters.users} onChange={handleFilterChange} label="Users">
                                         <MenuItem value=""><em>None</em></MenuItem>
-                                        {availableCoaches.map(coach => (
-                                            <MenuItem key={coach.id} value={coach.name}>{coach.name}</MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                                <FormControl variant="outlined" size="small" sx={{ minWidth: 120 }}>
-                                    <InputLabel>Leader</InputLabel>
-                                    <Select name="leader" value={filters.leader} onChange={handleFilterChange} label="Leader">
-                                        <MenuItem value=""><em>None</em></MenuItem>
-                                        {availableLeaders.map(leader => (
-                                            <MenuItem key={leader.id} value={leader.name}>{leader.name}</MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                                <FormControl variant="outlined" size="small" sx={{ minWidth: 120 }}>
-                                    <InputLabel>Observer</InputLabel>
-                                    <Select name="observer" value={filters.observer} onChange={handleFilterChange} label="Observer">
-                                        <MenuItem value=""><em>None</em></MenuItem>
-                                        {availableObservers.map(observer => (
-                                            <MenuItem key={observer.id} value={observer.name}>{observer.name}</MenuItem>
+                                        {availableUsers.map(user => (
+                                            <MenuItem key={user.id} value={user.name}>{user.name}</MenuItem>
                                         ))}
                                     </Select>
                                 </FormControl>
@@ -433,10 +372,8 @@ function AdminDashboard({ onLogout }) {
                                         <Table sx={{ borderCollapse: 'collapse' }}>
                                             <TableHead>
                                                 <TableRow sx={{ backgroundColor: adminColors.headerBg }}>
-                                                    <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}` }}>Company</TableCell>
-                                                    <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}` }}>Coach</TableCell>
-                                                    <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}` }}>Leader</TableCell>
-                                                    <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}` }}>Observer</TableCell>
+                                                    <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}` }}>Organization</TableCell>
+                                                    <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}` }}>Users</TableCell>
                                                     <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}` }}>Status</TableCell>
                                                     <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}` }}>Start Date</TableCell>
                                                     <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}` }}>End Date</TableCell> 
@@ -447,22 +384,17 @@ function AdminDashboard({ onLogout }) {
                                             <TableBody>
                                                 {filteredAssessments.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((assessment) => {
                                                     const leader = data.users.find(u => u.id === assessment.leader_id && u.role === 'leader');
-                                                    const coach = data.users.find(u => u.role === 'coach' && data.users.some(l => l.id === assessment.leader_id && l.role === 'leader' && l.supervisor_id === u.id));
                                                     const observer = data.observers.find(o => o.assessment_id === assessment.id);
                                                     const company = data.companies.find(c => leader && c.id === leader.company_id);
                                                     const companyName = company ? company.name : '';
                                                     
-                                                    let { status, urgencyColor } = leader && !observer ? 
-                                                    getStatusAndUrgencyforLO(assessment, true) : 
-                                                    observer ? getStatusAndUrgencyforLO(assessment, false) : 
-                                                    { status: '', urgencyColor: '' };
+                                                    const { status, urgencyColor } = getStatusAndUrgency(assessment);
+                                                    const userName = leader ? leader.name : (observer ? observer.name : '');
                                                     
                                                     return (
                                                         <TableRow key={assessment.id} sx={{ height: '30px', '& td': { padding: '4px', height: 'auto' } }}>
                                                             <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}` }}>{companyName}</TableCell>
-                                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`}}>{coach ? coach.name : ''}</TableCell>
-                                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, bgcolor:(leader && !observer ? urgencyColor : '') }}>{leader ? leader.name : ''}</TableCell>
-                                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, bgcolor:(observer ? urgencyColor : '') }}>{observer ? observer.name : ''}</TableCell>
+                                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, bgcolor: urgencyColor }}>{userName}</TableCell>
                                                             <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}` }}>{status}</TableCell>
                                                             <TableCell 
                                                                 sx={{ 
@@ -516,8 +448,7 @@ function AdminDashboard({ onLogout }) {
 
                 </Box>
             </Container>
-
-        </div>
+        </>
     );
 }
 

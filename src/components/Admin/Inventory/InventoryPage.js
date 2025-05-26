@@ -296,8 +296,8 @@ const InventoryPage = () => {
             }}
           >
             <Tab label="Template Versions" />
-            <Tab label="Questions" />
-            <Tab label="Templates" />
+            <Tab label="Questions Inventory" />
+            <Tab label="Preview Templates" />
           </Tabs>
         </Paper>
       

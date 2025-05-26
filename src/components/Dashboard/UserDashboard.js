@@ -21,18 +21,18 @@ import ErrorIcon from '@mui/icons-material/Error';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 
-const UserDashboard = () => {
+// Home Component - This will be the default landing page for non-admin users
+const HomeComponent = () => {
   const [userDetails, setUserDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const userRole = localStorage.getItem('userRole');
   
   // Get user ID from localStorage (set during login)
-  // Convert to a number since the backend expects numeric values
-  const userId = parseInt(localStorage.getItem('userId') || '0', 10); // Default to 0 if not found
-  console.log('User ID:', userId);
+  const userId = parseInt(localStorage.getItem('userId') || '0', 10);
   const surveyCode = localStorage.getItem('surveyCode');
 
   useEffect(() => {
@@ -50,7 +50,11 @@ const UserDashboard = () => {
       }
     };
 
-    fetchUserDetails();
+    if (userId > 0) {
+      fetchUserDetails();
+    } else {
+      setLoading(false);
+    }
   }, [userId]);
 
   const handleEditDetails = () => {
@@ -76,7 +80,6 @@ const UserDashboard = () => {
     if (!userDetails) {
       return false;
     }
-    
     return userDetails.personal_details_filled;
   };
 
@@ -99,12 +102,12 @@ const UserDashboard = () => {
           variant={isMobile ? "h5" : "h4"} 
           component="h1" 
           gutterBottom 
-          sx={{ fontWeight: 'bold', mb: isMobile ? 2 : 3 }}
+          sx={{ fontWeight: 'bold', mb: isMobile ? 2 : 3, color: '#633394' }}
         >
           {userDetails && userDetails.form_data && userDetails.form_data.personal && 
            userDetails.form_data.personal.firstName ? 
             `Welcome ${userDetails.form_data.personal.firstName}!` : 
-            'Welcome User!'}
+            'Welcome to Bosko Partners!'}
         </Typography>
         
         {error && (
@@ -114,6 +117,37 @@ const UserDashboard = () => {
         )}
 
         <Grid container spacing={isMobile ? 2 : 3}>
+          {/* Quick Actions Card */}
+          <Grid item xs={12} md={6}>
+            <Card sx={{ 
+              height: '100%', 
+              backgroundColor: '#f5f5f5',
+              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+              borderRadius: '8px'
+            }}>
+              <CardContent sx={{ p: isMobile ? 2 : 3 }}>
+                <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold' }}>
+                  Quick Actions
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <Button 
+                    variant="outlined" 
+                    onClick={() => navigate('/profile')}
+                    sx={{ 
+                      borderColor: '#633394', 
+                      color: '#633394',
+                      '&:hover': { borderColor: '#7c52a5', backgroundColor: 'rgba(99, 51, 148, 0.04)' }
+                    }}
+                  >
+                    View Profile
+                  </Button>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Personal Details Card */}
           <Grid item xs={12} md={6}>
             <Card sx={{ 
               height: '100%', 
@@ -129,7 +163,7 @@ const UserDashboard = () => {
                   alignItems: isMobile ? 'flex-start' : 'center', 
                   mb: 2 
                 }}>
-                  <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', mb: isMobile ? 1 : 0 }}>
+                  <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', mb: isMobile ? 1 : 0, color: '#633394' }}>
                     Personal Details
                   </Typography>
                   <Chip 
@@ -197,12 +231,41 @@ const UserDashboard = () => {
               </CardContent>
             </Card>
           </Grid>
-          
-          {/* Additional cards for other sections can be added here */}
         </Grid>
       </Container>
     </>
   );
+};
+
+// Main UserDashboard Component
+const UserDashboard = () => {
+  const [userRole, setUserRole] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const role = localStorage.getItem('userRole');
+    setUserRole(role);
+    
+    // If no role is found, redirect to login
+    if (!role) {
+      navigate('/login');
+    }
+  }, [navigate]);
+
+  // Show loading while determining user role
+  if (!userRole) {
+    return (
+      <>
+        <Navbar />
+        <Container maxWidth="xl" sx={{ mt: 4 }}>
+          <Typography variant="h6">Loading...</Typography>
+        </Container>
+      </>
+    );
+  }
+
+  // Always show the HomeComponent for UserDashboard
+  return <HomeComponent />;
 };
 
 export default UserDashboard;

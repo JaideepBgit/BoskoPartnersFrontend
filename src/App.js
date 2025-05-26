@@ -6,11 +6,31 @@ import FormContainer from './components/UserDetailsForm/FormContainer';
 import UserLandingPage from './components/LandingPages/UserLandingPage';
 import AdminLandingPage from './components/LandingPages/AdminLandingPage';
 import UserDashboard from './components/Dashboard/UserDashboard';
+import AdminDashboard from './components/Dashboard/AdminDashboard';
 import InventoryPage from './components/Admin/Inventory/InventoryPage';
 import UserManagementMain from './components/UserManagement/UserManagementMain';
-import AdminDashboard from './external/AdminDashboard';
 import './App.css';
 import './styles/form.css';
+
+// Role-based dashboard component
+function RoleBasedDashboard() {
+  const userRole = localStorage.getItem('userRole');
+  const location = useLocation();
+  
+  if (userRole === 'admin') {
+    // If admin is on /home route, show AdminLandingPage
+    if (location.pathname === '/home') {
+      return <AdminLandingPage />;
+    }
+    // If admin is on /dashboard route, show AdminDashboard
+    if (location.pathname === '/dashboard') {
+      return <AdminDashboard />;
+    }
+  }
+  
+  // For regular users, always show UserDashboard
+  return <UserDashboard />;
+}
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -63,9 +83,14 @@ function Main({ isAuthenticated, userRole, login, logout }) {
             <FormContainer onLogout={logout} />
           </ProtectedRoute>
         } />
+        <Route path="/home" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <RoleBasedDashboard />
+          </ProtectedRoute>
+        } />
         <Route path="/dashboard" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
-            <UserDashboard />
+            <RoleBasedDashboard />
           </ProtectedRoute>
         } />
         
@@ -78,11 +103,6 @@ function Main({ isAuthenticated, userRole, login, logout }) {
         <Route path="/admin" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <AdminLandingPage onLogout={logout} />
-          </ProtectedRoute>
-        } />
-        <Route path="/admin-dashboard" element={
-          <ProtectedRoute isAuthenticated={isAuthenticated}>
-            <AdminDashboard onLogout={logout} />
           </ProtectedRoute>
         } />
         <Route path="/inventory" element={

@@ -34,7 +34,191 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import TemplateUtils from './shared/TemplateUtils';
+
+// Sortable Question Item Component for questions within a section
+const SortableQuestionInSection = ({ question, index, onEdit, onDelete, getQuestionTypeName, sectionName }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: `${sectionName}-${question.id}` });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <Accordion 
+      ref={setNodeRef} 
+      style={style}
+      sx={{ 
+        mb: 1, 
+        backgroundColor: '#fff',
+        border: isDragging ? '2px dashed #633394' : 'none',
+        '&:hover': {
+          boxShadow: '0 4px 12px rgba(99, 51, 148, 0.2)',
+        }
+      }}
+    >
+      <AccordionSummary 
+        expandIcon={<ExpandMoreIcon />}
+        sx={{
+          '& .MuiAccordionSummary-content': {
+            alignItems: 'center',
+          }
+        }}
+      >
+        <Box
+          {...attributes}
+          {...listeners}
+          sx={{ 
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 32,
+            height: 32,
+            mr: 1, 
+            cursor: 'grab',
+            color: '#633394',
+            borderRadius: 1,
+            '&:hover': {
+              backgroundColor: 'rgba(99, 51, 148, 0.04)',
+            },
+            '&:active': { cursor: 'grabbing' }
+          }}
+        >
+          <DragIndicatorIcon fontSize="small" />
+        </Box>
+        <Typography sx={{ width: '70%', flexShrink: 0 }}>
+          {index + 1}. {question.question_text}
+        </Typography>
+        <Typography sx={{ color: 'text.secondary' }}>
+          Type: {getQuestionTypeName(question.question_type_id)}
+        </Typography>
+      </AccordionSummary>
+      <AccordionDetails>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box>
+            <Typography variant="body2">
+              Required: {question.is_required ? 'Yes' : 'No'}
+            </Typography>
+            <Typography variant="body2">
+              Order: {question.order}
+            </Typography>
+            <Typography variant="body2">
+              Section: {question.section || 'Uncategorized'}
+            </Typography>
+            {question.config && (
+              <Typography variant="body2">
+                Config: {JSON.stringify(question.config)}
+              </Typography>
+            )}
+          </Box>
+          <Box>
+            <IconButton color="primary" onClick={() => onEdit(question)}>
+              <EditIcon />
+            </IconButton>
+            <IconButton color="error" onClick={() => onDelete(question.id)}>
+              <DeleteIcon />
+            </IconButton>
+          </Box>
+        </Box>
+      </AccordionDetails>
+    </Accordion>
+  );
+};
+
+// Section Card Component
+const SectionCard = ({ sectionName, questions, onEdit, onDelete, getQuestionTypeName, onDragEnd, sensors }) => {
+  const sectionIndex = sectionName === 'Uncategorized' ? 999 : parseInt(sectionName.replace('Section ', '')) || 0;
+  
+  // Sort questions by order before displaying
+  const sortedQuestions = [...questions].sort((a, b) => (a.order || 0) - (b.order || 0));
+  
+  return (
+    <Card sx={{ mb: 3, backgroundColor: '#f9f9f9', boxShadow: '0 6px 16px rgba(0, 0, 0, 0.15)' }}>
+      <CardContent>
+        <Typography 
+          variant="h6" 
+          sx={{ 
+            color: '#633394', 
+            fontWeight: 'bold', 
+            mb: 2,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1
+          }}
+        >
+          <Chip 
+            label={sectionIndex === 999 ? 'Uncategorized' : `Section ${sectionIndex}`}
+            sx={{ 
+              backgroundColor: '#633394', 
+              color: 'white',
+              fontWeight: 'bold'
+            }}
+          />
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            ({sortedQuestions.length} question{sortedQuestions.length !== 1 ? 's' : ''})
+          </Typography>
+        </Typography>
+        
+        {sortedQuestions.length > 0 ? (
+          <DndContext 
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={(event) => onDragEnd(event, sectionName)}
+          >
+            <SortableContext 
+              items={sortedQuestions.map(q => `${sectionName}-${q.id}`)}
+              strategy={verticalListSortingStrategy}
+            >
+              <List sx={{ pt: 0 }}>
+                {sortedQuestions.map((question, index) => (
+                  <SortableQuestionInSection 
+                    key={question.id}
+                    question={question}
+                    index={index}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    getQuestionTypeName={getQuestionTypeName}
+                    sectionName={sectionName}
+                  />
+                ))}
+              </List>
+            </SortableContext>
+          </DndContext>
+        ) : (
+          <Alert severity="info">No questions in this section yet.</Alert>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
 
 const QuestionsTab = () => {
   const [templateVersions, setTemplateVersions] = useState([]);
@@ -77,6 +261,18 @@ const QuestionsTab = () => {
   const [choiceOptions, setChoiceOptions] = useState([]);
   const [ratingConfig, setRatingConfig] = useState({ min: 1, max: 5, step: 1 });
   const [dropdownOptions, setDropdownOptions] = useState([]);
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5, // Require 5px of movement before drag starts
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     fetchTemplateVersions();
@@ -127,13 +323,109 @@ const QuestionsTab = () => {
     fetchTemplate(templateId);
   };
 
+  const handleDragEnd = async (event, sectionName) => {
+    const { active, over } = event;
+    
+    console.log('Drag ended:', { activeId: active.id, overId: over?.id, sectionName });
+
+    if (active.id !== over?.id && selectedTemplate) {
+      // Extract question IDs from the drag identifiers
+      const activeQuestionId = parseInt(active.id.split('-').pop());
+      const overQuestionId = parseInt(over.id.split('-').pop());
+      
+      console.log('Parsed IDs:', { activeQuestionId, overQuestionId });
+      
+      // Get questions in this section only and sort them by order
+      const sectionsData = TemplateUtils.groupQuestionsBySection(selectedTemplate.questions);
+      const sectionQuestions = (sectionsData[sectionName] || []).sort((a, b) => (a.order || 0) - (b.order || 0));
+      
+      console.log('Section questions:', sectionQuestions.map(q => ({ id: q.id, order: q.order, text: q.question_text.substring(0, 20) })));
+      
+      const oldIndex = sectionQuestions.findIndex((q) => q.id === activeQuestionId);
+      const newIndex = sectionQuestions.findIndex((q) => q.id === overQuestionId);
+      
+      console.log('Indices:', { oldIndex, newIndex });
+
+      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+        const reorderedSectionQuestions = arrayMove(sectionQuestions, oldIndex, newIndex);
+        
+        // Update the order property of each question in this section based on new position
+        const updatedSectionQuestions = reorderedSectionQuestions.map((question, index) => ({
+          ...question,
+          order: index
+        }));
+
+        console.log('Updated section questions:', updatedSectionQuestions.map(q => ({ id: q.id, order: q.order, text: q.question_text.substring(0, 20) })));
+
+        // Merge with questions from other sections
+        const allQuestions = selectedTemplate.questions.map(question => {
+          const updatedQuestion = updatedSectionQuestions.find(uq => uq.id === question.id);
+          return updatedQuestion || question;
+        });
+
+        // Update local state immediately for responsive UI
+        setSelectedTemplate(prev => ({
+          ...prev,
+          questions: allQuestions
+        }));
+
+        // Update the templates array to reflect the new order
+        setTemplates(prevTemplates => 
+          prevTemplates.map(template => 
+            template.id === selectedTemplate.id 
+              ? { ...template, questions: allQuestions } 
+              : template
+          )
+        );
+
+        // Save to backend
+        try {
+          await TemplateUtils.updateTemplateQuestions(selectedTemplate.id, allQuestions);
+          console.log('Successfully updated question order in section:', sectionName);
+        } catch (error) {
+          console.error('Error updating question order:', error);
+          // Revert on error
+          fetchTemplate(selectedTemplate.id);
+        }
+      } else {
+        console.log('Drag operation not processed:', { oldIndex, newIndex, sameIndex: oldIndex === newIndex });
+      }
+    } else {
+      console.log('Drag not processed - same position or no target');
+    }
+  };
+
   const handleOpenAdd = () => {
     setEditingQuestion(null);
+    
+    // Determine the next section or use a default
+    let defaultSection = 'Section 1';
+    if (selectedTemplate?.questions?.length > 0) {
+      const sectionsData = TemplateUtils.groupQuestionsBySection(selectedTemplate.questions);
+      const sectionNumbers = Object.keys(sectionsData)
+        .filter(s => s.startsWith('Section '))
+        .map(s => parseInt(s.replace('Section ', '')) || 0)
+        .sort((a, b) => a - b);
+      
+      if (sectionNumbers.length > 0) {
+        // Use the last section as default
+        defaultSection = `Section ${sectionNumbers[sectionNumbers.length - 1]}`;
+      }
+    }
+    
+    // Calculate the next order number within the default section
+    let nextOrder = 0;
+    if (selectedTemplate?.questions?.length > 0) {
+      const sectionsData = TemplateUtils.groupQuestionsBySection(selectedTemplate.questions);
+      const sectionQuestions = sectionsData[defaultSection] || [];
+      nextOrder = sectionQuestions.length;
+    }
+    
     setQuestionData({
       question_text: '',
       question_type_id: '',
-      section: '',
-      order: selectedTemplate?.questions?.length || 0,
+      section: defaultSection,
+      order: nextOrder,
       is_required: false,
       config: null
     });
@@ -210,14 +502,39 @@ const QuestionsTab = () => {
     };
     
     let updatedQuestions = [...(selectedTemplate.questions || [])];
+    
     if (editingQuestion) {
+      // Editing existing question
       const index = updatedQuestions.findIndex(q => q.id === editingQuestion.id);
-      if (index !== -1) updatedQuestions[index] = { ...updatedQuestions[index], ...payload };
+      if (index !== -1) {
+        updatedQuestions[index] = { ...updatedQuestions[index], ...payload };
+      }
     } else {
+      // Adding new question
       const newId = Math.max(0, ...updatedQuestions.map(q => q.id || 0)) + 1;
-      updatedQuestions.push({ id: newId, ...payload });
+      
+      // Calculate proper order within the section
+      const sectionsData = TemplateUtils.groupQuestionsBySection(updatedQuestions);
+      const sectionQuestions = sectionsData[questionData.section] || [];
+      const sectionOrder = sectionQuestions.length;
+      
+      updatedQuestions.push({ 
+        id: newId, 
+        ...payload, 
+        order: sectionOrder 
+      });
     }
-    updatedQuestions.sort((a, b) => a.order - b.order);
+    
+    // Re-order questions within each section
+    const sectionsData = TemplateUtils.groupQuestionsBySection(updatedQuestions);
+    updatedQuestions = [];
+    
+    Object.keys(sectionsData).forEach(sectionName => {
+      const sectionQuestions = sectionsData[sectionName]
+        .sort((a, b) => a.order - b.order)
+        .map((q, index) => ({ ...q, order: index }));
+      updatedQuestions.push(...sectionQuestions);
+    });
     
     const success = await TemplateUtils.updateTemplateQuestions(selectedTemplate.id, updatedQuestions);
     if (success) {
@@ -305,7 +622,7 @@ const QuestionsTab = () => {
     <Box>
       <Grid container spacing={3}>
         {/* Left column - Version selection */}
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} sm={2} md={3}>
           <Paper sx={{ p: 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', height: '100%' }}>
             <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold' }}>Template Versions</Typography>
             <List sx={{ maxHeight: '70vh', overflow: 'auto' }}>
@@ -330,8 +647,13 @@ const QuestionsTab = () => {
           </Paper>
         </Grid>
         
-        {/* Right column - Template and Questions */}
-        <Grid item xs={12} md={9}>
+        {/* Right column - Template selection and Questions */}
+        <Grid 
+          item 
+          xs={12} 
+          md="auto" 
+          sx={{ flexGrow: 1 }}
+        >
           {selectedVersion ? (
             <>
               {/* Template selection or creation */}
@@ -371,7 +693,7 @@ const QuestionsTab = () => {
                   {templates
                     .filter(t => t.version_id === selectedVersion.id)
                     .map(template => (
-                      <Grid item xs={12} sm={6} md={4} key={template.id}>
+                      <Grid item xs={12} sm={6} md={4} lg={3} key={template.id}>
                         <Card 
                           sx={{ 
                             backgroundColor: selectedTemplate?.id === template.id ? 'rgba(99, 51, 148, 0.1)' : '#f5f5f5', 
@@ -402,7 +724,7 @@ const QuestionsTab = () => {
                   <Alert severity="info" sx={{ mt: 2 }}>No templates available for this version. Create one to add questions.</Alert>
                 )}
               </Paper>
-              
+
               {/* Questions section */}
               {selectedTemplate && (
                 <Paper sx={{ p: 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
@@ -424,45 +746,33 @@ const QuestionsTab = () => {
                   </Box>
                   
                   {selectedTemplate.questions?.length > 0 ? (
-                    <List>
-                      {selectedTemplate.questions.map((question, index) => (
-                        <Accordion key={question.id} sx={{ mb: 1, backgroundColor: '#fff' }}>
-                          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                            <Typography sx={{ width: '70%', flexShrink: 0 }}>
-                              {index + 1}. {question.question_text}
-                            </Typography>
-                            <Typography sx={{ color: 'text.secondary' }}>
-                              Type: {getQuestionTypeName(question.question_type_id)}
-                            </Typography>
-                          </AccordionSummary>
-                          <AccordionDetails>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <Box>
-                                <Typography variant="body2">
-                                  Required: {question.is_required ? 'Yes' : 'No'}
-                                </Typography>
-                                <Typography variant="body2">
-                                  Order: {question.order}
-                                </Typography>
-                                {question.config && (
-                                  <Typography variant="body2">
-                                    Config: {JSON.stringify(question.config)}
-                                  </Typography>
-                                )}
-                              </Box>
-                              <Box>
-                                <IconButton color="primary" onClick={() => handleOpenEdit(question)}>
-                                  <EditIcon />
-                                </IconButton>
-                                <IconButton color="error" onClick={() => handleDeleteQuestion(question.id)}>
-                                  <DeleteIcon />
-                                </IconButton>
-                              </Box>
-                            </Box>
-                          </AccordionDetails>
-                        </Accordion>
-                      ))}
-                    </List>
+                    <Box>
+                      {(() => {
+                        const sectionsData = TemplateUtils.groupQuestionsBySection(selectedTemplate.questions);
+                        const sortedSections = Object.keys(sectionsData).sort((a, b) => {
+                          // Sort sections: numbered sections first, then "Uncategorized" last
+                          if (a === 'Uncategorized') return 1;
+                          if (b === 'Uncategorized') return -1;
+                          
+                          const aNum = parseInt(a.replace('Section ', '')) || 0;
+                          const bNum = parseInt(b.replace('Section ', '')) || 0;
+                          return aNum - bNum;
+                        });
+
+                        return sortedSections.map(sectionName => (
+                          <SectionCard
+                            key={sectionName}
+                            sectionName={sectionName}
+                            questions={sectionsData[sectionName]}
+                            onEdit={handleOpenEdit}
+                            onDelete={handleDeleteQuestion}
+                            getQuestionTypeName={getQuestionTypeName}
+                            onDragEnd={handleDragEnd}
+                            sensors={sensors}
+                          />
+                        ));
+                      })()}
+                    </Box>
                   ) : (
                     <Alert severity="info">No questions added yet. Click "Add Question" to create one.</Alert>
                   )}
@@ -478,7 +788,7 @@ const QuestionsTab = () => {
           )}
         </Grid>
       </Grid>
-      
+
       {/* Question Dialog */}
       <Dialog open={openQDialog} onClose={handleCloseDialog} fullWidth maxWidth="sm">
         <DialogTitle>{editingQuestion ? 'Edit Question' : 'Add Question'}</DialogTitle>
@@ -491,13 +801,45 @@ const QuestionsTab = () => {
               onChange={(e) => setQuestionData({ ...questionData, question_text: e.target.value })}
               margin="normal"
             />
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Section</InputLabel>
+              <Select
+                value={questionData.section}
+                onChange={(e) => setQuestionData({ ...questionData, section: e.target.value })}
+                label="Section"
+              >
+                {selectedTemplate?.questions?.length > 0 && (() => {
+                  const sectionsData = TemplateUtils.groupQuestionsBySection(selectedTemplate.questions);
+                  const availableSections = Object.keys(sectionsData).sort((a, b) => {
+                    if (a === 'Uncategorized') return 1;
+                    if (b === 'Uncategorized') return -1;
+                    const aNum = parseInt(a.replace('Section ', '')) || 0;
+                    const bNum = parseInt(b.replace('Section ', '')) || 0;
+                    return aNum - bNum;
+                  });
+                  
+                  return availableSections.map(section => (
+                    <MenuItem key={section} value={section}>
+                      {section}
+                    </MenuItem>
+                  ));
+                })()}
+                <MenuItem value="Section 1">Section 1</MenuItem>
+                <MenuItem value="Section 2">Section 2</MenuItem>
+                <MenuItem value="Section 3">Section 3</MenuItem>
+                <MenuItem value="Section 4">Section 4</MenuItem>
+                <MenuItem value="Section 5">Section 5</MenuItem>
+                <MenuItem value="Uncategorized">Uncategorized</MenuItem>
+              </Select>
+            </FormControl>
             <TextField
               fullWidth
-              label="Section"
-              value={questionData.section}
+              label="Custom Section Name"
+              value={questionData.section.startsWith('Section ') ? '' : questionData.section}
               onChange={(e) => setQuestionData({ ...questionData, section: e.target.value })}
               margin="normal"
-              placeholder="Enter section name (e.g., Personal Information, Education, etc.)"
+              placeholder="Or enter custom section name"
+              helperText="Leave empty to use selected section above"
             />
             <FormControl fullWidth margin="normal">
               <InputLabel>Question Type</InputLabel>

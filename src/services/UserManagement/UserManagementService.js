@@ -1,11 +1,11 @@
 import axios from "axios";
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 // Organization-related API calls
 export const fetchOrganizations = async () => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/organizations`);
+        const response = await axios.get(`${BASE_URL}/organizations`);
         return response.data;
     } catch (error) {
         console.error('Failed to fetch organizations:', error);
@@ -15,7 +15,7 @@ export const fetchOrganizations = async () => {
 
 export const addOrganization = async (organizationData) => {
     try {
-        const response = await axios.post(`${API_BASE_URL}/organizations`, organizationData);
+        const response = await axios.post(`${BASE_URL}/organizations`, organizationData);
         return response.data;
     } catch (error) {
         console.error('Failed to add organization:', error);
@@ -25,7 +25,7 @@ export const addOrganization = async (organizationData) => {
 
 export const updateOrganization = async (id, organizationData) => {
     try {
-        const response = await axios.put(`${API_BASE_URL}/organizations/${id}`, organizationData);
+        const response = await axios.put(`${BASE_URL}/organizations/${id}`, organizationData);
         return response.data;
     } catch (error) {
         console.error('Failed to update organization:', error);
@@ -35,7 +35,7 @@ export const updateOrganization = async (id, organizationData) => {
 
 export const deleteOrganization = async (id) => {
     try {
-        const response = await axios.delete(`${API_BASE_URL}/organizations/${id}`);
+        const response = await axios.delete(`${BASE_URL}/organizations/${id}`);
         return response.data;
     } catch (error) {
         console.error('Failed to delete organization:', error);
@@ -45,7 +45,7 @@ export const deleteOrganization = async (id) => {
 
 export const fetchOrganizationById = async (id) => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/organizations/${id}`);
+        const response = await axios.get(`${BASE_URL}/organizations/${id}`);
         return response.data;
     } catch (error) {
         console.error(`Failed to fetch organization with id ${id}:`, error);
@@ -55,7 +55,7 @@ export const fetchOrganizationById = async (id) => {
 
 export const uploadOrganizationFile = async (formData) => {
     try {
-        const response = await axios.post(`${API_BASE_URL}/organizations/upload`, formData, {
+        const response = await axios.post(`${BASE_URL}/organizations/upload`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }
@@ -70,7 +70,7 @@ export const uploadOrganizationFile = async (formData) => {
 // User-related API calls
 export const fetchUsers = async () => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/users`);
+        const response = await axios.get(`${BASE_URL}/users`);
         return response.data;
     } catch (error) {
         console.error('Failed to fetch users:', error);
@@ -80,7 +80,7 @@ export const fetchUsers = async () => {
 
 export const fetchUsersByOrganization = async (organizationId) => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/organizations/${organizationId}/users`);
+        const response = await axios.get(`${BASE_URL}/organizations/${organizationId}/users`);
         return response.data;
     } catch (error) {
         console.error(`Failed to fetch users for organization ${organizationId}:`, error);
@@ -90,7 +90,7 @@ export const fetchUsersByOrganization = async (organizationId) => {
 
 export const addUser = async (userData) => {
     try {
-        const response = await axios.post(`${API_BASE_URL}/users`, userData);
+        const response = await axios.post(`${BASE_URL}/users`, userData);
         return response.data;
     } catch (error) {
         console.error('Failed to add user:', error);
@@ -100,7 +100,7 @@ export const addUser = async (userData) => {
 
 export const updateUser = async (id, userData) => {
     try {
-        const response = await axios.put(`${API_BASE_URL}/users/${id}`, userData);
+        const response = await axios.put(`${BASE_URL}/users/${id}`, userData);
         return response.data;
     } catch (error) {
         console.error('Failed to update user:', error);
@@ -110,7 +110,7 @@ export const updateUser = async (id, userData) => {
 
 export const deleteUser = async (id) => {
     try {
-        const response = await axios.delete(`${API_BASE_URL}/users/${id}`);
+        const response = await axios.delete(`${BASE_URL}/users/${id}`);
         return response.data;
     } catch (error) {
         console.error('Failed to delete user:', error);
@@ -120,7 +120,7 @@ export const deleteUser = async (id) => {
 
 export const fetchUserById = async (id) => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/users/${id}`);
+        const response = await axios.get(`${BASE_URL}/users/${id}`);
         return response.data;
     } catch (error) {
         console.error(`Failed to fetch user with id ${id}:`, error);
@@ -130,7 +130,7 @@ export const fetchUserById = async (id) => {
 
 export const uploadUserFile = async (formData) => {
     try {
-        const response = await axios.post(`${API_BASE_URL}/users/upload`, formData, {
+        const response = await axios.post(`${BASE_URL}/users/upload`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }
@@ -145,7 +145,7 @@ export const uploadUserFile = async (formData) => {
 // Fetch user roles
 export const fetchRoles = async () => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/roles`);
+        const response = await axios.get(`${BASE_URL}/roles`);
         return response.data;
     } catch (error) {
         console.error('Failed to fetch roles:', error);
@@ -156,7 +156,7 @@ export const fetchRoles = async () => {
 // Add a new role
 export const addRole = async (roleData) => {
     try {
-        const response = await axios.post(`${API_BASE_URL}/roles`, roleData);
+        const response = await axios.post(`${BASE_URL}/roles`, roleData);
         return response.data;
     } catch (error) {
         console.error('Failed to add role:', error);
@@ -167,7 +167,7 @@ export const addRole = async (roleData) => {
 // Fetch denominations
 export const fetchDenominations = async () => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/denominations`);
+        const response = await axios.get(`${BASE_URL}/denominations`);
         return response.data;
     } catch (error) {
         console.error('Failed to fetch denominations:', error);
@@ -178,7 +178,7 @@ export const fetchDenominations = async () => {
 // Fetch accreditation bodies
 export const fetchAccreditationBodies = async () => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/accreditation-bodies`);
+        const response = await axios.get(`${BASE_URL}/accreditation-bodies`);
         return response.data;
     } catch (error) {
         console.error('Failed to fetch accreditation bodies:', error);
@@ -189,7 +189,7 @@ export const fetchAccreditationBodies = async () => {
 // Fetch umbrella associations
 export const fetchUmbrellaAssociations = async () => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/umbrella-associations`);
+        const response = await axios.get(`${BASE_URL}/umbrella-associations`);
         return response.data;
     } catch (error) {
         console.error('Failed to fetch umbrella associations:', error);
@@ -200,7 +200,7 @@ export const fetchUmbrellaAssociations = async () => {
 // Fetch users with role "user" and their organizational details
 export const fetchUsersWithRoleUser = async () => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/users/role/user`);
+        const response = await axios.get(`${BASE_URL}/users/role/user`);
         return response.data;
     } catch (error) {
         console.error('Failed to fetch users with role "user":', error);

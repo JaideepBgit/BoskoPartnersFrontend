@@ -1,11 +1,11 @@
 import axios from "axios";
 
-const API_BASE_URL  = 'http://localhost:5000/api/users';
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const loginUser = async (username, password) => {
     try{
         console.log('Sending login request with:', { username });
-        const response = await axios.post(`${API_BASE_URL}/login`,{
+        const response = await axios.post(`${BASE_URL}/users/login`,{
             username,
             password
         });

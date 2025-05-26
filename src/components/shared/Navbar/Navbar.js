@@ -19,6 +19,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import LogoutIcon from '@mui/icons-material/Logout';
 import DashboardIcon from '@mui/icons-material/Dashboard';
+import HomeIcon from '@mui/icons-material/Home';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
 import PeopleIcon from '@mui/icons-material/People';
 import BarChartIcon from '@mui/icons-material/BarChart';
@@ -52,16 +53,17 @@ const Navbar = () => {
   useEffect(() => {
     if (user?.role === 'admin') {
       const p = location.pathname.toLowerCase();
-      if (p.includes('/admin'))       setTabValue(0); // Admin landing page is the dashboard for admins
-      else if (p.includes('/inventory')) setTabValue(1);
-      else if (p.includes('/users'))     setTabValue(2);
-      else if (p.includes('/reports'))   setTabValue(3);
-      else if (p.includes('/settings'))  setTabValue(4);
+      if (p.includes('/home'))         setTabValue(0); // Home tab
+      else if (p.includes('/dashboard')) setTabValue(1); // Dashboard tab
+      else if (p.includes('/inventory')) setTabValue(2);
+      else if (p.includes('/users'))     setTabValue(3);
+      else if (p.includes('/reports'))   setTabValue(4);
+      else if (p.includes('/settings'))  setTabValue(5);
       else                                setTabValue(0);
     } else {
       // For regular users
       const p = location.pathname.toLowerCase();
-      if (p.includes('/dashboard'))    setUserTabValue(0);
+      if (p.includes('/home') || p.includes('/dashboard'))    setUserTabValue(0);
       else if (p.includes('/surveys')) setUserTabValue(1);
       else if (p.includes('/reports')) setUserTabValue(2);
       else                             setUserTabValue(0);
@@ -71,22 +73,23 @@ const Navbar = () => {
   const handleTabChange = (_, v) => {
     setTabValue(v);
     switch (v) {
-      case 0: navigate('/admin'); break; // Navigate to admin landing page for admins
-      case 1: navigate('/inventory'); break;
-      case 2: navigate('/users');     break;
-      case 3: navigate('/reports');   break;
-      case 4: navigate('/settings');  break;
-      default: navigate('/admin');
+      case 0: navigate('/home'); break; // Navigate to home page
+      case 1: navigate('/dashboard'); break; // Navigate to dashboard
+      case 2: navigate('/inventory'); break;
+      case 3: navigate('/users');     break;
+      case 4: navigate('/reports');   break;
+      case 5: navigate('/settings');  break;
+      default: navigate('/home');
     }
   };
 
   const handleUserTabChange = (_, v) => {
     setUserTabValue(v);
     switch (v) {
-      case 0: navigate('/dashboard'); break;
+      case 0: navigate('/home'); break; // Navigate to home for regular users
       case 1: navigate('/surveys');   break;
       case 2: navigate('/reports');   break;
-      default: navigate('/dashboard');
+      default: navigate('/home');
     }
   };
 
@@ -108,32 +111,36 @@ const Navbar = () => {
       <Divider />
       {user?.role === 'admin' ? (
         <List>
-          <ListItem button onClick={() => navigate('/admin')} selected={tabValue === 0}>
-            <ListItemIcon><DashboardIcon color={tabValue === 0 ? 'primary' : 'inherit'} /></ListItemIcon>
+          <ListItem button onClick={() => navigate('/home')} selected={tabValue === 0}>
+            <ListItemIcon><HomeIcon color={tabValue === 0 ? 'primary' : 'inherit'} /></ListItemIcon>
+            <ListItemText primary="Home" />
+          </ListItem>
+          <ListItem button onClick={() => navigate('/dashboard')} selected={tabValue === 1}>
+            <ListItemIcon><DashboardIcon color={tabValue === 1 ? 'primary' : 'inherit'} /></ListItemIcon>
             <ListItemText primary="Dashboard" />
           </ListItem>
-          <ListItem button onClick={() => navigate('/inventory')} selected={tabValue === 1}>
-            <ListItemIcon><Inventory2Icon color={tabValue === 1 ? 'primary' : 'inherit'} /></ListItemIcon>
+          <ListItem button onClick={() => navigate('/inventory')} selected={tabValue === 2}>
+            <ListItemIcon><Inventory2Icon color={tabValue === 2 ? 'primary' : 'inherit'} /></ListItemIcon>
             <ListItemText primary="Inventory Page" />
           </ListItem>
-          <ListItem button onClick={() => navigate('/users')} selected={tabValue === 2}>
-            <ListItemIcon><PeopleIcon color={tabValue === 2 ? 'primary' : 'inherit'} /></ListItemIcon>
+          <ListItem button onClick={() => navigate('/users')} selected={tabValue === 3}>
+            <ListItemIcon><PeopleIcon color={tabValue === 3 ? 'primary' : 'inherit'} /></ListItemIcon>
             <ListItemText primary="Users Management" />
           </ListItem>
-          <ListItem button onClick={() => navigate('/reports')} selected={tabValue === 3}>
-            <ListItemIcon><BarChartIcon color={tabValue === 3 ? 'primary' : 'inherit'} /></ListItemIcon>
+          <ListItem button onClick={() => navigate('/reports')} selected={tabValue === 4}>
+            <ListItemIcon><BarChartIcon color={tabValue === 4 ? 'primary' : 'inherit'} /></ListItemIcon>
             <ListItemText primary="Reports Page" />
           </ListItem>
-          <ListItem button onClick={() => navigate('/settings')} selected={tabValue === 4}>
-            <ListItemIcon><SettingsIcon color={tabValue === 4 ? 'primary' : 'inherit'} /></ListItemIcon>
+          <ListItem button onClick={() => navigate('/settings')} selected={tabValue === 5}>
+            <ListItemIcon><SettingsIcon color={tabValue === 5 ? 'primary' : 'inherit'} /></ListItemIcon>
             <ListItemText primary="Settings" />
           </ListItem>
         </List>
       ) : (
         <List>
-          <ListItem button onClick={() => navigate('/dashboard')} selected={userTabValue === 0}>
-            <ListItemIcon><DashboardIcon color={userTabValue === 0 ? 'primary' : 'inherit'} /></ListItemIcon>
-            <ListItemText primary="Dashboard" />
+          <ListItem button onClick={() => navigate('/home')} selected={userTabValue === 0}>
+            <ListItemIcon><HomeIcon color={userTabValue === 0 ? 'primary' : 'inherit'} /></ListItemIcon>
+            <ListItemText primary="Home" />
           </ListItem>
           <ListItem button onClick={() => navigate('/surveys')} selected={userTabValue === 1}>
             <ListItemIcon><AssignmentIcon color={userTabValue === 1 ? 'primary' : 'inherit'} /></ListItemIcon>
@@ -202,6 +209,7 @@ const Navbar = () => {
                   },
                 }}
               >
+                <Tab icon={<HomeIcon />} label="Home" iconPosition="start" />
                 <Tab icon={<DashboardIcon />} label="Dashboard" iconPosition="start" />
                 <Tab icon={<Inventory2Icon />} label="Inventory Page" iconPosition="start" />
                 <Tab icon={<PeopleIcon />} label="Users Management" iconPosition="start" />
@@ -226,7 +234,7 @@ const Navbar = () => {
                   },
                 }}
               >
-                <Tab icon={<DashboardIcon />} label="Dashboard" iconPosition="start" />
+                <Tab icon={<HomeIcon />} label="Home" iconPosition="start" />
                 <Tab icon={<AssignmentIcon />} label="Surveys" iconPosition="start" />
                 <Tab icon={<BarChartIcon />} label="Reports" iconPosition="start" />
               </Tabs>

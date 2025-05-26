@@ -1,11 +1,11 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000';
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 // Save user details (for both "Save & Continue" and "Save & Exit")
 export const saveUserDetails = async (data) => {
   try {
-    const response = await axios.post(`${API_URL}/api/user-details/save`, data);
+    const response = await axios.post(`${BASE_URL}/user-details/save`, data);
     console.log('Data saved successfully:', response.data);
     return response.data;
   } catch (error) {
@@ -21,7 +21,7 @@ export const saveUserDetails = async (data) => {
 // Submit the complete form
 export const submitUserDetails = async (data) => {
   try {
-    const response = await axios.post(`${API_URL}/api/user-details/submit`, data);
+    const response = await axios.post(`${BASE_URL}/user-details/submit`, data);
     console.log('Form submitted successfully:', response.data);
     return response.data;
   } catch (error) {
@@ -40,7 +40,7 @@ export const submitUserDetails = async (data) => {
 // Get user details (to resume form filling)
 export const getUserDetails = async (userId) => {
   try {
-    const response = await axios.get(`${API_URL}/api/user-details/${userId}`);
+    const response = await axios.get(`${BASE_URL}/user-details/${userId}`);
     console.log('User details retrieved successfully:', response.data);
     return response.data;
   } catch (error) {
@@ -59,7 +59,7 @@ export const getUserDetails = async (userId) => {
 // Get user details status for dashboard
 export const getUserDetailsStatus = async (userId) => {
   try {
-    const response = await axios.get(`${API_URL}/api/user-details/status/${userId}`);
+    const response = await axios.get(`${BASE_URL}/user-details/status/${userId}`);
     console.log('User details status retrieved successfully:', response.data);
     return response.data;
   } catch (error) {
