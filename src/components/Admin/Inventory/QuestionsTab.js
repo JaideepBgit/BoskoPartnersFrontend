@@ -1,62 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Button,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Typography,
-  Paper,
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Divider,
-  Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  FormControlLabel,
-  Checkbox,
-  List,
-  ListItem,
-  ListItemText,
+  Button,
   IconButton,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Alert
+  Alert,
+  Chip,
+  Paper,
+  TextField,
+  Checkbox
 } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  DragIndicator as DragIndicatorIcon
+} from '@mui/icons-material';
 import {
   DndContext,
   closestCenter,
-  KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
 import {
-  arrayMove,
   SortableContext,
-  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
 } from '@dnd-kit/sortable';
 import {
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import TemplateUtils from './shared/TemplateUtils';
+  CSS,
+} from '@dnd-kit/utilities';
 
-// Sortable Question Item Component for questions within a section
-const SortableQuestionInSection = ({ question, index, onEdit, onDelete, getQuestionTypeName, sectionName }) => {
+import TemplateUtils from './shared/TemplateUtils';
+import QuestionDialog from './QuestionDialog';
+import { getQuestionTypeById } from '../../../config/questionTypes';
+
+// Compact Question Item Component for question list display
+const CompactQuestionItem = ({ question, index, onEdit, onDelete, getQuestionTypeName, sectionName }) => {
   const {
     attributes,
     listeners,
@@ -73,150 +55,310 @@ const SortableQuestionInSection = ({ question, index, onEdit, onDelete, getQuest
   };
 
   return (
-    <Accordion 
+    <Paper 
       ref={setNodeRef} 
       style={style}
       sx={{ 
-        mb: 1, 
+        mb: 0.5, 
         backgroundColor: '#fff',
-        border: isDragging ? '2px dashed #633394' : 'none',
+        border: isDragging ? '2px dashed #633394' : '1px solid #e0e0e0',
+        borderRadius: 1,
+        transition: 'all 0.2s ease-in-out',
         '&:hover': {
-          boxShadow: '0 4px 12px rgba(99, 51, 148, 0.2)',
+          boxShadow: '0 2px 8px rgba(99, 51, 148, 0.15)',
+          borderColor: '#633394',
+          transform: isDragging ? 'none' : 'translateX(2px)',
         }
       }}
     >
-      <AccordionSummary 
-        expandIcon={<ExpandMoreIcon />}
-        sx={{
-          '& .MuiAccordionSummary-content': {
-            alignItems: 'center',
-          }
-        }}
-      >
-        <Box
-          {...attributes}
-          {...listeners}
-          sx={{ 
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 32,
-            height: 32,
-            mr: 1, 
-            cursor: 'grab',
-            color: '#633394',
-            borderRadius: 1,
-            '&:hover': {
-              backgroundColor: 'rgba(99, 51, 148, 0.04)',
-            },
-            '&:active': { cursor: 'grabbing' }
-          }}
-        >
-          <DragIndicatorIcon fontSize="small" />
-        </Box>
-        <Typography sx={{ width: '70%', flexShrink: 0 }}>
-          {index + 1}. {question.question_text}
-        </Typography>
-        <Typography sx={{ color: 'text.secondary' }}>
-          Type: {getQuestionTypeName(question.question_type_id)}
-        </Typography>
-      </AccordionSummary>
-      <AccordionDetails>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box>
-            <Typography variant="body2">
-              Required: {question.is_required ? 'Yes' : 'No'}
-            </Typography>
-            <Typography variant="body2">
-              Order: {question.order}
-            </Typography>
-            <Typography variant="body2">
-              Section: {question.section || 'Uncategorized'}
-            </Typography>
-            {question.config && (
-              <Typography variant="body2">
-                Config: {JSON.stringify(question.config)}
-              </Typography>
-            )}
+      <Box sx={{ p: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+          <Box
+            {...attributes}
+            {...listeners}
+            sx={{ 
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 20,
+              height: 20,
+              mr: 1.5, 
+              cursor: 'grab',
+              color: '#633394',
+              borderRadius: 1,
+              flexShrink: 0,
+              transition: 'all 0.2s ease-in-out',
+              '&:hover': {
+                backgroundColor: 'rgba(99, 51, 148, 0.08)',
+                transform: 'scale(1.1)',
+              },
+              '&:active': { cursor: 'grabbing' }
+            }}
+          >
+            <DragIndicatorIcon fontSize="small" />
           </Box>
-          <Box>
-            <IconButton color="primary" onClick={() => onEdit(question)}>
-              <EditIcon />
-            </IconButton>
-            <IconButton color="error" onClick={() => onDelete(question.id)}>
-              <DeleteIcon />
-            </IconButton>
+          
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                fontWeight: 600, 
+                color: '#333',
+                mb: 0.25,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                fontSize: '0.875rem'
+              }}
+            >
+              {index + 1}. {question.question_text}
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+              <Chip 
+                label={getQuestionTypeName(question.question_type_id)} 
+                size="small" 
+                variant="outlined"
+                sx={{ 
+                  height: 18, 
+                  fontSize: '0.65rem',
+                  borderColor: '#633394',
+                  color: '#633394',
+                  '& .MuiChip-label': { px: 1 }
+                }}
+              />
+              {question.is_required && (
+                <Chip 
+                  label="Required" 
+                  size="small" 
+                  color="error"
+                  variant="outlined"
+                  sx={{ 
+                    height: 18, 
+                    fontSize: '0.65rem',
+                    '& .MuiChip-label': { px: 1 }
+                  }}
+                />
+              )}
+            </Box>
           </Box>
         </Box>
-      </AccordionDetails>
-    </Accordion>
+        
+        <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
+          <IconButton 
+            size="small" 
+            color="primary" 
+            onClick={() => onEdit(question)}
+            sx={{ 
+              p: 0.5,
+              color: '#633394',
+              transition: 'all 0.2s ease-in-out',
+              '&:hover': { 
+                backgroundColor: 'rgba(99, 51, 148, 0.08)',
+                transform: 'scale(1.1)',
+              } 
+            }}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+          <IconButton 
+            size="small" 
+            color="error" 
+            onClick={() => onDelete(question.id)}
+            sx={{ 
+              p: 0.5,
+              transition: 'all 0.2s ease-in-out',
+              '&:hover': { 
+                backgroundColor: 'rgba(211, 47, 47, 0.08)',
+                transform: 'scale(1.1)',
+              }
+            }}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      </Box>
+    </Paper>
   );
 };
 
-// Section Card Component
-const SectionCard = ({ sectionName, questions, onEdit, onDelete, getQuestionTypeName, onDragEnd, sensors }) => {
-  const sectionIndex = sectionName === 'Uncategorized' ? 999 : parseInt(sectionName.replace('Section ', '')) || 0;
-  
-  // Sort questions by order before displaying
-  const sortedQuestions = [...questions].sort((a, b) => (a.order || 0) - (b.order || 0));
-  
+// Template Chip Component for the template selection list
+const TemplateChip = ({ 
+  template, 
+  isSelected, 
+  onSelect, 
+  onToggleSelect, 
+  isMultiSelectMode, 
+  isChecked,
+  onDelete,
+  onEdit 
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState(template.survey_code);
+
+  const handleClick = (e) => {
+    if (isMultiSelectMode || isEditing) {
+      return; // Don't select when in multi-select mode or editing
+    }
+    if (isMultiSelectMode) {
+      onToggleSelect();
+    } else {
+      onSelect();
+    }
+  };
+
+  const handleStartEdit = (e) => {
+    e.stopPropagation();
+    setIsEditing(true);
+    setEditedName(template.survey_code);
+  };
+
+  const handleSaveEdit = (e) => {
+    e.stopPropagation();
+    if (editedName.trim() && editedName !== template.survey_code) {
+      onEdit(template.id, editedName.trim());
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = (e) => {
+    e.stopPropagation();
+    setIsEditing(false);
+    setEditedName(template.survey_code);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSaveEdit(e);
+    } else if (e.key === 'Escape') {
+      handleCancelEdit(e);
+    }
+  };
+
   return (
-    <Card sx={{ mb: 3, backgroundColor: '#f9f9f9', boxShadow: '0 6px 16px rgba(0, 0, 0, 0.15)' }}>
-      <CardContent>
-        <Typography 
-          variant="h6" 
-          sx={{ 
-            color: '#633394', 
-            fontWeight: 'bold', 
-            mb: 2,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1
+    <Box 
+      sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        mb: 1,
+        p: 1,
+        borderRadius: 1,
+        backgroundColor: isSelected ? 'rgba(99, 51, 148, 0.15)' : '#f5f5f5',
+        border: '1px solid',
+        borderColor: isSelected ? '#633394' : '#e0e0e0',
+        cursor: isEditing ? 'default' : 'pointer',
+        transition: 'all 0.2s ease-in-out',
+        '&:hover': {
+          boxShadow: '0 2px 8px rgba(99, 51, 148, 0.2)',
+          borderColor: '#633394',
+          backgroundColor: isSelected ? 'rgba(99, 51, 148, 0.2)' : 'rgba(99, 51, 148, 0.05)',
+        }
+      }}
+      onClick={handleClick}
+    >
+      {isMultiSelectMode && (
+        <Checkbox 
+          checked={isChecked}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSelect();
           }}
-        >
-          <Chip 
-            label={sectionIndex === 999 ? 'Uncategorized' : `Section ${sectionIndex}`}
+          sx={{ 
+            p: 0.5, 
+            mr: 1,
+            color: '#633394',
+            '&.Mui-checked': {
+              color: '#633394',
+            },
+          }}
+        />
+      )}
+      <Box sx={{ flex: 1 }}>
+        {isEditing ? (
+          <TextField
+            value={editedName}
+            onChange={(e) => setEditedName(e.target.value)}
+            onKeyDown={handleKeyPress}
+            onBlur={handleSaveEdit}
+            autoFocus
+            size="small"
+            fullWidth
+            variant="outlined"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                fontSize: '0.875rem',
+                '&.Mui-focused fieldset': {
+                  borderColor: '#633394',
+                },
+              },
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <Typography 
+            variant="body2" 
             sx={{ 
-              backgroundColor: '#633394', 
-              color: 'white',
-              fontWeight: 'bold'
+              fontWeight: isSelected ? 600 : 400,
+              color: isSelected ? '#633394' : '#333',
+              transition: 'color 0.2s ease-in-out',
+            }}
+          >
+            {template.survey_code}
+          </Typography>
+        )}
+        <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
+          <Chip 
+            label={`${template.questions?.length || 0} Questions`} 
+            size="small" 
+            variant="outlined"
+            sx={{ 
+              height: 18, 
+              fontSize: '0.65rem',
+              borderColor: '#633394',
+              color: '#633394',
+              '& .MuiChip-label': { px: 1 }
             }}
           />
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            ({sortedQuestions.length} question{sortedQuestions.length !== 1 ? 's' : ''})
+          <Typography variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
+            {new Date(template.created_at).toLocaleDateString()}
           </Typography>
-        </Typography>
-        
-        {sortedQuestions.length > 0 ? (
-          <DndContext 
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={(event) => onDragEnd(event, sectionName)}
+        </Box>
+      </Box>
+      
+      {!isMultiSelectMode && !isEditing && (
+        <Box sx={{ display: 'flex', gap: 0.5 }}>
+          <IconButton 
+            size="small" 
+            color="primary" 
+            onClick={handleStartEdit}
+            sx={{ 
+              color: '#633394',
+              '&:hover': {
+                backgroundColor: 'rgba(99, 51, 148, 0.08)',
+              }
+            }}
           >
-            <SortableContext 
-              items={sortedQuestions.map(q => `${sectionName}-${q.id}`)}
-              strategy={verticalListSortingStrategy}
-            >
-              <List sx={{ pt: 0 }}>
-                {sortedQuestions.map((question, index) => (
-                  <SortableQuestionInSection 
-                    key={question.id}
-                    question={question}
-                    index={index}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                    getQuestionTypeName={getQuestionTypeName}
-                    sectionName={sectionName}
-                  />
-                ))}
-              </List>
-            </SortableContext>
-          </DndContext>
-        ) : (
-          <Alert severity="info">No questions in this section yet.</Alert>
-        )}
-      </CardContent>
-    </Card>
+            <EditIcon fontSize="small" />
+          </IconButton>
+          <IconButton 
+            size="small" 
+            color="error" 
+            onClick={(e) => {
+              e.stopPropagation();
+              console.log('Delete button clicked for template:', template.survey_code, 'ID:', template.id);
+              if (window.confirm(`Delete template "${template.survey_code}"?`)) {
+                console.log('User confirmed deletion, calling onDelete...');
+                onDelete(template.id);
+              } else {
+                console.log('User cancelled deletion');
+              }
+            }}
+            sx={{ ml: 0.5 }}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      )}
+    </Box>
   );
 };
 
@@ -230,22 +372,10 @@ const QuestionsTab = () => {
     version_id: '',
     questions: []
   });
-  const [questionTypes, setQuestionTypes] = useState([
-    { id: 1, name: 'text' },
-    { id: 2, name: 'textarea' },
-    { id: 3, name: 'single_choice' },
-    { id: 4, name: 'multi_choice' },
-    { id: 5, name: 'rating' },
-    { id: 6, name: 'date' },
-    { id: 7, name: 'numeric' },
-    { id: 8, name: 'boolean' },
-    { id: 9, name: 'dropdown' },
-    { id: 10, name: 'slider' },
-    { id: 11, name: 'file_upload' },
-    { id: 12, name: 'matrix' },
-    { id: 13, name: 'ranking' }
-  ]);
-
+  const [selectedTemplates, setSelectedTemplates] = useState([]);
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  
+  // Question dialog state
   const [openQDialog, setOpenQDialog] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [questionData, setQuestionData] = useState({
@@ -257,11 +387,6 @@ const QuestionsTab = () => {
     config: null
   });
 
-  // Add state for dynamic options for choice-based questions
-  const [choiceOptions, setChoiceOptions] = useState([]);
-  const [ratingConfig, setRatingConfig] = useState({ min: 1, max: 5, step: 1 });
-  const [dropdownOptions, setDropdownOptions] = useState([]);
-
   // Drag and drop sensors
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -269,9 +394,6 @@ const QuestionsTab = () => {
         distance: 5, // Require 5px of movement before drag starts
       },
     }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
   );
 
   useEffect(() => {
@@ -302,9 +424,14 @@ const QuestionsTab = () => {
   };
 
   const handleAddTemplate = async () => {
-    if (!newTemplateData.survey_code || !newTemplateData.version_id) return;
+    if (!newTemplateData.survey_code || !selectedVersion?.id) return;
     
-    const success = await TemplateUtils.addTemplate(newTemplateData);
+    const templateToAdd = {
+      ...newTemplateData,
+      version_id: selectedVersion.id
+    };
+    
+    const success = await TemplateUtils.addTemplate(templateToAdd);
     if (success) {
       setNewTemplateData({ survey_code: '', version_id: '', questions: [] });
       fetchTemplates();
@@ -312,127 +439,166 @@ const QuestionsTab = () => {
   };
 
   const handleDeleteTemplate = async (templateId) => {
-    const success = await TemplateUtils.deleteTemplate(templateId);
-    if (success) {
-      setSelectedTemplate(null);
+    try {
+      console.log('Attempting to delete template with ID:', templateId);
+      const success = await TemplateUtils.deleteTemplate(templateId);
+      console.log('Delete result:', success);
+      
+      if (success) {
+        console.log('Template deleted successfully, updating UI...');
+        if (selectedTemplate?.id === templateId) {
+          setSelectedTemplate(null);
+        }
+        await fetchTemplates();
+        console.log('UI updated after template deletion');
+      } else {
+        console.error('Failed to delete template:', templateId);
+        alert('Failed to delete template. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      alert('Error occurred while deleting template: ' + error.message);
+    }
+  };
+
+  const handleEditTemplate = async (templateId, newName) => {
+    try {
+      console.log('Attempting to edit template with ID:', templateId, 'to name:', newName);
+      const success = await TemplateUtils.updateTemplateName(templateId, newName);
+      console.log('Edit result:', success);
+      
+      if (success) {
+        console.log('Template name updated successfully, updating UI...');
+        // Update the templates list
+        await fetchTemplates();
+        
+        // Update selected template if it's the one being edited
+        if (selectedTemplate?.id === templateId) {
+          const updatedTemplate = { ...selectedTemplate, survey_code: newName };
+          setSelectedTemplate(updatedTemplate);
+        }
+        
+        console.log('UI updated after template name change');
+      } else {
+        console.error('Failed to edit template:', templateId);
+        alert('Failed to update template name. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error editing template:', error);
+      alert('Error occurred while updating template name: ' + error.message);
+    }
+  };
+
+  const handleDeleteSelectedTemplates = async () => {
+    if (selectedTemplates.length === 0) return;
+    
+    // Delete selected templates one by one
+    const deletePromises = selectedTemplates.map(templateId => 
+      TemplateUtils.deleteTemplate(templateId)
+    );
+    
+    try {
+      await Promise.all(deletePromises);
+      
+      // Clear selection and refresh
+      setSelectedTemplates([]);
+      setIsMultiSelectMode(false);
+      
+      if (selectedTemplates.includes(selectedTemplate?.id)) {
+        setSelectedTemplate(null);
+      }
+      
       fetchTemplates();
+    } catch (error) {
+      console.error('Error deleting templates:', error);
     }
   };
 
   const handleSelectTemplate = (templateId) => {
+    if (isMultiSelectMode) {
+      return; // Don't select template in multi-select mode, just toggle checkbox
+    }
     fetchTemplate(templateId);
   };
+  
+  const handleToggleSelectTemplate = (templateId) => {
+    if (selectedTemplates.includes(templateId)) {
+      setSelectedTemplates(prev => prev.filter(id => id !== templateId));
+    } else {
+      setSelectedTemplates(prev => [...prev, templateId]);
+    }
+  };
+  
+  const toggleMultiSelectMode = () => {
+    setIsMultiSelectMode(prev => !prev);
+    if (!isMultiSelectMode) {
+      setSelectedTemplates([]);
+    }
+  };
 
-  const handleDragEnd = async (event, sectionName) => {
+  const handleDragEnd = async (event) => {
     const { active, over } = event;
     
-    console.log('Drag ended:', { activeId: active.id, overId: over?.id, sectionName });
-
-    if (active.id !== over?.id && selectedTemplate) {
-      // Extract question IDs from the drag identifiers
-      const activeQuestionId = parseInt(active.id.split('-').pop());
-      const overQuestionId = parseInt(over.id.split('-').pop());
-      
-      console.log('Parsed IDs:', { activeQuestionId, overQuestionId });
-      
-      // Get questions in this section only and sort them by order
-      const sectionsData = TemplateUtils.groupQuestionsBySection(selectedTemplate.questions);
-      const sectionQuestions = (sectionsData[sectionName] || []).sort((a, b) => (a.order || 0) - (b.order || 0));
-      
-      console.log('Section questions:', sectionQuestions.map(q => ({ id: q.id, order: q.order, text: q.question_text.substring(0, 20) })));
-      
-      const oldIndex = sectionQuestions.findIndex((q) => q.id === activeQuestionId);
-      const newIndex = sectionQuestions.findIndex((q) => q.id === overQuestionId);
-      
-      console.log('Indices:', { oldIndex, newIndex });
-
-      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-        const reorderedSectionQuestions = arrayMove(sectionQuestions, oldIndex, newIndex);
-        
-        // Update the order property of each question in this section based on new position
-        const updatedSectionQuestions = reorderedSectionQuestions.map((question, index) => ({
-          ...question,
-          order: index
-        }));
-
-        console.log('Updated section questions:', updatedSectionQuestions.map(q => ({ id: q.id, order: q.order, text: q.question_text.substring(0, 20) })));
-
-        // Merge with questions from other sections
-        const allQuestions = selectedTemplate.questions.map(question => {
-          const updatedQuestion = updatedSectionQuestions.find(uq => uq.id === question.id);
-          return updatedQuestion || question;
-        });
-
-        // Update local state immediately for responsive UI
-        setSelectedTemplate(prev => ({
-          ...prev,
-          questions: allQuestions
-        }));
-
-        // Update the templates array to reflect the new order
-        setTemplates(prevTemplates => 
-          prevTemplates.map(template => 
-            template.id === selectedTemplate.id 
-              ? { ...template, questions: allQuestions } 
-              : template
-          )
-        );
-
-        // Save to backend
-        try {
-          await TemplateUtils.updateTemplateQuestions(selectedTemplate.id, allQuestions);
-          console.log('Successfully updated question order in section:', sectionName);
-        } catch (error) {
-          console.error('Error updating question order:', error);
-          // Revert on error
-          fetchTemplate(selectedTemplate.id);
-        }
-      } else {
-        console.log('Drag operation not processed:', { oldIndex, newIndex, sameIndex: oldIndex === newIndex });
-      }
-    } else {
-      console.log('Drag not processed - same position or no target');
+    if (!active || !over || active.id === over.id || !selectedTemplate) return;
+    
+    // Extract question IDs from the drag identifiers
+    const activeId = active.id.toString();
+    const overId = over.id.toString();
+    
+    const activeQuestionId = parseInt(activeId.split('-').pop());
+    const overQuestionId = parseInt(overId.split('-').pop());
+    
+    // Find question indices
+    const questions = [...selectedTemplate.questions];
+    const oldIndex = questions.findIndex(q => q.id === activeQuestionId);
+    const newIndex = questions.findIndex(q => q.id === overQuestionId);
+    
+    if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
+    
+    // Reorder questions
+    const reorderedQuestions = arrayMove(questions, oldIndex, newIndex);
+    
+    // Update order property
+    const updatedQuestions = reorderedQuestions.map((q, index) => ({
+      ...q,
+      order: index
+    }));
+    
+    // Update locally
+    setSelectedTemplate(prev => ({
+      ...prev,
+      questions: updatedQuestions
+    }));
+    
+    // Update templates array
+    setTemplates(prev => 
+      prev.map(t => 
+        t.id === selectedTemplate.id 
+          ? { ...t, questions: updatedQuestions } 
+          : t
+      )
+    );
+    
+    // Save to backend
+    try {
+      await TemplateUtils.updateTemplateQuestions(selectedTemplate.id, updatedQuestions);
+    } catch (error) {
+      console.error('Error updating question order:', error);
+      // Revert on error
+      fetchTemplate(selectedTemplate.id);
     }
   };
 
   const handleOpenAdd = () => {
     setEditingQuestion(null);
-    
-    // Determine the next section or use a default
-    let defaultSection = 'Section 1';
-    if (selectedTemplate?.questions?.length > 0) {
-      const sectionsData = TemplateUtils.groupQuestionsBySection(selectedTemplate.questions);
-      const sectionNumbers = Object.keys(sectionsData)
-        .filter(s => s.startsWith('Section '))
-        .map(s => parseInt(s.replace('Section ', '')) || 0)
-        .sort((a, b) => a - b);
-      
-      if (sectionNumbers.length > 0) {
-        // Use the last section as default
-        defaultSection = `Section ${sectionNumbers[sectionNumbers.length - 1]}`;
-      }
-    }
-    
-    // Calculate the next order number within the default section
-    let nextOrder = 0;
-    if (selectedTemplate?.questions?.length > 0) {
-      const sectionsData = TemplateUtils.groupQuestionsBySection(selectedTemplate.questions);
-      const sectionQuestions = sectionsData[defaultSection] || [];
-      nextOrder = sectionQuestions.length;
-    }
-    
     setQuestionData({
       question_text: '',
       question_type_id: '',
-      section: defaultSection,
-      order: nextOrder,
+      section: 'Section 1',
+      order: selectedTemplate?.questions?.length || 0,
       is_required: false,
       config: null
     });
-    // Reset dynamic field states
-    setChoiceOptions([]);
-    setRatingConfig({ min: 1, max: 5, step: 1 });
-    setDropdownOptions([]);
     setOpenQDialog(true);
   };
 
@@ -441,30 +607,11 @@ const QuestionsTab = () => {
     setQuestionData({
       question_text: q.question_text,
       question_type_id: q.question_type_id,
-      section: q.section || '',
+      section: q.section || 'Section 1',
       order: q.order,
       is_required: q.is_required,
       config: q.config || null
     });
-    
-    // Initialize dynamic field states based on question type and config
-    if (q.question_type_id === 3 || q.question_type_id === 4) { // single_choice or multi_choice
-      setChoiceOptions(q.config?.options || []);
-    } else if (q.question_type_id === 5) { // rating
-      setRatingConfig({
-        min: q.config?.min || 1,
-        max: q.config?.max || 5,
-        step: q.config?.step || 1
-      });
-    } else if (q.question_type_id === 9) { // dropdown
-      setDropdownOptions(q.config?.options || []);
-    } else {
-      // Reset dynamic field states for other types
-      setChoiceOptions([]);
-      setRatingConfig({ min: 1, max: 5, step: 1 });
-      setDropdownOptions([]);
-    }
-    
     setOpenQDialog(true);
   };
 
@@ -472,34 +619,10 @@ const QuestionsTab = () => {
     setOpenQDialog(false);
   };
 
-  const handleSaveQuestion = async () => {
+  const handleSaveQuestion = async (finalQuestionData) => {
     if (!selectedTemplate) return;
     
-    // Prepare config based on question type
-    let config = null;
-    
-    if (questionData.question_type_id === 3 || questionData.question_type_id === 4) { // single_choice or multi_choice
-      config = { options: choiceOptions };
-    } else if (questionData.question_type_id === 5) { // rating
-      config = ratingConfig;
-    } else if (questionData.question_type_id === 9) { // dropdown
-      config = { options: dropdownOptions };
-    } else if (questionData.question_type_id === 6) { // date
-      config = { format: "YYYY-MM-DD" };
-    } else if (questionData.question_type_id === 12) { // matrix
-      config = { rows: [], columns: [] };
-    } else if (questionData.question_type_id === 13) { // ranking
-      config = { items: [] };
-    }
-    
-    const payload = {
-      question_text: questionData.question_text,
-      question_type_id: questionData.question_type_id,
-      section: questionData.section,
-      order: questionData.order,
-      is_required: questionData.is_required,
-      config: config
-    };
+    const payload = finalQuestionData;
     
     let updatedQuestions = [...(selectedTemplate.questions || [])];
     
@@ -512,37 +635,26 @@ const QuestionsTab = () => {
     } else {
       // Adding new question
       const newId = Math.max(0, ...updatedQuestions.map(q => q.id || 0)) + 1;
-      
-      // Calculate proper order within the section
-      const sectionsData = TemplateUtils.groupQuestionsBySection(updatedQuestions);
-      const sectionQuestions = sectionsData[questionData.section] || [];
-      const sectionOrder = sectionQuestions.length;
-      
       updatedQuestions.push({ 
         id: newId, 
-        ...payload, 
-        order: sectionOrder 
+        ...payload,
+        order: updatedQuestions.length
       });
     }
     
-    // Re-order questions within each section
-    const sectionsData = TemplateUtils.groupQuestionsBySection(updatedQuestions);
-    updatedQuestions = [];
-    
-    Object.keys(sectionsData).forEach(sectionName => {
-      const sectionQuestions = sectionsData[sectionName]
-        .sort((a, b) => a.order - b.order)
-        .map((q, index) => ({ ...q, order: index }));
-      updatedQuestions.push(...sectionQuestions);
-    });
+    // Update order property
+    updatedQuestions = updatedQuestions.map((q, index) => ({
+      ...q,
+      order: index
+    }));
     
     const success = await TemplateUtils.updateTemplateQuestions(selectedTemplate.id, updatedQuestions);
     if (success) {
-      // Update local state for immediate UI update
+      // Update local state
       const updatedTemplate = { ...selectedTemplate, questions: updatedQuestions };
       setSelectedTemplate(updatedTemplate);
       
-      // Update templates array to reflect the new question count
+      // Update templates array
       const updatedTemplates = templates.map(t => 
         t.id === selectedTemplate.id ? { ...t, questions: updatedQuestions } : t
       );
@@ -557,12 +669,12 @@ const QuestionsTab = () => {
     
     const success = await TemplateUtils.deleteTemplateQuestion(selectedTemplate.id, questionId);
     if (success) {
-      // Update local state for immediate UI update
+      // Update local state
       const updatedQuestions = selectedTemplate.questions.filter(q => q.id !== questionId);
       const updatedTemplate = { ...selectedTemplate, questions: updatedQuestions };
       setSelectedTemplate(updatedTemplate);
       
-      // Update templates array to reflect the new question count
+      // Update templates array
       const updatedTemplates = templates.map(t => 
         t.id === selectedTemplate.id ? { ...t, questions: updatedQuestions } : t
       );
@@ -572,6 +684,10 @@ const QuestionsTab = () => {
 
   const handleSelectVersion = (version) => {
     setSelectedVersion(version);
+    // Reset multi-select mode when changing version
+    setIsMultiSelectMode(false);
+    setSelectedTemplates([]);
+    
     // Filter templates for this version
     const versionTemplates = templates.filter(t => t.version_id === version.id);
     if (versionTemplates.length > 0) {
@@ -582,420 +698,313 @@ const QuestionsTab = () => {
   };
 
   const getQuestionTypeName = (typeId) => {
-    return TemplateUtils.getQuestionTypeName(typeId, questionTypes);
-  };
-
-  // Dynamic option handling for question types
-  const handleAddOption = () => {
-    setChoiceOptions([...choiceOptions, '']);
-  };
-
-  const handleOptionChange = (index, value) => {
-    const newOptions = [...choiceOptions];
-    newOptions[index] = value;
-    setChoiceOptions(newOptions);
-  };
-
-  const handleRemoveOption = (index) => {
-    const newOptions = [...choiceOptions];
-    newOptions.splice(index, 1);
-    setChoiceOptions(newOptions);
-  };
-
-  const handleAddDropdownOption = () => {
-    setDropdownOptions([...dropdownOptions, { value: '', label: '' }]);
-  };
-
-  const handleDropdownOptionChange = (index, field, value) => {
-    const newOptions = [...dropdownOptions];
-    newOptions[index] = { ...newOptions[index], [field]: value };
-    setDropdownOptions(newOptions);
-  };
-
-  const handleRemoveDropdownOption = (index) => {
-    const newOptions = [...dropdownOptions];
-    newOptions.splice(index, 1);
-    setDropdownOptions(newOptions);
+    const questionType = getQuestionTypeById(typeId);
+    return questionType ? questionType.display_name : 'Unknown Type';
   };
 
   return (
-    <Box>
-      <Grid container spacing={3}>
-        {/* Left column - Version selection */}
-        <Grid item xs={12} sm={2} md={3}>
-          <Paper sx={{ p: 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', height: '100%' }}>
-            <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold' }}>Template Versions</Typography>
-            <List sx={{ maxHeight: '70vh', overflow: 'auto' }}>
-              {templateVersions.map(version => (
-                <ListItem 
-                  key={version.id} 
-                  button 
-                  selected={selectedVersion?.id === version.id}
-                  onClick={() => handleSelectVersion(version)}
-                  sx={{ '&.Mui-selected': { backgroundColor: 'rgba(99, 51, 148, 0.1)' } }}
-                >
-                  <ListItemText 
-                    primary={version.name} 
-                    secondary={version.description || 'No description'} 
-                  />
-                </ListItem>
-              ))}
-              {templateVersions.length === 0 && (
-                <Typography color="text.secondary" sx={{ py: 2 }}>No template versions available</Typography>
-              )}
-            </List>
-          </Paper>
-        </Grid>
+    <Box sx={{ display: 'flex', height: 'calc(100vh - 180px)' }}>
+      {/* Left sidebar - Version selection */}
+      <Box 
+        sx={{ 
+          width: 240, 
+          backgroundColor: '#f5f5f5', 
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', 
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+      >
+        <Typography variant="h6" sx={{ p: 2, color: '#633394', fontWeight: 'bold' }}>
+          Template Versions
+        </Typography>
         
-        {/* Right column - Template selection and Questions */}
-        <Grid 
-          item 
-          xs={12} 
-          md="auto" 
-          sx={{ flexGrow: 1 }}
-        >
-          {selectedVersion ? (
-            <>
-              {/* Template selection or creation */}
-              <Paper sx={{ p: 2, mb: 3, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
-                <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold' }}>
+        <Box sx={{ flex: 1, overflow: 'auto', px: 2 }}>
+          {templateVersions.map(version => (
+            <Button
+              key={version.id}
+              fullWidth
+              variant={selectedVersion?.id === version.id ? 'contained' : 'outlined'}
+              onClick={() => handleSelectVersion(version)}
+              sx={{
+                mb: 1,
+                justifyContent: 'flex-start',
+                textTransform: 'none',
+                backgroundColor: selectedVersion?.id === version.id ? '#633394' : 'transparent',
+                color: selectedVersion?.id === version.id ? 'white' : '#633394',
+                borderColor: '#633394',
+                fontWeight: selectedVersion?.id === version.id ? 600 : 400,
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                  backgroundColor: selectedVersion?.id === version.id ? '#7c52a5' : 'rgba(99, 51, 148, 0.08)',
+                  transform: 'translateY(-1px)',
+                  boxShadow: '0 3px 5px rgba(99, 51, 148, 0.2)',
+                },
+                '&:active': {
+                  transform: 'translateY(0)',
+                  boxShadow: '0 1px 3px rgba(99, 51, 148, 0.2)',
+                }
+              }}
+            >
+              {version.name}
+            </Button>
+          ))}
+        </Box>
+      </Box>
+      
+      {/* Main content area */}
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', pl: 2 }}>
+        {selectedVersion ? (
+          <>
+            {/* Templates section */}
+            <Paper 
+              sx={{ 
+                p: 2, 
+                mb: 2, 
+                backgroundColor: '#f5f5f5', 
+                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                height: 'auto',
+                maxHeight: '40%'
+              }}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold' }}>
                   Templates for {selectedVersion.name}
                 </Typography>
                 
-                <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
-                  <Grid item xs={12} sm={5}>
-                    <TextField
-                      label="Template Name"
-                      fullWidth
-                      value={newTemplateData.survey_code}
-                      onChange={e => setNewTemplateData(prev => ({ ...prev, survey_code: e.target.value, version_id: selectedVersion.id }))}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={2}>
-                    <Button
-                      variant="contained"
-                      startIcon={<AddIcon />}
-                      onClick={handleAddTemplate}
-                      disabled={!newTemplateData.survey_code}
-                      fullWidth
-                      sx={{ 
-                        backgroundColor: '#633394', 
-                        '&:hover': { backgroundColor: '#7c52a5' },
-                        '&.Mui-disabled': { backgroundColor: '#d1c4e9' }
-                      }}
-                    >
-                      Add Template
-                    </Button>
-                  </Grid>
-                </Grid>
-                
-                <Grid container spacing={2}>
-                  {templates
-                    .filter(t => t.version_id === selectedVersion.id)
-                    .map(template => (
-                      <Grid item xs={12} sm={6} md={4} lg={3} key={template.id}>
-                        <Card 
-                          sx={{ 
-                            backgroundColor: selectedTemplate?.id === template.id ? 'rgba(99, 51, 148, 0.1)' : '#f5f5f5', 
-                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                            cursor: 'pointer'
-                          }}
-                          onClick={() => handleSelectTemplate(template.id)}
-                        >
-                          <CardContent>
-                            <Typography variant="h6" noWrap sx={{ color: '#633394', fontWeight: 'bold' }}>{template.survey_code}</Typography>
-                            <Divider sx={{ my: 1 }} />
-                            <Box display="flex" justifyContent="space-between" alignItems="center">
-                              <Chip label={`${template.questions?.length || 0} Questions`} size="small" color="primary" variant="outlined" sx={{ borderColor: '#633394', color: '#633394' }} />
-                              <Typography variant="caption">{new Date(template.created_at).toLocaleDateString()}</Typography>
-                            </Box>
-                          </CardContent>
-                          <CardActions>
-                            <Button size="small" color="error" onClick={(e) => { e.stopPropagation(); handleDeleteTemplate(template.id); }}>
-                              Delete
-                            </Button>
-                          </CardActions>
-                        </Card>
-                      </Grid>
-                    ))}
-                </Grid>
-                
-                {templates.filter(t => t.version_id === selectedVersion.id).length === 0 && (
-                  <Alert severity="info" sx={{ mt: 2 }}>No templates available for this version. Create one to add questions.</Alert>
-                )}
-              </Paper>
-
-              {/* Questions section */}
-              {selectedTemplate && (
-                <Paper sx={{ p: 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
-                  <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-                    <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold' }}>
-                      Questions for {selectedTemplate.survey_code}
-                    </Typography>
-                    <Button 
-                      variant="contained" 
-                      startIcon={<AddIcon />} 
-                      onClick={handleOpenAdd}
-                      sx={{ 
-                        backgroundColor: '#633394', 
-                        '&:hover': { backgroundColor: '#7c52a5' }
-                      }}
-                    >
-                      Add Question
-                    </Button>
-                  </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Typography variant="h6" sx={{ mr: 2, color: '#633394', fontWeight: 'bold' }}>
+                    List of Templates
+                  </Typography>
                   
+                  <Box>
+                    <IconButton 
+                      size="small" 
+                      onClick={toggleMultiSelectMode}
+                      color={isMultiSelectMode ? "primary" : "default"}
+                      sx={{ 
+                        mr: 1,
+                        backgroundColor: isMultiSelectMode ? 'rgba(99, 51, 148, 0.1)' : 'transparent',
+                        '&:hover': { 
+                          backgroundColor: isMultiSelectMode ? 'rgba(99, 51, 148, 0.15)' : 'rgba(99, 51, 148, 0.05)'
+                        }
+                      }}
+                    >
+                      <Checkbox 
+                        checked={isMultiSelectMode}
+                        sx={{ 
+                          p: 0,
+                          color: '#633394',
+                          '&.Mui-checked': {
+                            color: '#633394',
+                          },
+                        }}
+                      />
+                    </IconButton>
+                    
+                    {selectedTemplates.length > 0 && (
+                      <IconButton 
+                        size="small" 
+                        color="error" 
+                        onClick={handleDeleteSelectedTemplates}
+                        sx={{
+                          transition: 'all 0.2s ease-in-out',
+                          '&:hover': {
+                            backgroundColor: 'rgba(211, 47, 47, 0.1)',
+                            transform: 'scale(1.1)',
+                          }
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    )}
+                  </Box>
+                </Box>
+              </Box>
+              
+              <Box sx={{ display: 'flex', height: 'calc(100% - 40px)' }}>
+                {/* Left side - Add template form */}
+                <Box sx={{ width: '40%', pr: 2 }}>
+                  <TextField
+                    label="Template Name"
+                    fullWidth
+                    value={newTemplateData.survey_code}
+                    onChange={e => setNewTemplateData(prev => ({ 
+                      ...prev, 
+                      survey_code: e.target.value 
+                    }))}
+                    sx={{ 
+                      mb: 2,
+                      '& .MuiOutlinedInput-root': {
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#633394',
+                        },
+                      },
+                      '& .MuiInputLabel-root.Mui-focused': {
+                        color: '#633394',
+                      }
+                    }}
+                  />
+                  
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={handleAddTemplate}
+                    disabled={!newTemplateData.survey_code}
+                    fullWidth
+                    sx={{ 
+                      backgroundColor: '#633394', 
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': { 
+                        backgroundColor: '#7c52a5',
+                        transform: 'translateY(-1px)',
+                        boxShadow: '0 4px 8px rgba(99, 51, 148, 0.3)',
+                      },
+                      '&:active': {
+                        transform: 'translateY(0)',
+                        boxShadow: '0 2px 4px rgba(99, 51, 148, 0.3)',
+                      },
+                      '&.Mui-disabled': { backgroundColor: '#d1c4e9' }
+                    }}
+                  >
+                    Add Template
+                  </Button>
+                </Box>
+                
+                {/* Right side - Templates list */}
+                <Box sx={{ width: '60%', display: 'flex', flexDirection: 'column' }}>
+                  <Box 
+                    sx={{ 
+                      flex: 1, 
+                      overflow: 'auto', 
+                      maxHeight: 300,
+                      bgcolor: 'white',
+                      borderRadius: 1,
+                      p: 1,
+                      boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.1)'
+                    }}
+                  >
+                    {templates
+                      .filter(t => t.version_id === selectedVersion.id)
+                      .map(template => (
+                        <TemplateChip
+                          key={template.id}
+                          template={template}
+                          isSelected={selectedTemplate?.id === template.id}
+                          onSelect={() => handleSelectTemplate(template.id)}
+                          onToggleSelect={() => handleToggleSelectTemplate(template.id)}
+                          isMultiSelectMode={isMultiSelectMode}
+                          isChecked={selectedTemplates.includes(template.id)}
+                          onDelete={handleDeleteTemplate}
+                          onEdit={handleEditTemplate}
+                        />
+                      ))}
+                      
+                    {templates.filter(t => t.version_id === selectedVersion.id).length === 0 && (
+                      <Box sx={{ p: 2, textAlign: 'center' }}>
+                        <Typography variant="body2" color="text.secondary">
+                          No templates available for this version.
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              </Box>
+            </Paper>
+            
+            {/* Questions section */}
+            {selectedTemplate && (
+              <Paper 
+                sx={{ 
+                  p: 2, 
+                  backgroundColor: '#f5f5f5', 
+                  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden'
+                }}
+              >
+                <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                  <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold' }}>
+                    Questions for {selectedTemplate.survey_code}
+                  </Typography>
+                  <Button 
+                    variant="contained" 
+                    startIcon={<AddIcon />} 
+                    onClick={handleOpenAdd}
+                    sx={{ 
+                      backgroundColor: '#633394', 
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': { 
+                        backgroundColor: '#7c52a5',
+                        transform: 'translateY(-1px)',
+                        boxShadow: '0 4px 8px rgba(99, 51, 148, 0.3)',
+                      },
+                      '&:active': {
+                        transform: 'translateY(0)',
+                        boxShadow: '0 2px 4px rgba(99, 51, 148, 0.3)',
+                      }
+                    }}
+                  >
+                    Add Question
+                  </Button>
+                </Box>
+                
+                <Box sx={{ flex: 1, overflow: 'auto', bgcolor: 'white', borderRadius: 1, p: 1, boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.1)' }}>
                   {selectedTemplate.questions?.length > 0 ? (
-                    <Box>
-                      {(() => {
-                        const sectionsData = TemplateUtils.groupQuestionsBySection(selectedTemplate.questions);
-                        const sortedSections = Object.keys(sectionsData).sort((a, b) => {
-                          // Sort sections: numbered sections first, then "Uncategorized" last
-                          if (a === 'Uncategorized') return 1;
-                          if (b === 'Uncategorized') return -1;
-                          
-                          const aNum = parseInt(a.replace('Section ', '')) || 0;
-                          const bNum = parseInt(b.replace('Section ', '')) || 0;
-                          return aNum - bNum;
-                        });
-
-                        return sortedSections.map(sectionName => (
-                          <SectionCard
-                            key={sectionName}
-                            sectionName={sectionName}
-                            questions={sectionsData[sectionName]}
-                            onEdit={handleOpenEdit}
-                            onDelete={handleDeleteQuestion}
-                            getQuestionTypeName={getQuestionTypeName}
-                            onDragEnd={handleDragEnd}
-                            sensors={sensors}
-                          />
-                        ));
-                      })()}
-                    </Box>
+                    <DndContext 
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleDragEnd}
+                    >
+                      <SortableContext 
+                        items={selectedTemplate.questions.map(q => `question-${q.id}`)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                          {selectedTemplate.questions
+                            .sort((a, b) => (a.order || 0) - (b.order || 0))
+                            .map((question, index) => (
+                              <CompactQuestionItem 
+                                key={question.id}
+                                question={question}
+                                index={index}
+                                onEdit={handleOpenEdit}
+                                onDelete={handleDeleteQuestion}
+                                getQuestionTypeName={getQuestionTypeName}
+                                sectionName="question"
+                              />
+                            ))}
+                        </Box>
+                      </SortableContext>
+                    </DndContext>
                   ) : (
                     <Alert severity="info">No questions added yet. Click "Add Question" to create one.</Alert>
                   )}
-                </Paper>
-              )}
-            </>
-          ) : (
-            <Paper sx={{ p: 4, textAlign: 'center', backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
-              <Typography variant="h6" color="text.secondary">
-                Select a template version from the left panel to manage questions
-              </Typography>
-            </Paper>
-          )}
-        </Grid>
-      </Grid>
-
+                </Box>
+              </Paper>
+            )}
+          </>
+        ) : (
+          <Paper sx={{ p: 4, textAlign: 'center', backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', flex: 1 }}>
+            <Typography variant="h6" color="text.secondary">
+              Select a template version from the left panel to manage templates and questions
+            </Typography>
+          </Paper>
+        )}
+      </Box>
+      
       {/* Question Dialog */}
-      <Dialog open={openQDialog} onClose={handleCloseDialog} fullWidth maxWidth="sm">
-        <DialogTitle>{editingQuestion ? 'Edit Question' : 'Add Question'}</DialogTitle>
-        <DialogContent>
-          <Box sx={{ mt: 2 }}>
-            <TextField
-              fullWidth
-              label="Question Text"
-              value={questionData.question_text}
-              onChange={(e) => setQuestionData({ ...questionData, question_text: e.target.value })}
-              margin="normal"
-            />
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Section</InputLabel>
-              <Select
-                value={questionData.section}
-                onChange={(e) => setQuestionData({ ...questionData, section: e.target.value })}
-                label="Section"
-              >
-                {selectedTemplate?.questions?.length > 0 && (() => {
-                  const sectionsData = TemplateUtils.groupQuestionsBySection(selectedTemplate.questions);
-                  const availableSections = Object.keys(sectionsData).sort((a, b) => {
-                    if (a === 'Uncategorized') return 1;
-                    if (b === 'Uncategorized') return -1;
-                    const aNum = parseInt(a.replace('Section ', '')) || 0;
-                    const bNum = parseInt(b.replace('Section ', '')) || 0;
-                    return aNum - bNum;
-                  });
-                  
-                  return availableSections.map(section => (
-                    <MenuItem key={section} value={section}>
-                      {section}
-                    </MenuItem>
-                  ));
-                })()}
-                <MenuItem value="Section 1">Section 1</MenuItem>
-                <MenuItem value="Section 2">Section 2</MenuItem>
-                <MenuItem value="Section 3">Section 3</MenuItem>
-                <MenuItem value="Section 4">Section 4</MenuItem>
-                <MenuItem value="Section 5">Section 5</MenuItem>
-                <MenuItem value="Uncategorized">Uncategorized</MenuItem>
-              </Select>
-            </FormControl>
-            <TextField
-              fullWidth
-              label="Custom Section Name"
-              value={questionData.section.startsWith('Section ') ? '' : questionData.section}
-              onChange={(e) => setQuestionData({ ...questionData, section: e.target.value })}
-              margin="normal"
-              placeholder="Or enter custom section name"
-              helperText="Leave empty to use selected section above"
-            />
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Question Type</InputLabel>
-              <Select
-                value={questionData.question_type_id}
-                onChange={(e) => setQuestionData({ ...questionData, question_type_id: e.target.value })}
-                label="Question Type"
-              >
-                {questionTypes.map((type) => (
-                  <MenuItem key={type.id} value={type.id}>
-                    {type.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            
-            {/* Dynamic fields based on question type */}
-            {questionData.question_type_id === 3 || questionData.question_type_id === 4 ? (
-              // Single choice or Multi choice
-              <Box sx={{ mt: 2, mb: 2 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Options
-                </Typography>
-                {choiceOptions.map((option, index) => (
-                  <Box key={index} sx={{ display: 'flex', mb: 1 }}>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      value={option}
-                      onChange={e => handleOptionChange(index, e.target.value)}
-                      placeholder={`Option ${index + 1}`}
-                    />
-                    <IconButton color="error" onClick={() => handleRemoveOption(index)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                ))}
-                <Button 
-                  startIcon={<AddIcon />} 
-                  onClick={handleAddOption}
-                  sx={{ mt: 1 }}
-                >
-                  Add Option
-                </Button>
-              </Box>
-            ) : questionData.question_type_id === 5 ? (
-              // Rating
-              <Box sx={{ mt: 2, mb: 2 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Rating Configuration
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={4}>
-                    <TextField
-                      label="Min"
-                      type="number"
-                      fullWidth
-                      size="small"
-                      value={ratingConfig.min}
-                      onChange={e => setRatingConfig(prev => ({ ...prev, min: Number(e.target.value) }))}
-                    />
-                  </Grid>
-                  <Grid item xs={4}>
-                    <TextField
-                      label="Max"
-                      type="number"
-                      fullWidth
-                      size="small"
-                      value={ratingConfig.max}
-                      onChange={e => setRatingConfig(prev => ({ ...prev, max: Number(e.target.value) }))}
-                    />
-                  </Grid>
-                  <Grid item xs={4}>
-                    <TextField
-                      label="Step"
-                      type="number"
-                      fullWidth
-                      size="small"
-                      value={ratingConfig.step}
-                      onChange={e => setRatingConfig(prev => ({ ...prev, step: Number(e.target.value) }))}
-                    />
-                  </Grid>
-                </Grid>
-              </Box>
-            ) : questionData.question_type_id === 9 ? (
-              // Dropdown
-              <Box sx={{ mt: 2, mb: 2 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Dropdown Options
-                </Typography>
-                {dropdownOptions.map((option, index) => (
-                  <Box key={index} sx={{ display: 'flex', mb: 1 }}>
-                    <TextField
-                      size="small"
-                      sx={{ mr: 1 }}
-                      value={option.value}
-                      onChange={e => handleDropdownOptionChange(index, 'value', e.target.value)}
-                      placeholder="Value"
-                    />
-                    <TextField
-                      fullWidth
-                      size="small"
-                      value={option.label}
-                      onChange={e => handleDropdownOptionChange(index, 'label', e.target.value)}
-                      placeholder="Label"
-                    />
-                    <IconButton color="error" onClick={() => handleRemoveDropdownOption(index)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                ))}
-                <Button 
-                  startIcon={<AddIcon />} 
-                  onClick={handleAddDropdownOption}
-                  sx={{ mt: 1 }}
-                >
-                  Add Option
-                </Button>
-              </Box>
-            ) : null}
-            
-            <TextField 
-              label="Order" 
-              type="number" 
-              fullWidth 
-              margin="normal" 
-              value={questionData.order} 
-              onChange={e => setQuestionData(prev => ({ ...prev, order: Number(e.target.value) }))} 
-            />
-            
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={questionData.is_required}
-                  onChange={e => setQuestionData(prev => ({ ...prev, is_required: e.target.checked }))}
-                />
-              }
-              label="Required"
-              sx={{ mt: 1 }}
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog} sx={{ color: '#633394' }}>Cancel</Button>
-          <Button 
-            variant="contained" 
-            onClick={handleSaveQuestion}
-            sx={{ 
-              backgroundColor: '#633394', 
-              '&:hover': { backgroundColor: '#7c52a5' }
-            }}
-          >
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <QuestionDialog
+        open={openQDialog}
+        onClose={handleCloseDialog}
+        onSave={handleSaveQuestion}
+        editingQuestion={editingQuestion}
+        questionData={questionData}
+        setQuestionData={setQuestionData}
+        selectedTemplate={selectedTemplate}
+      />
     </Box>
   );
 };

@@ -23,6 +23,15 @@ const InventoryService = {
   addResponse: (templateId, payload) => axios.post(`${BASE_URL}/templates/${templateId}/responses`, payload),
   updateResponse: (responseId, payload) => axios.put(`${BASE_URL}/responses/${responseId}`, payload),
   
+  // Question Types
+  getQuestionTypes: (category = null) => {
+    const url = category ? `${BASE_URL}/question-types?category=${category}` : `${BASE_URL}/question-types`;
+    return axios.get(url).then(res => res.data);
+  },
+  getQuestionType: (typeId) => axios.get(`${BASE_URL}/question-types/${typeId}`).then(res => res.data),
+  getQuestionTypeCategories: () => axios.get(`${BASE_URL}/question-types/categories`).then(res => res.data),
+  initializeQuestionTypes: () => axios.post(`${BASE_URL}/question-types/initialize`),
+  
   // Legacy methods for backward compatibility
   getVersions: (surveyId) => axios.get(`${BASE_URL}/surveys/${surveyId}/versions`).then(res => res.data),
   getQuestions: (versionId) => axios.get(`${BASE_URL}/versions/${versionId}/questions`).then(res => res.data),

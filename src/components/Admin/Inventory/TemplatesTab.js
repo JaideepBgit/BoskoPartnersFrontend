@@ -11,10 +11,7 @@ import {
   Chip,
   List,
   ListItem,
-  ListItemText,
   Alert,
-  Stack,
-  CardActions,
   LinearProgress,
   RadioGroup,
   Radio,
@@ -23,8 +20,17 @@ import {
   FormLabel,
   TextField,
   Checkbox,
-  Container,
-  IconButton
+  IconButton,
+  FormGroup,
+  InputLabel,
+  Select,
+  MenuItem,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow
 } from '@mui/material';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import QuizIcon from '@mui/icons-material/Quiz';
@@ -32,9 +38,11 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CloseIcon from '@mui/icons-material/Close';
-import EditIcon from '@mui/icons-material/Edit';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import TemplateUtils from './shared/TemplateUtils';
+import Slider from '@mui/material/Slider';
+import UploadIcon from '@mui/icons-material/Upload';
+import AttachmentIcon from '@mui/icons-material/Attachment';
 
 const TemplatesTab = () => {
   const [templateVersions, setTemplateVersions] = useState([]);
@@ -46,21 +54,17 @@ const TemplatesTab = () => {
   const [responses, setResponses] = useState({});
   const [surveyProgress, setSurveyProgress] = useState(0);
 
-  // Add question types definition
+  // Add question types definition that matches backend
   const questionTypes = [
-    { id: 1, name: 'text' },
-    { id: 2, name: 'textarea' },
-    { id: 3, name: 'single_choice' },
-    { id: 4, name: 'multi_choice' },
-    { id: 5, name: 'rating' },
-    { id: 6, name: 'date' },
+    { id: 1, name: 'short_text' },
+    { id: 2, name: 'single_choice' },
+    { id: 3, name: 'yes_no' },
+    { id: 4, name: 'likert5' },
+    { id: 5, name: 'multi_select' },
+    { id: 6, name: 'paragraph' },
     { id: 7, name: 'numeric' },
-    { id: 8, name: 'boolean' },
-    { id: 9, name: 'dropdown' },
-    { id: 10, name: 'slider' },
-    { id: 11, name: 'file_upload' },
-    { id: 12, name: 'matrix' },
-    { id: 13, name: 'ranking' }
+    { id: 8, name: 'percentage' },
+    { id: 9, name: 'year_matrix' }
   ];
 
   useEffect(() => {
@@ -183,7 +187,7 @@ const TemplatesTab = () => {
 
   const renderQuestionContent = (question) => {
     switch (question.question_type_id) {
-      case 1: // text
+      case 1: // short_text
         return (
           <TextField
             fullWidth
@@ -191,11 +195,187 @@ const TemplatesTab = () => {
             variant="outlined"
             value={responses[question.id] || ''}
             onChange={(e) => handleResponseChange(question.id, e.target.value)}
+            placeholder={question.config?.placeholder || 'Enter your answer here...'}
+            inputProps={{
+              maxLength: question.config?.max_length || 255
+            }}
             sx={{ mt: 2 }}
+            required={question.is_required}
+            helperText={question.config?.max_length ? `Maximum ${question.config.max_length} characters` : ''}
           />
         );
       
-      case 2: // textarea
+      case 2: // single_choice
+        return (
+          <FormControl component="fieldset" sx={{ mt: 2, width: '100%' }} required={question.is_required}>
+            <RadioGroup
+              value={responses[question.id] || ''}
+              onChange={(e) => handleResponseChange(question.id, e.target.value)}
+            >
+              {question.config?.options?.map((option, idx) => (
+                <FormControlLabel
+                  key={idx}
+                  value={typeof option === 'object' ? option.value : option}
+                  control={<Radio />}
+                  label={typeof option === 'object' ? option.label : option}
+                  sx={{ my: 0.5 }}
+                />
+              ))}
+              {question.config?.allow_other && (
+                <FormControlLabel
+                  value="other"
+                  control={<Radio />}
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <span>{question.config?.other_text || 'Other (please specify)'}</span>
+                      {responses[question.id] === 'other' && (
+                        <TextField
+                          size="small"
+                          placeholder="Please specify..."
+                          value={responses[`${question.id}_other`] || ''}
+                          onChange={(e) => handleResponseChange(`${question.id}_other`, e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      )}
+                    </Box>
+                  }
+                  sx={{ my: 0.5 }}
+                />
+              )}
+            </RadioGroup>
+          </FormControl>
+        );
+      
+      case 3: // yes_no
+        return (
+          <FormControl component="fieldset" sx={{ mt: 2, width: '100%' }} required={question.is_required}>
+            <RadioGroup
+              value={responses[question.id] || ''}
+              onChange={(e) => handleResponseChange(question.id, e.target.value)}
+              row
+            >
+              <FormControlLabel
+                value="yes"
+                control={<Radio />}
+                label={question.config?.yes_label || 'Yes'}
+                sx={{ mr: 4 }}
+              />
+              <FormControlLabel
+                value="no"
+                control={<Radio />}
+                label={question.config?.no_label || 'No'}
+              />
+            </RadioGroup>
+          </FormControl>
+        );
+      
+      case 4: // likert5
+        return (
+          <FormControl component="fieldset" sx={{ mt: 2, width: '100%' }} required={question.is_required}>
+            <RadioGroup
+              value={responses[question.id] || ''}
+              onChange={(e) => handleResponseChange(question.id, e.target.value)}
+            >
+              {[1, 2, 3, 4, 5].map((value) => {
+                // Use custom labels if available, otherwise fall back to default
+                const defaultLabels = {
+                  1: 'None',
+                  2: 'A little', 
+                  3: 'A moderate amount',
+                  4: 'A lot',
+                  5: 'A great deal'
+                };
+                
+                const labels = question.config?.scale_labels || defaultLabels;
+                const displayValue = question.config?.reverse_scale ? (6 - value) : value;
+                const labelText = labels[displayValue] || defaultLabels[displayValue] || `Option ${displayValue}`;
+                
+                return (
+                  <FormControlLabel
+                    key={value}
+                    value={displayValue.toString()}
+                    control={<Radio />}
+                    label={`${displayValue} - ${labelText}`}
+                    sx={{ my: 0.5 }}
+                  />
+                );
+              })}
+            </RadioGroup>
+          </FormControl>
+        );
+      
+      case 5: // multi_select
+        return (
+          <FormControl component="fieldset" sx={{ mt: 2, width: '100%' }} required={question.is_required}>
+            <FormGroup>
+              <FormLabel component="legend">Select all that apply</FormLabel>
+              {question.config?.options?.map((option, idx) => {
+                const selectedOptions = responses[question.id] || [];
+                const optionValue = typeof option === 'object' ? option.value : option;
+                const optionLabel = typeof option === 'object' ? option.label : option;
+                
+                return (
+                  <FormControlLabel
+                    key={idx}
+                    control={
+                      <Checkbox 
+                        checked={selectedOptions.includes(optionValue)}
+                        onChange={(e) => {
+                          const current = responses[question.id] || [];
+                          let newValue;
+                          if (e.target.checked) {
+                            newValue = [...current, optionValue];
+                          } else {
+                            newValue = current.filter(item => item !== optionValue);
+                          }
+                          handleResponseChange(question.id, newValue);
+                        }}
+                      />
+                    }
+                    label={optionLabel}
+                    sx={{ my: 0.5 }}
+                  />
+                );
+              })}
+              {question.config?.allow_other && (
+                <FormControlLabel
+                  control={
+                    <Checkbox 
+                      checked={(responses[question.id] || []).includes('other')}
+                      onChange={(e) => {
+                        const current = responses[question.id] || [];
+                        let newValue;
+                        if (e.target.checked) {
+                          newValue = [...current, 'other'];
+                        } else {
+                          newValue = current.filter(item => item !== 'other');
+                        }
+                        handleResponseChange(question.id, newValue);
+                      }}
+                    />
+                  }
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <span>{question.config?.other_text || 'Other (please specify)'}</span>
+                      {(responses[question.id] || []).includes('other') && (
+                        <TextField
+                          size="small"
+                          placeholder="Please specify..."
+                          value={responses[`${question.id}_other`] || ''}
+                          onChange={(e) => handleResponseChange(`${question.id}_other`, e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      )}
+                    </Box>
+                  }
+                  sx={{ my: 0.5 }}
+                />
+              )}
+            </FormGroup>
+          </FormControl>
+        );
+      
+      case 6: // paragraph
         return (
           <TextField
             fullWidth
@@ -205,74 +385,160 @@ const TemplatesTab = () => {
             rows={4}
             value={responses[question.id] || ''}
             onChange={(e) => handleResponseChange(question.id, e.target.value)}
+            placeholder={question.config?.placeholder || 'Enter your detailed response here...'}
+            inputProps={{
+              maxLength: question.config?.max_length || 2000,
+              minLength: question.config?.min_length || 0
+            }}
             sx={{ mt: 2 }}
+            required={question.is_required}
+            helperText={
+              question.config?.character_counter 
+                ? `${(responses[question.id] || '').length}/${question.config?.max_length || 2000} characters`
+                : question.config?.max_length ? `Maximum ${question.config.max_length} characters` : ''
+            }
           />
         );
       
-      case 3: // single_choice
+      case 7: // numeric
         return (
-          <FormControl component="fieldset" sx={{ mt: 2, width: '100%' }}>
-            <RadioGroup
-              value={responses[question.id] || ''}
-              onChange={(e) => handleResponseChange(question.id, e.target.value)}
-            >
-              {question.config?.options?.map((option, idx) => (
-                <FormControlLabel
-                  key={idx}
-                  value={option}
-                  control={<Radio />}
-                  label={option}
-                  sx={{ my: 0.5 }}
-                />
-              ))}
-            </RadioGroup>
-          </FormControl>
+          <TextField
+            fullWidth
+            label="Your answer"
+            variant="outlined"
+            type="number"
+            value={responses[question.id] || ''}
+            onChange={(e) => handleResponseChange(question.id, e.target.value)}
+            placeholder={`Enter a ${question.config?.number_type || 'integer'} value`}
+            inputProps={{
+              min: question.config?.min_value,
+              max: question.config?.max_value,
+              step: question.config?.number_type === 'decimal' ? 0.01 : 1
+            }}
+            sx={{ mt: 2 }}
+            required={question.is_required}
+            helperText={
+              question.config?.min_value !== null && question.config?.max_value !== null
+                ? `Range: ${question.config.min_value} to ${question.config.max_value}${question.config?.unit_label ? ` ${question.config.unit_label}` : ''}`
+                : question.config?.unit_label ? `Unit: ${question.config.unit_label}` : ''
+            }
+          />
         );
       
-      case 4: // multi_choice
+      case 8: // percentage
         return (
-          <FormControl component="fieldset" sx={{ mt: 2, width: '100%' }}>
-            <FormLabel component="legend">Select all that apply</FormLabel>
-            {question.config?.options?.map((option, idx) => {
-              const selectedOptions = responses[question.id] || [];
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="body2" gutterBottom>
+              Allocate percentages (Total must equal {question.config?.total_percentage || 100}%)
+            </Typography>
+            {question.config?.items?.map((item, idx) => {
+              const itemValue = typeof item === 'object' ? item.value : item;
+              const itemLabel = typeof item === 'object' ? item.label : item;
+              const currentResponses = responses[question.id] || {};
+              
               return (
-                <FormControlLabel
-                  key={idx}
-                  control={
-                    <Checkbox 
-                      checked={selectedOptions.includes(option)}
-                      onChange={(e) => {
-                        const current = responses[question.id] || [];
-                        let newValue;
-                        if (e.target.checked) {
-                          newValue = [...current, option];
-                        } else {
-                          newValue = current.filter(item => item !== option);
-                        }
-                        handleResponseChange(question.id, newValue);
-                      }}
-                    />
-                  }
-                  label={option}
-                  sx={{ my: 0.5 }}
-                />
+                <Box key={idx} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Typography variant="body2" sx={{ flex: 1, mr: 2 }}>
+                    {itemLabel}
+                  </Typography>
+                  <TextField
+                    type="number"
+                    value={currentResponses[itemValue] || ''}
+                    onChange={(e) => {
+                      const newValue = parseFloat(e.target.value) || 0;
+                      handleResponseChange(question.id, {
+                        ...currentResponses,
+                        [itemValue]: newValue
+                      });
+                    }}
+                    inputProps={{
+                      min: 0,
+                      max: question.config?.total_percentage || 100,
+                      step: question.config?.allow_decimals ? 0.1 : 1
+                    }}
+                    sx={{ width: 100 }}
+                    size="small"
+                  />
+                  <Typography variant="body2" sx={{ ml: 1 }}>%</Typography>
+                </Box>
               );
             })}
-          </FormControl>
+            {question.config?.show_running_total && (
+              <Typography variant="body2" sx={{ mt: 1, color: '#666' }}>
+                Total: {Object.values(responses[question.id] || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0)}%
+              </Typography>
+            )}
+          </Box>
         );
       
-      case 8: // boolean
+      case 9: // year_matrix
         return (
-          <FormControl component="fieldset" sx={{ mt: 2 }}>
-            <RadioGroup
-              row
-              value={responses[question.id] === true ? 'true' : responses[question.id] === false ? 'false' : ''}
-              onChange={(e) => handleResponseChange(question.id, e.target.value === 'true')}
-            >
-              <FormControlLabel value="true" control={<Radio />} label="Yes" />
-              <FormControlLabel value="false" control={<Radio />} label="No" />
-            </RadioGroup>
-          </FormControl>
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="body2" gutterBottom sx={{ mb: 2 }}>
+              Complete the information for each year from {question.config?.start_year} to {question.config?.end_year}
+            </Typography>
+            <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Item</TableCell>
+                    {(() => {
+                      const startYear = question.config?.start_year || new Date().getFullYear();
+                      const endYear = question.config?.end_year || new Date().getFullYear() + 5;
+                      const years = [];
+                      for (let year = startYear; year <= endYear; year++) {
+                        years.push(year);
+                      }
+                      return years.map(year => (
+                        <TableCell key={year} align="center">{year}</TableCell>
+                      ));
+                    })()}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {question.config?.rows?.map((row, rowIdx) => {
+                    const rowValue = typeof row === 'object' ? row.value : row;
+                    const rowLabel = typeof row === 'object' ? row.label : row;
+                    
+                    return (
+                      <TableRow key={rowIdx}>
+                        <TableCell>{rowLabel}</TableCell>
+                        {(() => {
+                          const startYear = question.config?.start_year || new Date().getFullYear();
+                          const endYear = question.config?.end_year || new Date().getFullYear() + 5;
+                          const years = [];
+                          for (let year = startYear; year <= endYear; year++) {
+                            years.push(year);
+                          }
+                          return years.map(year => {
+                            const currentResponses = responses[question.id] || {};
+                            const cellKey = `${rowValue}_${year}`;
+                            
+                            return (
+                              <TableCell key={year} align="center">
+                                <TextField
+                                  size="small"
+                                  type={question.config?.input_type === 'numeric' ? 'number' : 'text'}
+                                  value={currentResponses[cellKey] || ''}
+                                  onChange={(e) => {
+                                    handleResponseChange(question.id, {
+                                      ...currentResponses,
+                                      [cellKey]: e.target.value
+                                    });
+                                  }}
+                                  sx={{ width: 80 }}
+                                />
+                              </TableCell>
+                            );
+                          });
+                        })()}
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Box>
         );
       
       default:
@@ -285,46 +551,81 @@ const TemplatesTab = () => {
   };
 
   return (
-    <Box>
-      <Grid container spacing={3}>
-        {/* Left column - Version selection */}
-        <Grid item xs={12} sm={2} md={1}>
-          <Paper sx={{ p: 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', height: '100%' }}>
-            <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold' }}>Template Versions</Typography>
-            <List sx={{ maxHeight: '70vh', overflow: 'auto' }}>
-              {templateVersions.map(version => (
-                <ListItem 
-                  key={version.id} 
-                  button 
-                  selected={selectedVersion?.id === version.id}
-                  onClick={() => handleSelectVersion(version)}
-                  sx={{ '&.Mui-selected': { backgroundColor: 'rgba(99, 51, 148, 0.1)' } }}
-                >
-                  <ListItemText 
-                    primary={version.name} 
-                    secondary={version.description || 'No description'} 
-                  />
-                </ListItem>
-              ))}
-              {templateVersions.length === 0 && (
-                <Typography color="text.secondary" sx={{ py: 2 }}>No template versions available</Typography>
-              )}
-            </List>
-          </Paper>
-        </Grid>
+    <Box sx={{ display: 'flex', minHeight: 'calc(100vh - 180px)' }}>
+      {/* Left sidebar - Version selection */}
+      <Box 
+        sx={{ 
+          width: { xs: selectedSection ? 0 : 240, sm: 280 }, 
+          backgroundColor: '#f5f5f5', 
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', 
+          minHeight: '100%',
+          display: { xs: selectedSection ? 'none' : 'flex', sm: 'flex' },
+          flexDirection: 'column',
+          transition: 'width 0.3s ease'
+        }}
+      >
+        <Typography variant="h6" sx={{ p: 2, color: '#633394', fontWeight: 'bold' }}>
+          Template Versions
+        </Typography>
         
-        {/* Right column - Template details */}
-        <Grid 
-          item 
-          xs={12} 
-          md="auto" 
-          sx={{ flexGrow: 1 }}  // ← here
-        >
-          {selectedVersion ? (
-            <>
-              {/* Template selection */}
-              <Paper sx={{ p: 2, mb: 3, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
-                <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold' }}>
+        <Box sx={{ flex: 1, overflow: 'auto', px: 2 }}>
+          {templateVersions.map(version => (
+            <Button
+              key={version.id}
+              fullWidth
+              variant={selectedVersion?.id === version.id ? 'contained' : 'outlined'}
+              onClick={() => handleSelectVersion(version)}
+              sx={{
+                mb: 1,
+                justifyContent: 'flex-start',
+                textTransform: 'none',
+                backgroundColor: selectedVersion?.id === version.id ? '#633394' : 'transparent',
+                color: selectedVersion?.id === version.id ? 'white' : '#633394',
+                borderColor: '#633394',
+                fontWeight: selectedVersion?.id === version.id ? 600 : 400,
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                  backgroundColor: selectedVersion?.id === version.id ? '#7c52a5' : 'rgba(99, 51, 148, 0.08)',
+                  transform: 'translateY(-1px)',
+                  boxShadow: '0 3px 5px rgba(99, 51, 148, 0.2)',
+                },
+                '&:active': {
+                  transform: 'translateY(0)',
+                  boxShadow: '0 1px 3px rgba(99, 51, 148, 0.2)',
+                }
+              }}
+            >
+              <Box sx={{ textAlign: 'left', width: '100%' }}>
+                <Typography variant="body2" sx={{ fontWeight: 'inherit', fontSize: '0.875rem' }}>
+                  {version.name}
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'inherit', opacity: 0.8, fontSize: '0.75rem' }}>
+                  {version.description || 'No description'}
+                </Typography>
+              </Box>
+            </Button>
+          ))}
+          {templateVersions.length === 0 && (
+            <Typography color="text.secondary" sx={{ py: 2, fontSize: '0.875rem', textAlign: 'center' }}>
+              No template versions available
+            </Typography>
+          )}
+        </Box>
+      </Box>
+      
+      {/* Main content area */}
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', pl: 2 }}>
+        {selectedVersion ? (
+          <>
+            {/* Template selection - Only when not viewing a section */}
+            {!selectedSection && (
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" gutterBottom sx={{ 
+                  color: '#633394', 
+                  fontWeight: 'bold',
+                  fontSize: '1.125rem',
+                  mb: 2
+                }}>
                   Templates for {selectedVersion.name}
                 </Typography>
                 
@@ -335,18 +636,54 @@ const TemplatesTab = () => {
                       <Grid item xs={12} sm={6} md={4} lg={3} key={template.id}>
                         <Card 
                           sx={{ 
-                            backgroundColor: selectedTemplate?.id === template.id ? 'rgba(99, 51, 148, 0.1)' : '#f5f5f5', 
-                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                            cursor: 'pointer'
+                            backgroundColor: '#fff', 
+                            boxShadow: selectedTemplate?.id === template.id 
+                              ? '0 0 0 2px #633394, 0 4px 8px rgba(99, 51, 148, 0.2)'
+                              : '0 1px 3px rgba(0, 0, 0, 0.1)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease-in-out',
+                            '&:hover': {
+                              boxShadow: selectedTemplate?.id === template.id 
+                                ? '0 0 0 2px #633394, 0 6px 16px rgba(99, 51, 148, 0.25)'
+                                : '0 4px 12px rgba(99, 51, 148, 0.15)',
+                              transform: 'translateY(-2px)'
+                            },
+                            overflow: 'hidden'
                           }}
                           onClick={() => handleSelectTemplate(template.id)}
                         >
-                          <CardContent>
-                            <Typography variant="h6" noWrap sx={{ color: '#633394', fontWeight: 'bold' }}>{template.survey_code}</Typography>
+                          <CardContent sx={{ p: 2 }}>
+                            <Typography 
+                              variant="subtitle1" 
+                              noWrap 
+                              sx={{ 
+                                color: selectedTemplate?.id === template.id ? '#633394' : '#333', 
+                                fontWeight: 600,
+                                fontSize: '0.9rem',
+                                mb: 1,
+                                transition: 'color 0.2s ease-in-out',
+                              }}
+                            >
+                              {template.survey_code}
+                            </Typography>
                             <Divider sx={{ my: 1 }} />
                             <Box display="flex" justifyContent="space-between" alignItems="center">
-                              <Chip label={`${template.questions?.length || 0} Questions`} size="small" color="primary" variant="outlined" sx={{ borderColor: '#633394', color: '#633394' }} />
-                              <Typography variant="caption">{new Date(template.created_at).toLocaleDateString()}</Typography>
+                              <Chip 
+                                label={`${template.questions?.length || 0} Questions`} 
+                                size="small" 
+                                sx={{ 
+                                  height: '22px',
+                                  fontSize: '0.75rem',
+                                  borderRadius: '4px',
+                                  backgroundColor: 'rgba(99, 51, 148, 0.08)',
+                                  color: '#633394',
+                                  fontWeight: 500,
+                                  border: '1px solid rgba(99, 51, 148, 0.2)',
+                                }} 
+                              />
+                              <Typography variant="caption" sx={{ color: '#666', fontSize: '0.75rem' }}>
+                                {new Date(template.created_at).toLocaleDateString()}
+                              </Typography>
                             </Box>
                           </CardContent>
                         </Card>
@@ -355,291 +692,419 @@ const TemplatesTab = () => {
                 </Grid>
                 
                 {templates.filter(t => t.version_id === selectedVersion.id).length === 0 && (
-                  <Alert severity="info" sx={{ mt: 2 }}>No templates available for this version.</Alert>
+                  <Alert 
+                    severity="info" 
+                    sx={{ 
+                      mt: 2,
+                      borderRadius: '4px',
+                      '& .MuiAlert-message': { fontSize: '0.875rem' }
+                    }}
+                  >
+                    No templates available for this version.
+                  </Alert>
                 )}
-              </Paper>
-              
-              {/* Template details or Survey View */}
-              {selectedTemplate && (
-                <Paper sx={{ p: 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
-                  {!selectedSection ? (
-                    // Show template overview when no section is selected
-                    <Card sx={{ mb: 3, p: 2 }}>
-                      <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold', mb: 2 }}>
-                        {selectedTemplate.survey_code} - Survey Structure
-                      </Typography>
-                      
-                      <Typography variant="body1" sx={{ mb: 3 }}>
-                        Review the survey structure below
-                      </Typography>
-                      
-                      <Card sx={{ backgroundColor: '#e3f2fd', mb: 3, p: 2 }}>
-                        <Typography variant="h6" sx={{ mb: 2 }}>Survey Overview:</Typography>
-                        
-                        {/* Calculate survey statistics */}
-                        {(() => {
-                          const stats = TemplateUtils.calculateSurveyStats(selectedTemplate.questions);
-                          
-                          return (
-                            <Paper
-                              elevation={1}
-                              sx={{
-                                p: 2,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                borderRadius: 2,
-                                mb: 2,
-                                backgroundColor: '#ffffff'
-                              }}
-                            >
-                              <Stack direction="row" spacing={1} alignItems="center">
-                                <ListAltIcon color="primary" fontSize="small"/>
-                                <Typography variant="subtitle2">
-                                  <strong>{stats.sectionCount}</strong> Sections
-                                </Typography>
-                              </Stack>
-
-                              <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
-
-                              <Stack direction="row" spacing={1} alignItems="center">
-                                <QuizIcon color="primary" fontSize="small"/>
-                                <Typography variant="subtitle2">
-                                  <strong>{stats.questionCount}</strong> Questions
-                                </Typography>
-                              </Stack>
-
-                              <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
-
-                              <Stack direction="row" spacing={1} alignItems="center">
-                                <AccessTimeIcon color="primary" fontSize="small"/>
-                                <Typography variant="subtitle2">
-                                  <strong>{stats.estimatedTime}</strong> min
-                                </Typography>
-                              </Stack>
-                            </Paper>
-                          );
-                        })()}
-                      </Card>
-                      
-                      <Typography variant="h6" sx={{ mb: 2 }}>Section Details:</Typography>
-                      
-                      {/* Display section cards vertically */}
-                      {(() => {
-                        const sections = TemplateUtils.groupQuestionsBySection(selectedTemplate.questions);
-                        
-                        return (
-                          <>
-                            {Object.entries(sections).map(([sectionName, questions]) => (
-                              <Paper
-                                key={sectionName}
-                                elevation={1}
-                                sx={{
-                                  mb: 2,
-                                  borderRadius: 2,
-                                  overflow: 'hidden',
-                                  cursor: 'pointer',
-                                  transition: 'transform 0.2s, box-shadow 0.2s',
-                                  '&:hover': {
-                                    transform: 'translateY(-2px)',
-                                    boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)'
-                                  }
-                                }}
-                                onClick={() => handleOpenSection(sectionName, questions)}
-                              >
-                                <Box sx={{ 
-                                  display: 'flex', 
-                                  alignItems: 'center', 
-                                  justifyContent: 'space-between',
-                                  p: 2,
-                                  backgroundColor: '#f9f9f9',
-                                  borderBottom: '1px solid #eaeaea'
-                                }}>
-                                  <Stack direction="row" spacing={1.5} alignItems="center">
-                                    <AssignmentIcon color="primary" />
-                                    <Typography variant="h6" sx={{ fontWeight: 500 }}>
-                                      Section {sectionName}
-                                    </Typography>
-                                  </Stack>
-                                  <Chip 
-                                    icon={<QuizIcon />}
-                                    label={`${questions.length} questions`}
-                                    color="primary"
-                                    variant="outlined"
-                                    size="small"
-                                  />
-                                </Box>
-                                <Box sx={{ 
-                                  p: 2, 
-                                  display: 'flex', 
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                  backgroundColor: 'white'
-                                }}>
-                                  <Typography variant="body2" color="text.secondary">
-                                    {questions.filter(q => q.is_required).length} required questions
-                                  </Typography>
-                                  <Stack direction="row" spacing={0.5} alignItems="center" sx={{ color: 'primary.main' }}>
-                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                      Start Section
-                                    </Typography>
-                                    <ArrowForwardIcon fontSize="small" />
-                                  </Stack>
-                                </Box>
-                              </Paper>
-                            ))}
-                          </>
-                        );
-                      })()}
-                    </Card>
-                  ) : (
-                    // Show survey view when a section is selected
-                    <Card sx={{ p: 0, overflow: 'hidden', minHeight: '75vh' }}>
-                      {/* Header */}
-                      <Box sx={{ 
-                        p: 2, 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'space-between',
-                        borderBottom: '1px solid #eaeaea',
-                        backgroundColor: '#f9f9f9'
-                      }}>
-                        <Stack direction="row" spacing={1.5} alignItems="center">
-                          <AssignmentIcon color="primary" />
-                          <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#633394' }}>
-                            Section {selectedSection.name}
-                          </Typography>
-                        </Stack>
-                        <IconButton onClick={handleCloseSection} color="primary">
-                          <CloseIcon />
-                        </IconButton>
-                      </Box>
-
-                      {/* Progress bar */}
-                      <Box sx={{ 
-                        px: { xs: 2, sm: 3 }, 
-                        pt: 3, 
-                        width: '100%',
-                        boxSizing: 'border-box'
-                      }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                          <Typography variant="body2" color="text.secondary">
-                            Question {currentQuestionIndex + 1} of {selectedSection.questions.length}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {Math.round(surveyProgress)}% Complete
+              </Box>
+            )}
+            
+            {/* Template details or Survey View */}
+            {selectedTemplate && !selectedSection && (
+              <Paper sx={{ 
+                p: 3, 
+                backgroundColor: '#f5f5f5', 
+                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column'
+              }}>
+                <Typography variant="h6" sx={{ 
+                  color: '#333', 
+                  fontWeight: 600,
+                  fontSize: '1rem',
+                  mb: 2
+                }}>
+                  {selectedTemplate.survey_code} - Survey Structure
+                </Typography>
+                
+                <Typography variant="body2" sx={{ mb: 3, color: '#666' }}>
+                  Review the survey structure below
+                </Typography>
+                
+                <Box sx={{ 
+                  backgroundColor: '#f8f9fa',
+                  borderRadius: '4px',
+                  mb: 3,
+                  p: 2
+                }}>
+                  <Typography variant="subtitle2" sx={{ mb: 2, color: '#333', fontWeight: 600 }}>
+                    Survey Overview:
+                  </Typography>
+                  
+                  {/* Calculate survey statistics */}
+                  {(() => {
+                    const stats = TemplateUtils.calculateSurveyStats(selectedTemplate.questions);
+                    
+                    return (
+                      <Box
+                        sx={{
+                          p: 2,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          borderRadius: '4px',
+                          mb: 1,
+                          backgroundColor: '#fff',
+                          border: '1px solid #e0e0e0'
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <ListAltIcon sx={{ color: '#633394', fontSize: '1.25rem', mr: 1 }}/>
+                          <Typography variant="body2" sx={{ color: '#333', fontWeight: 500 }}>
+                            <strong>{stats.sectionCount}</strong> Sections
                           </Typography>
                         </Box>
-                        <LinearProgress 
-                          variant="determinate" 
-                          value={surveyProgress} 
-                          sx={{ 
-                            height: 8, 
-                            borderRadius: 4,
-                            backgroundColor: '#e0e0e0',
-                            '& .MuiLinearProgress-bar': {
-                              backgroundColor: '#633394',
-                            },
-                            width: '100%'
-                          }} 
-                        />
+
+                        <Divider orientation="vertical" flexItem sx={{ mx: 2, height: '20px' }} />
+
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <QuizIcon sx={{ color: '#633394', fontSize: '1.25rem', mr: 1 }}/>
+                          <Typography variant="body2" sx={{ color: '#333', fontWeight: 500 }}>
+                            <strong>{stats.questionCount}</strong> Questions
+                          </Typography>
+                        </Box>
+
+                        <Divider orientation="vertical" flexItem sx={{ mx: 2, height: '20px' }} />
+
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <AccessTimeIcon sx={{ color: '#633394', fontSize: '1.25rem', mr: 1 }}/>
+                          <Typography variant="body2" sx={{ color: '#333', fontWeight: 500 }}>
+                            <strong>{stats.estimatedTime}</strong> min
+                          </Typography>
+                        </Box>
                       </Box>
-                      
-                      {/* Question content */}
+                    );
+                  })()}
+                </Box>
+                
+                <Box sx={{ flex: 1, minHeight: 0 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 2, color: '#333', fontWeight: 600 }}>
+                    Section Details:
+                  </Typography>
+                  
+                  {/* Display section cards vertically */}
+                  {(() => {
+                    const sections = TemplateUtils.groupQuestionsBySection(selectedTemplate.questions);
+                    
+                    return (
                       <Box sx={{ 
-                        py: 3, 
-                        px: { xs: 2, sm: 3 }, 
-                        minHeight: '450px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        flexGrow: 1,
-                        boxSizing: 'border-box'
+                        height: 'auto',
+                        overflowY: 'visible',
+                        paddingBottom: 2 
                       }}>
-                        {selectedSection.questions[currentQuestionIndex] && (
-                          <>
-                            <Box sx={{ mb: 5 }}>
-                              <Typography 
-                                variant="h5" 
-                                sx={{ 
-                                  color: '#333', 
-                                  mb: 1, 
-                                  fontWeight: 500,
-                                  fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.75rem' } 
-                                }}
-                              >
-                                {currentQuestionIndex + 1}. {selectedSection.questions[currentQuestionIndex].question_text}
-                              </Typography>
-                              {selectedSection.questions[currentQuestionIndex].is_required && (
-                                <Typography variant="body2" color="error">
-                                  * Required
+                        {Object.entries(sections).map(([sectionName, questions]) => (
+                          <Box
+                            key={sectionName}
+                            sx={{
+                              mb: 2,
+                              borderRadius: '4px',
+                              overflow: 'hidden',
+                              cursor: 'pointer',
+                              border: '1px solid #e0e0e0',
+                              transition: 'transform 0.2s, box-shadow 0.2s',
+                              '&:hover': {
+                                transform: 'translateY(-2px)',
+                                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
+                              }
+                            }}
+                            onClick={() => handleOpenSection(sectionName, questions)}
+                          >
+                            <Box sx={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'space-between',
+                              p: 2,
+                              backgroundColor: '#f9f9f9',
+                              borderBottom: '1px solid #e0e0e0'
+                            }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Box sx={{ 
+                                  display: 'flex', 
+                                  p: 0.5, 
+                                  borderRadius: '4px',
+                                  backgroundColor: 'rgba(99, 51, 148, 0.1)'
+                                }}>
+                                  <AssignmentIcon fontSize="small" sx={{ color: '#633394' }} />
+                                </Box>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#333' }}>
+                                  Section {sectionName}
                                 </Typography>
-                              )}
+                              </Box>
+                              <Chip 
+                                label={`${questions.length} questions`}
+                                size="small"
+                                sx={{ 
+                                  height: '24px',
+                                  fontSize: '0.75rem',
+                                  backgroundColor: 'rgba(99, 51, 148, 0.08)',
+                                  color: '#633394',
+                                  fontWeight: 500,
+                                  borderRadius: '4px'
+                                }}
+                              />
                             </Box>
-                            
-                            <Box sx={{ flexGrow: 1, width: '100%', maxWidth: '800px' }}>
-                              {renderQuestionContent(selectedSection.questions[currentQuestionIndex])}
+                            <Box sx={{ 
+                              p: 2, 
+                              display: 'flex', 
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              backgroundColor: 'white'
+                            }}>
+                              <Typography variant="body2" sx={{ color: '#666', fontSize: '0.875rem' }}>
+                                {questions.filter(q => q.is_required).length} required questions
+                              </Typography>
+                              <Box sx={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                color: '#5c68c3',
+                                gap: 0.5
+                              }}>
+                                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.875rem' }}>
+                                  Start Section
+                                </Typography>
+                                <ArrowForwardIcon sx={{ fontSize: '0.9rem' }} />
+                              </Box>
                             </Box>
-                          </>
+                          </Box>
+                        ))}
+                      </Box>
+                    );
+                  })()}
+                </Box>
+              </Paper>
+            )}
+            
+            {/* Survey view - Full screen when viewing a section */}
+            {selectedSection && (
+              <Paper sx={{ 
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                backgroundColor: '#fff',
+                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
+              }}>
+                {/* Header - Clean and minimal */}
+                <Box sx={{ 
+                  px: 3,
+                  py: 2, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between',
+                  borderBottom: '1px solid #e0e0e0',
+                  backgroundColor: '#fff'
+                }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    {/* Back button for mobile */}
+                    <IconButton 
+                      onClick={handleCloseSection} 
+                      size="small"
+                      sx={{ 
+                        display: { xs: 'inline-flex', sm: 'none' },
+                        mr: 1,
+                        color: '#633394',
+                        '&:hover': {
+                          backgroundColor: 'rgba(99, 51, 148, 0.08)'
+                        }
+                      }}
+                    >
+                      <ArrowBackIcon fontSize="small" />
+                    </IconButton>
+                    <Typography 
+                      variant="subtitle1" 
+                      sx={{ 
+                        fontWeight: 600, 
+                        color: '#333',
+                        display: 'flex',
+                        alignItems: 'center',
+                        fontSize: '0.95rem'
+                      }}
+                    >
+                      <Box component="span" sx={{ 
+                        display: 'inline-flex',
+                        mr: 1.5,
+                        color: '#633394',
+                        bgcolor: 'rgba(99, 51, 148, 0.1)',
+                        p: 0.5,
+                        borderRadius: '4px'
+                      }}>
+                        <AssignmentIcon fontSize="small" />
+                      </Box>
+                      Section {selectedSection.name}
+                    </Typography>
+                  </Box>
+                  <IconButton 
+                    onClick={handleCloseSection} 
+                    size="small"
+                    sx={{ 
+                      display: { xs: 'none', sm: 'inline-flex' },
+                      color: '#666',
+                      '&:hover': {
+                        backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                      }
+                    }}
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+
+                {/* Progress bar - More subtle */}
+                <Box sx={{ 
+                  px: 3, 
+                  py: 1.5, 
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  borderBottom: '1px solid #f0f0f0'
+                }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75, alignItems: 'center' }}>
+                    <Typography variant="caption" sx={{ color: '#666', fontSize: '0.75rem' }}>
+                      Question {currentQuestionIndex + 1} of {selectedSection.questions.length}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#666', fontSize: '0.75rem' }}>
+                      {Math.round(surveyProgress)}% Complete
+                    </Typography>
+                  </Box>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={surveyProgress} 
+                    sx={{ 
+                      height: 4, 
+                      borderRadius: 2,
+                      backgroundColor: '#f0f0f0',
+                      '& .MuiLinearProgress-bar': {
+                        backgroundColor: '#633394',
+                      },
+                      width: '100%'
+                    }} 
+                  />
+                </Box>
+                
+                {/* Question content - Clean white space */}
+                <Box sx={{ 
+                  py: 4, 
+                  px: 3, 
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  backgroundColor: '#fff',
+                  overflow: 'auto'
+                }}>
+                  {selectedSection.questions[currentQuestionIndex] && (
+                    <>
+                      <Box sx={{ mb: 4 }}>
+                        <Typography 
+                          variant="h6" 
+                          sx={{ 
+                            color: '#333', 
+                            mb: 0.5, 
+                            fontWeight: 500,
+                            fontSize: '1.125rem',
+                            lineHeight: 1.4
+                          }}
+                        >
+                          {currentQuestionIndex + 1}. {selectedSection.questions[currentQuestionIndex].question_text}
+                        </Typography>
+                        {selectedSection.questions[currentQuestionIndex].is_required && (
+                          <Typography variant="caption" sx={{ color: '#d32f2f', fontSize: '0.75rem' }}>
+                            * Required
+                          </Typography>
                         )}
                       </Box>
                       
-                      {/* Footer with navigation */}
-                      <Box sx={{ 
-                        p: 3, 
-                        borderTop: '1px solid #eaeaea',
-                        backgroundColor: '#f9f9f9',
-                        display: 'flex',
-                        justifyContent: 'space-between' 
-                      }}>
-                        <Button 
-                          onClick={handlePreviousQuestion} 
-                          disabled={currentQuestionIndex === 0}
-                          startIcon={<ArrowBackIcon />}
-                          size="large"
-                          sx={{ color: '#633394' }}
-                        >
-                          Previous
-                        </Button>
-                        <Box>
-                          <Button 
-                            onClick={handleCloseSection}
-                            size="large"
-                            sx={{ 
-                              mr: 2,
-                              color: '#633394'
-                            }}
-                          >
-                            Save & Exit
-                          </Button>
-                          <Button 
-                            onClick={handleNextQuestion}
-                            endIcon={<ArrowForwardIcon />}
-                            variant="contained"
-                            size="large"
-                            sx={{ 
-                              backgroundColor: '#633394', 
-                              '&:hover': { backgroundColor: '#7c52a5' },
-                              px: 3
-                            }}
-                          >
-                            {currentQuestionIndex < selectedSection.questions.length - 1 ? 'Next' : 'Finish'}
-                          </Button>
-                        </Box>
+                      <Box sx={{ width: '100%', maxWidth: '900px' }}>
+                        {renderQuestionContent(selectedSection.questions[currentQuestionIndex])}
                       </Box>
-                    </Card>
+                    </>
                   )}
-                </Paper>
-              )}
-            </>
-          ) : (
-            <Paper sx={{ p: 4, textAlign: 'center', backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
-              <Typography variant="h6" color="text.secondary">
-                Select a template version from the left panel to view templates
-              </Typography>
-            </Paper>
-          )}
-        </Grid>
-      </Grid>
+                </Box>
+                
+                {/* Footer with navigation - Cleaner buttons */}
+                <Box sx={{ 
+                  px: 3,
+                  py: 2,
+                  borderTop: '1px solid #e0e0e0',
+                  backgroundColor: '#fafafa',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <Button 
+                    onClick={handlePreviousQuestion} 
+                    disabled={currentQuestionIndex === 0}
+                    startIcon={<ArrowBackIcon fontSize="small" />}
+                    sx={{ 
+                      color: '#633394', 
+                      textTransform: 'none',
+                      fontWeight: 500,
+                      fontSize: '0.875rem',
+                      '&.Mui-disabled': {
+                        color: 'rgba(0, 0, 0, 0.26)'
+                      }
+                    }}
+                  >
+                    Previous
+                  </Button>
+                  <Box>
+                    <Button 
+                      onClick={handleCloseSection}
+                      sx={{ 
+                        mr: 2,
+                        color: '#666',
+                        textTransform: 'none',
+                        fontWeight: 500,
+                        fontSize: '0.875rem'
+                      }}
+                    >
+                      Save & Exit
+                    </Button>
+                    <Button 
+                      onClick={handleNextQuestion}
+                      endIcon={<ArrowForwardIcon fontSize="small" />}
+                      variant="contained"
+                      disableElevation
+                      sx={{ 
+                        backgroundColor: '#633394', 
+                        '&:hover': { backgroundColor: '#7c52a5' },
+                        px: 2.5,
+                        py: 0.75,
+                        borderRadius: '4px',
+                        textTransform: 'none',
+                        fontWeight: 500,
+                        fontSize: '0.875rem'
+                      }}
+                    >
+                      {currentQuestionIndex < selectedSection.questions.length - 1 ? 'Next' : 'Finish'}
+                    </Button>
+                  </Box>
+                </Box>
+              </Paper>
+            )}
+          </>
+        ) : (
+          <Paper sx={{ 
+            p: 4, 
+            textAlign: 'center', 
+            backgroundColor: '#f5f5f5', 
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', 
+            flex: 1 
+          }}>
+            <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold', mb: 2 }}>
+              Survey Management
+            </Typography>
+            <Typography variant="body1" sx={{ color: '#666', fontSize: '0.95rem' }}>
+              Select a template version from the left panel to view templates
+            </Typography>
+          </Paper>
+        )}
+      </Box>
     </Box>
   );
 };
