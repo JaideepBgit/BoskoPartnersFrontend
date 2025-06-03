@@ -29,7 +29,8 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Alert
+  Alert,
+  Autocomplete
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -295,6 +296,21 @@ const TemplatesQuestionsTab = () => {
     return type ? type.name : 'Unknown';
   };
 
+  // Get existing sections from the current template
+  const getExistingSections = () => {
+    if (!selectedTemplate?.questions) return [];
+    
+    const sectionsMap = selectedTemplate.questions.reduce((acc, question) => {
+      const section = question.section || 'Uncategorized';
+      if (section !== 'Uncategorized') {
+        acc[section] = (acc[section] || 0) + 1;
+      }
+      return acc;
+    }, {});
+    
+    return Object.keys(sectionsMap);
+  };
+
   return (
     <Box>
       <Grid container spacing={3}>
@@ -328,69 +344,76 @@ const TemplatesQuestionsTab = () => {
         <Grid item xs={12} md={9}>
           {selectedVersion ? (
             <>
-              {/* Template selection or creation */}
-              <Paper sx={{ p: 2, mb: 3, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
+              <Paper sx={{ p: 2, mb: 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold' }}>
                   Templates for {selectedVersion.name}
                 </Typography>
                 
-                <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
-                  <Grid item xs={12} sm={5}>
-                    <TextField
-                      label="Template Name"
-                      fullWidth
-                      value={newTemplateData.survey_code}
-                      onChange={e => setNewTemplateData(prev => ({ ...prev, survey_code: e.target.value, version_id: selectedVersion.id }))}
-                    />
+                {/* Add new template form */}
+                <Box sx={{ mb: 3, p: 2, backgroundColor: 'white', borderRadius: 1 }}>
+                  <Typography variant="subtitle2" gutterBottom>Add New Template</Typography>
+                  <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        label="Survey Code"
+                        value={newTemplateData.survey_code}
+                        onChange={(e) => setNewTemplateData({ ...newTemplateData, survey_code: e.target.value, version_id: selectedVersion.id })}
+                        placeholder="Enter survey code"
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <Button 
+                        variant="contained" 
+                        onClick={handleAddTemplate}
+                        disabled={!newTemplateData.survey_code}
+                        sx={{ 
+                          backgroundColor: '#633394', 
+                          '&:hover': { backgroundColor: '#7c52a5' }
+                        }}
+                      >
+                        Add Template
+                      </Button>
+                    </Grid>
                   </Grid>
-                  <Grid item xs={12} sm={2}>
-                    <Button
-                      variant="contained"
-                      startIcon={<AddIcon />}
-                      onClick={handleAddTemplate}
-                      disabled={!newTemplateData.survey_code}
-                      fullWidth
-                      sx={{ 
-                        backgroundColor: '#633394', 
-                        '&:hover': { backgroundColor: '#7c52a5' },
-                        '&.Mui-disabled': { backgroundColor: '#d1c4e9' }
-                      }}
-                    >
-                      Add Template
-                    </Button>
-                  </Grid>
-                </Grid>
-                
-                <Grid container spacing={2}>
+                </Box>
+
+                {/* Templates list */}
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                   {templates
                     .filter(t => t.version_id === selectedVersion.id)
                     .map(template => (
-                      <Grid item xs={12} sm={6} md={4} key={template.id}>
-                        <Card 
-                          sx={{ 
-                            backgroundColor: selectedTemplate?.id === template.id ? 'rgba(99, 51, 148, 0.1)' : '#f5f5f5', 
-                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                            cursor: 'pointer'
-                          }}
-                          onClick={() => handleSelectTemplate(template.id)}
-                        >
-                          <CardContent>
-                            <Typography variant="h6" noWrap sx={{ color: '#633394', fontWeight: 'bold' }}>{template.survey_code}</Typography>
-                            <Divider sx={{ my: 1 }} />
-                            <Box display="flex" justifyContent="space-between" alignItems="center">
-                              <Chip label={`${template.questions?.length || 0} Questions`} size="small" color="primary" variant="outlined" sx={{ borderColor: '#633394', color: '#633394' }} />
-                              <Typography variant="caption">{new Date(template.created_at).toLocaleDateString()}</Typography>
-                            </Box>
-                          </CardContent>
-                          <CardActions>
-                            <Button size="small" color="error" onClick={(e) => { e.stopPropagation(); handleDeleteTemplate(template.id); }}>
-                              Delete
-                            </Button>
-                          </CardActions>
-                        </Card>
-                      </Grid>
+                      <Card 
+                        key={template.id}
+                        sx={{ 
+                          minWidth: 250, 
+                          cursor: 'pointer',
+                          border: selectedTemplate?.id === template.id ? '2px solid #633394' : '1px solid #e0e0e0',
+                          '&:hover': { boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }
+                        }}
+                        onClick={() => handleSelectTemplate(template.id)}
+                      >
+                        <CardContent>
+                          <Typography variant="h6" sx={{ color: '#633394' }}>{template.survey_code}</Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {template.questions?.length || 0} questions
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Created: {new Date(template.created_at).toLocaleDateString()}
+                          </Typography>
+                        </CardContent>
+                        <CardActions>
+                          <IconButton size="small" color="error" onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteTemplate(template.id);
+                          }}>
+                            <DeleteIcon />
+                          </IconButton>
+                        </CardActions>
+                      </Card>
                     ))}
-                </Grid>
+                </Box>
                 
                 {templates.filter(t => t.version_id === selectedVersion.id).length === 0 && (
                   <Alert severity="info" sx={{ mt: 2 }}>No templates available for this version. Create one to add questions.</Alert>
@@ -438,8 +461,13 @@ const TemplatesQuestionsTab = () => {
                                 <Typography variant="body2">
                                   Order: {question.order}
                                 </Typography>
-                                {question.config && (
+                                {question.section && (
                                   <Typography variant="body2">
+                                    Section: {question.section}
+                                  </Typography>
+                                )}
+                                {question.config && (
+                                  <Typography variant="body2" sx={{ mt: 1 }}>
                                     Config: {JSON.stringify(question.config)}
                                   </Typography>
                                 )}
@@ -485,13 +513,37 @@ const TemplatesQuestionsTab = () => {
               onChange={(e) => setQuestionData({ ...questionData, question_text: e.target.value })}
               margin="normal"
             />
-            <TextField
+            <Autocomplete
               fullWidth
-              label="Section"
+              freeSolo
+              options={getExistingSections()}
               value={questionData.section}
-              onChange={(e) => setQuestionData({ ...questionData, section: e.target.value })}
-              margin="normal"
-              placeholder="Enter section name (e.g., Personal Information, Education, etc.)"
+              onChange={(event, newValue) => {
+                setQuestionData({ ...questionData, section: newValue || '' });
+              }}
+              onInputChange={(event, newInputValue) => {
+                setQuestionData({ ...questionData, section: newInputValue || '' });
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Section"
+                  margin="normal"
+                  placeholder="Enter section name or select existing"
+                  helperText="Type a new section name or select from existing sections"
+                />
+              )}
+              renderOption={(props, option) => (
+                <Box component="li" {...props}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                    <Typography variant="body2">{option}</Typography>
+                    <Typography variant="caption" sx={{ ml: 'auto', color: 'text.secondary' }}>
+                      ({selectedTemplate?.questions?.filter(q => q.section === option).length || 0} questions)
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
+              sx={{ mt: 1 }}
             />
             <FormControl fullWidth margin="normal">
               <InputLabel>Question Type</InputLabel>
@@ -625,46 +677,26 @@ const TemplatesQuestionsTab = () => {
                   Add Option
                 </Button>
               </Box>
-            ) : questionData.question_type_id === 12 ? (
-              // Matrix
-              <Box sx={{ mt: 2, mb: 2 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Matrix Configuration
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Matrix configuration will be implemented in a future update
-                </Typography>
-              </Box>
-            ) : questionData.question_type_id === 13 ? (
-              // Ranking
-              <Box sx={{ mt: 2, mb: 2 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Ranking Configuration
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Ranking configuration will be implemented in a future update
-                </Typography>
-              </Box>
             ) : null}
             
-            <TextField 
-              label="Order" 
-              type="number" 
-              fullWidth 
-              margin="normal" 
-              value={questionData.order} 
-              onChange={e => setQuestionData(prev => ({ ...prev, order: parseInt(e.target.value) || 0 }))} 
+            <TextField
+              fullWidth
+              type="number"
+              label="Order"
+              value={questionData.order}
+              onChange={(e) => setQuestionData({ ...questionData, order: parseInt(e.target.value) || 0 })}
+              margin="normal"
             />
             
             <FormControlLabel
               control={
                 <Checkbox
                   checked={questionData.is_required}
-                  onChange={e => setQuestionData(prev => ({ ...prev, is_required: e.target.checked }))}
+                  onChange={(e) => setQuestionData({ ...questionData, is_required: e.target.checked })}
                 />
               }
               label="Required"
-              sx={{ mt: 1 }}
+              sx={{ mt: 2 }}
             />
           </Box>
         </DialogContent>
@@ -672,8 +704,12 @@ const TemplatesQuestionsTab = () => {
           <Button onClick={handleCloseDialog}>Cancel</Button>
           <Button 
             variant="contained" 
-            onClick={handleSaveQuestion} 
-            sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
+            onClick={handleSaveQuestion}
+            disabled={!questionData.question_text || !questionData.question_type_id}
+            sx={{ 
+              backgroundColor: '#633394', 
+              '&:hover': { backgroundColor: '#7c52a5' }
+            }}
           >
             Save
           </Button>

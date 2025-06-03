@@ -55,10 +55,16 @@ const TemplateUtils = {
   // Delete a template
   deleteTemplate: async (templateId) => {
     try {
-      await InventoryService.deleteTemplate(templateId);
+      console.log('TemplateUtils: Deleting template ID:', templateId);
+      const response = await InventoryService.deleteTemplate(templateId);
+      console.log('TemplateUtils: Delete response:', response);
       return true;
     } catch (err) {
-      console.error('Error deleting template:', err.response || err);
+      console.error('TemplateUtils: Error deleting template:', err);
+      if (err.response) {
+        console.error('TemplateUtils: Response status:', err.response.status);
+        console.error('TemplateUtils: Response data:', err.response.data);
+      }
       return false;
     }
   },
@@ -70,6 +76,23 @@ const TemplateUtils = {
       return true;
     } catch (err) {
       console.error('Error updating questions:', err.response || err);
+      return false;
+    }
+  },
+
+  // Update template name
+  updateTemplateName: async (templateId, newName) => {
+    try {
+      console.log('TemplateUtils: Updating template name for ID:', templateId, 'to:', newName);
+      const response = await InventoryService.updateTemplate(templateId, { survey_code: newName });
+      console.log('TemplateUtils: Update name response:', response);
+      return true;
+    } catch (err) {
+      console.error('TemplateUtils: Error updating template name:', err);
+      if (err.response) {
+        console.error('TemplateUtils: Response status:', err.response.status);
+        console.error('TemplateUtils: Response data:', err.response.data);
+      }
       return false;
     }
   },

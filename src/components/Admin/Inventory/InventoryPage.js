@@ -314,6 +314,16 @@ const InventoryPage = () => {
                     fullWidth
                     value={newVersionName}
                     onChange={e => setNewVersionName(e.target.value)}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': {
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#633394',
+                        },
+                      },
+                      '& .MuiInputLabel-root.Mui-focused': {
+                        color: '#633394',
+                      }
+                    }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={5}>
@@ -322,6 +332,16 @@ const InventoryPage = () => {
                     fullWidth
                     value={newVersionDesc}
                     onChange={e => setNewVersionDesc(e.target.value)}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': {
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#633394',
+                        },
+                      },
+                      '& .MuiInputLabel-root.Mui-focused': {
+                        color: '#633394',
+                      }
+                    }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={2}>
@@ -333,7 +353,16 @@ const InventoryPage = () => {
                     fullWidth
                     sx={{ 
                       backgroundColor: '#633394', 
-                      '&:hover': { backgroundColor: '#7c52a5' },
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': { 
+                        backgroundColor: '#7c52a5',
+                        transform: 'translateY(-1px)',
+                        boxShadow: '0 4px 8px rgba(99, 51, 148, 0.3)',
+                      },
+                      '&:active': {
+                        transform: 'translateY(0)',
+                        boxShadow: '0 2px 4px rgba(99, 51, 148, 0.3)',
+                      },
                       '&.Mui-disabled': { backgroundColor: '#d1c4e9' }
                     }}
                   >
@@ -344,30 +373,81 @@ const InventoryPage = () => {
             </Paper>
             
             <Paper sx={{ p: 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
-              <List>
-                {templateVersions.map(v => (
-                  <ListItem 
-                    key={v.id} 
-                    button 
-                    selected={selectedVersion?.id === v.id}
-                    onClick={() => setSelectedVersion(v)}
-                    sx={{ '&.Mui-selected': { backgroundColor: 'rgba(99, 51, 148, 0.1)' } }}
-                  >
-                    <ListItemText
-                      primary={v.name}
-                      secondary={v.description || 'No description'}
-                    />
-                    <ListItemSecondaryAction>
-                      <IconButton edge="end" color="error" onClick={() => handleDeleteTemplateVersion(v.id)}>
-                        <DeleteIcon />
-                      </IconButton>
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                ))}
-                {templateVersions.length === 0 && (
-                  <Typography color="text.secondary" sx={{ py: 2 }}>No template versions available</Typography>
-                )}
-              </List>
+              <Box 
+                sx={{ 
+                  bgcolor: 'white',
+                  borderRadius: 1,
+                  p: 1,
+                  boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.1)'
+                }}
+              >
+                <List>
+                  {templateVersions.map(v => (
+                    <ListItem 
+                      key={v.id} 
+                      button 
+                      selected={selectedVersion?.id === v.id}
+                      onClick={() => setSelectedVersion(v)}
+                      sx={{ 
+                        borderRadius: 1,
+                        mb: 0.5,
+                        transition: 'all 0.2s ease-in-out',
+                        '&.Mui-selected': { 
+                          backgroundColor: 'rgba(99, 51, 148, 0.15)',
+                          borderColor: '#633394',
+                          '&:hover': {
+                            backgroundColor: 'rgba(99, 51, 148, 0.2)',
+                          }
+                        },
+                        '&:hover': {
+                          backgroundColor: selectedVersion?.id === v.id ? 'rgba(99, 51, 148, 0.2)' : 'rgba(99, 51, 148, 0.05)',
+                          boxShadow: '0 2px 8px rgba(99, 51, 148, 0.15)',
+                          transform: 'translateX(2px)',
+                        }
+                      }}
+                    >
+                      <ListItemText
+                        primary={v.name}
+                        secondary={v.description || 'No description'}
+                        primaryTypographyProps={{
+                          fontWeight: selectedVersion?.id === v.id ? 600 : 400,
+                          color: selectedVersion?.id === v.id ? '#633394' : '#333',
+                          transition: 'color 0.2s ease-in-out',
+                        }}
+                        secondaryTypographyProps={{
+                          color: 'text.secondary'
+                        }}
+                      />
+                      <ListItemSecondaryAction>
+                        <IconButton 
+                          edge="end" 
+                          color="error" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm(`Delete version "${v.name}"?`)) {
+                              handleDeleteTemplateVersion(v.id);
+                            }
+                          }}
+                          sx={{
+                            transition: 'all 0.2s ease-in-out',
+                            '&:hover': {
+                              backgroundColor: 'rgba(211, 47, 47, 0.08)',
+                              transform: 'scale(1.1)',
+                            }
+                          }}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  ))}
+                  {templateVersions.length === 0 && (
+                    <Box sx={{ p: 2, textAlign: 'center' }}>
+                      <Typography color="text.secondary" sx={{ py: 2 }}>No template versions available</Typography>
+                    </Box>
+                  )}
+                </List>
+              </Box>
             </Paper>
           </Box>
         )}
@@ -402,19 +482,34 @@ const InventoryPage = () => {
                 label="Type"
                 onChange={e => setQuestionData(prev => ({ ...prev, question_type_id: e.target.value }))}
               >
-                <MenuItem value={1}>Text</MenuItem>
-                <MenuItem value={2}>Textarea</MenuItem>
-                <MenuItem value={3}>Single Choice</MenuItem>
-                <MenuItem value={4}>Multi Choice</MenuItem>
-                <MenuItem value={5}>Rating</MenuItem>
-                <MenuItem value={6}>Date</MenuItem>
-                <MenuItem value={7}>Numeric</MenuItem>
-                <MenuItem value={8}>Boolean</MenuItem>
-                <MenuItem value={9}>Dropdown</MenuItem>
-                <MenuItem value={10}>Slider</MenuItem>
-                <MenuItem value={11}>File Upload</MenuItem>
-                <MenuItem value={12}>Matrix</MenuItem>
-                <MenuItem value={13}>Ranking</MenuItem>
+                {/* Note: This dialog should be replaced with QuestionDialog for consistency */}
+                <MenuItem value={1}>Text / Graphic</MenuItem>
+                <MenuItem value={2}>Multiple Choice</MenuItem>
+                <MenuItem value={3}>Matrix Table</MenuItem>
+                <MenuItem value={4}>Text Entry</MenuItem>
+                <MenuItem value={5}>Form Field</MenuItem>
+                <MenuItem value={6}>Slider</MenuItem>
+                <MenuItem value={7}>Rank Order</MenuItem>
+                <MenuItem value={8}>Side by Side</MenuItem>
+                <MenuItem value={9}>Autocomplete</MenuItem>
+                <MenuItem value={10}>Constant Sum</MenuItem>
+                <MenuItem value={11}>Pick, Group & Rank</MenuItem>
+                <MenuItem value={12}>Hot Spot</MenuItem>
+                <MenuItem value={13}>Heat Map</MenuItem>
+                <MenuItem value={14}>Graphic Slider</MenuItem>
+                <MenuItem value={15}>Drill Down</MenuItem>
+                <MenuItem value={16}>Net Promoter Score</MenuItem>
+                <MenuItem value={17}>Highlight</MenuItem>
+                <MenuItem value={18}>Signature</MenuItem>
+                <MenuItem value={19}>Video Response</MenuItem>
+                <MenuItem value={20}>User Testing</MenuItem>
+                <MenuItem value={21}>Tree Testing</MenuItem>
+                <MenuItem value={22}>Timing</MenuItem>
+                <MenuItem value={23}>Meta Info</MenuItem>
+                <MenuItem value={24}>File Upload</MenuItem>
+                <MenuItem value={25}>Captcha Verification</MenuItem>
+                <MenuItem value={26}>Location Selector</MenuItem>
+                <MenuItem value={27}>ArcGIS Map</MenuItem>
               </Select>
             </FormControl>
             <TextField
