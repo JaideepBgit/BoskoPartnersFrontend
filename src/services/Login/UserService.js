@@ -20,4 +20,5 @@ const loginUser = async (username, password) => {
     }
 };
 
-export default {loginUser};
+const UserService = {loginUser};
+export default UserService;
