@@ -30,7 +30,9 @@ import {
   CardActions,
   Divider,
   Chip,
-  Alert
+  Alert,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -42,6 +44,8 @@ import TemplatesTab from './TemplatesTab';
 const InventoryPage = () => {
   const { templateId } = useParams();
   const [activeTab, setActiveTab] = useState(0);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
   // Template versions
   const [templateVersions, setTemplateVersions] = useState([]);
@@ -276,42 +280,72 @@ const InventoryPage = () => {
   return (
     <>
       <Navbar />
-      <Box p={3}>
-        <Typography variant="h4" gutterBottom sx={{ color: '#633394', fontWeight: 'bold' }}>Survey Management</Typography>
+      <Box p={isMobile ? 2 : 3}>
+        <Typography 
+          variant={isMobile ? "h5" : "h4"} 
+          gutterBottom 
+          sx={{ 
+            color: '#633394', 
+            fontWeight: 'bold',
+            fontSize: isMobile ? '1.5rem' : '2.125rem'
+          }}
+        >
+          Survey Management
+        </Typography>
         
         <Paper sx={{ mb: 3 }}>
           <Tabs 
             value={activeTab} 
-            onChange={handleTabChange} 
+            onChange={handleTabChange}
+            variant={isMobile ? "scrollable" : "standard"}
+            scrollButtons={isMobile ? "auto" : false}
+            allowScrollButtonsMobile={isMobile}
             sx={{ 
               mb: 3,
               '& .MuiTab-root': {
                 color: '#633394',
                 fontWeight: 500,
+                fontSize: isMobile ? '0.75rem' : '0.875rem',
+                minWidth: isMobile ? 'auto' : '160px',
+                padding: isMobile ? '6px 8px' : '12px 16px',
                 '&.Mui-selected': { fontWeight: 700 },
               },
               '& .MuiTabs-indicator': {
                 backgroundColor: '#633394',
-              }, 
+              },
+              '& .MuiTabs-scrollButtons': {
+                color: '#633394',
+              }
             }}
           >
-            <Tab label="Template Versions" />
-            <Tab label="Questions Inventory" />
-            <Tab label="Preview Templates" />
+            <Tab label={isMobile ? "Versions" : "Template Versions"} />
+            <Tab label={isMobile ? "Questions" : "Questions Inventory"} />
+            <Tab label={isMobile ? "Preview" : "Preview Templates"} />
           </Tabs>
         </Paper>
       
         {/* Template Versions Tab */}
         {activeTab === 0 && (
           <Box>
-            <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold' }}>Template Versions</Typography>
+            <Typography 
+              variant={isMobile ? "subtitle1" : "h6"} 
+              gutterBottom 
+              sx={{ 
+                color: '#633394', 
+                fontWeight: 'bold',
+                fontSize: isMobile ? '1.1rem' : '1.25rem'
+              }}
+            >
+              Template Versions
+            </Typography>
             
-            <Paper sx={{ p: 2, mb: 3, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
+            <Paper sx={{ p: isMobile ? 1.5 : 2, mb: 3, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
               <Grid container spacing={2} alignItems="center">
                 <Grid item xs={12} sm={5}>
                   <TextField
                     label="Version Name"
                     fullWidth
+                    size={isMobile ? "small" : "medium"}
                     value={newVersionName}
                     onChange={e => setNewVersionName(e.target.value)}
                     sx={{ 
@@ -330,6 +364,7 @@ const InventoryPage = () => {
                   <TextField
                     label="Description"
                     fullWidth
+                    size={isMobile ? "small" : "medium"}
                     value={newVersionDesc}
                     onChange={e => setNewVersionDesc(e.target.value)}
                     sx={{ 
@@ -347,13 +382,15 @@ const InventoryPage = () => {
                 <Grid item xs={12} sm={2}>
                   <Button
                     variant="contained"
-                    startIcon={<AddIcon />}
+                    startIcon={!isMobile && <AddIcon />}
                     onClick={handleAddTemplateVersion}
                     disabled={!newVersionName}
                     fullWidth
+                    size={isMobile ? "small" : "medium"}
                     sx={{ 
                       backgroundColor: '#633394', 
                       transition: 'all 0.2s ease-in-out',
+                      fontSize: isMobile ? '0.75rem' : '0.875rem',
                       '&:hover': { 
                         backgroundColor: '#7c52a5',
                         transform: 'translateY(-1px)',
@@ -366,22 +403,22 @@ const InventoryPage = () => {
                       '&.Mui-disabled': { backgroundColor: '#d1c4e9' }
                     }}
                   >
-                    Add
+                    {isMobile ? "Add" : "Add"}
                   </Button>
                 </Grid>
               </Grid>
             </Paper>
             
-            <Paper sx={{ p: 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
+            <Paper sx={{ p: isMobile ? 1.5 : 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
               <Box 
                 sx={{ 
                   bgcolor: 'white',
                   borderRadius: 1,
-                  p: 1,
+                  p: isMobile ? 0.5 : 1,
                   boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.1)'
                 }}
               >
-                <List>
+                <List dense={isMobile}>
                   {templateVersions.map(v => (
                     <ListItem 
                       key={v.id} 
@@ -391,6 +428,7 @@ const InventoryPage = () => {
                       sx={{ 
                         borderRadius: 1,
                         mb: 0.5,
+                        py: isMobile ? 1 : 1.5,
                         transition: 'all 0.2s ease-in-out',
                         '&.Mui-selected': { 
                           backgroundColor: 'rgba(99, 51, 148, 0.15)',
@@ -413,15 +451,18 @@ const InventoryPage = () => {
                           fontWeight: selectedVersion?.id === v.id ? 600 : 400,
                           color: selectedVersion?.id === v.id ? '#633394' : '#333',
                           transition: 'color 0.2s ease-in-out',
+                          fontSize: isMobile ? '0.9rem' : '1rem',
                         }}
                         secondaryTypographyProps={{
-                          color: 'text.secondary'
+                          color: 'text.secondary',
+                          fontSize: isMobile ? '0.75rem' : '0.875rem',
                         }}
                       />
                       <ListItemSecondaryAction>
                         <IconButton 
                           edge="end" 
-                          color="error" 
+                          color="error"
+                          size={isMobile ? "small" : "medium"}
                           onClick={(e) => {
                             e.stopPropagation();
                             if (window.confirm(`Delete version "${v.name}"?`)) {
@@ -436,14 +477,22 @@ const InventoryPage = () => {
                             }
                           }}
                         >
-                          <DeleteIcon />
+                          <DeleteIcon fontSize={isMobile ? "small" : "medium"} />
                         </IconButton>
                       </ListItemSecondaryAction>
                     </ListItem>
                   ))}
                   {templateVersions.length === 0 && (
                     <Box sx={{ p: 2, textAlign: 'center' }}>
-                      <Typography color="text.secondary" sx={{ py: 2 }}>No template versions available</Typography>
+                      <Typography 
+                        color="text.secondary" 
+                        sx={{ 
+                          py: 2,
+                          fontSize: isMobile ? '0.875rem' : '1rem'
+                        }}
+                      >
+                        No template versions available
+                      </Typography>
                     </Box>
                   )}
                 </List>
@@ -463,18 +512,27 @@ const InventoryPage = () => {
         )}
       
         {/* Question Dialog */}
-        <Dialog open={openQDialog} onClose={handleCloseDialog} fullWidth>
-          <DialogTitle>{editingQuestion ? 'Edit Question' : 'Add Question'}</DialogTitle>
+        <Dialog 
+          open={openQDialog} 
+          onClose={handleCloseDialog} 
+          fullWidth
+          fullScreen={isMobile}
+          maxWidth={isMobile ? false : "sm"}
+        >
+          <DialogTitle sx={{ fontSize: isMobile ? '1.1rem' : '1.25rem' }}>
+            {editingQuestion ? 'Edit Question' : 'Add Question'}
+          </DialogTitle>
           <DialogContent>
             <TextField
               label="Question Text"
               fullWidth
               multiline
               margin="normal"
+              size={isMobile ? "small" : "medium"}
               value={questionData.question_text}
               onChange={e => setQuestionData(prev => ({ ...prev, question_text: e.target.value }))}
             />
-            <FormControl fullWidth margin="normal">
+            <FormControl fullWidth margin="normal" size={isMobile ? "small" : "medium"}>
               <InputLabel id="type-label">Type</InputLabel>
               <Select
                 labelId="type-label"
@@ -517,6 +575,7 @@ const InventoryPage = () => {
               type="number"
               fullWidth
               margin="normal"
+              size={isMobile ? "small" : "medium"}
               value={questionData.order}
               onChange={e => setQuestionData(prev => ({ ...prev, order: Number(e.target.value) }))}
             />
@@ -525,19 +584,36 @@ const InventoryPage = () => {
                 <Checkbox
                   checked={questionData.is_required}
                   onChange={e => setQuestionData(prev => ({ ...prev, is_required: e.target.checked }))}
+                  size={isMobile ? "small" : "medium"}
                 />
               }
               label="Required"
+              sx={{ 
+                '& .MuiFormControlLabel-label': { 
+                  fontSize: isMobile ? '0.875rem' : '1rem' 
+                } 
+              }}
             />
           </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseDialog} sx={{ color: '#633394' }}>Cancel</Button>
+          <DialogActions sx={{ p: isMobile ? 2 : 1 }}>
+            <Button 
+              onClick={handleCloseDialog} 
+              size={isMobile ? "small" : "medium"}
+              sx={{ 
+                color: '#633394',
+                fontSize: isMobile ? '0.75rem' : '0.875rem'
+              }}
+            >
+              Cancel
+            </Button>
             <Button 
               variant="contained" 
-              onClick={handleSaveQuestion} 
+              onClick={handleSaveQuestion}
+              size={isMobile ? "small" : "medium"}
               sx={{ 
                 backgroundColor: '#633394', 
-                '&:hover': { backgroundColor: '#7c52a5' }
+                '&:hover': { backgroundColor: '#7c52a5' },
+                fontSize: isMobile ? '0.75rem' : '0.875rem'
               }}
             >
               Save
