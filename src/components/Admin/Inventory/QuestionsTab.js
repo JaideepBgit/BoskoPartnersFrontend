@@ -196,8 +196,8 @@ const TemplateChip = ({
   const [editedName, setEditedName] = useState(template.survey_code);
 
   const handleClick = (e) => {
-    if (isMultiSelectMode || isEditing) {
-      return; // Don't select when in multi-select mode or editing
+    if (isEditing) {
+      return; // Don't select when editing
     }
     if (isMultiSelectMode) {
       onToggleSelect();
@@ -541,47 +541,82 @@ const QuestionsTab = () => {
     
     if (!active || !over || active.id === over.id || !selectedTemplate) return;
     
-    // Extract question IDs from the drag identifiers
+    // Extract section and question IDs from the drag identifiers
     const activeId = active.id.toString();
     const overId = over.id.toString();
     
-    const activeQuestionId = parseInt(activeId.split('-').pop());
-    const overQuestionId = parseInt(overId.split('-').pop());
+    // Parse the IDs to get section and question info
+    // Format is "section-questionId", but section might contain hyphens
+    const activeLastHyphenIndex = activeId.lastIndexOf('-');
+    const overLastHyphenIndex = overId.lastIndexOf('-');
     
-    // Find question indices
-    const questions = [...selectedTemplate.questions];
-    const oldIndex = questions.findIndex(q => q.id === activeQuestionId);
-    const newIndex = questions.findIndex(q => q.id === overQuestionId);
+    const activeSection = activeId.substring(0, activeLastHyphenIndex);
+    const activeQuestionId = activeId.substring(activeLastHyphenIndex + 1);
+    const overSection = overId.substring(0, overLastHyphenIndex);
+    const overQuestionId = overId.substring(overLastHyphenIndex + 1);
+    
+    // Only allow reordering within the same section
+    if (activeSection !== overSection) {
+      return;
+    }
+    
+    const activeQuestionIdNum = parseInt(activeQuestionId);
+    const overQuestionIdNum = parseInt(overQuestionId);
+    
+    // Get questions for the specific section
+    const sectionQuestions = selectedTemplate.questions.filter(q => 
+      (q.section || 'Uncategorized') === activeSection
+    );
+    
+    // Find question indices within the section
+    const oldIndex = sectionQuestions.findIndex(q => q.id === activeQuestionIdNum);
+    const newIndex = sectionQuestions.findIndex(q => q.id === overQuestionIdNum);
     
     if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
     
-    // Reorder questions
-    const reorderedQuestions = arrayMove(questions, oldIndex, newIndex);
+    // Reorder questions within the section
+    const reorderedSectionQuestions = arrayMove(sectionQuestions, oldIndex, newIndex);
     
-    // Update order property
-    const updatedQuestions = reorderedQuestions.map((q, index) => ({
+    // Update the order property for questions in this section
+    const updatedSectionQuestions = reorderedSectionQuestions.map((q, index) => ({
       ...q,
       order: index
     }));
     
+    // Merge back with questions from other sections
+    const otherSectionQuestions = selectedTemplate.questions.filter(q => 
+      (q.section || 'Uncategorized') !== activeSection
+    );
+    
+    const allUpdatedQuestions = [...otherSectionQuestions, ...updatedSectionQuestions]
+      .sort((a, b) => {
+        // First sort by section, then by order within section
+        const sectionA = a.section || 'Uncategorized';
+        const sectionB = b.section || 'Uncategorized';
+        if (sectionA !== sectionB) {
+          return sectionA.localeCompare(sectionB);
+        }
+        return (a.order || 0) - (b.order || 0);
+      });
+    
     // Update locally
     setSelectedTemplate(prev => ({
       ...prev,
-      questions: updatedQuestions
+      questions: allUpdatedQuestions
     }));
     
     // Update templates array
     setTemplates(prev => 
       prev.map(t => 
         t.id === selectedTemplate.id 
-          ? { ...t, questions: updatedQuestions } 
+          ? { ...t, questions: allUpdatedQuestions } 
           : t
       )
     );
     
     // Save to backend
     try {
-      await TemplateUtils.updateTemplateQuestions(selectedTemplate.id, updatedQuestions);
+      await TemplateUtils.updateTemplateQuestions(selectedTemplate.id, allUpdatedQuestions);
     } catch (error) {
       console.error('Error updating question order:', error);
       // Revert on error
@@ -607,7 +642,7 @@ const QuestionsTab = () => {
     setQuestionData({
       question_text: q.question_text,
       question_type_id: q.question_type_id,
-      section: q.section || 'Section 1',
+      section: q.section || 'Uncategorized',
       order: q.order,
       is_required: q.is_required,
       config: q.config || null
@@ -633,20 +668,27 @@ const QuestionsTab = () => {
         updatedQuestions[index] = { ...updatedQuestions[index], ...payload };
       }
     } else {
-      // Adding new question
+      // Adding new question - assign order within the section
+      const sectionQuestions = updatedQuestions.filter(q => 
+        (q.section || 'Uncategorized') === (payload.section || 'Uncategorized')
+      );
       const newId = Math.max(0, ...updatedQuestions.map(q => q.id || 0)) + 1;
       updatedQuestions.push({ 
         id: newId, 
         ...payload,
-        order: updatedQuestions.length
+        order: sectionQuestions.length
       });
     }
     
-    // Update order property
-    updatedQuestions = updatedQuestions.map((q, index) => ({
-      ...q,
-      order: index
-    }));
+    // Sort questions by section and order within section
+    updatedQuestions.sort((a, b) => {
+      const sectionA = a.section || 'Uncategorized';
+      const sectionB = b.section || 'Uncategorized';
+      if (sectionA !== sectionB) {
+        return sectionA.localeCompare(sectionB);
+      }
+      return (a.order || 0) - (b.order || 0);
+    });
     
     const success = await TemplateUtils.updateTemplateQuestions(selectedTemplate.id, updatedQuestions);
     if (success) {
@@ -703,14 +745,13 @@ const QuestionsTab = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex', height: 'calc(100vh - 180px)' }}>
+    <Box sx={{ display: 'flex', minHeight: 'calc(100vh - 180px)' }}>
       {/* Left sidebar - Version selection */}
       <Box 
         sx={{ 
           width: 240, 
           backgroundColor: '#f5f5f5', 
           boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', 
-          height: '100%',
           display: 'flex',
           flexDirection: 'column'
         }}
@@ -719,7 +760,7 @@ const QuestionsTab = () => {
           Template Versions
         </Typography>
         
-        <Box sx={{ flex: 1, overflow: 'auto', px: 2 }}>
+        <Box sx={{ px: 2, pb: 2 }}>
           {templateVersions.map(version => (
             <Button
               key={version.id}
@@ -762,9 +803,7 @@ const QuestionsTab = () => {
                 p: 2, 
                 mb: 2, 
                 backgroundColor: '#f5f5f5', 
-                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                height: 'auto',
-                maxHeight: '40%'
+                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
               }}
             >
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
@@ -822,7 +861,7 @@ const QuestionsTab = () => {
                 </Box>
               </Box>
               
-              <Box sx={{ display: 'flex', height: 'calc(100% - 40px)' }}>
+              <Box sx={{ display: 'flex' }}>
                 {/* Left side - Add template form */}
                 <Box sx={{ width: '40%', pr: 2 }}>
                   <TextField
@@ -872,12 +911,9 @@ const QuestionsTab = () => {
                 </Box>
                 
                 {/* Right side - Templates list */}
-                <Box sx={{ width: '60%', display: 'flex', flexDirection: 'column' }}>
+                <Box sx={{ width: '60%' }}>
                   <Box 
                     sx={{ 
-                      flex: 1, 
-                      overflow: 'auto', 
-                      maxHeight: 300,
                       bgcolor: 'white',
                       borderRadius: 1,
                       p: 1,
@@ -918,11 +954,7 @@ const QuestionsTab = () => {
                 sx={{ 
                   p: 2, 
                   backgroundColor: '#f5f5f5', 
-                  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  overflow: 'hidden'
+                  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
                 }}
               >
                 <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
@@ -951,33 +983,61 @@ const QuestionsTab = () => {
                   </Button>
                 </Box>
                 
-                <Box sx={{ flex: 1, overflow: 'auto', bgcolor: 'white', borderRadius: 1, p: 1, boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.1)' }}>
+                <Box sx={{ bgcolor: 'white', borderRadius: 1, p: 1, boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.1)' }}>
                   {selectedTemplate.questions?.length > 0 ? (
                     <DndContext 
                       sensors={sensors}
                       collisionDetection={closestCenter}
                       onDragEnd={handleDragEnd}
                     >
-                      <SortableContext 
-                        items={selectedTemplate.questions.map(q => `question-${q.id}`)}
-                        strategy={verticalListSortingStrategy}
-                      >
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                          {selectedTemplate.questions
-                            .sort((a, b) => (a.order || 0) - (b.order || 0))
-                            .map((question, index) => (
-                              <CompactQuestionItem 
-                                key={question.id}
-                                question={question}
-                                index={index}
-                                onEdit={handleOpenEdit}
-                                onDelete={handleDeleteQuestion}
-                                getQuestionTypeName={getQuestionTypeName}
-                                sectionName="question"
-                              />
-                            ))}
-                        </Box>
-                      </SortableContext>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {(() => {
+                          // Group questions by section
+                          const questionsBySection = TemplateUtils.groupQuestionsBySection(selectedTemplate.questions);
+                          const sortedSections = Object.keys(questionsBySection).sort();
+                          
+                          return sortedSections.map(sectionName => {
+                            const sectionQuestions = questionsBySection[sectionName]
+                              .sort((a, b) => (a.order || 0) - (b.order || 0));
+                            
+                            return (
+                              <Box key={sectionName} sx={{ mb: 2 }}>
+                                <Typography 
+                                  variant="h6" 
+                                  sx={{ 
+                                    mb: 1, 
+                                    color: '#633394', 
+                                    fontWeight: 'bold',
+                                    borderBottom: '2px solid #633394',
+                                    pb: 0.5
+                                  }}
+                                >
+                                  {sectionName} ({sectionQuestions.length} questions)
+                                </Typography>
+                                
+                                <SortableContext 
+                                  items={sectionQuestions.map(q => `${sectionName}-${q.id}`)}
+                                  strategy={verticalListSortingStrategy}
+                                >
+                                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                    {sectionQuestions.map((question, index) => (
+                                      <CompactQuestionItem 
+                                        key={question.id}
+                                        question={question}
+                                        index={index}
+                                        onEdit={handleOpenEdit}
+                                        onDelete={handleDeleteQuestion}
+                                        getQuestionTypeName={getQuestionTypeName}
+                                        sectionName={sectionName}
+                                      />
+                                    ))}
+                                  </Box>
+                                </SortableContext>
+                              </Box>
+                            );
+                          });
+                        })()}
+                      </Box>
                     </DndContext>
                   ) : (
                     <Alert severity="info">No questions added yet. Click "Add Question" to create one.</Alert>
@@ -987,7 +1047,7 @@ const QuestionsTab = () => {
             )}
           </>
         ) : (
-          <Paper sx={{ p: 4, textAlign: 'center', backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', flex: 1 }}>
+          <Paper sx={{ p: 4, textAlign: 'center', backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
             <Typography variant="h6" color="text.secondary">
               Select a template version from the left panel to manage templates and questions
             </Typography>
