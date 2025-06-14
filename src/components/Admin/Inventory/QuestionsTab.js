@@ -3,13 +3,25 @@ import {
   Box,
   Typography,
   Button,
+  Button,
   IconButton,
   Alert,
   Chip,
   Paper,
   TextField,
   Checkbox
+  Alert,
+  Chip,
+  Paper,
+  TextField,
+  Checkbox
 } from '@mui/material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  DragIndicator as DragIndicatorIcon
+} from '@mui/icons-material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -28,7 +40,12 @@ import {
   verticalListSortingStrategy,
   useSortable,
   arrayMove,
+  arrayMove,
 } from '@dnd-kit/sortable';
+import {
+  CSS,
+} from '@dnd-kit/utilities';
+
 import {
   CSS,
 } from '@dnd-kit/utilities';
@@ -36,7 +53,11 @@ import {
 import TemplateUtils from './shared/TemplateUtils';
 import QuestionDialog from './QuestionDialog';
 import { getQuestionTypeById } from '../../../config/questionTypes';
+import QuestionDialog from './QuestionDialog';
+import { getQuestionTypeById } from '../../../config/questionTypes';
 
+// Compact Question Item Component for question list display
+const CompactQuestionItem = ({ question, index, onEdit, onDelete, getQuestionTypeName, sectionName }) => {
 // Compact Question Item Component for question list display
 const CompactQuestionItem = ({ question, index, onEdit, onDelete, getQuestionTypeName, sectionName }) => {
   const {
@@ -56,15 +77,133 @@ const CompactQuestionItem = ({ question, index, onEdit, onDelete, getQuestionTyp
 
   return (
     <Paper 
+    <Paper 
       ref={setNodeRef} 
       style={style}
       sx={{ 
+        mb: 0.5, 
         mb: 0.5, 
         backgroundColor: '#fff',
         border: isDragging ? '2px dashed #633394' : '1px solid #e0e0e0',
         borderRadius: 1,
         transition: 'all 0.2s ease-in-out',
+        border: isDragging ? '2px dashed #633394' : '1px solid #e0e0e0',
+        borderRadius: 1,
+        transition: 'all 0.2s ease-in-out',
         '&:hover': {
+          boxShadow: '0 2px 8px rgba(99, 51, 148, 0.15)',
+          borderColor: '#633394',
+          transform: isDragging ? 'none' : 'translateX(2px)',
+        }
+      }}
+    >
+      <Box sx={{ p: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+          <Box
+            {...attributes}
+            {...listeners}
+            sx={{ 
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 20,
+              height: 20,
+              mr: 1.5, 
+              cursor: 'grab',
+              color: '#633394',
+              borderRadius: 1,
+              flexShrink: 0,
+              transition: 'all 0.2s ease-in-out',
+              '&:hover': {
+                backgroundColor: 'rgba(99, 51, 148, 0.08)',
+                transform: 'scale(1.1)',
+              },
+              '&:active': { cursor: 'grabbing' }
+            }}
+          >
+            <DragIndicatorIcon fontSize="small" />
+          </Box>
+          
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                fontWeight: 600, 
+                color: '#333',
+                mb: 0.25,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                fontSize: '0.875rem'
+              }}
+            >
+              {index + 1}. {question.question_text}
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+              <Chip 
+                label={getQuestionTypeName(question.question_type_id)} 
+                size="small" 
+                variant="outlined"
+                sx={{ 
+                  height: 18, 
+                  fontSize: '0.65rem',
+                  borderColor: '#633394',
+                  color: '#633394',
+                  '& .MuiChip-label': { px: 1 }
+                }}
+              />
+              {question.is_required && (
+                <Chip 
+                  label="Required" 
+                  size="small" 
+                  color="error"
+                  variant="outlined"
+                  sx={{ 
+                    height: 18, 
+                    fontSize: '0.65rem',
+                    '& .MuiChip-label': { px: 1 }
+                  }}
+                />
+              )}
+            </Box>
+          </Box>
+        </Box>
+        
+        <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
+          <IconButton 
+            size="small" 
+            color="primary" 
+            onClick={() => onEdit(question)}
+            sx={{ 
+              p: 0.5,
+              color: '#633394',
+              transition: 'all 0.2s ease-in-out',
+              '&:hover': { 
+                backgroundColor: 'rgba(99, 51, 148, 0.08)',
+                transform: 'scale(1.1)',
+              } 
+            }}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+          <IconButton 
+            size="small" 
+            color="error" 
+            onClick={() => onDelete(question.id)}
+            sx={{ 
+              p: 0.5,
+              transition: 'all 0.2s ease-in-out',
+              '&:hover': { 
+                backgroundColor: 'rgba(211, 47, 47, 0.08)',
+                transform: 'scale(1.1)',
+              }
+            }}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      </Box>
+    </Paper>
           boxShadow: '0 2px 8px rgba(99, 51, 148, 0.15)',
           borderColor: '#633394',
           transform: isDragging ? 'none' : 'translateX(2px)',
@@ -306,11 +445,90 @@ const TemplateChip = ({
           </Typography>
         )}
         <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
+    <Box 
+      sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        mb: 1,
+        p: 1,
+        borderRadius: 1,
+        backgroundColor: isSelected ? 'rgba(99, 51, 148, 0.15)' : '#f5f5f5',
+        border: '1px solid',
+        borderColor: isSelected ? '#633394' : '#e0e0e0',
+        cursor: isEditing ? 'default' : 'pointer',
+        transition: 'all 0.2s ease-in-out',
+        '&:hover': {
+          boxShadow: '0 2px 8px rgba(99, 51, 148, 0.2)',
+          borderColor: '#633394',
+          backgroundColor: isSelected ? 'rgba(99, 51, 148, 0.2)' : 'rgba(99, 51, 148, 0.05)',
+        }
+      }}
+      onClick={handleClick}
+    >
+      {isMultiSelectMode && (
+        <Checkbox 
+          checked={isChecked}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSelect();
+          }}
+          sx={{ 
+            p: 0.5, 
+            mr: 1,
+            color: '#633394',
+            '&.Mui-checked': {
+              color: '#633394',
+            },
+          }}
+        />
+      )}
+      <Box sx={{ flex: 1 }}>
+        {isEditing ? (
+          <TextField
+            value={editedName}
+            onChange={(e) => setEditedName(e.target.value)}
+            onKeyDown={handleKeyPress}
+            onBlur={handleSaveEdit}
+            autoFocus
+            size="small"
+            fullWidth
+            variant="outlined"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                fontSize: '0.875rem',
+                '&.Mui-focused fieldset': {
+                  borderColor: '#633394',
+                },
+              },
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              fontWeight: isSelected ? 600 : 400,
+              color: isSelected ? '#633394' : '#333',
+              transition: 'color 0.2s ease-in-out',
+            }}
+          >
+            {template.survey_code}
+          </Typography>
+        )}
+        <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
           <Chip 
             label={`${template.questions?.length || 0} Questions`} 
             size="small" 
             variant="outlined"
+            label={`${template.questions?.length || 0} Questions`} 
+            size="small" 
+            variant="outlined"
             sx={{ 
+              height: 18, 
+              fontSize: '0.65rem',
+              borderColor: '#633394',
+              color: '#633394',
+              '& .MuiChip-label': { px: 1 }
               height: 18, 
               fontSize: '0.65rem',
               borderColor: '#633394',
@@ -321,6 +539,44 @@ const TemplateChip = ({
           <Typography variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
             {new Date(template.created_at).toLocaleDateString()}
           </Typography>
+        </Box>
+      </Box>
+      
+      {!isMultiSelectMode && !isEditing && (
+        <Box sx={{ display: 'flex', gap: 0.5 }}>
+          <IconButton 
+            size="small" 
+            color="primary" 
+            onClick={handleStartEdit}
+            sx={{ 
+              color: '#633394',
+              '&:hover': {
+                backgroundColor: 'rgba(99, 51, 148, 0.08)',
+              }
+            }}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+          <IconButton 
+            size="small" 
+            color="error" 
+            onClick={(e) => {
+              e.stopPropagation();
+              console.log('Delete button clicked for template:', template.survey_code, 'ID:', template.id);
+              if (window.confirm(`Delete template "${template.survey_code}"?`)) {
+                console.log('User confirmed deletion, calling onDelete...');
+                onDelete(template.id);
+              } else {
+                console.log('User cancelled deletion');
+              }
+            }}
+            sx={{ ml: 0.5 }}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      )}
+    </Box>
         </Box>
       </Box>
       
@@ -372,6 +628,10 @@ const QuestionsTab = () => {
     version_id: '',
     questions: []
   });
+  const [selectedTemplates, setSelectedTemplates] = useState([]);
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  
+  // Question dialog state
   const [selectedTemplates, setSelectedTemplates] = useState([]);
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   
@@ -430,7 +690,14 @@ const QuestionsTab = () => {
       ...newTemplateData,
       version_id: selectedVersion.id
     };
+    if (!newTemplateData.survey_code || !selectedVersion?.id) return;
     
+    const templateToAdd = {
+      ...newTemplateData,
+      version_id: selectedVersion.id
+    };
+    
+    const success = await TemplateUtils.addTemplate(templateToAdd);
     const success = await TemplateUtils.addTemplate(templateToAdd);
     if (success) {
       setNewTemplateData({ survey_code: '', version_id: '', questions: [] });
@@ -508,7 +775,78 @@ const QuestionsTab = () => {
         setSelectedTemplate(null);
       }
       
+    try {
+      console.log('Attempting to delete template with ID:', templateId);
+      const success = await TemplateUtils.deleteTemplate(templateId);
+      console.log('Delete result:', success);
+      
+      if (success) {
+        console.log('Template deleted successfully, updating UI...');
+        if (selectedTemplate?.id === templateId) {
+          setSelectedTemplate(null);
+        }
+        await fetchTemplates();
+        console.log('UI updated after template deletion');
+      } else {
+        console.error('Failed to delete template:', templateId);
+        alert('Failed to delete template. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      alert('Error occurred while deleting template: ' + error.message);
+    }
+  };
+
+  const handleEditTemplate = async (templateId, newName) => {
+    try {
+      console.log('Attempting to edit template with ID:', templateId, 'to name:', newName);
+      const success = await TemplateUtils.updateTemplateName(templateId, newName);
+      console.log('Edit result:', success);
+      
+      if (success) {
+        console.log('Template name updated successfully, updating UI...');
+        // Update the templates list
+        await fetchTemplates();
+        
+        // Update selected template if it's the one being edited
+        if (selectedTemplate?.id === templateId) {
+          const updatedTemplate = { ...selectedTemplate, survey_code: newName };
+          setSelectedTemplate(updatedTemplate);
+        }
+        
+        console.log('UI updated after template name change');
+      } else {
+        console.error('Failed to edit template:', templateId);
+        alert('Failed to update template name. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error editing template:', error);
+      alert('Error occurred while updating template name: ' + error.message);
+    }
+  };
+
+  const handleDeleteSelectedTemplates = async () => {
+    if (selectedTemplates.length === 0) return;
+    
+    // Delete selected templates one by one
+    const deletePromises = selectedTemplates.map(templateId => 
+      TemplateUtils.deleteTemplate(templateId)
+    );
+    
+    try {
+      await Promise.all(deletePromises);
+      
+      // Clear selection and refresh
+      setSelectedTemplates([]);
+      setIsMultiSelectMode(false);
+      
+      if (selectedTemplates.includes(selectedTemplate?.id)) {
+        setSelectedTemplate(null);
+      }
+      
       fetchTemplates();
+    } catch (error) {
+      console.error('Error deleting templates:', error);
     } catch (error) {
       console.error('Error deleting templates:', error);
     }
@@ -518,8 +856,28 @@ const QuestionsTab = () => {
     if (isMultiSelectMode) {
       return; // Don't select template in multi-select mode, just toggle checkbox
     }
+    if (isMultiSelectMode) {
+      return; // Don't select template in multi-select mode, just toggle checkbox
+    }
     fetchTemplate(templateId);
   };
+  
+  const handleToggleSelectTemplate = (templateId) => {
+    if (selectedTemplates.includes(templateId)) {
+      setSelectedTemplates(prev => prev.filter(id => id !== templateId));
+    } else {
+      setSelectedTemplates(prev => [...prev, templateId]);
+    }
+  };
+  
+  const toggleMultiSelectMode = () => {
+    setIsMultiSelectMode(prev => !prev);
+    if (!isMultiSelectMode) {
+      setSelectedTemplates([]);
+    }
+  };
+
+  const handleDragEnd = async (event) => {
   
   const handleToggleSelectTemplate = (templateId) => {
     if (selectedTemplates.includes(templateId)) {
@@ -596,6 +954,8 @@ const QuestionsTab = () => {
       question_type_id: '',
       section: 'Section 1',
       order: selectedTemplate?.questions?.length || 0,
+      section: 'Section 1',
+      order: selectedTemplate?.questions?.length || 0,
       is_required: false,
       config: null
     });
@@ -607,7 +967,7 @@ const QuestionsTab = () => {
     setQuestionData({
       question_text: q.question_text,
       question_type_id: q.question_type_id,
-      section: q.section || 'Section 1',
+      section: q.section || 'Uncategorized',
       order: q.order,
       is_required: q.is_required,
       config: q.config || null
@@ -620,8 +980,10 @@ const QuestionsTab = () => {
   };
 
   const handleSaveQuestion = async (finalQuestionData) => {
+  const handleSaveQuestion = async (finalQuestionData) => {
     if (!selectedTemplate) return;
     
+    const payload = finalQuestionData;
     const payload = finalQuestionData;
     
     let updatedQuestions = [...(selectedTemplate.questions || [])];
@@ -633,7 +995,10 @@ const QuestionsTab = () => {
         updatedQuestions[index] = { ...updatedQuestions[index], ...payload };
       }
     } else {
-      // Adding new question
+      // Adding new question - assign order within the section
+      const sectionQuestions = updatedQuestions.filter(q => 
+        (q.section || 'Uncategorized') === (payload.section || 'Uncategorized')
+      );
       const newId = Math.max(0, ...updatedQuestions.map(q => q.id || 0)) + 1;
       updatedQuestions.push({ 
         id: newId, 
@@ -642,18 +1007,24 @@ const QuestionsTab = () => {
       });
     }
     
-    // Update order property
-    updatedQuestions = updatedQuestions.map((q, index) => ({
-      ...q,
-      order: index
-    }));
+    // Sort questions by section and order within section
+    updatedQuestions.sort((a, b) => {
+      const sectionA = a.section || 'Uncategorized';
+      const sectionB = b.section || 'Uncategorized';
+      if (sectionA !== sectionB) {
+        return sectionA.localeCompare(sectionB);
+      }
+      return (a.order || 0) - (b.order || 0);
+    });
     
     const success = await TemplateUtils.updateTemplateQuestions(selectedTemplate.id, updatedQuestions);
     if (success) {
       // Update local state
+      // Update local state
       const updatedTemplate = { ...selectedTemplate, questions: updatedQuestions };
       setSelectedTemplate(updatedTemplate);
       
+      // Update templates array
       // Update templates array
       const updatedTemplates = templates.map(t => 
         t.id === selectedTemplate.id ? { ...t, questions: updatedQuestions } : t
@@ -670,10 +1041,12 @@ const QuestionsTab = () => {
     const success = await TemplateUtils.deleteTemplateQuestion(selectedTemplate.id, questionId);
     if (success) {
       // Update local state
+      // Update local state
       const updatedQuestions = selectedTemplate.questions.filter(q => q.id !== questionId);
       const updatedTemplate = { ...selectedTemplate, questions: updatedQuestions };
       setSelectedTemplate(updatedTemplate);
       
+      // Update templates array
       // Update templates array
       const updatedTemplates = templates.map(t => 
         t.id === selectedTemplate.id ? { ...t, questions: updatedQuestions } : t
@@ -684,6 +1057,10 @@ const QuestionsTab = () => {
 
   const handleSelectVersion = (version) => {
     setSelectedVersion(version);
+    // Reset multi-select mode when changing version
+    setIsMultiSelectMode(false);
+    setSelectedTemplates([]);
+    
     // Reset multi-select mode when changing version
     setIsMultiSelectMode(false);
     setSelectedTemplates([]);
@@ -700,17 +1077,18 @@ const QuestionsTab = () => {
   const getQuestionTypeName = (typeId) => {
     const questionType = getQuestionTypeById(typeId);
     return questionType ? questionType.display_name : 'Unknown Type';
+    const questionType = getQuestionTypeById(typeId);
+    return questionType ? questionType.display_name : 'Unknown Type';
   };
 
   return (
-    <Box sx={{ display: 'flex', height: 'calc(100vh - 180px)' }}>
+    <Box sx={{ display: 'flex', minHeight: 'calc(100vh - 180px)' }}>
       {/* Left sidebar - Version selection */}
       <Box 
         sx={{ 
           width: 240, 
           backgroundColor: '#f5f5f5', 
           boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', 
-          height: '100%',
           display: 'flex',
           flexDirection: 'column'
         }}
@@ -719,7 +1097,7 @@ const QuestionsTab = () => {
           Template Versions
         </Typography>
         
-        <Box sx={{ flex: 1, overflow: 'auto', px: 2 }}>
+        <Box sx={{ px: 2, pb: 2 }}>
           {templateVersions.map(version => (
             <Button
               key={version.id}
@@ -762,9 +1140,7 @@ const QuestionsTab = () => {
                 p: 2, 
                 mb: 2, 
                 backgroundColor: '#f5f5f5', 
-                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                height: 'auto',
-                maxHeight: '40%'
+                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
               }}
             >
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
@@ -822,7 +1198,7 @@ const QuestionsTab = () => {
                 </Box>
               </Box>
               
-              <Box sx={{ display: 'flex', height: 'calc(100% - 40px)' }}>
+              <Box sx={{ display: 'flex' }}>
                 {/* Left side - Add template form */}
                 <Box sx={{ width: '40%', pr: 2 }}>
                   <TextField
@@ -872,12 +1248,9 @@ const QuestionsTab = () => {
                 </Box>
                 
                 {/* Right side - Templates list */}
-                <Box sx={{ width: '60%', display: 'flex', flexDirection: 'column' }}>
+                <Box sx={{ width: '60%' }}>
                   <Box 
                     sx={{ 
-                      flex: 1, 
-                      overflow: 'auto', 
-                      maxHeight: 300,
                       bgcolor: 'white',
                       borderRadius: 1,
                       p: 1,
@@ -918,11 +1291,7 @@ const QuestionsTab = () => {
                 sx={{ 
                   p: 2, 
                   backgroundColor: '#f5f5f5', 
-                  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  overflow: 'hidden'
+                  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
                 }}
               >
                 <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
@@ -951,33 +1320,61 @@ const QuestionsTab = () => {
                   </Button>
                 </Box>
                 
-                <Box sx={{ flex: 1, overflow: 'auto', bgcolor: 'white', borderRadius: 1, p: 1, boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.1)' }}>
+                <Box sx={{ bgcolor: 'white', borderRadius: 1, p: 1, boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.1)' }}>
                   {selectedTemplate.questions?.length > 0 ? (
                     <DndContext 
                       sensors={sensors}
                       collisionDetection={closestCenter}
                       onDragEnd={handleDragEnd}
                     >
-                      <SortableContext 
-                        items={selectedTemplate.questions.map(q => `question-${q.id}`)}
-                        strategy={verticalListSortingStrategy}
-                      >
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                          {selectedTemplate.questions
-                            .sort((a, b) => (a.order || 0) - (b.order || 0))
-                            .map((question, index) => (
-                              <CompactQuestionItem 
-                                key={question.id}
-                                question={question}
-                                index={index}
-                                onEdit={handleOpenEdit}
-                                onDelete={handleDeleteQuestion}
-                                getQuestionTypeName={getQuestionTypeName}
-                                sectionName="question"
-                              />
-                            ))}
-                        </Box>
-                      </SortableContext>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {(() => {
+                          // Group questions by section
+                          const questionsBySection = TemplateUtils.groupQuestionsBySection(selectedTemplate.questions);
+                          const sortedSections = Object.keys(questionsBySection).sort();
+                          
+                          return sortedSections.map(sectionName => {
+                            const sectionQuestions = questionsBySection[sectionName]
+                              .sort((a, b) => (a.order || 0) - (b.order || 0));
+                            
+                            return (
+                              <Box key={sectionName} sx={{ mb: 2 }}>
+                                <Typography 
+                                  variant="h6" 
+                                  sx={{ 
+                                    mb: 1, 
+                                    color: '#633394', 
+                                    fontWeight: 'bold',
+                                    borderBottom: '2px solid #633394',
+                                    pb: 0.5
+                                  }}
+                                >
+                                  {sectionName} ({sectionQuestions.length} questions)
+                                </Typography>
+                                
+                                <SortableContext 
+                                  items={sectionQuestions.map(q => `${sectionName}-${q.id}`)}
+                                  strategy={verticalListSortingStrategy}
+                                >
+                                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                    {sectionQuestions.map((question, index) => (
+                                      <CompactQuestionItem 
+                                        key={question.id}
+                                        question={question}
+                                        index={index}
+                                        onEdit={handleOpenEdit}
+                                        onDelete={handleDeleteQuestion}
+                                        getQuestionTypeName={getQuestionTypeName}
+                                        sectionName={sectionName}
+                                      />
+                                    ))}
+                                  </Box>
+                                </SortableContext>
+                              </Box>
+                            );
+                          });
+                        })()}
+                      </Box>
                     </DndContext>
                   ) : (
                     <Alert severity="info">No questions added yet. Click "Add Question" to create one.</Alert>
@@ -987,7 +1384,7 @@ const QuestionsTab = () => {
             )}
           </>
         ) : (
-          <Paper sx={{ p: 4, textAlign: 'center', backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', flex: 1 }}>
+          <Paper sx={{ p: 4, textAlign: 'center', backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
             <Typography variant="h6" color="text.secondary">
               Select a template version from the left panel to manage templates and questions
             </Typography>
