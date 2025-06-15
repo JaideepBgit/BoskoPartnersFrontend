@@ -132,11 +132,73 @@ const TemplateUtils = {
       return acc;
     }, {});
   },
+
+  // Group questions by section with ordering
+  groupQuestionsBySectionWithOrder: (questions, sectionOrder = {}) => {
+    const grouped = TemplateUtils.groupQuestionsBySection(questions);
+    
+    // Sort sections by their order
+    const sortedSections = Object.keys(grouped).sort((a, b) => {
+      const orderA = sectionOrder[a] !== undefined ? sectionOrder[a] : 999;
+      const orderB = sectionOrder[b] !== undefined ? sectionOrder[b] : 999;
+      return orderA - orderB;
+    });
+    
+    const orderedSections = {};
+    sortedSections.forEach(sectionName => {
+      orderedSections[sectionName] = grouped[sectionName];
+    });
+    
+    return orderedSections;
+  },
+
+  // Get existing sections from questions
+  getExistingSections: (questions, sectionOrder = {}) => {
+    const sections = new Set();
+    (questions || []).forEach(q => {
+      const section = q.section || 'Uncategorized';
+      if (section !== 'Uncategorized') {
+        sections.add(section);
+      }
+    });
+    
+    // Sort sections by their order if provided, otherwise alphabetically
+    return Array.from(sections).sort((a, b) => {
+      const orderA = sectionOrder[a] !== undefined ? sectionOrder[a] : 999;
+      const orderB = sectionOrder[b] !== undefined ? sectionOrder[b] : 999;
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      return a.localeCompare(b);
+    });
+  },
+
+  // Fetch template sections
+  fetchTemplateSections: async (templateId) => {
+    try {
+      const data = await InventoryService.getTemplateSections(templateId);
+      return data;
+    } catch (err) {
+      console.error('Error fetching template sections:', err.response || err);
+      return [];
+    }
+  },
+
+  // Update template sections order
+  updateTemplateSectionsOrder: async (templateId, sections) => {
+    try {
+      await InventoryService.updateTemplateSections(templateId, sections);
+      return true;
+    } catch (err) {
+      console.error('Error updating template sections:', err.response || err);
+      return false;
+    }
+  },
   
 
   // Calculate survey statistics
-  calculateSurveyStats: (questions) => {
-    const sections = TemplateUtils.groupQuestionsBySection(questions);
+  calculateSurveyStats: (questions, sectionOrder = {}) => {
+    const sections = TemplateUtils.groupQuestionsBySectionWithOrder(questions, sectionOrder);
     const sectionCount = Object.keys(sections).length || 0;
     const questionCount = questions?.length || 0;
     // Estimate 1 minute per question as default

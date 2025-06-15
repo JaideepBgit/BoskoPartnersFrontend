@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -14,7 +14,8 @@ import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  DragIndicator as DragIndicatorIcon
+  DragIndicator as DragIndicatorIcon,
+  Reorder as ReorderIcon
 } from '@mui/icons-material';
 import {
   DndContext,
@@ -35,6 +36,7 @@ import {
 
 import TemplateUtils from './shared/TemplateUtils';
 import QuestionDialog from './QuestionDialog';
+import SectionOrderDialog from './SectionOrderDialog';
 import { getQuestionTypeById } from '../../../config/questionTypes';
 
 // Compact Question Item Component for question list display
@@ -362,9 +364,13 @@ const TemplateChip = ({
   );
 };
 
-const QuestionsTab = () => {
-  const [templateVersions, setTemplateVersions] = useState([]);
-  const [templates, setTemplates] = useState([]);
+const QuestionsTab = ({ 
+  templateVersions: parentTemplateVersions = [], 
+  templates: parentTemplates = [], 
+  onRefreshData 
+}) => {
+  const [templateVersions, setTemplateVersions] = useState(parentTemplateVersions);
+  const [templates, setTemplates] = useState(parentTemplates);
   const [selectedVersion, setSelectedVersion] = useState(null);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [newTemplateData, setNewTemplateData] = useState({
@@ -387,6 +393,10 @@ const QuestionsTab = () => {
     config: null
   });
 
+  // Section ordering state
+  const [openSectionDialog, setOpenSectionDialog] = useState(false);
+  const [templateSections, setTemplateSections] = useState([]);
+
   // Drag and drop sensors
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -396,20 +406,41 @@ const QuestionsTab = () => {
     }),
   );
 
+  // Update local state when parent data changes
   useEffect(() => {
-    fetchTemplateVersions();
-    fetchTemplates();
-  }, []);
+    setTemplateVersions(parentTemplateVersions);
+  }, [parentTemplateVersions]);
 
-  const fetchTemplateVersions = async () => {
-    const data = await TemplateUtils.fetchTemplateVersions();
-    setTemplateVersions(data);
-  };
+  useEffect(() => {
+    setTemplates(parentTemplates);
+  }, [parentTemplates]);
 
-  const fetchTemplates = async () => {
-    const data = await TemplateUtils.fetchTemplates();
-    setTemplates(data);
-  };
+  useEffect(() => {
+    // Initial data fetch if parent doesn't provide data
+    if (parentTemplateVersions.length === 0 && parentTemplates.length === 0) {
+      fetchTemplateVersions();
+      fetchTemplates();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parentTemplateVersions.length, parentTemplates.length]);
+
+  const fetchTemplateVersions = useCallback(async () => {
+    if (onRefreshData) {
+      onRefreshData(); // Use parent's refresh function
+    } else {
+      const data = await TemplateUtils.fetchTemplateVersions();
+      setTemplateVersions(data);
+    }
+  }, [onRefreshData]);
+
+  const fetchTemplates = useCallback(async () => {
+    if (onRefreshData) {
+      onRefreshData(); // Use parent's refresh function
+    } else {
+      const data = await TemplateUtils.fetchTemplates();
+      setTemplates(data);
+    }
+  }, [onRefreshData]);
 
   const fetchTemplate = async (id) => {
     const data = await TemplateUtils.fetchTemplate(id);
@@ -635,6 +666,58 @@ const QuestionsTab = () => {
       config: null
     });
     setOpenQDialog(true);
+  };
+
+  const handleOpenSectionOrder = async () => {
+    if (!selectedTemplate) return;
+    
+    try {
+      // Get sections from the template
+      const sections = await TemplateUtils.fetchTemplateSections(selectedTemplate.id);
+      
+      // If no sections from backend, derive from questions
+      if (sections.length === 0) {
+        const sectionOrder = selectedTemplate.sections || {};
+        const questionsBySection = TemplateUtils.groupQuestionsBySectionWithOrder(selectedTemplate.questions, sectionOrder);
+        const derivedSections = Object.keys(questionsBySection).map((sectionName, index) => ({
+          name: sectionName,
+          order: sectionOrder[sectionName] !== undefined ? sectionOrder[sectionName] : index,
+          questionCount: questionsBySection[sectionName].length
+        }));
+        setTemplateSections(derivedSections.sort((a, b) => a.order - b.order));
+      } else {
+        // Add question count to sections
+        const sectionOrder = selectedTemplate.sections || {};
+        const questionsBySection = TemplateUtils.groupQuestionsBySectionWithOrder(selectedTemplate.questions, sectionOrder);
+        const sectionsWithCount = sections.map(section => ({
+          ...section,
+          questionCount: questionsBySection[section.name]?.length || 0
+        }));
+        setTemplateSections(sectionsWithCount);
+      }
+      
+      setOpenSectionDialog(true);
+    } catch (error) {
+      console.error('Error loading sections:', error);
+    }
+  };
+
+  const handleSaveSectionOrder = async (orderedSections) => {
+    if (!selectedTemplate) return;
+    
+    try {
+      const success = await TemplateUtils.updateTemplateSectionsOrder(selectedTemplate.id, orderedSections);
+      if (success) {
+        console.log('Section order updated successfully');
+        setOpenSectionDialog(false);
+        // Optionally refresh the template to reflect new section order
+        fetchTemplate(selectedTemplate.id);
+      } else {
+        console.error('Failed to update section order');
+      }
+    } catch (error) {
+      console.error('Error updating section order:', error);
+    }
   };
 
   const handleOpenEdit = (q) => {
@@ -961,26 +1044,48 @@ const QuestionsTab = () => {
                   <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold' }}>
                     Questions for {selectedTemplate.survey_code}
                   </Typography>
-                  <Button 
-                    variant="contained" 
-                    startIcon={<AddIcon />} 
-                    onClick={handleOpenAdd}
-                    sx={{ 
-                      backgroundColor: '#633394', 
-                      transition: 'all 0.2s ease-in-out',
-                      '&:hover': { 
-                        backgroundColor: '#7c52a5',
-                        transform: 'translateY(-1px)',
-                        boxShadow: '0 4px 8px rgba(99, 51, 148, 0.3)',
-                      },
-                      '&:active': {
-                        transform: 'translateY(0)',
-                        boxShadow: '0 2px 4px rgba(99, 51, 148, 0.3)',
-                      }
-                    }}
-                  >
-                    Add Question
-                  </Button>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button 
+                      variant="outlined" 
+                      startIcon={<ReorderIcon />} 
+                      onClick={handleOpenSectionOrder}
+                      sx={{ 
+                        borderColor: '#633394',
+                        color: '#633394',
+                        transition: 'all 0.2s ease-in-out',
+                        '&:hover': { 
+                          borderColor: '#7c52a5',
+                          backgroundColor: 'rgba(99, 51, 148, 0.04)',
+                          transform: 'translateY(-1px)',
+                        },
+                        '&:active': {
+                          transform: 'translateY(0)',
+                        }
+                      }}
+                    >
+                      Reorder Sections
+                    </Button>
+                    <Button 
+                      variant="contained" 
+                      startIcon={<AddIcon />} 
+                      onClick={handleOpenAdd}
+                      sx={{ 
+                        backgroundColor: '#633394', 
+                        transition: 'all 0.2s ease-in-out',
+                        '&:hover': { 
+                          backgroundColor: '#7c52a5',
+                          transform: 'translateY(-1px)',
+                          boxShadow: '0 4px 8px rgba(99, 51, 148, 0.3)',
+                        },
+                        '&:active': {
+                          transform: 'translateY(0)',
+                          boxShadow: '0 2px 4px rgba(99, 51, 148, 0.3)',
+                        }
+                      }}
+                    >
+                      Add Question
+                    </Button>
+                  </Box>
                 </Box>
                 
                 <Box sx={{ bgcolor: 'white', borderRadius: 1, p: 1, boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.1)' }}>
@@ -992,11 +1097,11 @@ const QuestionsTab = () => {
                     >
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                         {(() => {
-                          // Group questions by section
-                          const questionsBySection = TemplateUtils.groupQuestionsBySection(selectedTemplate.questions);
-                          const sortedSections = Object.keys(questionsBySection).sort();
+                          // Group questions by section with ordering
+                          const sectionOrder = selectedTemplate.sections || {};
+                          const questionsBySection = TemplateUtils.groupQuestionsBySectionWithOrder(selectedTemplate.questions, sectionOrder);
                           
-                          return sortedSections.map(sectionName => {
+                          return Object.keys(questionsBySection).map(sectionName => {
                             const sectionQuestions = questionsBySection[sectionName]
                               .sort((a, b) => (a.order || 0) - (b.order || 0));
                             
@@ -1064,6 +1169,15 @@ const QuestionsTab = () => {
         questionData={questionData}
         setQuestionData={setQuestionData}
         selectedTemplate={selectedTemplate}
+      />
+
+      {/* Section Order Dialog */}
+      <SectionOrderDialog
+        open={openSectionDialog}
+        onClose={() => setOpenSectionDialog(false)}
+        onSave={handleSaveSectionOrder}
+        sections={templateSections}
+        templateName={selectedTemplate?.survey_code || ''}
       />
     </Box>
   );

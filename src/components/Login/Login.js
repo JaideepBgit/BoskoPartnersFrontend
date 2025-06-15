@@ -57,6 +57,9 @@ const LoginPage = ({ onLogin }) => {
       if (userData.organization_id) {
         localStorage.setItem('organizationId', userData.organization_id);
       }
+      if (userData.survey_code) {
+        localStorage.setItem('surveyCode', userData.survey_code);
+      }
 
       // notify parent (so Navbar can re-check user)
       if (onLogin) onLogin();

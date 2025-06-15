@@ -9,6 +9,8 @@ import UserDashboard from './components/Dashboard/UserDashboard';
 import AdminDashboard from './components/Dashboard/AdminDashboard';
 import InventoryPage from './components/Admin/Inventory/InventoryPage';
 import UserManagementMain from './components/UserManagement/UserManagementMain';
+import SurveysPage from './components/Surveys/SurveysPage';
+import SurveyTaking from './components/Survey/SurveyTaking';
 import './App.css';
 import './styles/form.css';
 
@@ -70,8 +72,8 @@ function App() {
 }
 
 function Main({ isAuthenticated, userRole, login, logout }) {
-  const location = useLocation();
-  const isLoginPage = location.pathname === '/' || location.pathname === '/login';
+  // const location = useLocation();
+  // const isLoginPage = location.pathname === '/' || location.pathname === '/login';
   
   return (
     <div>
@@ -118,6 +120,20 @@ function Main({ isAuthenticated, userRole, login, logout }) {
           </ProtectedRoute>
         } />
         
+        {/* Surveys Route */}
+        <Route path="/surveys" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <SurveysPage onLogout={logout} />
+          </ProtectedRoute>
+        } />
+        
+        {/* Survey Taking Route */}
+        <Route path="/survey" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <SurveyTaking onLogout={logout} />
+          </ProtectedRoute>
+        } />
+        
         {/* Redirect root to login */}
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
@@ -126,6 +142,7 @@ function Main({ isAuthenticated, userRole, login, logout }) {
 }
 
 function ProtectedRoute({ isAuthenticated, children }) {
+  console.log('🔒 ProtectedRoute - isAuthenticated:', isAuthenticated);
   return isAuthenticated ? children : <Navigate to="/login" />;
 }
 
