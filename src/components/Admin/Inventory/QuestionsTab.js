@@ -4,11 +4,17 @@ import {
   Typography,
   Button,
   IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Checkbox,
   Alert,
   Chip,
   Paper,
-  TextField,
-  Checkbox
+  Grid,
+  CircularProgress
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -61,7 +67,7 @@ const CompactQuestionItem = ({ question, index, onEdit, onDelete, getQuestionTyp
       ref={setNodeRef} 
       style={style}
       sx={{ 
-        mb: 0.5, 
+        mb: 0.5,
         backgroundColor: '#fff',
         border: isDragging ? '2px dashed #633394' : '1px solid #e0e0e0',
         borderRadius: 1,
@@ -198,8 +204,8 @@ const TemplateChip = ({
   const [editedName, setEditedName] = useState(template.survey_code);
 
   const handleClick = (e) => {
-    if (isEditing) {
-      return; // Don't select when editing
+    if (isMultiSelectMode || isEditing) {
+      return; // Don't select when in multi-select mode or editing
     }
     if (isMultiSelectMode) {
       onToggleSelect();
@@ -383,14 +389,10 @@ const QuestionsTab = ({
   
   // Question dialog state
   const [openQDialog, setOpenQDialog] = useState(false);
-  const [editingQuestion, setEditingQuestion] = useState(null);
-  const [questionData, setQuestionData] = useState({
-    question_text: '',
-    question_type_id: '',
-    section: '',
-    order: 0,
-    is_required: false,
-    config: null
+  const [selectedQuestion, setSelectedQuestion] = useState(null);
+  const [isEdit, setIsEdit] = useState(false);
+  const [formData, setFormData] = useState({
+    questions: []
   });
 
   // Section ordering state
@@ -553,11 +555,11 @@ const QuestionsTab = ({
   };
   
   const handleToggleSelectTemplate = (templateId) => {
-    if (selectedTemplates.includes(templateId)) {
-      setSelectedTemplates(prev => prev.filter(id => id !== templateId));
-    } else {
-      setSelectedTemplates(prev => [...prev, templateId]);
-    }
+    setSelectedTemplates(prev => 
+      prev.includes(templateId)
+        ? prev.filter(id => id !== templateId)
+        : [...prev, templateId]
+    );
   };
   
   const toggleMultiSelectMode = () => {
@@ -572,82 +574,47 @@ const QuestionsTab = ({
     
     if (!active || !over || active.id === over.id || !selectedTemplate) return;
     
-    // Extract section and question IDs from the drag identifiers
+    // Extract question IDs from the drag identifiers
     const activeId = active.id.toString();
     const overId = over.id.toString();
     
-    // Parse the IDs to get section and question info
-    // Format is "section-questionId", but section might contain hyphens
-    const activeLastHyphenIndex = activeId.lastIndexOf('-');
-    const overLastHyphenIndex = overId.lastIndexOf('-');
+    const activeQuestionId = parseInt(activeId.split('-').pop());
+    const overQuestionId = parseInt(overId.split('-').pop());
     
-    const activeSection = activeId.substring(0, activeLastHyphenIndex);
-    const activeQuestionId = activeId.substring(activeLastHyphenIndex + 1);
-    const overSection = overId.substring(0, overLastHyphenIndex);
-    const overQuestionId = overId.substring(overLastHyphenIndex + 1);
-    
-    // Only allow reordering within the same section
-    if (activeSection !== overSection) {
-      return;
-    }
-    
-    const activeQuestionIdNum = parseInt(activeQuestionId);
-    const overQuestionIdNum = parseInt(overQuestionId);
-    
-    // Get questions for the specific section
-    const sectionQuestions = selectedTemplate.questions.filter(q => 
-      (q.section || 'Uncategorized') === activeSection
-    );
-    
-    // Find question indices within the section
-    const oldIndex = sectionQuestions.findIndex(q => q.id === activeQuestionIdNum);
-    const newIndex = sectionQuestions.findIndex(q => q.id === overQuestionIdNum);
+    // Find question indices
+    const questions = [...selectedTemplate.questions];
+    const oldIndex = questions.findIndex(q => q.id === activeQuestionId);
+    const newIndex = questions.findIndex(q => q.id === overQuestionId);
     
     if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
     
-    // Reorder questions within the section
-    const reorderedSectionQuestions = arrayMove(sectionQuestions, oldIndex, newIndex);
+    // Reorder questions
+    const reorderedQuestions = arrayMove(questions, oldIndex, newIndex);
     
-    // Update the order property for questions in this section
-    const updatedSectionQuestions = reorderedSectionQuestions.map((q, index) => ({
+    // Update order property
+    const updatedQuestions = reorderedQuestions.map((q, index) => ({
       ...q,
       order: index
     }));
     
-    // Merge back with questions from other sections
-    const otherSectionQuestions = selectedTemplate.questions.filter(q => 
-      (q.section || 'Uncategorized') !== activeSection
-    );
-    
-    const allUpdatedQuestions = [...otherSectionQuestions, ...updatedSectionQuestions]
-      .sort((a, b) => {
-        // First sort by section, then by order within section
-        const sectionA = a.section || 'Uncategorized';
-        const sectionB = b.section || 'Uncategorized';
-        if (sectionA !== sectionB) {
-          return sectionA.localeCompare(sectionB);
-        }
-        return (a.order || 0) - (b.order || 0);
-      });
-    
     // Update locally
     setSelectedTemplate(prev => ({
       ...prev,
-      questions: allUpdatedQuestions
+      questions: updatedQuestions
     }));
     
     // Update templates array
     setTemplates(prev => 
       prev.map(t => 
         t.id === selectedTemplate.id 
-          ? { ...t, questions: allUpdatedQuestions } 
+          ? { ...t, questions: updatedQuestions } 
           : t
       )
     );
     
     // Save to backend
     try {
-      await TemplateUtils.updateTemplateQuestions(selectedTemplate.id, allUpdatedQuestions);
+      await TemplateUtils.updateTemplateQuestions(selectedTemplate.id, updatedQuestions);
     } catch (error) {
       console.error('Error updating question order:', error);
       // Revert on error
@@ -656,14 +623,9 @@ const QuestionsTab = ({
   };
 
   const handleOpenAdd = () => {
-    setEditingQuestion(null);
-    setQuestionData({
-      question_text: '',
-      question_type_id: '',
-      section: 'Section 1',
-      order: selectedTemplate?.questions?.length || 0,
-      is_required: false,
-      config: null
+    setSelectedQuestion(null);
+    setFormData({
+      questions: []
     });
     setOpenQDialog(true);
   };
@@ -721,14 +683,9 @@ const QuestionsTab = ({
   };
 
   const handleOpenEdit = (q) => {
-    setEditingQuestion(q);
-    setQuestionData({
-      question_text: q.question_text,
-      question_type_id: q.question_type_id,
-      section: q.section || 'Uncategorized',
-      order: q.order,
-      is_required: q.is_required,
-      config: q.config || null
+    setSelectedQuestion(q);
+    setFormData({
+      questions: [q]
     });
     setOpenQDialog(true);
   };
@@ -744,9 +701,9 @@ const QuestionsTab = ({
     
     let updatedQuestions = [...(selectedTemplate.questions || [])];
     
-    if (editingQuestion) {
+    if (selectedQuestion) {
       // Editing existing question
-      const index = updatedQuestions.findIndex(q => q.id === editingQuestion.id);
+      const index = updatedQuestions.findIndex(q => q.id === selectedQuestion.id);
       if (index !== -1) {
         updatedQuestions[index] = { ...updatedQuestions[index], ...payload };
       }
@@ -759,7 +716,7 @@ const QuestionsTab = ({
       updatedQuestions.push({ 
         id: newId, 
         ...payload,
-        order: sectionQuestions.length
+        order: updatedQuestions.length
       });
     }
     
@@ -1165,9 +1122,9 @@ const QuestionsTab = ({
         open={openQDialog}
         onClose={handleCloseDialog}
         onSave={handleSaveQuestion}
-        editingQuestion={editingQuestion}
-        questionData={questionData}
-        setQuestionData={setQuestionData}
+        editingQuestion={selectedQuestion}
+        questionData={formData}
+        setQuestionData={setFormData}
         selectedTemplate={selectedTemplate}
       />
 

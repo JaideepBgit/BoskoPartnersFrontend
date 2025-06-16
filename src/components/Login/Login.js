@@ -20,8 +20,7 @@ const LoginPage = ({ onLogin }) => {
   const [success, setSuccess]   = useState('');
   const navigate                = useNavigate();
 
-  const backgroundImage = process.env.PUBLIC_URL + '/assets/chruch_school.jpg';
-  const logoImage       = process.env.PUBLIC_URL + '/assets/saurara-high-resolution-logo-transparent.png';
+  const logoImage = process.env.PUBLIC_URL + '/assets/saurara-high-resolution-logo-transparent.png';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -86,13 +85,22 @@ const LoginPage = ({ onLogin }) => {
   return (
     <Box
       sx={{
-        backgroundImage: `url(${backgroundImage})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        background: 'linear-gradient(135deg, #3B1C55 0%, #633394 25%, #61328E 50%, #967CB2 75%, #FBFAFA 100%)',
         height: '100vh',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        position: 'relative',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'radial-gradient(ellipse at top left, rgba(59, 28, 85, 0.1) 0%, transparent 50%), radial-gradient(ellipse at bottom right, rgba(150, 124, 178, 0.1) 0%, transparent 50%)',
+          pointerEvents: 'none'
+        }
       }}
     >
       <Container maxWidth="xs" sx={{ display: 'flex', alignItems: 'center', height: '100vh' }}>
@@ -101,10 +109,14 @@ const LoginPage = ({ onLogin }) => {
           onSubmit={handleSubmit}
           sx={{
             width: '100%',
-            bgcolor: 'white',
+            bgcolor: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(10px)',
             p: 4,
-            boxShadow: 3,
-            borderRadius: 2
+            boxShadow: '0 20px 40px rgba(59, 28, 85, 0.15)',
+            borderRadius: 3,
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            position: 'relative',
+            zIndex: 1
           }}
         >
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
