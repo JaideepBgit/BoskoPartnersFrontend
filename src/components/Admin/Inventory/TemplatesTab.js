@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Button,
@@ -9,8 +9,6 @@ import {
   CardContent,
   Divider,
   Chip,
-  List,
-  ListItem,
   Alert,
   LinearProgress,
   RadioGroup,
@@ -22,9 +20,6 @@ import {
   Checkbox,
   IconButton,
   FormGroup,
-  InputLabel,
-  Select,
-  MenuItem,
   Table,
   TableBody,
   TableCell,
@@ -40,13 +35,14 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CloseIcon from '@mui/icons-material/Close';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import TemplateUtils from './shared/TemplateUtils';
-import Slider from '@mui/material/Slider';
-import UploadIcon from '@mui/icons-material/Upload';
-import AttachmentIcon from '@mui/icons-material/Attachment';
 
-const TemplatesTab = () => {
-  const [templateVersions, setTemplateVersions] = useState([]);
-  const [templates, setTemplates] = useState([]);
+const TemplatesTab = ({ 
+  templateVersions: parentTemplateVersions = [], 
+  templates: parentTemplates = [], 
+  onRefreshData 
+}) => {
+  const [templateVersions, setTemplateVersions] = useState(parentTemplateVersions);
+  const [templates, setTemplates] = useState(parentTemplates);
   const [selectedVersion, setSelectedVersion] = useState(null);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [selectedSection, setSelectedSection] = useState(null);
@@ -54,33 +50,36 @@ const TemplatesTab = () => {
   const [responses, setResponses] = useState({});
   const [surveyProgress, setSurveyProgress] = useState(0);
 
-  // Add question types definition that matches backend
-  const questionTypes = [
-    { id: 1, name: 'short_text' },
-    { id: 2, name: 'single_choice' },
-    { id: 3, name: 'yes_no' },
-    { id: 4, name: 'likert5' },
-    { id: 5, name: 'multi_select' },
-    { id: 6, name: 'paragraph' },
-    { id: 7, name: 'numeric' },
-    { id: 8, name: 'percentage' },
-    { id: 9, name: 'year_matrix' }
-  ];
+  // Add question types definition that matches backend - commented out as unused
+  // const questionTypes = [
+  //   { id: 1, name: 'short_text' },
+  //   { id: 2, name: 'single_choice' },
+  //   { id: 3, name: 'yes_no' },
+  //   { id: 4, name: 'likert5' },
+  //   { id: 5, name: 'multi_select' },
+  //   { id: 6, name: 'paragraph' },
+  //   { id: 7, name: 'numeric' },
+  //   { id: 8, name: 'percentage' },
+  //   { id: 9, name: 'year_matrix' }
+  // ];
+
+  // Update local state when parent data changes
+  useEffect(() => {
+    setTemplateVersions(parentTemplateVersions);
+  }, [parentTemplateVersions]);
 
   useEffect(() => {
-    fetchTemplateVersions();
-    fetchTemplates();
+    setTemplates(parentTemplates);
+  }, [parentTemplates]);
 
-    // Load any saved responses from localStorage
-    const savedResponses = localStorage.getItem('surveyResponses');
-    if (savedResponses) {
-      try {
-        setResponses(JSON.parse(savedResponses));
-      } catch (e) {
-        console.error('Error loading saved responses', e);
-      }
+  useEffect(() => {
+    // Initial data fetch if parent doesn't provide data
+    if (parentTemplateVersions.length === 0 && parentTemplates.length === 0) {
+      fetchTemplateVersions();
+      fetchTemplates();
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parentTemplateVersions.length, parentTemplates.length]);
 
   // Save responses to localStorage whenever they change
   useEffect(() => {
@@ -99,15 +98,23 @@ const TemplatesTab = () => {
     }
   }, [responses, selectedSection]);
 
-  const fetchTemplateVersions = async () => {
-    const data = await TemplateUtils.fetchTemplateVersions();
-    setTemplateVersions(data);
-  };
+  const fetchTemplateVersions = useCallback(async () => {
+    if (onRefreshData) {
+      onRefreshData(); // Use parent's refresh function
+    } else {
+      const data = await TemplateUtils.fetchTemplateVersions();
+      setTemplateVersions(data);
+    }
+  }, [onRefreshData]);
 
-  const fetchTemplates = async () => {
-    const data = await TemplateUtils.fetchTemplates();
-    setTemplates(data);
-  };
+  const fetchTemplates = useCallback(async () => {
+    if (onRefreshData) {
+      onRefreshData(); // Use parent's refresh function
+    } else {
+      const data = await TemplateUtils.fetchTemplates();
+      setTemplates(data);
+    }
+  }, [onRefreshData]);
 
   const fetchTemplate = async (id) => {
     const data = await TemplateUtils.fetchTemplate(id);
@@ -195,13 +202,10 @@ const TemplatesTab = () => {
             variant="outlined"
             value={responses[question.id] || ''}
             onChange={(e) => handleResponseChange(question.id, e.target.value)}
-            placeholder={question.config?.placeholder || 'Enter your answer here...'}
-            inputProps={{
-              maxLength: question.config?.max_length || 255
-            }}
+            placeholder={question.config?.placeholder || ''}
+            inputProps={{ maxLength: question.config?.max_length || 255 }}
             sx={{ mt: 2 }}
             required={question.is_required}
-            helperText={question.config?.max_length ? `Maximum ${question.config.max_length} characters` : ''}
           />
         );
       
@@ -221,27 +225,6 @@ const TemplatesTab = () => {
                   sx={{ my: 0.5 }}
                 />
               ))}
-              {question.config?.allow_other && (
-                <FormControlLabel
-                  value="other"
-                  control={<Radio />}
-                  label={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <span>{question.config?.other_text || 'Other (please specify)'}</span>
-                      {responses[question.id] === 'other' && (
-                        <TextField
-                          size="small"
-                          placeholder="Please specify..."
-                          value={responses[`${question.id}_other`] || ''}
-                          onChange={(e) => handleResponseChange(`${question.id}_other`, e.target.value)}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      )}
-                    </Box>
-                  }
-                  sx={{ my: 0.5 }}
-                />
-              )}
             </RadioGroup>
           </FormControl>
         );
@@ -277,7 +260,6 @@ const TemplatesTab = () => {
               onChange={(e) => handleResponseChange(question.id, e.target.value)}
             >
               {[1, 2, 3, 4, 5].map((value) => {
-                // Use custom labels if available, otherwise fall back to default
                 const defaultLabels = {
                   1: 'None',
                   2: 'A little', 
@@ -287,15 +269,14 @@ const TemplatesTab = () => {
                 };
                 
                 const labels = question.config?.scale_labels || defaultLabels;
-                const displayValue = question.config?.reverse_scale ? (6 - value) : value;
-                const labelText = labels[displayValue] || defaultLabels[displayValue] || `Option ${displayValue}`;
+                const labelText = labels[value] || defaultLabels[value] || `Option ${value}`;
                 
                 return (
                   <FormControlLabel
                     key={value}
-                    value={displayValue.toString()}
+                    value={value.toString()}
                     control={<Radio />}
-                    label={`${displayValue} - ${labelText}`}
+                    label={`${value} - ${labelText}`}
                     sx={{ my: 0.5 }}
                   />
                 );
@@ -337,40 +318,6 @@ const TemplatesTab = () => {
                   />
                 );
               })}
-              {question.config?.allow_other && (
-                <FormControlLabel
-                  control={
-                    <Checkbox 
-                      checked={(responses[question.id] || []).includes('other')}
-                      onChange={(e) => {
-                        const current = responses[question.id] || [];
-                        let newValue;
-                        if (e.target.checked) {
-                          newValue = [...current, 'other'];
-                        } else {
-                          newValue = current.filter(item => item !== 'other');
-                        }
-                        handleResponseChange(question.id, newValue);
-                      }}
-                    />
-                  }
-                  label={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <span>{question.config?.other_text || 'Other (please specify)'}</span>
-                      {(responses[question.id] || []).includes('other') && (
-                        <TextField
-                          size="small"
-                          placeholder="Please specify..."
-                          value={responses[`${question.id}_other`] || ''}
-                          onChange={(e) => handleResponseChange(`${question.id}_other`, e.target.value)}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      )}
-                    </Box>
-                  }
-                  sx={{ my: 0.5 }}
-                />
-              )}
             </FormGroup>
           </FormControl>
         );
@@ -385,18 +332,10 @@ const TemplatesTab = () => {
             rows={4}
             value={responses[question.id] || ''}
             onChange={(e) => handleResponseChange(question.id, e.target.value)}
-            placeholder={question.config?.placeholder || 'Enter your detailed response here...'}
-            inputProps={{
-              maxLength: question.config?.max_length || 2000,
-              minLength: question.config?.min_length || 0
-            }}
+            placeholder={question.config?.placeholder || ''}
+            inputProps={{ maxLength: question.config?.max_length || 2000 }}
             sx={{ mt: 2 }}
             required={question.is_required}
-            helperText={
-              question.config?.character_counter 
-                ? `${(responses[question.id] || '').length}/${question.config?.max_length || 2000} characters`
-                : question.config?.max_length ? `Maximum ${question.config.max_length} characters` : ''
-            }
           />
         );
       
@@ -417,11 +356,6 @@ const TemplatesTab = () => {
             }}
             sx={{ mt: 2 }}
             required={question.is_required}
-            helperText={
-              question.config?.min_value !== null && question.config?.max_value !== null
-                ? `Range: ${question.config.min_value} to ${question.config.max_value}${question.config?.unit_label ? ` ${question.config.unit_label}` : ''}`
-                : question.config?.unit_label ? `Unit: ${question.config.unit_label}` : ''
-            }
           />
         );
       
@@ -454,7 +388,7 @@ const TemplatesTab = () => {
                     inputProps={{
                       min: 0,
                       max: question.config?.total_percentage || 100,
-                      step: question.config?.allow_decimals ? 0.1 : 1
+                      step: 1
                     }}
                     sx={{ width: 100 }}
                     size="small"
@@ -463,36 +397,29 @@ const TemplatesTab = () => {
                 </Box>
               );
             })}
-            {question.config?.show_running_total && (
-              <Typography variant="body2" sx={{ mt: 1, color: '#666' }}>
-                Total: {Object.values(responses[question.id] || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0)}%
-              </Typography>
-            )}
+            <Typography variant="body2" sx={{ mt: 1, color: '#666' }}>
+              Total: {Object.values(responses[question.id] || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0)}%
+            </Typography>
           </Box>
         );
       
       case 9: // year_matrix
         return (
           <Box sx={{ mt: 2 }}>
-            <Typography variant="body2" gutterBottom sx={{ mb: 2 }}>
-              Complete the information for each year from {question.config?.start_year} to {question.config?.end_year}
+            <Typography variant="body2" gutterBottom>
+              Year Matrix ({question.config?.start_year || 2024} - {question.config?.end_year || 2029})
             </Typography>
-            <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
+            <TableContainer component={Paper} sx={{ mt: 1 }}>
               <Table size="small">
                 <TableHead>
                   <TableRow>
                     <TableCell>Item</TableCell>
-                    {(() => {
-                      const startYear = question.config?.start_year || new Date().getFullYear();
-                      const endYear = question.config?.end_year || new Date().getFullYear() + 5;
-                      const years = [];
-                      for (let year = startYear; year <= endYear; year++) {
-                        years.push(year);
-                      }
-                      return years.map(year => (
-                        <TableCell key={year} align="center">{year}</TableCell>
-                      ));
-                    })()}
+                    {Array.from(
+                      { length: (question.config?.end_year || 2029) - (question.config?.start_year || 2024) + 1 },
+                      (_, i) => (question.config?.start_year || 2024) + i
+                    ).map(year => (
+                      <TableCell key={year} align="center">{year}</TableCell>
+                    ))}
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -503,35 +430,30 @@ const TemplatesTab = () => {
                     return (
                       <TableRow key={rowIdx}>
                         <TableCell>{rowLabel}</TableCell>
-                        {(() => {
-                          const startYear = question.config?.start_year || new Date().getFullYear();
-                          const endYear = question.config?.end_year || new Date().getFullYear() + 5;
-                          const years = [];
-                          for (let year = startYear; year <= endYear; year++) {
-                            years.push(year);
-                          }
-                          return years.map(year => {
-                            const currentResponses = responses[question.id] || {};
-                            const cellKey = `${rowValue}_${year}`;
-                            
-                            return (
-                              <TableCell key={year} align="center">
-                                <TextField
-                                  size="small"
-                                  type={question.config?.input_type === 'numeric' ? 'number' : 'text'}
-                                  value={currentResponses[cellKey] || ''}
-                                  onChange={(e) => {
-                                    handleResponseChange(question.id, {
-                                      ...currentResponses,
-                                      [cellKey]: e.target.value
-                                    });
-                                  }}
-                                  sx={{ width: 80 }}
-                                />
-                              </TableCell>
-                            );
-                          });
-                        })()}
+                        {Array.from(
+                          { length: (question.config?.end_year || 2029) - (question.config?.start_year || 2024) + 1 },
+                          (_, i) => (question.config?.start_year || 2024) + i
+                        ).map(year => (
+                          <TableCell key={year} align="center">
+                            <TextField
+                              size="small"
+                              type="number"
+                              value={responses[question.id]?.[rowValue]?.[year] || ''}
+                              onChange={(e) => {
+                                const currentMatrix = responses[question.id] || {};
+                                const currentRow = currentMatrix[rowValue] || {};
+                                handleResponseChange(question.id, {
+                                  ...currentMatrix,
+                                  [rowValue]: {
+                                    ...currentRow,
+                                    [year]: parseFloat(e.target.value) || 0
+                                  }
+                                });
+                              }}
+                              sx={{ width: 80 }}
+                            />
+                          </TableCell>
+                        ))}
                       </TableRow>
                     );
                   })}
@@ -544,7 +466,7 @@ const TemplatesTab = () => {
       default:
         return (
           <Typography color="text.secondary" sx={{ mt: 2 }}>
-            This question type ({questionTypes.find(t => t.id === question.question_type_id)?.name}) is not yet implemented.
+            This question type is not yet implemented.
           </Typography>
         );
     }
@@ -741,7 +663,8 @@ const TemplatesTab = () => {
                   
                   {/* Calculate survey statistics */}
                   {(() => {
-                    const stats = TemplateUtils.calculateSurveyStats(selectedTemplate.questions);
+                    const sectionOrder = selectedTemplate.sections || {};
+                    const stats = TemplateUtils.calculateSurveyStats(selectedTemplate.questions, sectionOrder);
                     
                     return (
                       <Box
@@ -792,7 +715,9 @@ const TemplatesTab = () => {
                   
                   {/* Display section cards vertically */}
                   {(() => {
-                    const sections = TemplateUtils.groupQuestionsBySection(selectedTemplate.questions);
+                    // Use ordered sections from template
+                    const sectionOrder = selectedTemplate.sections || {};
+                    const sections = TemplateUtils.groupQuestionsBySectionWithOrder(selectedTemplate.questions, sectionOrder);
                     
                     return (
                       <Box sx={{ 

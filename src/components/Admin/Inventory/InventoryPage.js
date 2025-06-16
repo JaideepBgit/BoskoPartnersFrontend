@@ -24,13 +24,6 @@ import {
   Tabs,
   Tab,
   Paper,
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Divider,
-  Chip,
-  Alert,
   useMediaQuery,
   useTheme
 } from '@mui/material';
@@ -52,15 +45,17 @@ const InventoryPage = () => {
   const [selectedVersion, setSelectedVersion] = useState(null);
   const [newVersionName, setNewVersionName] = useState('');
   const [newVersionDesc, setNewVersionDesc] = useState('');
+  const [editingVersion, setEditingVersion] = useState(null);
+  const [openVersionDialog, setOpenVersionDialog] = useState(false);
   
   // Templates
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
-  const [newTemplateData, setNewTemplateData] = useState({
-    survey_code: '',
-    version_id: '',
-    questions: []
-  });
+  // const [newTemplateData, setNewTemplateData] = useState({
+  //   survey_code: '',
+  //   version_id: '',
+  //   questions: []
+  // });
   
   // Questions
   const [openQDialog, setOpenQDialog] = useState(false);
@@ -75,7 +70,6 @@ const InventoryPage = () => {
   
   // Responses
   const [responses, setResponses] = useState([]);
-  const [selectedResponse, setSelectedResponse] = useState(null);
 
   // Fetch template versions
   const fetchTemplateVersions = async () => {
@@ -144,75 +138,112 @@ const InventoryPage = () => {
     }
   };
 
+  const handleEditTemplateVersion = (version) => {
+    setEditingVersion(version);
+    setNewVersionName(version.name);
+    setNewVersionDesc(version.description || '');
+    setOpenVersionDialog(true);
+  };
+
+  const handleUpdateTemplateVersion = async () => {
+    if (!newVersionName || !editingVersion) return;
+    try {
+      await InventoryService.updateTemplateVersion(editingVersion.id, newVersionName, newVersionDesc);
+      setNewVersionName('');
+      setNewVersionDesc('');
+      setEditingVersion(null);
+      setOpenVersionDialog(false);
+      fetchTemplateVersions();
+    } catch (err) {
+      console.error('Error updating template version:', err.response || err);
+    }
+  };
+
   const handleDeleteTemplateVersion = async (versionId) => {
     try {
       await InventoryService.deleteTemplateVersion(versionId);
       setSelectedVersion(null);
-      fetchTemplateVersions();
+      setSelectedTemplate(null);
+      
+      // Refresh all data to ensure consistency across tabs
+      await Promise.all([
+        fetchTemplateVersions(),
+        fetchTemplates()
+      ]);
+      
+      console.log('Template version deleted and all data refreshed');
     } catch (err) {
       console.error('Error deleting template version:', err.response || err);
+      alert('Failed to delete template version. Please try again.');
     }
-  };
-  
-  // Template handlers
-  const handleAddTemplate = async () => {
-    if (!newTemplateData.survey_code || !newTemplateData.version_id) return;
-    try {
-      const payload = {
-        ...newTemplateData,
-        created_by: 1, // TODO: Get from auth context
-        questions: newTemplateData.questions || []
-      };
-      await InventoryService.addTemplate(payload);
-      setNewTemplateData({
-        survey_code: '',
-        version_id: '',
-        questions: []
-      });
-      fetchTemplates();
-    } catch (err) {
-      console.error('Error adding template:', err.response || err);
-    }
-  };
-  
-  const handleDeleteTemplate = async (templateId) => {
-    try {
-      await InventoryService.deleteTemplate(templateId);
-      setSelectedTemplate(null);
-      fetchTemplates();
-    } catch (err) {
-      console.error('Error deleting template:', err.response || err);
-    }
-  };
-  
-  const handleSelectTemplate = (templateId) => {
-    fetchTemplate(templateId);
   };
 
-  // question dialog
-  const handleOpenAdd = () => {
-    setEditingQuestion(null);
-    setQuestionData({ 
-      question_text: '', 
-      question_type_id: '', 
-      order: selectedTemplate?.questions?.length || 0, 
-      is_required: false,
-      config: null
-    });
-    setOpenQDialog(true);
+  const handleCloseVersionDialog = () => {
+    setOpenVersionDialog(false);
+    setEditingVersion(null);
+    setNewVersionName('');
+    setNewVersionDesc('');
   };
   
-  const handleOpenEdit = (q) => {
-    setEditingQuestion(q);
-    setQuestionData({
-      question_text: q.question_text,
-      question_type_id: q.question_type_id,
-      order: q.order,
-      is_required: q.is_required,
-      config: q.config || null
-    });
-    setOpenQDialog(true);
-  };
+  // Template handlers - commented out unused functions
+  // const handleAddTemplate = async () => {
+  //   if (!newTemplateData.survey_code || !newTemplateData.version_id) return;
+  //   try {
+  //     const payload = {
+  //       ...newTemplateData,
+  //       created_by: 1, // TODO: Get from auth context
+  //       questions: newTemplateData.questions || []
+  //     };
+  //     await InventoryService.addTemplate(payload);
+  //     setNewTemplateData({
+  //       survey_code: '',
+  //       version_id: '',
+  //       questions: []
+  //     });
+  //     fetchTemplates();
+  //   } catch (err) {
+  //     console.error('Error adding template:', err.response || err);
+  //   }
+  // };
+  
+  // const handleDeleteTemplate = async (templateId) => {
+  //   try {
+  //     await InventoryService.deleteTemplate(templateId);
+  //     setSelectedTemplate(null);
+  //     fetchTemplates();
+  //   } catch (err) {
+  //     console.error('Error deleting template:', err.response || err);
+  //   }
+  // };
+  
+  // const handleSelectTemplate = (templateId) => {
+  //   fetchTemplate(templateId);
+  // };
+
+  // question dialog - commented out unused functions
+  // const handleOpenAdd = () => {
+  //   setEditingQuestion(null);
+  //   setQuestionData({ 
+  //     question_text: '', 
+  //     question_type_id: '', 
+  //     order: selectedTemplate?.questions?.length || 0, 
+  //     is_required: false,
+  //     config: null
+  //   });
+  //   setOpenQDialog(true);
+  // };
+  
+  // const handleOpenEdit = (q) => {
+  //   setEditingQuestion(q);
+  //   setQuestionData({
+  //     question_text: q.question_text,
+  //     question_type_id: q.question_type_id,
+  //     order: q.order,
+  //     is_required: q.is_required,
+  //     config: q.config || null
+  //   });
+  //   setOpenQDialog(true);
+  // };
   
   const handleCloseDialog = () => {
     setOpenQDialog(false);
@@ -257,20 +288,20 @@ const InventoryPage = () => {
     }
   };
 
-  const handleDeleteQuestion = async (questionId) => {
-    if (!selectedTemplate) return;
-    
-    try {
-      // Filter out the question to delete
-      const updatedQuestions = selectedTemplate.questions.filter(q => q.id !== questionId);
-      
-      // Update the template
-      await InventoryService.updateTemplate(selectedTemplate.id, { questions: updatedQuestions });
-      fetchTemplate(selectedTemplate.id);
-    } catch (err) {
-      console.error('Error deleting question:', err.response || err);
-    }
-  };
+  // const handleDeleteQuestion = async (questionId) => {
+  //   if (!selectedTemplate) return;
+  //   
+  //   try {
+  //     // Filter out the question to delete
+  //     const updatedQuestions = selectedTemplate.questions.filter(q => q.id !== questionId);
+  //     
+  //     // Update the template
+  //     await InventoryService.updateTemplate(selectedTemplate.id, { questions: updatedQuestions });
+  //     fetchTemplate(selectedTemplate.id);
+  //   } catch (err) {
+  //     console.error('Error deleting question:', err.response || err);
+  //   }
+  // };
   
   // Tab handling
   const handleTabChange = (event, newValue) => {
@@ -340,73 +371,33 @@ const InventoryPage = () => {
             </Typography>
             
             <Paper sx={{ p: isMobile ? 1.5 : 2, mb: 3, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
-              <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} sm={5}>
-                  <TextField
-                    label="Version Name"
-                    fullWidth
-                    size={isMobile ? "small" : "medium"}
-                    value={newVersionName}
-                    onChange={e => setNewVersionName(e.target.value)}
-                    sx={{ 
-                      '& .MuiOutlinedInput-root': {
-                        '&.Mui-focused fieldset': {
-                          borderColor: '#633394',
-                        },
-                      },
-                      '& .MuiInputLabel-root.Mui-focused': {
-                        color: '#633394',
-                      }
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={5}>
-                  <TextField
-                    label="Description"
-                    fullWidth
-                    size={isMobile ? "small" : "medium"}
-                    value={newVersionDesc}
-                    onChange={e => setNewVersionDesc(e.target.value)}
-                    sx={{ 
-                      '& .MuiOutlinedInput-root': {
-                        '&.Mui-focused fieldset': {
-                          borderColor: '#633394',
-                        },
-                      },
-                      '& .MuiInputLabel-root.Mui-focused': {
-                        color: '#633394',
-                      }
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={2}>
-                  <Button
-                    variant="contained"
-                    startIcon={!isMobile && <AddIcon />}
-                    onClick={handleAddTemplateVersion}
-                    disabled={!newVersionName}
-                    fullWidth
-                    size={isMobile ? "small" : "medium"}
-                    sx={{ 
-                      backgroundColor: '#633394', 
-                      transition: 'all 0.2s ease-in-out',
-                      fontSize: isMobile ? '0.75rem' : '0.875rem',
-                      '&:hover': { 
-                        backgroundColor: '#7c52a5',
-                        transform: 'translateY(-1px)',
-                        boxShadow: '0 4px 8px rgba(99, 51, 148, 0.3)',
-                      },
-                      '&:active': {
-                        transform: 'translateY(0)',
-                        boxShadow: '0 2px 4px rgba(99, 51, 148, 0.3)',
-                      },
-                      '&.Mui-disabled': { backgroundColor: '#d1c4e9' }
-                    }}
-                  >
-                    {isMobile ? "Add" : "Add"}
-                  </Button>
-                </Grid>
-              </Grid>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => {
+                  setEditingVersion(null);
+                  setNewVersionName('');
+                  setNewVersionDesc('');
+                  setOpenVersionDialog(true);
+                }}
+                size={isMobile ? "small" : "medium"}
+                sx={{ 
+                  backgroundColor: '#633394', 
+                  transition: 'all 0.2s ease-in-out',
+                  fontSize: isMobile ? '0.75rem' : '0.875rem',
+                  '&:hover': { 
+                    backgroundColor: '#7c52a5',
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 4px 8px rgba(99, 51, 148, 0.3)',
+                  },
+                  '&:active': {
+                    transform: 'translateY(0)',
+                    boxShadow: '0 2px 4px rgba(99, 51, 148, 0.3)',
+                  }
+                }}
+              >
+                Add New Version
+              </Button>
             </Paper>
             
             <Paper sx={{ p: isMobile ? 1.5 : 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
@@ -461,6 +452,26 @@ const InventoryPage = () => {
                       <ListItemSecondaryAction>
                         <IconButton 
                           edge="end" 
+                          color="primary"
+                          size={isMobile ? "small" : "medium"}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditTemplateVersion(v);
+                          }}
+                          sx={{
+                            mr: 1,
+                            transition: 'all 0.2s ease-in-out',
+                            color: '#633394',
+                            '&:hover': {
+                              backgroundColor: 'rgba(99, 51, 148, 0.08)',
+                              transform: 'scale(1.1)',
+                            }
+                          }}
+                        >
+                          <EditIcon fontSize={isMobile ? "small" : "medium"} />
+                        </IconButton>
+                        <IconButton 
+                          edge="end" 
                           color="error"
                           size={isMobile ? "small" : "medium"}
                           onClick={(e) => {
@@ -503,12 +514,26 @@ const InventoryPage = () => {
       
         {/* Questions Tab */}
         {activeTab === 1 && (
-          <QuestionsTab />
+          <QuestionsTab 
+            templateVersions={templateVersions}
+            templates={templates}
+            onRefreshData={() => {
+              fetchTemplateVersions();
+              fetchTemplates();
+            }}
+          />
         )}
       
         {/* Templates Tab */}
         {activeTab === 2 && (
-          <TemplatesTab />
+          <TemplatesTab 
+            templateVersions={templateVersions}
+            templates={templates}
+            onRefreshData={() => {
+              fetchTemplateVersions();
+              fetchTemplates();
+            }}
+          />
         )}
       
         {/* Question Dialog */}
@@ -617,6 +642,84 @@ const InventoryPage = () => {
               }}
             >
               Save
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Template Version Edit Dialog */}
+        <Dialog 
+          open={openVersionDialog} 
+          onClose={handleCloseVersionDialog} 
+          fullWidth
+          fullScreen={isMobile}
+          maxWidth={isMobile ? false : "sm"}
+        >
+          <DialogTitle sx={{ fontSize: isMobile ? '1.1rem' : '1.25rem' }}>
+            {editingVersion ? 'Edit Template Version' : 'Add Template Version'}
+          </DialogTitle>
+          <DialogContent>
+            <TextField
+              label="Version Name"
+              fullWidth
+              margin="normal"
+              size={isMobile ? "small" : "medium"}
+              value={newVersionName}
+              onChange={e => setNewVersionName(e.target.value)}
+              sx={{ 
+                '& .MuiOutlinedInput-root': {
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#633394',
+                  },
+                },
+                '& .MuiInputLabel-root.Mui-focused': {
+                  color: '#633394',
+                }
+              }}
+            />
+            <TextField
+              label="Description"
+              fullWidth
+              multiline
+              rows={3}
+              margin="normal"
+              size={isMobile ? "small" : "medium"}
+              value={newVersionDesc}
+              onChange={e => setNewVersionDesc(e.target.value)}
+              sx={{ 
+                '& .MuiOutlinedInput-root': {
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#633394',
+                  },
+                },
+                '& .MuiInputLabel-root.Mui-focused': {
+                  color: '#633394',
+                }
+              }}
+            />
+          </DialogContent>
+          <DialogActions sx={{ p: isMobile ? 2 : 1 }}>
+            <Button 
+              onClick={handleCloseVersionDialog} 
+              size={isMobile ? "small" : "medium"}
+              sx={{ 
+                color: '#633394',
+                fontSize: isMobile ? '0.75rem' : '0.875rem'
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="contained" 
+              onClick={editingVersion ? handleUpdateTemplateVersion : handleAddTemplateVersion}
+              disabled={!newVersionName}
+              size={isMobile ? "small" : "medium"}
+              sx={{ 
+                backgroundColor: '#633394', 
+                '&:hover': { backgroundColor: '#7c52a5' },
+                fontSize: isMobile ? '0.75rem' : '0.875rem'
+              }}
+            >
+              {editingVersion ? 'Update' : 'Add'}
             </Button>
           </DialogActions>
         </Dialog>

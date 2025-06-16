@@ -1,5 +1,5 @@
 // Question Types Configuration for Survey Platform
-// Updated to support only the nine validated question formats
+// Simplified to support only the nine core question formats without conditional logic
 
 /**
  * @typedef {'short_text'|'single_choice'|'yes_no'|'likert5'|'multi_select'|'paragraph'|'numeric'|'percentage'|'year_matrix'} QuestionType
@@ -27,8 +27,6 @@ export const QUESTION_TYPE_MAP = Object.freeze({
     config_schema: {
       max_length: 255,
       placeholder: '',
-      validation: null, // email, number, url, custom_regex
-      validation_regex: '',
       required: false
     }
   },
@@ -39,11 +37,7 @@ export const QUESTION_TYPE_MAP = Object.freeze({
     description: 'Radio button selection from predefined categorical options',
     category: 'Core Questions',
     config_schema: {
-      options: [], // Array of {value, label} objects
-      randomize_options: false,
-      allow_other: false,
-      other_text: 'Other (please specify)',
-      display_type: 'radio', // radio, dropdown
+      options: [],
       required: false
     }
   },
@@ -56,7 +50,6 @@ export const QUESTION_TYPE_MAP = Object.freeze({
     config_schema: {
       yes_label: 'Yes',
       no_label: 'No',
-      default_value: null, // null, 'yes', 'no'
       required: false
     }
   },
@@ -74,8 +67,6 @@ export const QUESTION_TYPE_MAP = Object.freeze({
         4: 'A lot',
         5: 'A great deal'
       },
-      use_custom_labels: false,
-      reverse_scale: false,
       required: false
     }
   },
@@ -86,12 +77,7 @@ export const QUESTION_TYPE_MAP = Object.freeze({
     description: '"Select all that apply" checkbox questions',
     category: 'Core Questions',
     config_schema: {
-      options: [], // Array of {value, label} objects
-      randomize_options: false,
-      min_selections: null,
-      max_selections: null,
-      allow_other: false,
-      other_text: 'Other (please specify)',
+      options: [],
       required: false
     }
   },
@@ -102,10 +88,8 @@ export const QUESTION_TYPE_MAP = Object.freeze({
     description: 'Open-ended narrative and essay responses',
     category: 'Core Questions',
     config_schema: {
-      min_length: null,
       max_length: 2000,
       placeholder: '',
-      character_counter: true,
       required: false
     }
   },
@@ -116,11 +100,9 @@ export const QUESTION_TYPE_MAP = Object.freeze({
     description: 'Absolute number input with validation',
     category: 'Core Questions',
     config_schema: {
-      number_type: 'integer', // integer, decimal
+      number_type: 'integer',
       min_value: null,
       max_value: null,
-      decimal_places: 0,
-      unit_label: '',
       required: false
     }
   },
@@ -131,10 +113,8 @@ export const QUESTION_TYPE_MAP = Object.freeze({
     description: 'Distribution and allocation percentage questions',
     category: 'Core Questions',
     config_schema: {
-      items: [], // Array of {value, label} objects
+      items: [],
       total_percentage: 100,
-      allow_decimals: false,
-      show_running_total: true,
       required: false
     }
   },
@@ -145,10 +125,9 @@ export const QUESTION_TYPE_MAP = Object.freeze({
     description: 'Row-by-year grid for temporal data collection',
     category: 'Core Questions',
     config_schema: {
-      rows: [], // Array of {value, label} objects
-      start_year: new Date().getFullYear(),
-      end_year: new Date().getFullYear() + 5,
-      input_type: 'numeric', // numeric, text, dropdown
+      rows: [],
+      start_year: 2024,
+      end_year: 2029,
       required: false
     }
   }

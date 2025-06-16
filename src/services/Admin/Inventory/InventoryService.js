@@ -7,6 +7,7 @@ const InventoryService = {
   // Template Versions
   getTemplateVersions: () => axios.get(`${BASE_URL}/template-versions`).then(res => res.data),
   addTemplateVersion: (name, description) => axios.post(`${BASE_URL}/template-versions`, { name, description }),
+  updateTemplateVersion: (versionId, name, description) => axios.put(`${BASE_URL}/template-versions/${versionId}`, { name, description }),
   deleteTemplateVersion: (versionId) => axios.delete(`${BASE_URL}/template-versions/${versionId}`),
   
   // Templates
@@ -16,6 +17,10 @@ const InventoryService = {
   updateTemplate: (templateId, payload) => axios.put(`${BASE_URL}/templates/${templateId}`, payload),
   deleteTemplate: (templateId) => axios.delete(`${BASE_URL}/templates/${templateId}`),
   deleteTemplateQuestion: (templateId, questionId) => axios.delete(`${BASE_URL}/templates/${templateId}/questions/${questionId}`),
+  
+  // Template Sections
+  getTemplateSections: (templateId) => axios.get(`${BASE_URL}/templates/${templateId}/sections`).then(res => res.data),
+  updateTemplateSections: (templateId, sections) => axios.put(`${BASE_URL}/templates/${templateId}/sections`, { sections }),
   
   // Responses
   getResponses: () => axios.get(`${BASE_URL}/responses`).then(res => res.data),
