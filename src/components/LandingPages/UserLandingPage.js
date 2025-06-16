@@ -43,22 +43,44 @@ const UserLandingPage = () => {
   };
 
   return (
-    <>
+    <Box
+      sx={{
+        background: 'linear-gradient(135deg, #3B1C55 0%, #633394 25%, #61328E 50%, #967CB2 75%, #FBFAFA 100%)',
+        minHeight: '100vh',
+        position: 'relative',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'radial-gradient(ellipse at top left, rgba(59, 28, 85, 0.1) 0%, transparent 50%), radial-gradient(ellipse at bottom right, rgba(150, 124, 178, 0.1) 0%, transparent 50%)',
+          pointerEvents: 'none'
+        }
+      }}
+    >
       <Navbar />
       <Container 
         sx={{ 
-          mt: 4,
+          pt: 4,
+          pb: 4,
           display: 'flex',
           justifyContent: 'center',
-          alignItems: 'center'
+          alignItems: 'center',
+          minHeight: 'calc(100vh - 80px)',
+          position: 'relative',
+          zIndex: 1
         }}
       >
         <Card sx={{
           width: '500px',
           minHeight: '450px',
-          backgroundColor: '#f5f5f5',
-          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-          borderRadius: '8px'
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 20px 40px rgba(59, 28, 85, 0.15)',
+          borderRadius: 3,
+          border: '1px solid rgba(255, 255, 255, 0.2)'
         }}>
           <CardContent sx={{ padding: '2rem' }}>
             <Typography variant="h4" align="center" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
@@ -118,7 +140,7 @@ const UserLandingPage = () => {
           </CardContent>
         </Card>
       </Container>
-    </>
+    </Box>
   );
 };
 

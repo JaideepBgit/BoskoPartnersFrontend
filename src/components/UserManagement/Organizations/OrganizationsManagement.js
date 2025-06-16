@@ -12,7 +12,7 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { 
     fetchOrganizations, addOrganization, updateOrganization, deleteOrganization, 
     fetchDenominations, fetchAccreditationBodies, fetchUmbrellaAssociations,
-    uploadOrganizationFile
+    uploadOrganizationFile, fetchOrganizationTypes, initializeOrganizationTypes
 } from '../../../services/UserManagement/UserManagementService';
 
 function OrganizationsManagement() {
@@ -20,6 +20,7 @@ function OrganizationsManagement() {
     
     // State variables
     const [organizations, setOrganizations] = useState([]);
+    const [organizationTypes, setOrganizationTypes] = useState([]);
     const [denominations, setDenominations] = useState([]);
     const [accreditationBodies, setAccreditationBodies] = useState([]);
     const [umbrellaAssociations, setUmbrellaAssociations] = useState([]);
@@ -38,17 +39,31 @@ function OrganizationsManagement() {
     // Form states
     const [formData, setFormData] = useState({
         name: '',
-        type: 'church',
+        type: 'Churches',
         continent: '',
         region: '',
+        country: '',
         province: '',
         city: '',
         town: '',
+        address_line1: '',
+        address_line2: '',
+        postal_code: '',
+        website: '',
+        denomination_affiliation: '',
+        accreditation_status_or_body: '',
+        highest_level_of_education: '',
+        affiliation_validation: '',
+        umbrella_association_membership: '',
         denomination_id: '',
         accreditation_body_id: '',
         umbrella_association_id: '',
         primary_contact_id: '',
         secondary_contact_id: '',
+        head_name: '',
+        head_email: '',
+        head_phone: '',
+        head_address: '',
         details: {}
     });
     
@@ -59,6 +74,7 @@ function OrganizationsManagement() {
     // Load data on component mount
     useEffect(() => {
         loadOrganizations();
+        loadOrganizationTypes();
         loadDenominations();
         loadAccreditationBodies();
         loadUmbrellaAssociations();
@@ -72,6 +88,24 @@ function OrganizationsManagement() {
             setTotalOrganizations(data.length);
         } catch (error) {
             console.error('Failed to fetch organizations:', error);
+        }
+    };
+
+    // Load organization types from API
+    const loadOrganizationTypes = async () => {
+        try {
+            const data = await fetchOrganizationTypes();
+            if (!data || data.length === 0) {
+                // Initialize default types if none exist
+                await initializeOrganizationTypes();
+                const retryData = await fetchOrganizationTypes();
+                setOrganizationTypes(retryData || []);
+            } else {
+                setOrganizationTypes(data);
+            }
+        } catch (error) {
+            console.error('Failed to fetch organization types:', error);
+            setOrganizationTypes([]);
         }
     };
 
@@ -166,17 +200,31 @@ function OrganizationsManagement() {
     const handleOpenAddDialog = () => {
         setFormData({
             name: '',
-            type: 'church',
+            type: 'Churches',
             continent: '',
             region: '',
+            country: '',
             province: '',
             city: '',
             town: '',
+            address_line1: '',
+            address_line2: '',
+            postal_code: '',
+            website: '',
+            denomination_affiliation: '',
+            accreditation_status_or_body: '',
+            highest_level_of_education: '',
+            affiliation_validation: '',
+            umbrella_association_membership: '',
             denomination_id: '',
             accreditation_body_id: '',
             umbrella_association_id: '',
             primary_contact_id: '',
             secondary_contact_id: '',
+            head_name: '',
+            head_email: '',
+            head_phone: '',
+            head_address: '',
             details: {}
         });
         setOpenAddDialog(true);
@@ -191,18 +239,32 @@ function OrganizationsManagement() {
         
         setFormData({
             name: organization.name,
-            type: organization.type,
-            continent: organization.continent || '',
-            region: organization.region || '',
-            province: organization.province || '',
-            city: organization.city || '',
-            town: organization.town || '',
+            type: organization.organization_type?.type || 'Churches',
+            continent: organization.geo_location?.continent || '',
+            region: organization.geo_location?.region || '',
+            country: organization.geo_location?.country || '',
+            province: organization.geo_location?.province || '',
+            city: organization.geo_location?.city || '',
+            town: organization.geo_location?.town || '',
+            address_line1: organization.geo_location?.address_line1 || '',
+            address_line2: organization.geo_location?.address_line2 || '',
+            postal_code: organization.geo_location?.postal_code || '',
+            website: organization.website || '',
+            denomination_affiliation: organization.denomination_affiliation || '',
+            accreditation_status_or_body: organization.accreditation_status_or_body || '',
+            highest_level_of_education: organization.highest_level_of_education || '',
+            affiliation_validation: organization.affiliation_validation || '',
+            umbrella_association_membership: organization.umbrella_association_membership || '',
             denomination_id: organization.denomination_id || '',
             accreditation_body_id: organization.accreditation_body_id || '',
             umbrella_association_id: organization.umbrella_association_id || '',
             primary_contact_id: organization.primary_contact_id || '',
             secondary_contact_id: organization.secondary_contact_id || '',
-            details: organization.details || {}
+            head_name: organization.lead?.firstname + ' ' + organization.lead?.lastname || '',
+            head_email: organization.lead?.email || '',
+            head_phone: organization.lead?.phone || '',
+            head_address: organization.lead?.address || '',
+            details: organization.misc || {}
         });
         
         setOpenEditDialog(true);
@@ -230,25 +292,69 @@ function OrganizationsManagement() {
         setSelectedOrganization(null);
         setFormData({
             name: '',
-            type: 'church',
+            type: 'Churches',
             continent: '',
             region: '',
+            country: '',
             province: '',
             city: '',
             town: '',
+            address_line1: '',
+            address_line2: '',
+            postal_code: '',
+            website: '',
+            denomination_affiliation: '',
+            accreditation_status_or_body: '',
+            highest_level_of_education: '',
+            affiliation_validation: '',
+            umbrella_association_membership: '',
             denomination_id: '',
             accreditation_body_id: '',
             umbrella_association_id: '',
             primary_contact_id: '',
             secondary_contact_id: '',
+            head_name: '',
+            head_email: '',
+            head_phone: '',
+            head_address: '',
             details: {}
         });
+    };
+
+    // Transform form data to API format
+    const transformFormDataToApiFormat = (formData) => {
+        // Find the organization type ID
+        const orgType = organizationTypes.find(ot => ot.type === formData.type);
+        
+        return {
+            name: formData.name,
+            organization_type_id: orgType?.id || null,
+            geo_location: {
+                continent: formData.continent,
+                region: formData.region,
+                country: formData.country,
+                province: formData.province,
+                city: formData.city,
+                town: formData.town,
+                address_line1: formData.address_line1 || '',
+                address_line2: formData.address_line2 || '',
+                postal_code: formData.postal_code || ''
+            },
+            website: formData.website || '',
+            denomination_affiliation: formData.denomination_affiliation || '',
+            accreditation_status_or_body: formData.accreditation_status_or_body || '',
+            highest_level_of_education: formData.highest_level_of_education || '',
+            affiliation_validation: formData.affiliation_validation || '',
+            umbrella_association_membership: formData.umbrella_association_membership || '',
+            misc: formData.details || {}
+        };
     };
 
     // Add a new organization
     const handleAddOrganization = async () => {
         try {
-            await addOrganization(formData);
+            const apiData = transformFormDataToApiFormat(formData);
+            await addOrganization(apiData);
             loadOrganizations();
             handleCloseDialogs();
         } catch (error) {
@@ -262,7 +368,8 @@ function OrganizationsManagement() {
         if (!selectedOrganization) return;
         
         try {
-            await updateOrganization(selectedOrganization.id, formData);
+            const apiData = transformFormDataToApiFormat(formData);
+            await updateOrganization(selectedOrganization.id, apiData);
             loadOrganizations();
             handleCloseDialogs();
         } catch (error) {
@@ -328,7 +435,7 @@ function OrganizationsManagement() {
     // Filter organizations based on type
     const filteredOrganizations = orgTypeFilter === 'all'
         ? organizations
-        : organizations.filter(org => org.type === orgTypeFilter);
+        : organizations.filter(org => org.organization_type?.type === orgTypeFilter);
 
     // Paginate organizations
     const paginatedOrganizations = filteredOrganizations.slice(
@@ -351,9 +458,14 @@ function OrganizationsManagement() {
                             displayEmpty
                         >
                             <MenuItem value="all">All Types</MenuItem>
-                            <MenuItem value="church">Churches</MenuItem>
-                            <MenuItem value="school">Schools</MenuItem>
-                            <MenuItem value="other">Other</MenuItem>
+                            {organizationTypes.map((orgType) => (
+                                <MenuItem key={orgType.id} value={orgType.type}>
+                                    {orgType.type === 'Churches' ? 'Churches' :
+                                     orgType.type === 'Institutions' ? 'Institutions' :
+                                     orgType.type === 'Non_formal_organizations' ? 'Non-formal Organizations' :
+                                     orgType.type.charAt(0).toUpperCase() + orgType.type.slice(1)}
+                                </MenuItem>
+                            ))}
                         </Select>
                     </FormControl>
                 </Box>
@@ -373,16 +485,25 @@ function OrganizationsManagement() {
                                 <TableCell>{org.name}</TableCell>
                                 <TableCell>
                                     <Chip 
-                                        label={org.type.charAt(0).toUpperCase() + org.type.slice(1)} 
+                                        label={org.organization_type?.type === 'Churches' ? 'Church' :
+                                               org.organization_type?.type === 'Institutions' ? 'Institution' :
+                                               org.organization_type?.type === 'Non_formal_organizations' ? 'Non-formal Org' :
+                                               org.organization_type?.type || 'N/A'} 
                                         color={
-                                            org.type === 'church' ? 'primary' : 
-                                            org.type === 'school' ? 'secondary' : 'default'
+                                            org.organization_type?.type === 'Churches' ? 'primary' : 
+                                            org.organization_type?.type === 'Institutions' ? 'secondary' : 
+                                            org.organization_type?.type === 'Non_formal_organizations' ? 'success' : 'default'
                                         }
                                         size="small"
                                     />
                                 </TableCell>
                                 <TableCell>
-                                    {[org.city, org.province, org.region, org.continent]
+                                    {[
+                                        org.geo_location?.city, 
+                                        org.geo_location?.province, 
+                                        org.geo_location?.region, 
+                                        org.geo_location?.continent
+                                    ]
                                         .filter(Boolean)
                                         .join(', ')}
                                 </TableCell>
@@ -430,232 +551,346 @@ function OrganizationsManagement() {
                     textColor="primary"
                     indicatorColor="primary"
                 >
-                    <Tab label="Basic Information" />
-                    <Tab label="Type-Specific Details" />
+                    <Tab label="Basic Information & Address" />
+                    <Tab label="Contacts & Relationships" />
                 </Tabs>
 
                 {activeTab === 0 && (
-                    <Grid container spacing={2}>
-                        <Grid item xs={12} md={6}>
-                            <TextField
-                                required
-                                fullWidth
-                                label="Organization Name"
-                                name="name"
-                                value={formData.name}
-                                onChange={handleInputChange}
-                                margin="normal"
-                            />
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                            <FormControl fullWidth margin="normal">
-                                <InputLabel>Type</InputLabel>
-                                <Select
-                                    name="type"
-                                    value={formData.type}
-                                    onChange={handleInputChange}
-                                    label="Type"
-                                >
-                                    <MenuItem value="church">Church</MenuItem>
-                                    <MenuItem value="school">School</MenuItem>
-                                    <MenuItem value="other">Other</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                            <TextField
-                                fullWidth
-                                label="Continent"
-                                name="continent"
-                                value={formData.continent}
-                                onChange={handleInputChange}
-                                margin="normal"
-                            />
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                            <TextField
-                                fullWidth
-                                label="Region"
-                                name="region"
-                                value={formData.region}
-                                onChange={handleInputChange}
-                                margin="normal"
-                            />
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                            <TextField
-                                fullWidth
-                                label="Province"
-                                name="province"
-                                value={formData.province}
-                                onChange={handleInputChange}
-                                margin="normal"
-                            />
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                            <TextField
-                                fullWidth
-                                label="City"
-                                name="city"
-                                value={formData.city}
-                                onChange={handleInputChange}
-                                margin="normal"
-                            />
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                            <TextField
-                                fullWidth
-                                label="Town"
-                                name="town"
-                                value={formData.town}
-                                onChange={handleInputChange}
-                                margin="normal"
-                            />
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                            <FormControl fullWidth margin="normal">
-                                <InputLabel>Denomination</InputLabel>
-                                <Select
-                                    name="denomination_id"
-                                    value={formData.denomination_id}
-                                    onChange={handleInputChange}
-                                    label="Denomination"
-                                >
-                                    <MenuItem value="">None</MenuItem>
-                                    {denominations.map((denom) => (
-                                        <MenuItem key={denom.id} value={denom.id}>
-                                            {denom.name}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                            <FormControl fullWidth margin="normal">
-                                <InputLabel>Accreditation Body</InputLabel>
-                                <Select
-                                    name="accreditation_body_id"
-                                    value={formData.accreditation_body_id}
-                                    onChange={handleInputChange}
-                                    label="Accreditation Body"
-                                >
-                                    <MenuItem value="">None</MenuItem>
-                                    {accreditationBodies.map((body) => (
-                                        <MenuItem key={body.id} value={body.id}>
-                                            {body.name}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                            <FormControl fullWidth margin="normal">
-                                <InputLabel>Umbrella Association</InputLabel>
-                                <Select
-                                    name="umbrella_association_id"
-                                    value={formData.umbrella_association_id}
-                                    onChange={handleInputChange}
-                                    label="Umbrella Association"
-                                >
-                                    <MenuItem value="">None</MenuItem>
-                                    {umbrellaAssociations.map((assoc) => (
-                                        <MenuItem key={assoc.id} value={assoc.id}>
-                                            {assoc.name}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-                        </Grid>
-                    </Grid>
+                    <Box>
+                        {/* Basic Information Section */}
+                        <Paper sx={{ p: 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0,0,0,0.1)', mb: 3, width: '96.5%' }}>
+                            <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold', mb: 2, textAlign: 'center' }}>
+                                Basic Information
+                            </Typography>
+                            
+                            <Box sx={{ display: 'flex', gap: 2 }}>
+                                {/* Column 1 */}
+                                <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    <TextField
+                                        required
+                                        fullWidth
+                                        label={formData.type === 'Churches' ? 'Name of Church' : 
+                                               formData.type === 'Institutions' ? 'Name of Institution' : 
+                                               'Name of Organization'}
+                                        name="name"
+                                        value={formData.name}
+                                        onChange={handleInputChange}
+                                        variant="outlined"
+                                    />
+                                    
+                                    <TextField
+                                        fullWidth
+                                        label="Website"
+                                        name="website"
+                                        value={formData.website}
+                                        onChange={handleInputChange}
+                                        variant="outlined"
+                                    />
+                                </Box>
+
+                                {/* Column 2 */}
+                                <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    <FormControl fullWidth variant="outlined">
+                                        <InputLabel>Type</InputLabel>
+                                        <Select
+                                            name="type"
+                                            value={formData.type}
+                                            onChange={handleInputChange}
+                                            label="Type"
+                                        >
+                                            {organizationTypes.map((orgType) => (
+                                                <MenuItem key={orgType.id} value={orgType.type}>
+                                                    {orgType.type === 'Churches' ? 'Churches' :
+                                                     orgType.type === 'Institutions' ? 'Institutions' :
+                                                     orgType.type === 'Non_formal_organizations' ? 'Non-formal Organizations' :
+                                                     orgType.type.charAt(0).toUpperCase() + orgType.type.slice(1)}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                    
+                                    {formData.type === 'Institutions' && (
+                                        <TextField
+                                            fullWidth
+                                            label="Highest Level of Education"
+                                            name="highest_level_of_education"
+                                            value={formData.highest_level_of_education}
+                                            onChange={handleInputChange}
+                                            variant="outlined"
+                                        />
+                                    )}
+                                </Box>
+                            </Box>
+                        </Paper>
+
+                        {/* Address Information Section */}
+                        <Paper sx={{ p: 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', mb: 3 }}>
+                            <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold', mb: 2, textAlign: 'center' }}>
+                                Address Information
+                            </Typography>
+                            
+                            <Box sx={{ maxWidth: '900px', mx: 'auto' }}>
+                                <Grid container spacing={3}>
+                                    {/* Left Column */}
+                                    <Grid item xs={12} md={6}>
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 2 }}>
+                                            <TextField
+                                                fullWidth
+                                                label="Country"
+                                                name="country"
+                                                value={formData.country}
+                                                onChange={handleInputChange}
+                                                variant="outlined"
+                                            />
+                                            
+                                            <TextField
+                                                fullWidth
+                                                label="Province/District/County"
+                                                name="province"
+                                                value={formData.province}
+                                                onChange={handleInputChange}
+                                                variant="outlined"
+                                            />
+                                            
+                                            <TextField
+                                                fullWidth
+                                                label="City"
+                                                name="city"
+                                                value={formData.city}
+                                                onChange={handleInputChange}
+                                                variant="outlined"
+                                            />
+                                            
+                                            <TextField
+                                                fullWidth
+                                                label="Address Line 1"
+                                                name="address_line1"
+                                                value={formData.address_line1}
+                                                onChange={handleInputChange}
+                                                variant="outlined"
+                                            />
+                                            
+                                            <TextField
+                                                fullWidth
+                                                label="Postal Code"
+                                                name="postal_code"
+                                                value={formData.postal_code}
+                                                onChange={handleInputChange}
+                                                variant="outlined"
+                                            />
+                                        </Box>
+                                    </Grid>
+                                    
+                                    {/* Right Column */}
+                                    <Grid item xs={12} md={6}>
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 2 }}>
+                                            <TextField
+                                                fullWidth
+                                                label="Continent"
+                                                name="continent"
+                                                value={formData.continent}
+                                                onChange={handleInputChange}
+                                                variant="outlined"
+                                            />
+                                            
+                                            <TextField
+                                                fullWidth
+                                                label="Region"
+                                                name="region"
+                                                value={formData.region}
+                                                onChange={handleInputChange}
+                                                variant="outlined"
+                                            />
+                                            
+                                            <TextField
+                                                fullWidth
+                                                label="Town"
+                                                name="town"
+                                                value={formData.town}
+                                                onChange={handleInputChange}
+                                                variant="outlined"
+                                            />
+                                            
+                                            <TextField
+                                                fullWidth
+                                                label="Address Line 2"
+                                                name="address_line2"
+                                                value={formData.address_line2}
+                                                onChange={handleInputChange}
+                                                variant="outlined"
+                                            />
+                                        </Box>
+                                    </Grid>
+                                </Grid>
+                            </Box>
+                        </Paper>
+                    </Box>
                 )}
 
                 {activeTab === 1 && (
                     <Grid container spacing={2}>
-                        {formData.type === 'church' && (
-                            <>
-                                <Grid item xs={12} md={6}>
-                                    <TextField
-                                        fullWidth
-                                        label="Senior Pastor Name"
-                                        name="senior_pastor_name"
-                                        value={formData.details.senior_pastor_name || ''}
-                                        onChange={handleDetailsChange}
-                                        margin="normal"
-                                    />
-                                </Grid>
-                                <Grid item xs={12} md={6}>
-                                    <TextField
-                                        fullWidth
-                                        label="Pastor Email"
-                                        name="pastor_email"
-                                        type="email"
-                                        value={formData.details.pastor_email || ''}
-                                        onChange={handleDetailsChange}
-                                        margin="normal"
-                                    />
-                                </Grid>
-                                <Grid item xs={12}>
-                                    <TextField
-                                        fullWidth
-                                        label="Umbrella Association"
-                                        name="umbrella_association"
-                                        value={formData.details.umbrella_association || ''}
-                                        onChange={handleDetailsChange}
-                                        margin="normal"
-                                    />
-                                </Grid>
-                            </>
+                        {/* Contacts Section */}
+                        <Grid item xs={12}>
+                            <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold', mb: 2 }}>
+                                Contacts
+                            </Typography>
+                        </Grid>
+                        
+                        <Grid item xs={12} md={6}>
+                            <TextField
+                                fullWidth
+                                label={`${formData.type === 'Churches' ? 'Church' : formData.type === 'Institutions' ? 'Institution' : 'Organization'} Primary Contact`}
+                                name="primary_contact_id"
+                                value={formData.primary_contact_id}
+                                onChange={handleInputChange}
+                                margin="normal"
+                                helperText="Search and select existing user or add new user"
+                            />
+                        </Grid>
+                        
+                        <Grid item xs={12} md={6}>
+                            <TextField
+                                fullWidth
+                                label={`${formData.type === 'Churches' ? 'Church' : formData.type === 'Institutions' ? 'Institution' : 'Organization'} Secondary Contact`}
+                                name="secondary_contact_id"
+                                value={formData.secondary_contact_id}
+                                onChange={handleInputChange}
+                                margin="normal"
+                                helperText="Search and select existing user or add new user"
+                            />
+                        </Grid>
+
+                        {/* Head/Lead Section */}
+                        <Grid item xs={12}>
+                            <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold', mb: 2, mt: 2 }}>
+                                {formData.type === 'Churches' ? 'Senior/Lead Pastor' : 
+                                 formData.type === 'Institutions' ? 'School President' : 
+                                 'Organization Lead'}
+                            </Typography>
+                        </Grid>
+                        
+                        <Grid item xs={12} md={6}>
+                            <TextField
+                                fullWidth
+                                label={formData.type === 'Churches' ? 'Senior/Lead Pastor Name' : 
+                                       formData.type === 'Institutions' ? 'School President Name' : 
+                                       'Organization Lead Name'}
+                                name="head_name"
+                                value={formData.head_name}
+                                onChange={handleInputChange}
+                                margin="normal"
+                            />
+                        </Grid>
+                        
+                        <Grid item xs={12} md={6}>
+                            <TextField
+                                fullWidth
+                                label={formData.type === 'Churches' ? "Pastor's Email Address" : 
+                                       formData.type === 'Institutions' ? "President's Email Address" : 
+                                       'Org. Lead Email Address'}
+                                name="head_email"
+                                type="email"
+                                value={formData.head_email}
+                                onChange={handleInputChange}
+                                margin="normal"
+                            />
+                        </Grid>
+                        
+                        <Grid item xs={12} md={6}>
+                            <TextField
+                                fullWidth
+                                label="Phone Contact"
+                                name="head_phone"
+                                value={formData.head_phone}
+                                onChange={handleInputChange}
+                                margin="normal"
+                            />
+                        </Grid>
+                        
+                        <Grid item xs={12} md={6}>
+                            <TextField
+                                fullWidth
+                                label={formData.type === 'Churches' ? 'Church Physical Address' : 'Physical Address'}
+                                name="head_address"
+                                value={formData.head_address}
+                                onChange={handleInputChange}
+                                margin="normal"
+                            />
+                        </Grid>
+
+                        {/* Organization-specific fields */}
+                        {formData.type === 'Institutions' && (
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    fullWidth
+                                    label="Highest Level of Education"
+                                    name="highest_level_of_education"
+                                    value={formData.highest_level_of_education}
+                                    onChange={handleInputChange}
+                                    margin="normal"
+                                />
+                            </Grid>
                         )}
 
-                        {formData.type === 'school' && (
-                            <>
-                                <Grid item xs={12} md={6}>
-                                    <TextField
-                                        fullWidth
-                                        label="Town"
-                                        name="town"
-                                        value={formData.details.town || ''}
-                                        onChange={handleDetailsChange}
-                                        margin="normal"
-                                    />
-                                </Grid>
-                                <Grid item xs={12} md={6}>
-                                    <TextField
-                                        fullWidth
-                                        label="Highest Education"
-                                        name="highest_education"
-                                        value={formData.details.highest_education || ''}
-                                        onChange={handleDetailsChange}
-                                        margin="normal"
-                                    />
-                                </Grid>
-                            </>
+                        {/* Organizational Relationships Section */}
+                        <Grid item xs={12}>
+                            <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold', mb: 2, mt: 2 }}>
+                                Organizational Relationships
+                            </Typography>
+                        </Grid>
+                        
+                        <Grid item xs={12} md={6}>
+                            <TextField
+                                fullWidth
+                                label="Denomination/Affiliation"
+                                name="denomination_affiliation"
+                                value={formData.denomination_affiliation}
+                                onChange={handleInputChange}
+                                margin="normal"
+                                helperText="Search organizations or add new"
+                            />
+                        </Grid>
+                        
+                        {formData.type === 'Institutions' && (
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    fullWidth
+                                    label="Accreditation Status/Accrediting Body"
+                                    name="accreditation_status_or_body"
+                                    value={formData.accreditation_status_or_body}
+                                    onChange={handleInputChange}
+                                    margin="normal"
+                                    helperText="Search organizations or add new"
+                                />
+                            </Grid>
                         )}
-
-                        {formData.type === 'other' && (
-                            <>
-                                <Grid item xs={12} md={6}>
-                                    <TextField
-                                        fullWidth
-                                        label="Organization Lead"
-                                        name="org_lead"
-                                        value={formData.details.org_lead || ''}
-                                        onChange={handleDetailsChange}
-                                        margin="normal"
-                                    />
-                                </Grid>
-                                <Grid item xs={12} md={6}>
-                                    <TextField
-                                        fullWidth
-                                        label="Lead Email"
-                                        name="lead_email"
-                                        type="email"
-                                        value={formData.details.lead_email || ''}
-                                        onChange={handleDetailsChange}
-                                        margin="normal"
-                                    />
-                                </Grid>
-                            </>
+                        
+                        {formData.type === 'Non_formal_organizations' && (
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    fullWidth
+                                    label="Affiliation/Validation"
+                                    name="affiliation_validation"
+                                    value={formData.affiliation_validation}
+                                    onChange={handleInputChange}
+                                    margin="normal"
+                                    helperText="Search organizations or add new"
+                                />
+                            </Grid>
+                        )}
+                        
+                        {formData.type === 'Churches' && (
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    fullWidth
+                                    label="Umbrella Association Membership"
+                                    name="umbrella_association_membership"
+                                    value={formData.umbrella_association_membership}
+                                    onChange={handleInputChange}
+                                    margin="normal"
+                                    helperText="Search organizations or add new"
+                                />
+                            </Grid>
                         )}
                     </Grid>
                 )}
@@ -695,26 +930,34 @@ function OrganizationsManagement() {
                         Organization Statistics
                     </Typography>
                     <Grid container spacing={2}>
-                        <Grid item xs={12} sm={4}>
+                        <Grid item xs={12} sm={3}>
                             <Paper sx={{ p: 2, textAlign: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
                                 <Typography variant="h4" sx={{ color: '#633394' }}>{organizations.length}</Typography>
                                 <Typography variant="body2" sx={{ color: '#633394' }}>Total Organizations</Typography>
                             </Paper>
                         </Grid>
-                        <Grid item xs={12} sm={4}>
+                        <Grid item xs={12} sm={3}>
                             <Paper sx={{ p: 2, textAlign: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
                                 <Typography variant="h4" sx={{ color: '#633394' }}>
-                                    {organizations.filter(org => org.type === 'church').length}
+                                    {organizations.filter(org => org.organization_type?.type === 'Churches').length}
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: '#633394' }}>Churches</Typography>
                             </Paper>
                         </Grid>
-                        <Grid item xs={12} sm={4}>
+                        <Grid item xs={12} sm={3}>
                             <Paper sx={{ p: 2, textAlign: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
                                 <Typography variant="h4" sx={{ color: '#633394' }}>
-                                    {organizations.filter(org => org.type === 'school').length}
+                                    {organizations.filter(org => org.organization_type?.type === 'Institutions').length}
                                 </Typography>
-                                <Typography variant="body2" sx={{ color: '#633394' }}>Schools</Typography>
+                                <Typography variant="body2" sx={{ color: '#633394' }}>Institutions</Typography>
+                            </Paper>
+                        </Grid>
+                        <Grid item xs={12} sm={3}>
+                            <Paper sx={{ p: 2, textAlign: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
+                                <Typography variant="h4" sx={{ color: '#633394' }}>
+                                    {organizations.filter(org => org.organization_type?.type === 'Non_formal_organizations').length}
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: '#633394' }}>Non-formal Orgs</Typography>
                             </Paper>
                         </Grid>
                     </Grid>

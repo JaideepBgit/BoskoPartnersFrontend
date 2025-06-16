@@ -197,6 +197,28 @@ export const fetchUmbrellaAssociations = async () => {
     }
 };
 
+// Fetch organization types
+export const fetchOrganizationTypes = async () => {
+    try {
+        const response = await axios.get(`${BASE_URL}/organization-types`);
+        return response.data;
+    } catch (error) {
+        console.error('Failed to fetch organization types:', error);
+        throw error;
+    }
+};
+
+// Initialize organization types
+export const initializeOrganizationTypes = async () => {
+    try {
+        const response = await axios.post(`${BASE_URL}/organization-types/initialize`);
+        return response.data;
+    } catch (error) {
+        console.error('Failed to initialize organization types:', error);
+        throw error;
+    }
+};
+
 // Fetch users with role "user" and their organizational details
 export const fetchUsersWithRoleUser = async () => {
     try {
@@ -204,6 +226,50 @@ export const fetchUsersWithRoleUser = async () => {
         return response.data;
     } catch (error) {
         console.error('Failed to fetch users with role "user":', error);
+        throw error;
+    }
+};
+
+// Add organization type
+export const addOrganizationType = async (typeData) => {
+    try {
+        const response = await axios.post(`${BASE_URL}/organization-types`, typeData);
+        return response.data;
+    } catch (error) {
+        console.error('Failed to add organization type:', error);
+        throw error;
+    }
+};
+
+// Add user organizational role
+export const addUserOrganizationalRole = async (roleData) => {
+    try {
+        const response = await axios.post(`${BASE_URL}/user-organizational-roles`, roleData);
+        return response.data;
+    } catch (error) {
+        console.error('Failed to add user organizational role:', error);
+        throw error;
+    }
+};
+
+// Fetch user organizational roles
+export const fetchUserOrganizationalRoles = async (userId) => {
+    try {
+        const response = await axios.get(`${BASE_URL}/users/${userId}/organizational-roles`);
+        return response.data;
+    } catch (error) {
+        console.error('Failed to fetch user organizational roles:', error);
+        throw error;
+    }
+};
+
+// Update user organizational roles
+export const updateUserOrganizationalRoles = async (userId, rolesData) => {
+    try {
+        const response = await axios.put(`${BASE_URL}/users/${userId}/organizational-roles`, rolesData);
+        return response.data;
+    } catch (error) {
+        console.error('Failed to update user organizational roles:', error);
         throw error;
     }
 };
