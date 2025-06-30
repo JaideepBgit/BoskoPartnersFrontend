@@ -5,15 +5,22 @@ const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const InventoryService = {
   // Template Versions
-  getTemplateVersions: () => axios.get(`${BASE_URL}/template-versions`).then(res => res.data),
-  addTemplateVersion: (name, description) => axios.post(`${BASE_URL}/template-versions`, { name, description }),
-  updateTemplateVersion: (versionId, name, description) => axios.put(`${BASE_URL}/template-versions/${versionId}`, { name, description }),
+  getTemplateVersions: (organizationId = null) => {
+    const url = organizationId ? `${BASE_URL}/template-versions?organization_id=${organizationId}` : `${BASE_URL}/template-versions`;
+    return axios.get(url).then(res => res.data);
+  },
+  addTemplateVersion: (name, description, organizationId) => axios.post(`${BASE_URL}/template-versions`, { name, description, organization_id: organizationId }),
+  updateTemplateVersion: (versionId, name, description, organizationId = null) => {
+    const data = { name, description };
+    if (organizationId) data.organization_id = organizationId;
+    return axios.put(`${BASE_URL}/template-versions/${versionId}`, data);
+  },
   deleteTemplateVersion: (versionId) => axios.delete(`${BASE_URL}/template-versions/${versionId}`),
   
   // Templates
   getTemplates: () => axios.get(`${BASE_URL}/templates`).then(res => res.data),
   getTemplate: (templateId) => axios.get(`${BASE_URL}/templates/${templateId}`).then(res => res.data),
-  addTemplate: (payload) => axios.post(`${BASE_URL}/templates`, payload),
+  addTemplate: (payload) => axios.post(`${BASE_URL}/templates`, payload).then(res => res.data),
   updateTemplate: (templateId, payload) => axios.put(`${BASE_URL}/templates/${templateId}`, payload),
   deleteTemplate: (templateId) => axios.delete(`${BASE_URL}/templates/${templateId}`),
   deleteTemplateQuestion: (templateId, questionId) => axios.delete(`${BASE_URL}/templates/${templateId}/questions/${questionId}`),
@@ -27,6 +34,9 @@ const InventoryService = {
   getResponse: (responseId) => axios.get(`${BASE_URL}/responses/${responseId}`).then(res => res.data),
   addResponse: (templateId, payload) => axios.post(`${BASE_URL}/templates/${templateId}/responses`, payload),
   updateResponse: (responseId, payload) => axios.put(`${BASE_URL}/responses/${responseId}`, payload),
+  
+  // Organizations
+  getOrganizations: () => axios.get(`${BASE_URL}/organizations`).then(res => res.data),
   
   // Question Types
   getQuestionTypes: (category = null) => {

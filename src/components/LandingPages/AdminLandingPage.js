@@ -7,6 +7,12 @@ import Navbar from '../shared/Navbar/Navbar';
 const AdminLandingPage = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [stats, setStats] = useState({
+    total_users: 0,
+    active_users: 0,
+    completed_surveys: 0,
+    total_organizations: 0
+  });
 
   useEffect(() => {
     // Get user data from localStorage
@@ -16,6 +22,19 @@ const AdminLandingPage = () => {
       console.log('AdminLandingPage - User data from localStorage:', parsedData);
       setUser(parsedData);
     }
+
+    // Fetch dashboard statistics
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/admin/dashboard-stats');
+        const data = await response.json();
+        setStats(data);
+      } catch (error) {
+        console.error('Failed to fetch dashboard stats:', error);
+      }
+    };
+
+    fetchStats();
   }, []);
 
   return (
@@ -32,10 +51,13 @@ const AdminLandingPage = () => {
             <Card sx={{ height: '100%', backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
               <CardContent>
                 <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#633394', mb: 2 }}>
-                  Active Surveys
+                  Active Users
                 </Typography>
                 <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
-                  12
+                  {stats.active_users}
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#666', mt: 1 }}>
+                  Users with survey codes
                 </Typography>
               </CardContent>
             </Card>
@@ -48,7 +70,10 @@ const AdminLandingPage = () => {
                   Total Users
                 </Typography>
                 <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
-                  48
+                  {stats.total_users}
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#666', mt: 1 }}>
+                  Registered users in the system
                 </Typography>
               </CardContent>
             </Card>
@@ -61,7 +86,10 @@ const AdminLandingPage = () => {
                   Completed Surveys
                 </Typography>
                 <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
-                  156
+                  {stats.completed_surveys}
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#666', mt: 1 }}>
+                  {stats.completion_rate}% completion rate
                 </Typography>
               </CardContent>
             </Card>
@@ -83,9 +111,9 @@ const AdminLandingPage = () => {
                     color: 'white',
                     '&:hover': { backgroundColor: '#967CB2' }
                   }}
-                  onClick={() => navigate('/surveys/create')}
+                  onClick={() => navigate('/users')}
                 >
-                  <Typography>Create New Survey</Typography>
+                  <Typography>Manage Organizations</Typography>
                 </Card>
                 <Card 
                   sx={{ 
@@ -96,7 +124,7 @@ const AdminLandingPage = () => {
                     color: 'white',
                     '&:hover': { backgroundColor: '#967CB2' }
                   }}
-                  onClick={() => navigate('/users/manage')}
+                  onClick={() => navigate('/users')}
                 >
                   <Typography>Manage Users</Typography>
                 </Card>
@@ -109,9 +137,9 @@ const AdminLandingPage = () => {
                     color: 'white',
                     '&:hover': { backgroundColor: '#967CB2' }
                   }}
-                  onClick={() => navigate('/reports/generate')}
+                  onClick={() => navigate('/inventory')}
                 >
-                  <Typography>Generate Reports</Typography>
+                  <Typography>Survey Inventory</Typography>
                 </Card>
               </Box>
             </Paper>

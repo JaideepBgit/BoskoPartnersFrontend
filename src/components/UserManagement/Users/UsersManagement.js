@@ -14,8 +14,12 @@ import {
     fetchUsersWithRoleUser, addUser, updateUser, deleteUser, 
     fetchOrganizations, fetchRoles, uploadUserFile, addRole,
     addUserOrganizationalRole, fetchUserOrganizationalRoles,
-    updateUserOrganizationalRoles
+    updateUserOrganizationalRoles, fetchTemplatesByOrganization
 } from '../../../services/UserManagement/UserManagementService';
+// import GooglePlacesAutocomplete from '../common/GooglePlacesAutocomplete';
+// import GooglePlacesAutocomplete from '../common/GooglePlacesAutocompleteSimple';
+// import ManualAddressInput from '../common/ManualAddressInput';
+import MapAddressSelector from '../common/MapAddressSelector';
 
 function UsersManagement() {
     const theme = useTheme();
@@ -24,6 +28,7 @@ function UsersManagement() {
     const [users, setUsers] = useState([]);
     const [organizations, setOrganizations] = useState([]);
     const [roles, setRoles] = useState([]);
+    const [templates, setTemplates] = useState([]);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [totalUsers, setTotalUsers] = useState(0);
@@ -33,6 +38,7 @@ function UsersManagement() {
     const [openEditDialog, setOpenEditDialog] = useState(false);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [openUploadDialog, setOpenUploadDialog] = useState(false);
+    const [openEmailDialog, setOpenEmailDialog] = useState(false);
     
     // Form states
     const [formData, setFormData] = useState({
@@ -44,6 +50,7 @@ function UsersManagement() {
         lastname: '',
         phone: '',
         organization_id: '',
+        template_id: '',
         roles: [],
         geo_location: {
             continent: '',
@@ -73,6 +80,21 @@ function UsersManagement() {
     const [selectedOrganizationId, setSelectedOrganizationId] = useState('');
     const [selectedRoleType, setSelectedRoleType] = useState('');
     const [organizationalRoleToAdd, setOrganizationalRoleToAdd] = useState('');
+    
+    // Email dialog states
+    const [emailData, setEmailData] = useState({
+        to: '',
+        subject: '',
+        body: '',
+        username: '',
+        password: '',
+        firstname: ''
+    });
+    const [emailSending, setEmailSending] = useState(false);
+    const [emailSent, setEmailSent] = useState(false);
+    
+    // Google Places state
+    const [addressSearch, setAddressSearch] = useState('');
 
     // Load data on component mount
     useEffect(() => {
@@ -113,6 +135,21 @@ function UsersManagement() {
         }
     };
 
+    // Load templates by organization
+    const loadTemplates = async (organizationId) => {
+        if (!organizationId) {
+            setTemplates([]);
+            return;
+        }
+        try {
+            const data = await fetchTemplatesByOrganization(organizationId);
+            setTemplates(data);
+        } catch (error) {
+            console.error('Failed to fetch templates:', error);
+            setTemplates([]);
+        }
+    };
+
     // Handle form input changes
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -128,10 +165,20 @@ function UsersManagement() {
                 }
             });
         } else {
-            setFormData({
-                ...formData,
-                [name]: value
-            });
+            // Handle organization change - load templates
+            if (name === 'organization_id') {
+                loadTemplates(value);
+                setFormData({
+                    ...formData,
+                    [name]: value,
+                    template_id: '' // Reset template selection when organization changes
+                });
+            } else {
+                setFormData({
+                    ...formData,
+                    [name]: value
+                });
+            }
         }
     };
 
@@ -224,6 +271,7 @@ function UsersManagement() {
             lastname: '',
             phone: '',
             organization_id: '',
+            template_id: '',
             roles: [],
             geo_location: {
                 continent: '',
@@ -239,6 +287,7 @@ function UsersManagement() {
                 longitude: ''
             }
         });
+        setTemplates([]); // Reset templates
         setOpenAddDialog(true);
     };
 
@@ -266,6 +315,7 @@ function UsersManagement() {
             lastname: user.lastname || '',
             phone: user.phone || '',
             organization_id: user.organization_id || '',
+            template_id: user.template_id || '',
             roles: userRoles,
             geo_location: user.geo_location || {
                 continent: '',
@@ -281,6 +331,13 @@ function UsersManagement() {
                 longitude: ''
             }
         });
+        
+        // Load templates for the user's organization
+        if (user.organization_id) {
+            loadTemplates(user.organization_id);
+        } else {
+            setTemplates([]);
+        }
         setOpenEditDialog(true);
     };
 
@@ -303,6 +360,7 @@ function UsersManagement() {
         setOpenEditDialog(false);
         setOpenDeleteDialog(false);
         setOpenUploadDialog(false);
+        setOpenEmailDialog(false);
         setSelectedUser(null);
         // Reset new organizational role fields
         setSelectedOrganizationId('');
@@ -317,6 +375,7 @@ function UsersManagement() {
             lastname: '',
             phone: '',
             organization_id: '',
+            template_id: '',
             roles: [],
             geo_location: {
                 continent: '',
@@ -332,6 +391,64 @@ function UsersManagement() {
                 longitude: ''
             }
         });
+        setTemplates([]); // Reset templates
+        // Reset email data
+        setEmailData({
+            to: '',
+            subject: '',
+            body: '',
+            username: '',
+            password: '',
+            firstname: ''
+        });
+    };
+
+    // Handle closing email dialog specifically
+    const handleCloseEmailDialog = () => {
+        setOpenEmailDialog(false);
+        setEmailSending(false);
+        setEmailSent(false);
+        setEmailData({
+            to: '',
+            subject: '',
+            body: '',
+            username: '',
+            password: '',
+            firstname: ''
+        });
+    };
+
+    // Handle sending the welcome email
+    const handleSendWelcomeEmail = async () => {
+        setEmailSending(true);
+        try {
+            const response = await fetch('/api/send-welcome-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    to_email: emailData.to,
+                    username: emailData.username,
+                    password: emailData.password,
+                    firstname: emailData.firstname
+                }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                setEmailSent(true);
+                alert(`Welcome email sent successfully to ${emailData.to}!`);
+            } else {
+                throw new Error(result.error || 'Failed to send email');
+            }
+        } catch (error) {
+            console.error('Error sending welcome email:', error);
+            alert(`Failed to send email: ${error.message}`);
+        } finally {
+            setEmailSending(false);
+        }
     };
 
     // Add a new user
@@ -362,8 +479,39 @@ function UsersManagement() {
                 }
             }
             
+            // Prepare email data for the welcome email
+            const welcomeEmailData = {
+                to: formData.email,
+                subject: 'Welcome to Saurara Platform',
+                body: `Dear ${formData.firstname || formData.username},
+
+Welcome to the Saurara Platform! We are excited to have you join our community.
+
+Your account has been successfully created with the following details:
+
+Username: ${formData.username}
+Email: ${formData.email}
+Password: ${formData.password || 'Auto-generated password will be sent separately'}
+
+You can access the platform at: www.saurara.org
+
+Please keep this information secure and change your password after your first login for enhanced security.
+
+If you have any questions or need assistance, please don't hesitate to contact our support team.
+
+Best regards,
+The Saurara Team`,
+                username: formData.username,
+                password: formData.password || 'Auto-generated',
+                firstname: formData.firstname
+            };
+            
+            setEmailData(welcomeEmailData);
             loadUsers();
-            handleCloseDialogs();
+            
+            // Close the add dialog and open the email dialog
+            setOpenAddDialog(false);
+            setOpenEmailDialog(true);
         } catch (error) {
             console.error('Failed to add user:', error);
             alert(`Failed to add user: ${error.message}`);
@@ -458,6 +606,30 @@ function UsersManagement() {
 
     const getOrganizationRoles = (organizationId) => {
         return formData.roles.filter(r => r.organization_id === organizationId);
+    };
+
+    // Handle Google Places selection
+    const handlePlaceSelect = (placeData) => {
+        const { geoLocationData, formattedAddress } = placeData;
+        
+        // Update form data with the selected place information
+        setFormData({
+            ...formData,
+            geo_location: {
+                ...geoLocationData
+            }
+        });
+        
+        // Show a brief success message
+        console.log('Address auto-filled:', formattedAddress);
+        
+        // Clear the search field
+        setAddressSearch('');
+    };
+
+    // Handle address search input change
+    const handleAddressSearchChange = (event) => {
+        setAddressSearch(event.target.value);
     };
 
     // Update an existing user
@@ -748,6 +920,26 @@ function UsersManagement() {
                             ))}
                             </Select>
                         </FormControl>
+
+                        {/* Template Selection - Only shown when organization is selected */}
+                        {formData.organization_id && (
+                            <FormControl fullWidth variant="outlined">
+                                <InputLabel>Survey Template</InputLabel>
+                                <Select
+                                    name="template_id"
+                                    value={formData.template_id}
+                                    onChange={handleInputChange}
+                                    label="Survey Template"
+                                >
+                                    <MenuItem value="">No Template Selected</MenuItem>
+                                    {templates.map((template) => (
+                                        <MenuItem key={template.id} value={template.id}>
+                                            {template.survey_code} - {template.version_name}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        )}
                     </Box>
                 </Box>
                 </Paper>
@@ -893,121 +1085,15 @@ function UsersManagement() {
                     </Typography>
                     
                     <Box sx={{ maxWidth: '900px', mx: 'auto' }}>
-                        <Grid container spacing={3}>
-                            {/* Left Column */}
-                            <Grid item xs={12} md={6}>
-                                <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 2 }}>
-                                    <TextField
-                                        fullWidth
-                                        label="Country"
-                                        name="geo_location.country"
-                                        value={formData.geo_location.country}
-                                        onChange={handleInputChange}
-                                        variant="outlined"
-                                    />
-                                    
-                                    <TextField
-                                        fullWidth
-                                        label="Province/State"
-                                        name="geo_location.province"
-                                        value={formData.geo_location.province}
-                                        onChange={handleInputChange}
-                                        variant="outlined"
-                                    />
-                                    
-                                    <TextField
-                                        fullWidth
-                                        label="City"
-                                        name="geo_location.city"
-                                        value={formData.geo_location.city}
-                                        onChange={handleInputChange}
-                                        variant="outlined"
-                                    />
-                                    
-                                    <TextField
-                                        fullWidth
-                                        label="Address Line 1"
-                                        name="geo_location.address_line1"
-                                        value={formData.geo_location.address_line1}
-                                        onChange={handleInputChange}
-                                        variant="outlined"
-                                    />
-                                    
-                                    <TextField
-                                        fullWidth
-                                        label="Postal Code"
-                                        name="geo_location.postal_code"
-                                        value={formData.geo_location.postal_code}
-                                        onChange={handleInputChange}
-                                        variant="outlined"
-                                    />
-                                </Box>
-                            </Grid>
-                            
-                            {/* Right Column */}
-                            <Grid item xs={12} md={6}>
-                                <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 2 }}>
-                                    <TextField
-                                        fullWidth
-                                        label="Continent"
-                                        name="geo_location.continent"
-                                        value={formData.geo_location.continent}
-                                        onChange={handleInputChange}
-                                        variant="outlined"
-                                    />
-                                    
-                                    <TextField
-                                        fullWidth
-                                        label="Region"
-                                        name="geo_location.region"
-                                        value={formData.geo_location.region}
-                                        onChange={handleInputChange}
-                                        variant="outlined"
-                                    />
-                                    
-                                    <TextField
-                                        fullWidth
-                                        label="Town"
-                                        name="geo_location.town"
-                                        value={formData.geo_location.town}
-                                        onChange={handleInputChange}
-                                        variant="outlined"
-                                    />
-                                    
-                                    <TextField
-                                        fullWidth
-                                        label="Address Line 2"
-                                        name="geo_location.address_line2"
-                                        value={formData.geo_location.address_line2}
-                                        onChange={handleInputChange}
-                                        variant="outlined"
-                                    />
-                                    
-                                    <Box sx={{ display: 'flex', gap: 1 }}>
-                                        <TextField
-                                            fullWidth
-                                            label="Latitude"
-                                            name="geo_location.latitude"
-                                            type="number"
-                                            value={formData.geo_location.latitude}
-                                            onChange={handleInputChange}
-                                            variant="outlined"
-                                            inputProps={{ step: "any" }}
-                                        />
-                                        <TextField
-                                            fullWidth
-                                            label="Longitude"
-                                            name="geo_location.longitude"
-                                            type="number"
-                                            value={formData.geo_location.longitude}
-                                            onChange={handleInputChange}
-                                            variant="outlined"
-                                            inputProps={{ step: "any" }}
-                                        />
-                                    </Box>
-                                </Box>
-                            </Grid>
-                        </Grid>
+                        {/* Map Address Selector */}
+                        <Box sx={{ mb: 3 }}>
+                            <MapAddressSelector
+                                onPlaceSelect={handlePlaceSelect}
+                                label="🔍 Address Information"
+                                fullWidth
+                            />
+                        </Box>
+
                     </Box>
                 </Paper>
                 
@@ -1176,6 +1262,100 @@ function UsersManagement() {
                         disabled={!selectedFile}
                     >
                         Upload
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Welcome Email Dialog */}
+            <Dialog 
+                open={openEmailDialog} 
+                onClose={() => {}} // Prevent closing by clicking outside
+                disableEscapeKeyDown // Prevent closing with Escape key
+                maxWidth="md" 
+                fullWidth
+            >
+                <DialogTitle sx={{ backgroundColor: '#633394', color: 'white' }}>
+                    Welcome Email Preview
+                </DialogTitle>
+                <DialogContent dividers>
+                    <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold' }}>
+                        Email Details
+                    </Typography>
+                    
+                    <Box sx={{ mb: 3 }}>
+                        <Paper sx={{ p: 2, backgroundColor: '#f5f5f5', mb: 2 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#633394' }}>
+                                To:
+                            </Typography>
+                            <Typography variant="body1" sx={{ mb: 2 }}>
+                                {emailData.to}
+                            </Typography>
+                            
+                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#633394' }}>
+                                Subject:
+                            </Typography>
+                            <Typography variant="body1" sx={{ mb: 2 }}>
+                                {emailData.subject}
+                            </Typography>
+                            
+                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#633394' }}>
+                                Message Body:
+                            </Typography>
+                            <Paper sx={{ p: 2, backgroundColor: 'white', border: '1px solid #ddd' }}>
+                                <Typography 
+                                    variant="body1" 
+                                    sx={{ 
+                                        whiteSpace: 'pre-line',
+                                        fontFamily: 'monospace',
+                                        fontSize: '0.9rem'
+                                    }}
+                                >
+                                    {emailData.body}
+                                </Typography>
+                            </Paper>
+                        </Paper>
+                        
+                        <Paper sx={{ p: 2, backgroundColor: emailSent ? '#e8f5e8' : '#fff3e0', border: emailSent ? '1px solid #4caf50' : '1px solid #ff9800' }}>
+                            <Typography variant="body2" sx={{ color: emailSent ? '#2e7d32' : '#e65100', fontWeight: 'bold' }}>
+                                {emailSent ? '✅ Email sent successfully!' : '📧 This email template is ready to be sent to the new user.'}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: emailSent ? '#2e7d32' : '#e65100', mt: 1 }}>
+                                Username: {emailData.username} | Password: {emailData.password}
+                            </Typography>
+                            {emailSent && (
+                                <Typography variant="body2" sx={{ color: '#2e7d32', mt: 1 }}>
+                                    The welcome email has been delivered to {emailData.to}
+                                </Typography>
+                            )}
+                        </Paper>
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    {!emailSent && (
+                        <Button 
+                            onClick={handleSendWelcomeEmail} 
+                            variant="contained" 
+                            disabled={emailSending}
+                            startIcon={emailSending ? <CircularProgress size={20} color="inherit" /> : null}
+                            sx={{ 
+                                backgroundColor: '#4caf50', 
+                                '&:hover': { backgroundColor: '#45a049' },
+                                mr: 1
+                            }}
+                        >
+                            {emailSending ? 'Sending...' : 'Send Email'}
+                        </Button>
+                    )}
+                    <Button 
+                        onClick={handleCloseEmailDialog} 
+                        variant="outlined" 
+                        sx={{ 
+                            color: '#633394', 
+                            borderColor: '#633394', 
+                            '&:hover': { borderColor: '#7c52a5', color: '#7c52a5' } 
+                        }}
+                    >
+                        {emailSent ? 'Done' : 'Close'}
                     </Button>
                 </DialogActions>
             </Dialog>

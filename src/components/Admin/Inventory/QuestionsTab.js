@@ -685,7 +685,12 @@ const QuestionsTab = ({
   const handleOpenEdit = (q) => {
     setSelectedQuestion(q);
     setFormData({
-      questions: [q]
+      question_text: q.question_text,
+      question_type_id: q.question_type_id,
+      section: q.section || '',
+      order: q.order,
+      is_required: q.is_required,
+      config: q.config || null
     });
     setOpenQDialog(true);
   };
@@ -1027,10 +1032,11 @@ const QuestionsTab = ({
                       startIcon={<AddIcon />} 
                       onClick={handleOpenAdd}
                       sx={{ 
-                        backgroundColor: '#633394', 
+                        backgroundColor: '#633394 !important', 
+                        color: 'white !important',
                         transition: 'all 0.2s ease-in-out',
                         '&:hover': { 
-                          backgroundColor: '#7c52a5',
+                          backgroundColor: '#7c52a5 !important',
                           transform: 'translateY(-1px)',
                           boxShadow: '0 4px 8px rgba(99, 51, 148, 0.3)',
                         },

@@ -45,8 +45,12 @@ const InventoryPage = () => {
   const [selectedVersion, setSelectedVersion] = useState(null);
   const [newVersionName, setNewVersionName] = useState('');
   const [newVersionDesc, setNewVersionDesc] = useState('');
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState('');
   const [editingVersion, setEditingVersion] = useState(null);
   const [openVersionDialog, setOpenVersionDialog] = useState(false);
+  
+  // Organizations
+  const [organizations, setOrganizations] = useState([]);
   
   // Templates
   const [templates, setTemplates] = useState([]);
@@ -70,6 +74,16 @@ const InventoryPage = () => {
   
   // Responses
   const [responses, setResponses] = useState([]);
+
+  // Fetch organizations
+  const fetchOrganizations = async () => {
+    try {
+      const data = await InventoryService.getOrganizations();
+      setOrganizations(data);
+    } catch (err) {
+      console.error('Error fetching organizations:', err.response || err);
+    }
+  };
 
   // Fetch template versions
   const fetchTemplateVersions = async () => {
@@ -113,6 +127,7 @@ const InventoryPage = () => {
 
   // Initial data loading
   useEffect(() => {
+    fetchOrganizations();
     fetchTemplateVersions();
     fetchTemplates();
     fetchResponses();
@@ -127,14 +142,20 @@ const InventoryPage = () => {
 
   // Template version handlers
   const handleAddTemplateVersion = async () => {
-    if (!newVersionName) return;
+    if (!newVersionName || !selectedOrganizationId) {
+      alert('Please provide a name and select an organization');
+      return;
+    }
     try {
-      await InventoryService.addTemplateVersion(newVersionName, newVersionDesc);
+      await InventoryService.addTemplateVersion(newVersionName, newVersionDesc, selectedOrganizationId);
       setNewVersionName('');
       setNewVersionDesc('');
+      setSelectedOrganizationId('');
+      setOpenVersionDialog(false);
       fetchTemplateVersions();
     } catch (err) {
       console.error('Error adding template version:', err.response || err);
+      alert('Failed to add template version. Please try again.');
     }
   };
 
@@ -142,20 +163,26 @@ const InventoryPage = () => {
     setEditingVersion(version);
     setNewVersionName(version.name);
     setNewVersionDesc(version.description || '');
+    setSelectedOrganizationId(version.organization_id || '');
     setOpenVersionDialog(true);
   };
 
   const handleUpdateTemplateVersion = async () => {
-    if (!newVersionName || !editingVersion) return;
+    if (!newVersionName || !editingVersion || !selectedOrganizationId) {
+      alert('Please provide a name and select an organization');
+      return;
+    }
     try {
-      await InventoryService.updateTemplateVersion(editingVersion.id, newVersionName, newVersionDesc);
+      await InventoryService.updateTemplateVersion(editingVersion.id, newVersionName, newVersionDesc, selectedOrganizationId);
       setNewVersionName('');
       setNewVersionDesc('');
+      setSelectedOrganizationId('');
       setEditingVersion(null);
       setOpenVersionDialog(false);
       fetchTemplateVersions();
     } catch (err) {
       console.error('Error updating template version:', err.response || err);
+      alert('Failed to update template version. Please try again.');
     }
   };
 
@@ -183,6 +210,7 @@ const InventoryPage = () => {
     setEditingVersion(null);
     setNewVersionName('');
     setNewVersionDesc('');
+    setSelectedOrganizationId('');
   };
   
   // Template handlers - commented out unused functions
@@ -378,6 +406,7 @@ const InventoryPage = () => {
                   setEditingVersion(null);
                   setNewVersionName('');
                   setNewVersionDesc('');
+                  setSelectedOrganizationId('');
                   setOpenVersionDialog(true);
                 }}
                 size={isMobile ? "small" : "medium"}
@@ -437,16 +466,21 @@ const InventoryPage = () => {
                     >
                       <ListItemText
                         primary={v.name}
-                        secondary={v.description || 'No description'}
+                        secondary={
+                          <Box>
+                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}>
+                              {v.description || 'No description'}
+                            </Typography>
+                            <Typography variant="caption" color="primary" sx={{ fontWeight: 500, fontSize: isMobile ? '0.7rem' : '0.75rem' }}>
+                              Organization: {v.organization_name || 'N/A'}
+                            </Typography>
+                          </Box>
+                        }
                         primaryTypographyProps={{
                           fontWeight: selectedVersion?.id === v.id ? 600 : 400,
                           color: selectedVersion?.id === v.id ? '#633394' : '#333',
                           transition: 'color 0.2s ease-in-out',
                           fontSize: isMobile ? '0.9rem' : '1rem',
-                        }}
-                        secondaryTypographyProps={{
-                          color: 'text.secondary',
-                          fontSize: isMobile ? '0.75rem' : '0.875rem',
                         }}
                       />
                       <ListItemSecondaryAction>
@@ -676,6 +710,30 @@ const InventoryPage = () => {
                 }
               }}
             />
+            <FormControl fullWidth margin="normal" size={isMobile ? "small" : "medium"}>
+              <InputLabel id="organization-label" sx={{ '&.Mui-focused': { color: '#633394' } }}>
+                Organization *
+              </InputLabel>
+              <Select
+                labelId="organization-label"
+                value={selectedOrganizationId}
+                label="Organization *"
+                onChange={e => setSelectedOrganizationId(e.target.value)}
+                sx={{ 
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    '&.Mui-focused': {
+                      borderColor: '#633394',
+                    },
+                  },
+                }}
+              >
+                {organizations.map(org => (
+                  <MenuItem key={org.id} value={org.id}>
+                    {org.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
             <TextField
               label="Description"
               fullWidth
@@ -711,7 +769,7 @@ const InventoryPage = () => {
             <Button 
               variant="contained" 
               onClick={editingVersion ? handleUpdateTemplateVersion : handleAddTemplateVersion}
-              disabled={!newVersionName}
+              disabled={!newVersionName || !selectedOrganizationId}
               size={isMobile ? "small" : "medium"}
               sx={{ 
                 backgroundColor: '#633394', 

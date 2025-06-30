@@ -119,18 +119,23 @@ const TemplatesQuestionsTab = () => {
   };
 
   const handleAddTemplate = async () => {
-    if (!newTemplateData.survey_code || !newTemplateData.version_id) return;
+    if (!newTemplateData.version_id) return;
     try {
       const payload = {
         ...newTemplateData,
         created_by: 1,
         questions: newTemplateData.questions || []
       };
-      await InventoryService.addTemplate(payload);
+      const response = await InventoryService.addTemplate(payload);
       setNewTemplateData({ survey_code: '', version_id: '', questions: [] });
       fetchTemplates();
+      // Show success message with the generated survey code
+      if (response && response.survey_code) {
+        alert(`Template created successfully with survey code: ${response.survey_code}`);
+      }
     } catch (err) {
       console.error('Error adding template:', err.response || err);
+      alert('Error creating template. Please try again.');
     }
   };
 
@@ -357,17 +362,17 @@ const TemplatesQuestionsTab = () => {
                       <TextField
                         fullWidth
                         size="small"
-                        label="Survey Code"
+                        label="Survey Code (Optional)"
                         value={newTemplateData.survey_code}
                         onChange={(e) => setNewTemplateData({ ...newTemplateData, survey_code: e.target.value, version_id: selectedVersion.id })}
-                        placeholder="Enter survey code"
+                        placeholder="Leave empty for auto-generated code"
+                        helperText="A unique identifier for this template. If left empty, one will be generated automatically."
                       />
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <Button 
                         variant="contained" 
                         onClick={handleAddTemplate}
-                        disabled={!newTemplateData.survey_code}
                         sx={{ 
                           backgroundColor: '#633394', 
                           '&:hover': { backgroundColor: '#7c52a5' }
@@ -432,8 +437,9 @@ const TemplatesQuestionsTab = () => {
                       startIcon={<AddIcon />} 
                       onClick={handleOpenAdd}
                       sx={{ 
-                        backgroundColor: '#633394', 
-                        '&:hover': { backgroundColor: '#7c52a5' }
+                        backgroundColor: '#633394 !important', 
+                        color: 'white !important',
+                        '&:hover': { backgroundColor: '#7c52a5 !important' }
                       }}
                     >
                       Add Question

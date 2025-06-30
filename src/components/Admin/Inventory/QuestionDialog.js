@@ -605,8 +605,35 @@ const QuestionDialog = ({
         {questionData.question_type_id && renderConfigFields()}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSave} variant="contained">
+        <Button 
+          onClick={onClose}
+          sx={{ 
+            color: '#633394',
+            borderColor: '#633394',
+            '&:hover': { 
+              backgroundColor: 'rgba(99, 51, 148, 0.04)',
+              borderColor: '#7c52a5',
+              color: '#7c52a5'
+            }
+          }}
+        >
+          Cancel
+        </Button>
+        <Button 
+          onClick={handleSave} 
+          variant="contained"
+          sx={{ 
+            backgroundColor: '#633394 !important', 
+            color: 'white !important',
+            '&:hover': { 
+              backgroundColor: '#7c52a5 !important',
+              boxShadow: '0 4px 8px rgba(99, 51, 148, 0.3)'
+            },
+            '&:active': {
+              boxShadow: '0 2px 4px rgba(99, 51, 148, 0.3)'
+            }
+          }}
+        >
           {editingQuestion ? 'Update' : 'Add'} Question
         </Button>
       </DialogActions>

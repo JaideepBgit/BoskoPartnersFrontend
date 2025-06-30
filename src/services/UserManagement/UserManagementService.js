@@ -273,3 +273,14 @@ export const updateUserOrganizationalRoles = async (userId, rolesData) => {
         throw error;
     }
 };
+
+// Fetch templates by organization
+export const fetchTemplatesByOrganization = async (organizationId) => {
+    try {
+        const response = await axios.get(`${BASE_URL}/templates?organization_id=${organizationId}`);
+        return response.data;
+    } catch (error) {
+        console.error(`Failed to fetch templates for organization ${organizationId}:`, error);
+        throw error;
+    }
+};
