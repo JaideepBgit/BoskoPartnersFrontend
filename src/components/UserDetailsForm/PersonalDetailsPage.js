@@ -11,13 +11,14 @@ const PersonalDetailsPage = ({ formData, updateFormData, saveAndContinue, saveAn
   };
 
   return (
-    <Box sx={{ px: isMobile ? 1 : 2 }}>
+    <Box sx={{ px: isMobile ? 1 : 2, maxWidth: '700px', mx: 'auto' }}>
       <Typography variant="h5" component="h2" gutterBottom>
         Personal Details
       </Typography>
       
-      <Grid container spacing={isMobile ? 2 : 3} direction="column">
-        <Grid item xs={12}>
+      <Grid container spacing={3}>
+        {/* First row - First Name and Last Name */}
+        <Grid item xs={12} md={6}>
           <TextField
             fullWidth
             name="firstName"
@@ -31,16 +32,23 @@ const PersonalDetailsPage = ({ formData, updateFormData, saveAndContinue, saveAn
             size={isMobile ? "small" : "medium"}
             sx={{ 
               backgroundColor: 'white',
+              minWidth: '280px',
               '& .MuiOutlinedInput-root': {
                 '& fieldset': {
-                  borderColor: 'white',
+                  borderColor: '#e0e0e0',
+                },
+                '&:hover fieldset': {
+                  borderColor: '#633394',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#633394',
                 },
               }
             }}
           />
         </Grid>
         
-        <Grid item xs={12}>
+        <Grid item xs={12} md={6}>
           <TextField
             fullWidth
             name="lastName"
@@ -54,16 +62,24 @@ const PersonalDetailsPage = ({ formData, updateFormData, saveAndContinue, saveAn
             size={isMobile ? "small" : "medium"}
             sx={{ 
               backgroundColor: 'white',
+              minWidth: '280px',
               '& .MuiOutlinedInput-root': {
                 '& fieldset': {
-                  borderColor: 'white',
+                  borderColor: '#e0e0e0',
+                },
+                '&:hover fieldset': {
+                  borderColor: '#633394',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#633394',
                 },
               }
             }}
           />
         </Grid>
         
-        <Grid item xs={12}>
+        {/* Second row - Email and Phone */}
+        <Grid item xs={12} md={6}>
           <TextField
             fullWidth
             name="email"
@@ -77,16 +93,23 @@ const PersonalDetailsPage = ({ formData, updateFormData, saveAndContinue, saveAn
             size={isMobile ? "small" : "medium"}
             sx={{ 
               backgroundColor: 'white',
+              minWidth: '280px',
               '& .MuiOutlinedInput-root': {
                 '& fieldset': {
-                  borderColor: 'white',
+                  borderColor: '#e0e0e0',
+                },
+                '&:hover fieldset': {
+                  borderColor: '#633394',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#633394',
                 },
               }
             }}
           />
         </Grid>
         
-        <Grid item xs={12}>
+        <Grid item xs={12} md={6}>
           <TextField
             fullWidth
             name="phone"
@@ -100,9 +123,16 @@ const PersonalDetailsPage = ({ formData, updateFormData, saveAndContinue, saveAn
             size={isMobile ? "small" : "medium"}
             sx={{ 
               backgroundColor: 'white',
+              minWidth: '280px',
               '& .MuiOutlinedInput-root': {
                 '& fieldset': {
-                  borderColor: 'white',
+                  borderColor: '#e0e0e0',
+                },
+                '&:hover fieldset': {
+                  borderColor: '#633394',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#633394',
                 },
               }
             }}
@@ -113,17 +143,14 @@ const PersonalDetailsPage = ({ formData, updateFormData, saveAndContinue, saveAn
           <Box sx={{
             display: 'flex', 
             flexDirection: isMobile ? 'column' : 'row',
-            justifyContent: isMobile ? 'center' : 'space-between', 
+            justifyContent: 'center', 
             alignItems: 'center',
             mt: 2,
-            gap: isMobile ? 2 : 0
+            gap: isMobile ? 2 : 3
           }}>
-            {!isMobile && <Box sx={{ width: 40 }} />}
-
             <Button 
               variant="outlined"
               disabled={isSaving}
-              fullWidth={isMobile}
               sx={{
                 color: 'black',
                 borderColor: '#ccc',
@@ -134,7 +161,7 @@ const PersonalDetailsPage = ({ formData, updateFormData, saveAndContinue, saveAn
                 },
                 borderRadius: '4px',
                 padding: isMobile ? '8px 16px' : '10px 20px',
-                order: isMobile ? 2 : 1
+                minWidth: '120px'
               }}
               onClick={saveAndExit}
             >
@@ -153,12 +180,11 @@ const PersonalDetailsPage = ({ formData, updateFormData, saveAndContinue, saveAn
               onClick={saveAndContinue}
               disabled={isSaving}
               sx={{ 
-                backgroundColor: '#8a94e3',
+                backgroundColor: '#633394',
                 color: 'white',
                 '&:hover': {
-                  backgroundColor: '#6a74c3',
+                  backgroundColor: '#7c52a5',
                 },
-                order: isMobile ? 1 : 2,
                 width: isMobile ? '100%' : 'auto',
                 borderRadius: isMobile ? '4px' : '50%',
                 padding: isMobile ? '8px' : '12px'

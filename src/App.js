@@ -11,6 +11,9 @@ import InventoryPage from './components/Admin/Inventory/InventoryPage';
 import UserManagementMain from './components/UserManagement/UserManagementMain';
 import SurveysPage from './components/Surveys/SurveysPage';
 import SurveyTaking from './components/Survey/SurveyTaking';
+import ReportBuilder from './components/Admin/Reports/ReportBuilder';
+import ReportsPage from './components/Admin/Reports/ReportsPage';
+import VisualReportBuilder from './components/Admin/Reports/VisualReportBuilder';
 import './App.css';
 import './styles/form.css';
 
@@ -131,6 +134,27 @@ function Main({ isAuthenticated, userRole, login, logout }) {
         <Route path="/survey" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <SurveyTaking onLogout={logout} />
+          </ProtectedRoute>
+        } />
+        
+        {/* Reports Route */}
+        <Route path="/reports" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <ReportsPage onLogout={logout} />
+          </ProtectedRoute>
+        } />
+        
+        {/* Report Builder Route */}
+        <Route path="/reportbuilder" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <ReportBuilder onLogout={logout} />
+          </ProtectedRoute>
+        } />
+        
+        {/* Visual Report Builder Route */}
+        <Route path="/visual-builder" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <VisualReportBuilder onLogout={logout} />
           </ProtectedRoute>
         } />
         

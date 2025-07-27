@@ -46,33 +46,10 @@ function OrganizationsManagement() {
     
     // Form states
     const [formData, setFormData] = useState({
+        // Basic Information & Address
         name: '',
         type: 'Churches',
-        continent: '',
-        region: '',
-        country: '',
-        province: '',
-        city: '',
-        town: '',
-        address_line1: '',
-        address_line2: '',
-        postal_code: '',
         website: '',
-        denomination_affiliation: '',
-        accreditation_status_or_body: '',
-        highest_level_of_education: '',
-        affiliation_validation: '',
-        umbrella_association_membership: '',
-        denomination_id: '',
-        accreditation_body_id: '',
-        umbrella_association_id: '',
-        primary_contact_id: '',
-        secondary_contact_id: '',
-        head_name: '',
-        head_email: '',
-        head_phone: '',
-        head_address: '',
-        details: {},
         geo_location: {
             continent: '',
             region: '',
@@ -85,7 +62,21 @@ function OrganizationsManagement() {
             postal_code: '',
             latitude: '',
             longitude: ''
-        }
+        },
+        // Contacts & Relationships
+        primary_contact_id: '',
+        secondary_contact_id: '',
+        head_name: '',
+        head_email: '',
+        head_phone: '',
+        head_address: '',
+        denomination_id: '',
+        accreditation_body_id: '',
+        umbrella_association_id: '',
+        // Miscellaneous
+        highest_level_of_education: '',
+        affiliation_validation: '',
+        details: {}
     });
     
     const [selectedOrganization, setSelectedOrganization] = useState(null);
@@ -248,65 +239,53 @@ function OrganizationsManagement() {
         // Handle nested geo_location fields
         if (name.startsWith('geo_location.')) {
             const geoField = name.split('.')[1];
-            setFormData({
-                ...formData,
+            setFormData(prevData => ({
+                ...prevData,
                 geo_location: {
-                    ...formData.geo_location,
+                    ...prevData.geo_location,
                     [geoField]: value
-                },
-                // Also update the individual address fields for backward compatibility
-                [geoField]: value
-            });
+                }
+            }));
         } else {
-            setFormData({
-                ...formData,
+            setFormData(prevData => ({
+                ...prevData,
                 [name]: value,
                 // Also update geo_location if it's an address field
                 ...(name === 'continent' || name === 'region' || name === 'country' || 
                     name === 'province' || name === 'city' || name === 'town' || 
                     name === 'address_line1' || name === 'address_line2' || name === 'postal_code' ? {
                     geo_location: {
-                        ...formData.geo_location,
+                        ...prevData.geo_location,
                         [name]: value
                     }
                 } : {})
-            });
+            }));
         }
     };
 
     // Handle details input changes
     const handleDetailsChange = (e) => {
         const { name, value } = e.target;
-        setFormData({
-            ...formData,
+        setFormData(prevData => ({
+            ...prevData,
             details: {
-                ...formData.details,
+                ...prevData.details,
                 [name]: value
             }
-        });
+        }));
     };
 
     // Handle Google Places selection for organization address
     const handlePlaceSelect = (placeData) => {
         const { geoLocationData, formattedAddress } = placeData;
         
-        // Update form data with the selected place information
-        setFormData({
-            ...formData,
+        setFormData(prevData => ({
+            ...prevData,
             geo_location: {
+                ...prevData.geo_location,
                 ...geoLocationData
-            },
-            // Also update the individual address fields for backward compatibility
-            continent: geoLocationData.continent || '',
-            region: geoLocationData.region || '',
-            country: geoLocationData.country || '',
-            province: geoLocationData.province || '',
-            city: geoLocationData.city || '',
-            town: geoLocationData.town || '',
-            address_line1: geoLocationData.address_line1 || '',
-            address_line2: geoLocationData.address_line2 || '',
-            postal_code: geoLocationData.postal_code || ''
-        });
+            }
+        }));
         
         // Show a brief success message
         console.log('Organization address auto-filled:', formattedAddress);
@@ -474,12 +453,10 @@ function OrganizationsManagement() {
 
     // Handle closing add related organization dialog
     const handleCloseAddRelatedOrgDialog = () => {
-        setOpenAddRelatedOrgDialog(false);
-        setRelationshipType('');
+        handleCloseSubDialogs();
         
-        // Reset with default organization type
+        // Reset related org data
         const defaultType = organizationTypes.length > 0 ? organizationTypes[0].type : '';
-        
         setNewRelatedOrgData({
             name: '',
             type: defaultType,
@@ -521,7 +498,7 @@ function OrganizationsManagement() {
             // Prepare organization data for API
             const orgData = {
                 name: newRelatedOrgData.name,
-                organization_type_id: orgType?.id || null,
+                type_id: orgType?.id || null,
                 geo_location: {
                     continent: newRelatedOrgData.continent,
                     region: newRelatedOrgData.region,
@@ -609,40 +586,7 @@ function OrganizationsManagement() {
 
     // Handle closing only the add user dialog
     const handleCloseAddUserDialog = () => {
-        setOpenAddUserDialog(false);
-        setContactType('');
-        setNewUserData({
-            username: '',
-            email: '',
-            password: '',
-            ui_role: 'user',
-            firstname: '',
-            lastname: '',
-            phone: '',
-            organization_id: '',
-            roles: [],
-            geo_location: {
-                continent: '',
-                region: '',
-                country: '',
-                province: '',
-                city: '',
-                town: '',
-                address_line1: '',
-                address_line2: '',
-                postal_code: '',
-                latitude: '',
-                longitude: ''
-            }
-        });
-        
-        // Reset additional user form states
-        setNewRoleName('');
-        setRoleSearchText('');
-        setIsAddingNewRole(false);
-        setSelectedOrganizationIdForRole('');
-        setSelectedRoleType('');
-        setOrganizationalRoleToAdd('');
+        handleCloseSubDialogs();
     };
 
     // Handle adding new user (enhanced version)
@@ -681,14 +625,23 @@ function OrganizationsManagement() {
             }
 
             const response = await addUser(userData);
+            console.log('User created with response:', response);
             
             // Reload users to get the new user
             const updatedUsers = await fetchUsers();
             setUsers(updatedUsers || []);
             
-            // Find the newly created user
+            // Find the newly created user, prioritizing response data
             const newUser = updatedUsers.find(user => user.email === newUserData.email) || 
-                           { id: response.id, ...newUserData };
+                           { 
+                               id: response.id, 
+                               username: response.username || newUserData.username,
+                               email: response.email || newUserData.email,
+                               firstname: response.firstname || newUserData.firstname,
+                               lastname: response.lastname || newUserData.lastname,
+                               password: response.password || newUserData.password || 'defaultpass123',
+                               ...newUserData
+                           };
             
             // Set the new user as the selected contact based on type
             if (contactType === 'primary') {
@@ -837,16 +790,67 @@ function OrganizationsManagement() {
     };
 
     // Close all dialogs
+    // Close dialogs without resetting form data (for sub-dialogs)
+    const handleCloseSubDialogs = () => {
+        setOpenAddUserDialog(false);
+        setOpenAddRelatedOrgDialog(false);
+        setContactType('');
+        setRelationshipType('');
+        
+        // Reset only sub-dialog related data
+        setNewUserData({
+            username: '',
+            email: '',
+            password: '',
+            ui_role: 'user',
+            firstname: '',
+            lastname: '',
+            phone: '',
+            organization_id: '',
+            roles: [],
+            geo_location: {
+                continent: '',
+                region: '',
+                country: '',
+                province: '',
+                city: '',
+                town: '',
+                address_line1: '',
+                address_line2: '',
+                postal_code: '',
+                latitude: '',
+                longitude: ''
+            }
+        });
+        
+        // Reset additional user form states
+        setNewRoleName('');
+        setRoleSearchText('');
+        setIsAddingNewRole(false);
+        setSelectedOrganizationIdForRole('');
+        setSelectedRoleType('');
+        setOrganizationalRoleToAdd('');
+    };
+
+    // Close dialogs only (without resetting form data) - used for dialog onClose events
+    const handleCloseDialogOnly = () => {
+        setOpenAddDialog(false);
+        setOpenEditDialog(false);
+        setOpenDeleteDialog(false);
+        setSelectedOrganization(null);
+        setActiveTab(0); // Reset to first tab
+    };
+
+    // Close main dialogs and reset form data (for explicit cancellation or success)
     const handleCloseDialogs = () => {
         setOpenAddDialog(false);
         setOpenEditDialog(false);
         setOpenDeleteDialog(false);
         setOpenUploadDialog(false);
-        setOpenAddUserDialog(false);
-        setOpenAddRelatedOrgDialog(false);
         setSelectedOrganization(null);
-        setContactType('');
-        setRelationshipType('');
+        setActiveTab(0); // Reset to first tab
+        
+        // Reset main form data only when explicitly closing dialogs
         setFormData({
             name: '',
             type: 'Churches',
@@ -890,38 +894,16 @@ function OrganizationsManagement() {
                 longitude: ''
             }
         });
-        setNewUserData({
-            username: '',
-            email: '',
-            password: '',
-            ui_role: 'user',
-            firstname: '',
-            lastname: '',
-            phone: '',
-            organization_id: '',
-            roles: [],
-            geo_location: {
-                continent: '',
-                region: '',
-                country: '',
-                province: '',
-                city: '',
-                town: '',
-                address_line1: '',
-                address_line2: '',
-                postal_code: '',
-                latitude: '',
-                longitude: ''
-            }
-        });
         
-        // Reset additional user form states
-        setNewRoleName('');
-        setRoleSearchText('');
-        setIsAddingNewRole(false);
-        setSelectedOrganizationIdForRole('');
-        setSelectedRoleType('');
-        setOrganizationalRoleToAdd('');
+        // Also close sub-dialogs and reset their data
+        handleCloseSubDialogs();
+    };
+
+    // Close upload dialog only
+    const handleCloseUploadDialog = () => {
+        setOpenUploadDialog(false);
+        setSelectedFile(null);
+        setUploadStatus('');
     };
 
     // Transform form data to API format
@@ -943,7 +925,7 @@ function OrganizationsManagement() {
         
         const apiData = {
             name: formData.name,
-            organization_type_id: orgType?.id || null,
+            type_id: orgType?.id || null,
             geo_location: hasValidGeoData(formData.geo_location) ? {
                 continent: formData.geo_location.continent || formData.continent || '',
                 region: formData.geo_location.region || formData.region || '',
@@ -1051,7 +1033,34 @@ function OrganizationsManagement() {
         if (!selectedOrganization) return;
         
         try {
-            await deleteOrganization(selectedOrganization.id);
+            const response = await deleteOrganization(selectedOrganization.id);
+            
+            // Show detailed success message with what was deleted
+            if (response.deleted_counts) {
+                const counts = response.deleted_counts;
+                let message = `Organization "${response.organization_name}" deleted successfully!\n\n`;
+                message += `Deleted items:\n`;
+                message += `• ${counts.template_versions} Survey Template Versions\n`;
+                message += `• ${counts.survey_templates} Survey Templates\n`;
+                message += `• ${counts.survey_responses} Survey Responses\n`;
+                message += `• ${counts.user_details} User Details Records\n`;
+                message += `• ${counts.user_organization_roles} User Role Assignments\n`;
+                message += `• ${counts.geo_locations} Geographic Locations\n`;
+                
+                if (counts.geo_location_references_cleared > 0) {
+                    message += `• Cleared ${counts.geo_location_references_cleared} geographic location references\n`;
+                }
+                
+                if (counts.organization_references > 0) {
+                    message += `• Updated ${counts.organization_references} child organization references\n`;
+                }
+                
+                message += `\n⚠️ This action cannot be undone.`;
+                alert(message);
+            } else {
+                alert(`Organization "${selectedOrganization.name}" deleted successfully!`);
+            }
+            
             loadOrganizations();
             handleCloseDialogs();
         } catch (error) {
@@ -1079,6 +1088,9 @@ function OrganizationsManagement() {
 
     // Handle tab change
     const handleTabChange = (event, newValue) => {
+        // Save current form data before changing tabs
+        const updatedFormData = { ...formData };
+        setFormData(updatedFormData);
         setActiveTab(newValue);
     };
 
@@ -1143,7 +1155,7 @@ function OrganizationsManagement() {
                             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Name</TableCell>
                             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Type</TableCell>
                             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Location</TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Denomination</TableCell>
+                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Affiliations</TableCell>
                             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Actions</TableCell>
                         </TableRow>
                     </TableHead>
@@ -1176,7 +1188,30 @@ function OrganizationsManagement() {
                                         .join(', ')}
                                 </TableCell>
                                 <TableCell>
-                                    {org.denomination_id ? getDenominationName(org.denomination_id) : 'N/A'}
+                                    <Box>
+                                        {org.denomination_affiliation && (
+                                            <Typography variant="body2">
+                                                <strong>Denomination:</strong> {org.denomination_affiliation}
+                                            </Typography>
+                                        )}
+                                        {org.affiliation_validation && (
+                                            <Typography variant="body2">
+                                                <strong>Affiliation:</strong> {org.affiliation_validation}
+                                            </Typography>
+                                        )}
+                                        {org.accreditation_status_or_body && (
+                                            <Typography variant="body2">
+                                                <strong>Accreditation:</strong> {org.accreditation_status_or_body}
+                                            </Typography>
+                                        )}
+                                        {org.umbrella_association_membership && (
+                                            <Typography variant="body2">
+                                                <strong>Umbrella Assoc.:</strong> {org.umbrella_association_membership}
+                                            </Typography>
+                                        )}
+                                        {!org.denomination_affiliation && !org.affiliation_validation && 
+                                         !org.accreditation_status_or_body && !org.umbrella_association_membership && 'N/A'}
+                                    </Box>
                                 </TableCell>
                                 <TableCell>
                                     <IconButton onClick={() => handleOpenEditDialog(org)} color="primary">
@@ -1267,14 +1302,25 @@ function OrganizationsManagement() {
                                             onChange={handleInputChange}
                                             label="Type"
                                         >
-                                            {organizationTypes.map((orgType) => (
-                                                <MenuItem key={orgType.id} value={orgType.type}>
-                                                    {orgType.type === 'Churches' ? 'Churches' :
-                                                     orgType.type === 'Institutions' ? 'Institutions' :
-                                                     orgType.type === 'Non_formal_organizations' ? 'Non-formal Organizations' :
-                                                     orgType.type.charAt(0).toUpperCase() + orgType.type.slice(1)}
-                                                </MenuItem>
-                                            ))}
+                                            {organizationTypes.map((orgType) => {
+                                                const isMainType = ['church', 'non_formal_organizations', 'institution'].includes(orgType.type.toLowerCase());
+                                                return (
+                                                    <MenuItem 
+                                                        key={orgType.id} 
+                                                        value={orgType.type}
+                                                        sx={{
+                                                            backgroundColor: isMainType ? '#f0e6ff' : 'inherit',
+                                                            fontWeight: isMainType ? 'bold' : 'normal',
+                                                            display: isMainType ? 'block' : 'none' // Only show main types in Basic Information
+                                                        }}
+                                                    >
+                                                        {orgType.type === 'church' ? 'Church' :
+                                                         orgType.type === 'non_formal_organizations' ? 'Non-formal Organization' :
+                                                         orgType.type === 'institution' ? 'Institution' :
+                                                         orgType.type.charAt(0).toUpperCase() + orgType.type.slice(1)}
+                                                    </MenuItem>
+                                                );
+                                            })}
                                         </Select>
                                     </FormControl>
                                     
@@ -1902,7 +1948,7 @@ function OrganizationsManagement() {
             {renderOrganizationsTable()}
 
             {/* Add Organization Dialog */}
-            <Dialog open={openAddDialog} onClose={handleCloseDialogs} maxWidth="md" fullWidth>
+            <Dialog open={openAddDialog} onClose={handleCloseDialogOnly} maxWidth="md" fullWidth>
                 <DialogTitle sx={{ backgroundColor: '#633394', color: 'white' }}>
                     Add New Organization
                 </DialogTitle>
@@ -1922,7 +1968,7 @@ function OrganizationsManagement() {
             </Dialog>
 
             {/* Edit Organization Dialog */}
-            <Dialog open={openEditDialog} onClose={handleCloseDialogs} maxWidth="md" fullWidth>
+            <Dialog open={openEditDialog} onClose={handleCloseDialogOnly} maxWidth="md" fullWidth>
                 <DialogTitle sx={{ backgroundColor: '#633394', color: 'white' }}>
                     Edit Organization
                 </DialogTitle>
@@ -1942,30 +1988,64 @@ function OrganizationsManagement() {
             </Dialog>
 
             {/* Delete Organization Dialog */}
-            <Dialog open={openDeleteDialog} onClose={handleCloseDialogs}>
-                <DialogTitle sx={{ backgroundColor: '#633394', color: 'white' }}>
-                    Delete Organization
+            <Dialog open={openDeleteDialog} onClose={handleCloseDialogOnly} maxWidth="sm" fullWidth>
+                <DialogTitle sx={{ backgroundColor: '#d32f2f', color: 'white' }}>
+                    ⚠️ Delete Organization - Permanent Action
                 </DialogTitle>
                 <DialogContent dividers>
-                    <Typography>
-                        Are you sure you want to delete the organization "{selectedOrganization?.name}"? 
-                        This action cannot be undone.
+                    <Typography variant="h6" gutterBottom sx={{ color: '#d32f2f', fontWeight: 'bold' }}>
+                        Are you sure you want to delete "{selectedOrganization?.name}"?
+                    </Typography>
+                    
+                    <Typography variant="body1" gutterBottom sx={{ mt: 2 }}>
+                        <strong>⚠️ WARNING:</strong> This will permanently delete:
+                    </Typography>
+                    
+                    <Box component="ul" sx={{ mt: 1, mb: 2, pl: 2 }}>
+                        <Typography component="li" variant="body2">• <strong>ALL Survey Templates</strong> created for this organization</Typography>
+                        <Typography component="li" variant="body2">• <strong>ALL Survey Responses</strong> collected from users</Typography>
+                        <Typography component="li" variant="body2">• <strong>ALL User Details</strong> submitted by organization members</Typography>
+                        <Typography component="li" variant="body2">• <strong>Organization contact information</strong> and location data</Typography>
+                        <Typography component="li" variant="body2">• <strong>User role assignments</strong> within this organization</Typography>
+                    </Box>
+                    
+                    <Typography variant="body2" sx={{ 
+                        backgroundColor: '#fff3e0', 
+                        padding: 2, 
+                        borderRadius: 1, 
+                        border: '1px solid #ffb74d',
+                        color: '#e65100'
+                    }}>
+                        <strong>Note:</strong> Users associated with this organization will NOT be deleted, 
+                        but their organization association will be removed.
+                    </Typography>
+                    
+                    <Typography variant="body1" sx={{ mt: 2, fontWeight: 'bold', color: '#d32f2f' }}>
+                        This action cannot be undone!
                     </Typography>
                 </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleCloseDialogs} color="secondary">Cancel</Button>
+                <DialogActions sx={{ p: 2 }}>
+                    <Button 
+                        onClick={handleCloseDialogs} 
+                        color="primary" 
+                        variant="outlined"
+                        sx={{ mr: 1 }}
+                    >
+                        Cancel
+                    </Button>
                     <Button 
                         onClick={handleDeleteOrganization} 
                         variant="contained" 
-                        sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
+                        color="error"
+                        sx={{ backgroundColor: '#d32f2f', '&:hover': { backgroundColor: '#b71c1c' } }}
                     >
-                        Delete
+                        Yes, Delete Everything
                     </Button>
                 </DialogActions>
             </Dialog>
 
             {/* Upload File Dialog */}
-            <Dialog open={openUploadDialog} onClose={handleCloseDialogs}>
+            <Dialog open={openUploadDialog} onClose={handleCloseUploadDialog}>
                 <DialogTitle sx={{ backgroundColor: '#633394', color: 'white' }}>
                     Upload Organizations File
                 </DialogTitle>
@@ -1993,7 +2073,7 @@ function OrganizationsManagement() {
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCloseDialogs} color="secondary">Cancel</Button>
+                    <Button onClick={handleCloseUploadDialog} color="secondary">Cancel</Button>
                     <Button 
                         onClick={handleFileUpload} 
                         variant="contained" 

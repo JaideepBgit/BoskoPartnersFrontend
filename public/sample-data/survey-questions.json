@@ -1,0 +1,396 @@
+{
+  "church_survey": {
+    "title": "Assessing the effectiveness of Theological institutions in Africa through the lens of African churches",
+    "sections": {
+      "personal_information": {
+        "title": "Personal Information",
+        "questions": [
+          {
+            "id": "church_name",
+            "text": "Name of Local Church/denomination",
+            "type": "text"
+          },
+          {
+            "id": "pastor_name",
+            "text": "Name of Pastor completing the questionnaire",
+            "type": "text"
+          },
+          {
+            "id": "physical_address",
+            "text": "Physical Address",
+            "type": "text"
+          },
+          {
+            "id": "town",
+            "text": "Town",
+            "type": "text"
+          },
+          {
+            "id": "city",
+            "text": "City",
+            "type": "text"
+          },
+          {
+            "id": "country",
+            "text": "Country",
+            "type": "text"
+          },
+          {
+            "id": "is_senior_pastor",
+            "text": "Are you the pastor (senior pastor) of this local church?",
+            "type": "yes_no"
+          },
+          {
+            "id": "age_group",
+            "text": "Age Group",
+            "type": "single_choice",
+            "options": ["20-30 YRS", "31-40 YRS", "41-50 YRS", "51-60 YRS", "Over 60 YRS"]
+          },
+          {
+            "id": "years_as_pastor",
+            "text": "How long have you been a pastor of this church?",
+            "type": "single_choice",
+            "options": ["1-3 YRS", "4-7 YRS", "8-10 YRS", "11-15 YRS", "16-20 YRS"]
+          },
+          {
+            "id": "education_level",
+            "text": "What is your highest level of education for ministry?",
+            "type": "single_choice",
+            "options": ["Certificate", "Diploma", "Bachelors", "Masters", "PhD"]
+          }
+        ]
+      },
+      "pastoral_formation": {
+        "title": "Pastoral Formation",
+        "questions": [
+          {
+            "id": "last_training_year",
+            "text": "In which year did you complete your last formal training for pastoral ministry?",
+            "type": "text"
+          },
+          {
+            "id": "training_institution",
+            "text": "From which institution did you receive pastoral training?",
+            "type": "text"
+          },
+          {
+            "id": "actea_accredited",
+            "text": "Is this institution an ACTEA accredited institution?",
+            "type": "yes_no"
+          },
+          {
+            "id": "other_accreditation",
+            "text": "If not ACTEA, what accreditation does the institution have?",
+            "type": "text"
+          }
+        ]
+      },
+      "ministry_training_assessment": {
+        "title": "Ministry Training Assessment (Scale 1-5)",
+        "scale_description": "1: A great deal, 2: Quite a bit, 3: Not too much, 4: Very little, 5: None",
+        "questions": [
+          {"id": "preaching", "text": "Preaching", "type": "scale_1_5"},
+          {"id": "teaching", "text": "Teaching", "type": "scale_1_5"},
+          {"id": "evangelism", "text": "Evangelism", "type": "scale_1_5"},
+          {"id": "community_impact", "text": "Community Impact", "type": "scale_1_5"},
+          {"id": "discipleship", "text": "Discipleship", "type": "scale_1_5"},
+          {"id": "pastoral_care", "text": "Pastoral Care", "type": "scale_1_5"},
+          {"id": "church_administration", "text": "Church Administration", "type": "scale_1_5"},
+          {"id": "counseling", "text": "Counseling", "type": "scale_1_5"},
+          {"id": "organization_leadership", "text": "Organization leadership", "type": "scale_1_5"},
+          {"id": "conflict_resolution", "text": "Conflict Resolution", "type": "scale_1_5"},
+          {"id": "prayer_spiritual_formation", "text": "Prayer & Spiritual Formation", "type": "scale_1_5"},
+          {"id": "spiritual_warfare", "text": "Spiritual Warfare", "type": "scale_1_5"},
+          {"id": "interpersonal_relations", "text": "Interpersonal Relations", "type": "scale_1_5"},
+          {"id": "written_communication", "text": "Written Communication", "type": "scale_1_5"},
+          {"id": "teamwork", "text": "Teamwork", "type": "scale_1_5"},
+          {"id": "leadership_development", "text": "Leadership Development", "type": "scale_1_5"},
+          {"id": "children_youth", "text": "Children & Youth", "type": "scale_1_5"},
+          {"id": "self_care", "text": "Self-care", "type": "scale_1_5"},
+          {"id": "marriage_family", "text": "Marriage & Family", "type": "scale_1_5"},
+          {"id": "emotional_mental_health", "text": "Emotional and Mental Health", "type": "scale_1_5"}
+        ]
+      },
+      "additional_questions": {
+        "title": "Additional Questions",
+        "questions": [
+          {
+            "id": "other_training_areas",
+            "text": "What other areas or skills were you trained to serve as a church leader besides those listed above?",
+            "type": "text"
+          },
+          {
+            "id": "why_choose_institution",
+            "text": "Why did you choose this institution for your ministry training?",
+            "type": "text"
+          },
+          {
+            "id": "expectations_met",
+            "text": "Were your expectations for choosing this institution met?",
+            "type": "yes_no"
+          },
+          {
+            "id": "better_preparation_areas",
+            "text": "What specific areas could your institution have better prepared you for ministry?",
+            "type": "text"
+          },
+          {
+            "id": "institution_changes",
+            "text": "What preparation for ministry did you wish your institution had done differently? Explain:",
+            "type": "text"
+          },
+          {
+            "id": "ongoing_support_individual",
+            "text": "Does the theological institution you attended provide you with ongoing support?",
+            "type": "yes_no"
+          },
+          {
+            "id": "ongoing_support_looks_like",
+            "text": "What does ongoing support from your institution look like now?",
+            "type": "text"
+          },
+          {
+            "id": "better_ongoing_support",
+            "text": "How could ongoing support for your ministry be better?",
+            "type": "text"
+          },
+          {
+            "id": "ongoing_support_church",
+            "text": "Does the theological institution you attended provide your church with ongoing support?",
+            "type": "yes_no"
+          },
+          {
+            "id": "church_support_looks_like",
+            "text": "What does ongoing support from your institution to your church look like now?",
+            "type": "text"
+          },
+          {
+            "id": "ongoing_learning_needs",
+            "text": "What ongoing learning do you need to maintain effective ministry?",
+            "type": "text"
+          },
+          {
+            "id": "retrain_where",
+            "text": "If you were to train all over again, where will you go for your ministry training? Why?",
+            "type": "text"
+          },
+          {
+            "id": "recommend_where",
+            "text": "If you were to recommend ministerial training for someone else, where will you encourage them to pursue their ministry? Why?",
+            "type": "text"
+          }
+        ]
+      }
+    }
+  },
+  "institution_survey": {
+    "title": "Assessing the effectiveness of Theological institutions in Africa through the lens of African churches",
+    "parts": {
+      "part_1_president": {
+        "title": "PART 1 - PRESIDENT",
+        "personal_info": [
+          {"id": "institution_name", "text": "Name of Institution", "type": "text"},
+          {"id": "affiliated_church", "text": "Affiliated Church/denomination/ Mission Agency", "type": "text"},
+          {"id": "president_name", "text": "Name of President completing the questionnaire", "type": "text"},
+          {"id": "physical_address", "text": "Physical Address", "type": "text"},
+          {"id": "town", "text": "Town", "type": "text"},
+          {"id": "city", "text": "City", "type": "text"},
+          {"id": "country", "text": "Country", "type": "text"},
+          {"id": "actea_accredited", "text": "Is this institution an ACTEA accredited institution?", "type": "yes_no"},
+          {"id": "other_accreditation", "text": "If NO, what accreditation does the institution have?", "type": "text"},
+          {"id": "establishment_year", "text": "When was the school established?", "type": "text"},
+          {"id": "preferred_title", "text": "What is your preferred title?", "type": "text"},
+          {"id": "email", "text": "Email", "type": "text"},
+          {"id": "website", "text": "Website", "type": "text"},
+          {"id": "mission", "text": "What is the mission of the school?", "type": "text"},
+          {"id": "is_president", "text": "Are you the president/principal/rector/doyen of this institution?", "type": "yes_no"}
+        ],
+        "questions": [
+          {
+            "id": "age",
+            "text": "Your Age",
+            "type": "single_choice",
+            "options": ["20-30 YRS", "31-40 YRS", "41-50 YRS", "51-60 YRS", "Over 60 YRS"]
+          },
+          {
+            "id": "years_as_president",
+            "text": "How long have you been a president of this institution?",
+            "type": "single_choice",
+            "options": ["1-3 YRS", "4-7 YRS", "8-10 YRS", "11-15 YRS", "More than 15"]
+          },
+          {
+            "id": "terms_to_serve",
+            "text": "How many terms does each president have to serve?",
+            "type": "single_choice",
+            "options": ["One Term", "Two Terms", "Three Terms", "No Terms"]
+          },
+          {
+            "id": "academic_qualification",
+            "text": "What kind of academic qualification do you hold?",
+            "type": "single_choice",
+            "options": ["Masters", "PhD/DMin/DTh"]
+          },
+          {
+            "id": "last_training_year",
+            "text": "In which year did you complete your last formal training?",
+            "type": "text"
+          },
+          {
+            "id": "highest_training_institution",
+            "text": "From which institution did you receive highest formal training?",
+            "type": "text"
+          },
+          {
+            "id": "start_leading_year",
+            "text": "In which year did you start leading your institution?",
+            "type": "text"
+          }
+        ],
+        "leadership_assessment": [
+          {"id": "organizational_leadership_training", "text": "What extent do you think you were trained with organizational leadership skills and competencies to lead the institution?", "type": "scale_1_5"},
+          {"id": "leadership_resources_available", "text": "What extent are organizational leadership resources available to you to help you lead your institution?", "type": "scale_1_5"},
+          {"id": "compensation", "text": "What extent are you being well compensated to take care of yourself and family for your work and qualification?", "type": "scale_1_5"},
+          {"id": "care_received", "text": "What extent are you receiving care for spiritual, emotional and mental health needs?", "type": "scale_1_5"},
+          {"id": "coaching_received", "text": "What extent do you receive coaching from any source to help you lead well?", "type": "scale_1_5"},
+          {"id": "leadership_team_support", "text": "What extent are you supported by your leadership team to lead the institution well?", "type": "scale_1_5"},
+          {"id": "board_understanding", "text": "What extent does your board understand and support you to lead the institution effectively?", "type": "scale_1_5"},
+          {"id": "board_concern_wellbeing", "text": "What extent does your board express concern for your personal health and wellbeing?", "type": "scale_1_5"},
+          {"id": "succession_plan", "text": "What extent are you working with your board on a succession plan?", "type": "scale_1_5"},
+          {"id": "support_group", "text": "What extent do you have a support group that prays for you and encourages you regularly?", "type": "scale_1_5"},
+          {"id": "leave_for_rest", "text": "What extent are you able to take leave to rest, rejuvenate, and be refreshed for your work?", "type": "scale_1_5"},
+          {"id": "professional_development", "text": "What extent are you able to pursue professional development for your area of expertise?", "type": "scale_1_5"},
+          {"id": "spiritual_retreats", "text": "What extent are you able to take spiritual retreats to pray and reflect on your work?", "type": "scale_1_5"},
+          {"id": "collaboration_leaders", "text": "What extent are you able to collaborate and share with other leaders of similar institutions?", "type": "scale_1_5"}
+        ]
+      }
+    }
+  },
+  "non_formal_survey": {
+    "title": "Assessing the Effectiveness of Non-Formal Theological Education in Africa",
+    "sections": {
+      "personal_information": {
+        "title": "Personal Information",
+        "questions": [
+          {"id": "ministry_name", "text": "Name of Local Church/Ministry", "type": "text"},
+          {"id": "leader_name", "text": "Name of Ministry Leader Completing the Questionnaire", "type": "text"},
+          {"id": "physical_address", "text": "Physical Address", "type": "text"},
+          {"id": "town", "text": "Town", "type": "text"},
+          {"id": "city", "text": "City", "type": "text"},
+          {"id": "country", "text": "Country", "type": "text"},
+          {"id": "is_primary_leader", "text": "Are you the primary leader of this church/ministry?", "type": "yes_no"},
+          {
+            "id": "age_group",
+            "text": "Age Group",
+            "type": "single_choice",
+            "options": ["20-30 YRS", "31-40 YRS", "41-50 YRS", "51-60 YRS", "Over 60 YRS"]
+          },
+          {
+            "id": "years_in_ministry",
+            "text": "How long have you been in ministry leadership?",
+            "type": "single_choice",
+            "options": ["1-3 YRS", "4-7 YRS", "8-10 YRS", "11-15 YRS", "16-20 YRS", "Over 20 YRS"]
+          }
+        ]
+      },
+      "ministry_training": {
+        "title": "Ministry Training and Development",
+        "questions": [
+          {
+            "id": "non_formal_education_types",
+            "text": "What forms of non-formal theological education have you participated in?",
+            "type": "multiple_choice",
+            "options": [
+              "Church-based training programs",
+              "Ministry apprenticeship/mentorship",
+              "Online theological courses (not part of a formal institution)",
+              "Conferences, workshops, or seminars",
+              "Bible study leadership training",
+              "Self-study (books, podcasts, video teachings, etc.)",
+              "Informal peer-learning networks",
+              "Other"
+            ]
+          },
+          {
+            "id": "primary_education_source",
+            "text": "Which of these was your primary source of theological education?",
+            "type": "text"
+          },
+          {
+            "id": "training_providers",
+            "text": "Who provided this training?",
+            "type": "multiple_choice",
+            "options": [
+              "Local church leadership",
+              "Denominational training programs",
+              "Independent Christian organizations or ministries",
+              "Online platforms or courses",
+              "Ministry mentors or experienced leaders",
+              "Mission agencies",
+              "Other"
+            ]
+          },
+          {
+            "id": "topics_covered",
+            "text": "What topics were covered in your non-formal theological training?",
+            "type": "multiple_choice",
+            "options": [
+              "Biblical studies",
+              "Preaching and teaching",
+              "Evangelism and missions",
+              "Discipleship and mentoring",
+              "Church leadership and administration",
+              "Conflict resolution and counseling",
+              "Community development and social impact",
+              "Spiritual formation and prayer",
+              "Marriage and family ministry",
+              "Youth and children's ministry",
+              "Spiritual warfare",
+              "Self-care and emotional well-being",
+              "Other"
+            ]
+          }
+        ]
+      },
+      "ministry_preparation_assessment": {
+        "title": "Ministry Preparation Assessment (Scale 1-5)",
+        "scale_description": "1: A great deal, 2: Quite a bit, 3: Not too much, 4: Very little, 5: None",
+        "questions": [
+          {"id": "preaching", "text": "Preaching", "type": "scale_1_5"},
+          {"id": "teaching", "text": "Teaching", "type": "scale_1_5"},
+          {"id": "evangelism", "text": "Evangelism", "type": "scale_1_5"},
+          {"id": "discipleship", "text": "Discipleship", "type": "scale_1_5"},
+          {"id": "community_impact", "text": "Community Impact", "type": "scale_1_5"},
+          {"id": "pastoral_care", "text": "Pastoral Care", "type": "scale_1_5"},
+          {"id": "leadership_development", "text": "Leadership Development", "type": "scale_1_5"},
+          {"id": "church_administration", "text": "Church Administration", "type": "scale_1_5"},
+          {"id": "conflict_resolution", "text": "Conflict Resolution", "type": "scale_1_5"},
+          {"id": "prayer_spiritual_formation", "text": "Prayer & Spiritual Formation", "type": "scale_1_5"},
+          {"id": "marriage_family_ministry", "text": "Marriage & Family Ministry", "type": "scale_1_5"},
+          {"id": "youth_children_ministry", "text": "Youth & Children's Ministry", "type": "scale_1_5"},
+          {"id": "emotional_mental_health", "text": "Emotional & Mental Health", "type": "scale_1_5"},
+          {"id": "self_care", "text": "Self-care", "type": "scale_1_5"}
+        ]
+      },
+      "evaluation_questions": {
+        "title": "Evaluation of Non-Formal Theological Education",
+        "questions": [
+          {"id": "why_choose_non_formal", "text": "Why did you choose non-formal theological education instead of attending a formal theological institution?", "type": "text"},
+          {"id": "greatest_strengths", "text": "What were the greatest strengths of your non-formal training?", "type": "text"},
+          {"id": "better_preparation_areas", "text": "In what areas do you feel your non-formal training could have better prepared you for ministry?", "type": "text"},
+          {"id": "suggested_improvements", "text": "If you could improve the non-formal theological training you received, what changes would you suggest?", "type": "text"},
+          {"id": "ongoing_support_available", "text": "Does your non-formal theological training provider offer ongoing support for your ministry?", "type": "yes_no"},
+          {"id": "ongoing_support_types", "text": "If yes, what does that support look like?", "type": "multiple_choice", "options": ["Continued mentorship/coaching", "Online resources and courses", "Workshops and refresher training", "Networking with other ministers", "Spiritual accountability groups", "Other"]},
+          {"id": "improve_ongoing_support", "text": "How could ongoing support from non-formal theological education providers be improved?", "type": "text"}
+        ]
+      },
+      "future_training_needs": {
+        "title": "Future Ministry Training Needs",
+        "questions": [
+          {"id": "further_training_needs", "text": "What further training or resources do you need to maintain effective ministry?", "type": "text"},
+          {"id": "still_choose_non_formal", "text": "If you had to receive theological training again, would you still choose non-formal education? Why or why not?", "type": "text"},
+          {"id": "recommend_non_formal", "text": "If you were to recommend ministry training to someone else, would you encourage them to pursue non-formal theological education? Why or why not?", "type": "text"}
+        ]
+      }
+    }
+  }
+} 

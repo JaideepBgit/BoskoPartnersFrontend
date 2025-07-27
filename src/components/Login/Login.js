@@ -34,10 +34,12 @@ const LoginPage = ({ onLogin }) => {
 
     try {
       const response = await UserService.loginUser(email, password);
-      // axios-style: response.data is your payload
-      const userData = response.data;
+      // The backend returns { message, data } where data contains the user information
+      const userData = response.data || response;
 
       console.log('Login Successful - userData:', userData);
+      console.log('User role:', userData.role);
+      console.log('User survey_code:', userData.survey_code);
       setSuccess('Login Successful');
 
       // 1️⃣ mark as authenticated
@@ -69,6 +71,8 @@ const LoginPage = ({ onLogin }) => {
           navigate('/admin');
           break;
         case 'user':
+          // Always redirect users to survey code validation page
+          // They need to validate their survey code before accessing the system
           navigate('/user');
           break;
         default:

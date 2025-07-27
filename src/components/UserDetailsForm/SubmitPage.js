@@ -73,6 +73,17 @@ const SubmitPage = ({ formData, submitForm, goBack, isSaving }) => {
             
             <Box sx={{ mb: 1 }}>
               <Typography variant="subtitle2" color="text.secondary">
+                Organization
+              </Typography>
+              <Typography variant="body1">
+                {organizational.organization ? 
+                  `${organizational.organization.name} (${organizational.organization.organization_type?.type || 'Unknown'})` : 
+                  'Not selected'}
+              </Typography>
+            </Box>
+            
+            <Box sx={{ mb: 1 }}>
+              <Typography variant="subtitle2" color="text.secondary">
                 Country
               </Typography>
               <Typography variant="body1">
@@ -82,30 +93,58 @@ const SubmitPage = ({ formData, submitForm, goBack, isSaving }) => {
             
             <Box sx={{ mb: 1 }}>
               <Typography variant="subtitle2" color="text.secondary">
-                Region
+                Province/State
               </Typography>
               <Typography variant="body1">
-                {organizational.region}
+                {organizational.province}
               </Typography>
             </Box>
             
             <Box sx={{ mb: 1 }}>
               <Typography variant="subtitle2" color="text.secondary">
-                Church
+                City
               </Typography>
               <Typography variant="body1">
-                {organizational.church}
+                {organizational.city}
               </Typography>
             </Box>
             
+            {organizational.town && (
+              <Box sx={{ mb: 1 }}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Town/District
+                </Typography>
+                <Typography variant="body1">
+                  {organizational.town}
+                </Typography>
+              </Box>
+            )}
+            
             <Box sx={{ mb: 1 }}>
               <Typography variant="subtitle2" color="text.secondary">
-                School
+                Address
               </Typography>
               <Typography variant="body1">
-                {organizational.school}
+                {organizational.address_line1}
+                {organizational.address_line2 && (
+                  <>
+                    <br />
+                    {organizational.address_line2}
+                  </>
+                )}
               </Typography>
             </Box>
+            
+            {organizational.postal_code && (
+              <Box sx={{ mb: 1 }}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Postal Code
+                </Typography>
+                <Typography variant="body1">
+                  {organizational.postal_code}
+                </Typography>
+              </Box>
+            )}
           </Paper>
         </Grid>
       </Grid>
@@ -118,6 +157,7 @@ const SubmitPage = ({ formData, submitForm, goBack, isSaving }) => {
         mt: isMobile ? 3 : 4,
         gap: isMobile ? 2 : 0
       }}>
+        
         <Button 
           variant="outlined"
           startIcon={<ArrowBackIcon />}
@@ -125,10 +165,10 @@ const SubmitPage = ({ formData, submitForm, goBack, isSaving }) => {
           disabled={isSaving}
           fullWidth={isMobile}
           sx={{
-            color: '#8a94e3',
+            color: '#7c52a5',
             borderColor: '#8a94e3',
             '&:hover': {
-              backgroundColor: '#f0f2ff',
+              backgroundColor: 'white',
               borderColor: '#6a74c3',
             },
             order: isMobile ? 2 : 1

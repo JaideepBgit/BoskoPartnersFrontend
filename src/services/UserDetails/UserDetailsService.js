@@ -76,10 +76,11 @@ export const getUserDetailsStatus = async (userId) => {
         user_id: localData.user_id,
         personal_details_filled: !!(personal.firstName && personal.lastName),
         organizational_details_filled: !!(
+          organizational.organization && 
           organizational.country && 
-          organizational.region && 
-          organizational.church && 
-          organizational.school
+          organizational.province && 
+          organizational.city && 
+          organizational.address_line1
         ),
         is_submitted: localData.is_submitted || false,
         last_page: localData.last_page || 1,

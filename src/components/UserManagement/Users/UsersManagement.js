@@ -62,8 +62,8 @@ function UsersManagement() {
             address_line1: '',
             address_line2: '',
             postal_code: '',
-            latitude: '',
-            longitude: ''
+            latitude: 0,
+            longitude: 0
         }
     });
     
@@ -93,8 +93,174 @@ function UsersManagement() {
     const [emailSending, setEmailSending] = useState(false);
     const [emailSent, setEmailSent] = useState(false);
     
+    // Email preview states for Add User dialog
+    const [showEmailPreview, setShowEmailPreview] = useState(false);
+    const [emailPreviewData, setEmailPreviewData] = useState({
+        textVersion: '',
+        htmlVersion: '',
+        subject: '',
+        to: ''
+    });
+    const [emailPreviewType, setEmailPreviewType] = useState('text'); // 'text' or 'html'
+    
     // Google Places state
     const [addressSearch, setAddressSearch] = useState('');
+
+    // Generate email preview content
+    const generateWelcomeEmailPreview = () => {
+        const firstname = formData.firstname || 'User';
+        const username = formData.username || 'your-username';
+        const email = formData.email || 'user@example.com';
+        const password = formData.password || 'auto-generated-password';
+        const organizationName = formData.organization_id ? 
+            organizations.find(org => org.id === parseInt(formData.organization_id))?.name || 'Organization' : 
+            'Organization';
+        
+        // Generate a sample survey code (UUID format)
+        const surveyCode = `survey-${Math.random().toString(36).substr(2, 9)}-${Date.now().toString(36)}`;
+        
+        const subject = `🎉 Welcome to Saurara! Your Account is Ready`;
+        
+        // Text version
+        const textVersion = `Welcome to Saurara, ${firstname}!
+
+We're thrilled to have you join our community! We have created an account for you and you can now take surveys.
+
+=== YOUR ACCOUNT DETAILS ===
+📧 Email: ${email}
+👤 Username: ${username}
+🔑 Password: ${password}
+🏢 Organization: ${organizationName}
+🎯 Survey Code: ${surveyCode}
+
+=== GETTING STARTED ===
+1. Visit our platform at: https://saurara.com
+2. Log in using your credentials above
+3. Use your Survey Code (${surveyCode}) to access your assigned surveys
+4. Complete your profile setup
+5. Please complete your survey and use reports to generate reports
+
+=== IMPORTANT: YOUR SURVEY CODE ===
+Your unique Survey Code is: ${surveyCode}
+
+This code is required to access your assigned surveys and assessments. 
+Keep it safe and use it whenever you need to participate in surveys.
+
+=== WHAT'S NEXT? ===
+• Complete your user profile
+• Take part in surveys and assessments using your Survey Code
+• Connect with your organization
+• Use reports to generate insights
+
+Welcome aboard, ${firstname}! We're excited to see what you'll accomplish with Saurara.
+
+Best regards,
+The Saurara Team
+
+---
+© ${new Date().getFullYear()} Saurara. All rights reserved.
+This email was sent to ${email}. If you received this email in error, please contact support@saurara.com`;
+
+        // HTML version
+        const htmlVersion = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Saurara</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #633394 0%, #7c52a5 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .details-box { background: #f8f9fa; border: 2px solid #633394; border-radius: 8px; padding: 20px; margin: 20px 0; }
+        .details-title { color: #633394; font-weight: bold; margin-bottom: 15px; font-size: 18px; }
+        .detail-item { margin: 8px 0; padding: 8px; background: white; border-radius: 4px; }
+        .section { margin: 25px 0; }
+        .section-title { color: #633394; font-weight: bold; font-size: 16px; margin-bottom: 10px; border-bottom: 2px solid #633394; padding-bottom: 5px; }
+        .steps { background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .step { margin: 5px 0; padding: 5px 0; }
+        .footer { text-align: center; margin-top: 30px; padding: 20px; background: #f5f5f5; border-radius: 8px; color: #666; }
+        .btn { background: #633394; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0; }
+        .btn:hover { background: #7c52a5; }
+        .emoji { font-size: 1.2em; margin-right: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎉 Welcome to Saurara!</h1>
+            <p>Your account is ready to use, ${firstname}!</p>
+        </div>
+        
+        <div class="content">
+            <p>We're thrilled to have you join our community! We have created an account for you and you can now take surveys.</p>
+            
+            <div class="details-box">
+                <div class="details-title"><span class="emoji">🔐</span>Your Account Details</div>
+                <div class="detail-item"><strong>📧 Email:</strong> ${email}</div>
+                <div class="detail-item"><strong>👤 Username:</strong> ${username}</div>
+                <div class="detail-item"><strong>🔑 Password:</strong> ${password}</div>
+                <div class="detail-item"><strong>🏢 Organization:</strong> ${organizationName}</div>
+                <div class="detail-item"><strong>🎯 Survey Code:</strong> ${surveyCode}</div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title"><span class="emoji">🚀</span>Getting Started</div>
+                <div class="steps">
+                    <div class="step">1. Visit our platform at: <strong>https://saurara.com</strong></div>
+                    <div class="step">2. Log in using your credentials above</div>
+                    <div class="step">3. Use your Survey Code (<strong>${surveyCode}</strong>) to access your assigned surveys</div>
+                    <div class="step">4. Complete your profile setup</div>
+                    <div class="step">5. Please complete your survey and use reports to generate reports</div>
+                </div>
+                <a href="https://saurara.com" class="btn">Access Saurara Platform</a>
+            </div>
+            
+            <div class="section">
+                <div class="section-title"><span class="emoji">🎯</span>Important: Your Survey Code</div>
+                <div class="details-box" style="background: #fff3e0; border: 2px solid #ff9800;">
+                    <div style="text-align: center; padding: 10px;">
+                        <p style="font-size: 18px; font-weight: bold; color: #e65100; margin: 0;">
+                            Your unique Survey Code is: <span style="background: #ffcc02; padding: 5px 10px; border-radius: 4px; color: #000;">${surveyCode}</span>
+                        </p>
+                        <p style="margin: 10px 0 0 0; color: #e65100;">
+                            This code is required to access your assigned surveys and assessments. Keep it safe and use it whenever you need to participate in surveys.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title"><span class="emoji">📋</span>What's Next?</div>
+                <ul>
+                    <li>Complete your user profile</li>
+                    <li>Take part in surveys and assessments using your Survey Code</li>
+                    <li>Connect with your organization</li>
+                    <li>Use reports to generate insights</li>
+                </ul>
+            </div>
+            
+            <p>Welcome aboard, ${firstname}! We're excited to see what you'll accomplish with Saurara.</p>
+            
+            <p><strong>Best regards,</strong><br>The Saurara Team</p>
+            
+            <div class="footer">
+                <p>© ${new Date().getFullYear()} Saurara. All rights reserved.</p>
+                <p>This email was sent to ${email}. If you received this email in error, please contact support@saurara.com</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>`;
+
+        setEmailPreviewData({
+            textVersion,
+            htmlVersion,
+            subject,
+            to: email
+        });
+    };
 
     // Load data on component mount
     useEffect(() => {
@@ -119,7 +285,13 @@ function UsersManagement() {
     const loadOrganizations = async () => {
         try {
             const data = await fetchOrganizations();
-            setOrganizations(data);
+            // Filter organizations by type
+            const filteredOrgs = data.filter(org => {
+                console.log(org.organization_type, org.organization_type.type);
+                return org.organization_type && 
+                ['church', 'non_formal_organizations', 'institution'].includes(org.organization_type.type.toLowerCase())
+            });
+            setOrganizations(filteredOrgs);
         } catch (error) {
             console.error('Failed to fetch organizations:', error);
         }
@@ -283,8 +455,8 @@ function UsersManagement() {
                 address_line1: '',
                 address_line2: '',
                 postal_code: '',
-                latitude: '',
-                longitude: ''
+                latitude: 0,
+                longitude: 0
             }
         });
         setTemplates([]); // Reset templates
@@ -317,7 +489,19 @@ function UsersManagement() {
             organization_id: user.organization_id || '',
             template_id: user.template_id || '',
             roles: userRoles,
-            geo_location: user.geo_location || {
+            geo_location: user.geo_location ? {
+                continent: user.geo_location.continent || '',
+                region: user.geo_location.region || '',
+                country: user.geo_location.country || '',
+                province: user.geo_location.province || '',
+                city: user.geo_location.city || '',
+                town: user.geo_location.town || '',
+                address_line1: user.geo_location.address_line1 || '',
+                address_line2: user.geo_location.address_line2 || '',
+                postal_code: user.geo_location.postal_code || '',
+                latitude: user.geo_location.latitude || 0,
+                longitude: user.geo_location.longitude || 0
+            } : {
                 continent: '',
                 region: '',
                 country: '',
@@ -327,8 +511,8 @@ function UsersManagement() {
                 address_line1: '',
                 address_line2: '',
                 postal_code: '',
-                latitude: '',
-                longitude: ''
+                latitude: 0,
+                longitude: 0
             }
         });
         
@@ -366,6 +550,15 @@ function UsersManagement() {
         setSelectedOrganizationId('');
         setSelectedRoleType('');
         setOrganizationalRoleToAdd('');
+        // Reset email preview states
+        setShowEmailPreview(false);
+        setEmailPreviewData({
+            textVersion: '',
+            htmlVersion: '',
+            subject: '',
+            to: ''
+        });
+        setEmailPreviewType('text');
         setFormData({
             username: '',
             email: '',
@@ -387,8 +580,8 @@ function UsersManagement() {
                 address_line1: '',
                 address_line2: '',
                 postal_code: '',
-                latitude: '',
-                longitude: ''
+                latitude: 0,
+                longitude: 0
             }
         });
         setTemplates([]); // Reset templates
@@ -468,6 +661,9 @@ function UsersManagement() {
             
             // First, create the user
             const newUser = await addUser(userData);
+            console.log('Backend response for new user:', newUser);
+            console.log('Password from backend:', newUser.password);
+            console.log('Password from form:', formData.password);
             
             // Then, if there are organizational roles, save them
             if (organizationalRoles.length > 0) {
@@ -479,39 +675,13 @@ function UsersManagement() {
                 }
             }
             
-            // Prepare email data for the welcome email
-            const welcomeEmailData = {
-                to: formData.email,
-                subject: 'Welcome to Saurara Platform',
-                body: `Dear ${formData.firstname || formData.username},
-
-Welcome to the Saurara Platform! We are excited to have you join our community.
-
-Your account has been successfully created with the following details:
-
-Username: ${formData.username}
-Email: ${formData.email}
-Password: ${formData.password || 'Auto-generated password will be sent separately'}
-
-You can access the platform at: www.saurara.org
-
-Please keep this information secure and change your password after your first login for enhanced security.
-
-If you have any questions or need assistance, please don't hesitate to contact our support team.
-
-Best regards,
-The Saurara Team`,
-                username: formData.username,
-                password: formData.password || 'Auto-generated',
-                firstname: formData.firstname
-            };
+            // Show success message - backend automatically sends welcome email
+            alert(`User "${newUser.username}" created successfully! Welcome email has been sent to ${newUser.email}.`);
             
-            setEmailData(welcomeEmailData);
             loadUsers();
             
-            // Close the add dialog and open the email dialog
+            // Close the add dialog - no email dialog needed
             setOpenAddDialog(false);
-            setOpenEmailDialog(true);
         } catch (error) {
             console.error('Failed to add user:', error);
             alert(`Failed to add user: ${error.message}`);
@@ -520,7 +690,16 @@ The Saurara Team`,
 
     // Helper function to check if geo_location has any meaningful data
     const hasValidGeoData = (geoData) => {
-        return geoData && Object.values(geoData).some(value => value && value.trim() !== '');
+        if (!geoData) return false;
+        
+        // Check all fields except latitude and longitude for meaningful string data
+        const stringFields = ['continent', 'region', 'country', 'province', 'city', 'town', 'address_line1', 'address_line2', 'postal_code'];
+        const hasStringData = stringFields.some(field => geoData[field] && geoData[field].trim() !== '');
+        
+        // Check if latitude and longitude have been set (not 0 or empty)
+        const hasCoordinates = (geoData.latitude && geoData.latitude !== 0) || (geoData.longitude && geoData.longitude !== 0);
+        
+        return hasStringData || hasCoordinates;
     };
 
     // New handlers for improved organizational roles workflow
@@ -612,16 +791,25 @@ The Saurara Team`,
     const handlePlaceSelect = (placeData) => {
         const { geoLocationData, formattedAddress } = placeData;
         
+        // Ensure latitude and longitude are numbers, defaulting to 0 if not provided
+        const updatedGeoLocation = {
+            ...geoLocationData,
+            latitude: geoLocationData.latitude ? Number(geoLocationData.latitude) : 0,
+            longitude: geoLocationData.longitude ? Number(geoLocationData.longitude) : 0
+        };
+        
         // Update form data with the selected place information
         setFormData({
             ...formData,
-            geo_location: {
-                ...geoLocationData
-            }
+            geo_location: updatedGeoLocation
         });
         
         // Show a brief success message
         console.log('Address auto-filled:', formattedAddress);
+        console.log('Coordinates set:', { 
+            latitude: updatedGeoLocation.latitude, 
+            longitude: updatedGeoLocation.longitude 
+        });
         
         // Clear the search field
         setAddressSearch('');
@@ -707,6 +895,12 @@ The Saurara Team`,
         return role ? role.name : 'N/A';
     };
 
+    // Helper function to truncate long text
+    const truncateText = (text, maxLength = 40) => {
+        if (!text) return '';
+        return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    };
+
     // Render the users table
     const renderUsersTable = () => {
         return (
@@ -735,16 +929,50 @@ The Saurara Team`,
                                     <TableCell>{user.lastname}</TableCell>
                                     <TableCell>{user.phone || 'N/A'}</TableCell>
                                     <TableCell>
-                                        {user.geo_location ? 
-                                            [
-                                                user.geo_location.city,
-                                                user.geo_location.province,
-                                                user.geo_location.country
-                                            ].filter(Boolean).join(', ') :
-                                            'N/A'
-                                        }
+                                        {user.geo_location ? (
+                                            <Box>
+                                                {user.geo_location.address_line1 && (
+                                                    <Typography variant="body2">
+                                                        {user.geo_location.address_line1}
+                                                    </Typography>
+                                                )}
+                                                {user.geo_location.address_line2 && (
+                                                    <Typography variant="body2">
+                                                        {user.geo_location.address_line2}
+                                                    </Typography>
+                                                )}
+                                                <Typography variant="body2">
+                                                    {[
+                                                        user.geo_location.city,
+                                                        user.geo_location.province,
+                                                        user.geo_location.country,
+                                                        user.geo_location.postal_code
+                                                    ].filter(Boolean).join(', ')}
+                                                </Typography>
+                                            </Box>
+                                        ) : 'N/A'}
                                     </TableCell>
-                                    <TableCell>{user.organization?.name || getOrganizationName(user.organization_id)}</TableCell>
+                                    <TableCell>
+                                        {user.organization ? (
+                                            <Box>
+                                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                                    {user.organization.name}
+                                                </Typography>
+                                                {user.organization.organization_type && (
+                                                    <Typography variant="body2" color="textSecondary">
+                                                        Type: {user.organization.organization_type.type}
+                                                    </Typography>
+                                                )}
+                                                {user.organization.website && (
+                                                    <Typography variant="body2" color="textSecondary">
+                                                        Website: {user.organization.website}
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                        ) : (
+                                            getOrganizationName(user.organization_id)
+                                        )}
+                                    </TableCell>
                                     <TableCell>
                                         <IconButton 
                                             onClick={() => handleOpenEditDialog(user)}
@@ -907,17 +1135,17 @@ The Saurara Team`,
                         <FormControl fullWidth variant="outlined">
                             <InputLabel>Organization</InputLabel>
                             <Select
-                            name="organization_id"
-                            value={formData.organization_id}
-                            onChange={handleInputChange}
-                            label="Organization"
+                                name="organization_id"
+                                value={formData.organization_id}
+                                onChange={handleInputChange}
+                                label="Organization"
                             >
-                            <MenuItem value="">No Organization Currently available</MenuItem>
-                            {organizations.map((org) => (
-                                <MenuItem key={org.id} value={org.id}>
-                                {org.name}
-                                </MenuItem>
-                            ))}
+                                <MenuItem value="">No Organization</MenuItem>
+                                {organizations.map((org) => (
+                                    <MenuItem key={org.id} value={org.id}>
+                                        {org.name} ({org.organization_type?.type || 'N/A'})
+                                    </MenuItem>
+                                ))}
                             </Select>
                         </FormControl>
 
@@ -930,11 +1158,22 @@ The Saurara Team`,
                                     value={formData.template_id}
                                     onChange={handleInputChange}
                                     label="Survey Template"
+                                    MenuProps={{
+                                        PaperProps: {
+                                            style: {
+                                                maxWidth: '400px', // Limit dropdown width
+                                            },
+                                        },
+                                    }}
                                 >
                                     <MenuItem value="">No Template Selected</MenuItem>
                                     {templates.map((template) => (
-                                        <MenuItem key={template.id} value={template.id}>
-                                            {template.survey_code} - {template.version_name}
+                                        <MenuItem 
+                                            key={template.id} 
+                                            value={template.id}
+                                            title={`${template.survey_code} - ${template.version_name}`} // Show full text on hover
+                                        >
+                                            {truncateText(`${template.survey_code} - ${template.version_name}`, 35)}
                                         </MenuItem>
                                     ))}
                                 </Select>
@@ -1097,6 +1336,142 @@ The Saurara Team`,
                     </Box>
                 </Paper>
                 
+                {/* Email Preview Section - Only shown for Add User dialog */}
+                {!isEdit && (
+                    <Paper sx={{ p: 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', mb: 3 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold' }}>
+                                📧 Welcome Email Preview
+                            </Typography>
+                            <Button
+                                variant="contained"
+                                onClick={() => {
+                                    if (!showEmailPreview) {
+                                        generateWelcomeEmailPreview();
+                                    }
+                                    setShowEmailPreview(!showEmailPreview);
+                                }}
+                                sx={{ 
+                                    backgroundColor: '#633394', 
+                                    '&:hover': { backgroundColor: '#7c52a5' },
+                                    minWidth: '200px'
+                                }}
+                            >
+                                {showEmailPreview ? 'Hide Email Preview' : 'Preview Email Content'}
+                            </Button>
+                        </Box>
+                        
+                        {showEmailPreview && (
+                            <Box sx={{ mt: 2 }}>
+                                {/* Email Details */}
+                                <Paper sx={{ p: 2, mb: 2, backgroundColor: 'white', border: '1px solid #ddd' }}>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#633394', mb: 1 }}>
+                                        📧 Email Details
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ mb: 1 }}>
+                                        <strong>To:</strong> {emailPreviewData.to}
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ mb: 1 }}>
+                                        <strong>Subject:</strong> {emailPreviewData.subject}
+                                    </Typography>
+                                </Paper>
+
+                                {/* Toggle between Text and HTML */}
+                                <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                                    <Button
+                                        variant={emailPreviewType === 'text' ? 'contained' : 'outlined'}
+                                        onClick={() => setEmailPreviewType('text')}
+                                        sx={{ 
+                                            backgroundColor: emailPreviewType === 'text' ? '#633394' : 'transparent',
+                                            color: emailPreviewType === 'text' ? 'white' : '#633394',
+                                            borderColor: '#633394',
+                                            '&:hover': { 
+                                                backgroundColor: emailPreviewType === 'text' ? '#7c52a5' : '#f5f5f5',
+                                                borderColor: '#7c52a5' 
+                                            }
+                                        }}
+                                    >
+                                        Text Version
+                                    </Button>
+                                    <Button
+                                        variant={emailPreviewType === 'html' ? 'contained' : 'outlined'}
+                                        onClick={() => setEmailPreviewType('html')}
+                                        sx={{ 
+                                            backgroundColor: emailPreviewType === 'html' ? '#633394' : 'transparent',
+                                            color: emailPreviewType === 'html' ? 'white' : '#633394',
+                                            borderColor: '#633394',
+                                            '&:hover': { 
+                                                backgroundColor: emailPreviewType === 'html' ? '#7c52a5' : '#f5f5f5',
+                                                borderColor: '#7c52a5' 
+                                            }
+                                        }}
+                                    >
+                                        HTML Version
+                                    </Button>
+                                </Box>
+
+                                {/* Email Content Display */}
+                                {emailPreviewType === 'text' ? (
+                                    <Paper sx={{ 
+                                        p: 2, 
+                                        backgroundColor: 'white', 
+                                        border: '1px solid #ddd',
+                                        maxHeight: '400px',
+                                        overflow: 'auto'
+                                    }}>
+                                        <Typography 
+                                            variant="body2" 
+                                            sx={{ 
+                                                whiteSpace: 'pre-line',
+                                                fontFamily: 'monospace',
+                                                fontSize: '0.85rem',
+                                                lineHeight: 1.4
+                                            }}
+                                        >
+                                            {emailPreviewData.textVersion}
+                                        </Typography>
+                                    </Paper>
+                                ) : (
+                                    <Paper sx={{ 
+                                        p: 1, 
+                                        backgroundColor: 'white', 
+                                        border: '1px solid #ddd',
+                                        maxHeight: '400px',
+                                        overflow: 'auto'
+                                    }}>
+                                        <iframe
+                                            title="Email HTML Preview"
+                                            srcDoc={emailPreviewData.htmlVersion}
+                                            style={{
+                                                width: '100%',
+                                                height: '380px',
+                                                border: 'none',
+                                                backgroundColor: 'white'
+                                            }}
+                                        />
+                                    </Paper>
+                                )}
+
+                                {/* Preview Notice */}
+                                <Paper sx={{ 
+                                    p: 2, 
+                                    mt: 2,
+                                    backgroundColor: '#e3f2fd', 
+                                    border: '1px solid #2196f3',
+                                    borderRadius: 1
+                                }}>
+                                    <Typography variant="body2" sx={{ color: '#1976d2', fontWeight: 'bold' }}>
+                                        📋 Preview Notice
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: '#1976d2', mt: 1 }}>
+                                        This is a preview of the welcome email that will be sent to the user after their account is created. 
+                                        The email contains their login credentials and getting started information.
+                                    </Typography>
+                                </Paper>
+                            </Box>
+                        )}
+                    </Paper>
+                )}
                 
             </Box>
         );
@@ -1278,52 +1653,87 @@ The Saurara Team`,
                     Welcome Email Preview
                 </DialogTitle>
                 <DialogContent dividers>
-                    <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold' }}>
-                        Email Details
-                    </Typography>
-                    
                     <Box sx={{ mb: 3 }}>
-                        <Paper sx={{ p: 2, backgroundColor: '#f5f5f5', mb: 2 }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#633394' }}>
-                                To:
-                            </Typography>
-                            <Typography variant="body1" sx={{ mb: 2 }}>
-                                {emailData.to}
+                        <Paper sx={{ p: 2, backgroundColor: '#f8f9fa', border: '2px solid #633394', borderRadius: '8px', mb: 2 }}>
+                            <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold', mb: 2 }}>
+                                Email Details
                             </Typography>
                             
-                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#633394' }}>
-                                Subject:
-                            </Typography>
-                            <Typography variant="body1" sx={{ mb: 2 }}>
-                                {emailData.subject}
-                            </Typography>
-                            
-                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#633394' }}>
-                                Message Body:
-                            </Typography>
-                            <Paper sx={{ p: 2, backgroundColor: 'white', border: '1px solid #ddd' }}>
-                                <Typography 
-                                    variant="body1" 
-                                    sx={{ 
-                                        whiteSpace: 'pre-line',
-                                        fontFamily: 'monospace',
-                                        fontSize: '0.9rem'
-                                    }}
-                                >
-                                    {emailData.body}
+                            <Box sx={{ mb: 2 }}>
+                                <Typography variant="subtitle1" sx={{ color: '#633394', fontWeight: 'bold', mb: 1 }}>
+                                    <span style={{ fontSize: '1.2em', marginRight: '5px' }}>📧</span> To:
                                 </Typography>
-                            </Paper>
+                                <Box sx={{ p: 1, backgroundColor: 'white', borderRadius: '4px' }}>
+                                    {emailData.to}
+                                </Box>
+                            </Box>
+                            
+                            <Box sx={{ mb: 2 }}>
+                                <Typography variant="subtitle1" sx={{ color: '#633394', fontWeight: 'bold', mb: 1 }}>
+                                    <span style={{ fontSize: '1.2em', marginRight: '5px' }}>📝</span> Subject:
+                                </Typography>
+                                <Box sx={{ p: 1, backgroundColor: 'white', borderRadius: '4px' }}>
+                                    {emailData.subject}
+                                </Box>
+                            </Box>
+                            
+                            <Box>
+                                <Typography variant="subtitle1" sx={{ color: '#633394', fontWeight: 'bold', mb: 1 }}>
+                                    <span style={{ fontSize: '1.2em', marginRight: '5px' }}>✉️</span> Message Body:
+                                </Typography>
+                                <Box sx={{ 
+                                    p: 2, 
+                                    backgroundColor: 'white', 
+                                    borderRadius: '4px',
+                                    border: '1px solid #e0e0e0',
+                                    maxHeight: '400px',
+                                    overflowY: 'auto',
+                                    whiteSpace: 'pre-line',
+                                    fontFamily: 'monospace',
+                                    fontSize: '0.9rem'
+                                }}>
+                                    {emailData.body}
+                                </Box>
+                            </Box>
                         </Paper>
                         
-                        <Paper sx={{ p: 2, backgroundColor: emailSent ? '#e8f5e8' : '#fff3e0', border: emailSent ? '1px solid #4caf50' : '1px solid #ff9800' }}>
-                            <Typography variant="body2" sx={{ color: emailSent ? '#2e7d32' : '#e65100', fontWeight: 'bold' }}>
-                                {emailSent ? '✅ Email sent successfully!' : '📧 This email template is ready to be sent to the new user.'}
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: emailSent ? '#2e7d32' : '#e65100', mt: 1 }}>
-                                Username: {emailData.username} | Password: {emailData.password}
-                            </Typography>
+                        <Paper sx={{ 
+                            p: 2, 
+                            backgroundColor: emailSent ? '#e8f5e8' : '#fff3e0', 
+                            border: emailSent ? '2px solid #4caf50' : '2px solid #ff9800',
+                            borderRadius: '8px'
+                        }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                <Typography variant="h6" sx={{ 
+                                    color: emailSent ? '#2e7d32' : '#e65100', 
+                                    fontWeight: 'bold',
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}>
+                                    <span style={{ fontSize: '1.2em', marginRight: '8px' }}>
+                                        {emailSent ? '✅' : '📧'}
+                                    </span>
+                                    {emailSent ? 'Email Sent Successfully!' : 'Ready to Send'}
+                                </Typography>
+                            </Box>
+                            
+                            <Box sx={{ mt: 1 }}>
+                                <Typography variant="body1" sx={{ color: emailSent ? '#2e7d32' : '#e65100', mb: 1 }}>
+                                    <strong>Username:</strong> {emailData.username}
+                                </Typography>
+                                <Typography variant="body1" sx={{ color: emailSent ? '#2e7d32' : '#e65100' }}>
+                                    <strong>Password:</strong> {emailData.password}
+                                </Typography>
+                            </Box>
+                            
                             {emailSent && (
-                                <Typography variant="body2" sx={{ color: '#2e7d32', mt: 1 }}>
+                                <Typography variant="body1" sx={{ 
+                                    color: '#2e7d32', 
+                                    mt: 2,
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}>
+                                    <span style={{ fontSize: '1.2em', marginRight: '8px' }}>📨</span>
                                     The welcome email has been delivered to {emailData.to}
                                 </Typography>
                             )}
@@ -1348,14 +1758,13 @@ The Saurara Team`,
                     )}
                     <Button 
                         onClick={handleCloseEmailDialog} 
-                        variant="outlined" 
+                        variant="contained"
                         sx={{ 
-                            color: '#633394', 
-                            borderColor: '#633394', 
-                            '&:hover': { borderColor: '#7c52a5', color: '#7c52a5' } 
+                            backgroundColor: '#633394', 
+                            '&:hover': { backgroundColor: '#7c52a5' } 
                         }}
                     >
-                        {emailSent ? 'Done' : 'Close'}
+                        Close
                     </Button>
                 </DialogActions>
             </Dialog>

@@ -12,12 +12,12 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../shared/Navbar/Navbar';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import axios from 'axios';
 
 const SurveysPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [surveyTemplate, setSurveyTemplate] = useState(null);
   const navigate = useNavigate();
   
   // Get user data from localStorage
@@ -26,22 +26,50 @@ const SurveysPage = () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1000);
+    const fetchSurveyTemplate = async () => {
+      try {
+        const response = await axios.get('/api/survey-templates/available');
+        
+        if (response.data && response.data.length > 0) {
+          // Use the first available template
+          setSurveyTemplate(response.data[0]);
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching survey templates:', err);
+        setError('Failed to load survey templates. Please try again later.');
+        setLoading(false);
+      }
+    };
 
-    return () => clearTimeout(timer);
+    fetchSurveyTemplate();
   }, []);
 
-  const handleStartSurvey = () => {
-    if (surveyCode) {
+  const handleStartSurvey = async () => {
+    try {
+      if (!surveyTemplate) {
+        setError('No survey template available.');
+        return;
+      }
+
+      // Create a new survey response
+      const response = await axios.post(`/api/templates/${surveyTemplate.id}/responses`, {
+        user_id: userId,
+        answers: {},
+        status: 'pending'
+      });
+
       // Navigate to survey taking page with survey data
       navigate('/survey', { 
         state: { 
           survey: { 
-            survey_code: surveyCode,
-            id: user.id || userId,
+            id: response.data.id,
+            template_id: surveyTemplate.id,
+            survey_code: surveyTemplate.survey_code,
+            template_name: surveyTemplate.version?.name,
+            organization_type: surveyTemplate.version?.organization?.organization_type?.type,
+            user_id: userId,
             username: user.username,
             email: user.email,
             organization_id: user.organization_id,
@@ -49,8 +77,32 @@ const SurveysPage = () => {
           } 
         } 
       });
-    } else {
-      setError('Survey code not found. Please contact your administrator.');
+    } catch (error) {
+      console.error('Error starting survey:', error);
+      setError('Failed to start survey. Please try again.');
+    }
+  };
+
+  const handleInitializeSurveyData = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      const response = await axios.post('/api/initialize-survey-data');
+      
+      if (response.status === 200 || response.status === 201) {
+        // Refresh the survey templates after initialization
+        const templatesResponse = await axios.get('/api/survey-templates/available');
+        if (templatesResponse.data && templatesResponse.data.length > 0) {
+          setSurveyTemplate(templatesResponse.data[0]);
+        }
+      }
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('Error initializing survey data:', error);
+      setError('Failed to initialize survey data. Please try again.');
+      setLoading(false);
     }
   };
 
@@ -59,11 +111,34 @@ const SurveysPage = () => {
       <>
         <Navbar />
         <Container sx={{ mt: 4, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-          <CircularProgress />
+          <CircularProgress sx={{ color: '#633394' }} />
         </Container>
       </>
     );
   }
+
+  // Format the survey name and organization type from backend data
+  const getSurveyDisplayName = () => {
+    if (!surveyTemplate) return 'Survey Template';
+    
+    const templateName = surveyTemplate.version?.name || 'Survey Template';
+    const orgType = surveyTemplate.version?.organization?.organization_type?.type || 'Survey';
+    
+    return `${templateName} (${orgType} Survey)`;
+  };
+
+  const getOrganizationType = () => {
+    if (!surveyTemplate) return 'Survey';
+    return surveyTemplate.version?.organization?.organization_type?.type || 'Survey';
+  };
+
+  const getQuestionCount = () => {
+    return surveyTemplate?.questions_count || 0;
+  };
+
+  const getSectionCount = () => {
+    return surveyTemplate?.sections_count || 0;
+  };
 
   return (
     <>
@@ -89,7 +164,7 @@ const SurveysPage = () => {
         )}
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          {surveyCode ? (
+          {surveyTemplate ? (
             <Card 
               sx={{ 
                 boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
@@ -104,13 +179,13 @@ const SurveysPage = () => {
             >
               <CardContent sx={{ p: 4 }}>
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-                  <AssignmentIcon 
-                    sx={{ 
-                      color: '#633394', 
-                      fontSize: 40,
-                      mt: 0.5
-                    }} 
-                  />
+                  <Box sx={{ 
+                    color: '#633394', 
+                    fontSize: '2.5rem',
+                    mt: 0.5
+                  }}>
+                    📋
+                  </Box>
                   <Box sx={{ flex: 1 }}>
                     <Typography 
                       variant="h5" 
@@ -122,7 +197,7 @@ const SurveysPage = () => {
                         mb: 1
                       }}
                     >
-                      2024.11.03 Health of Theol Edu (Church Survey)
+                      {getSurveyDisplayName()}
                     </Typography>
                     
                     <Typography 
@@ -130,12 +205,12 @@ const SurveysPage = () => {
                       color="text.secondary"
                       sx={{ mb: 2, lineHeight: 1.6 }}
                     >
-                      Assessing the effectiveness of Theological institutions in Africa through the lens of African churches.
+                      {surveyTemplate.version?.description || 'Assessing the effectiveness of educational institutions through comprehensive survey analysis.'}
                     </Typography>
 
                     <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap' }}>
                       <Chip 
-                        label="Church Survey" 
+                        label={`${getOrganizationType()} Survey`}
                         size="small" 
                         sx={{ 
                           backgroundColor: '#f3e5f5',
@@ -144,7 +219,7 @@ const SurveysPage = () => {
                         }} 
                       />
                       <Chip 
-                        label="47 Questions" 
+                        label={`${getQuestionCount()} Questions`}
                         size="small" 
                         variant="outlined"
                         sx={{ 
@@ -153,7 +228,7 @@ const SurveysPage = () => {
                         }} 
                       />
                       <Chip 
-                        label="2 Sections" 
+                        label={`${getSectionCount()} Sections`}
                         size="small" 
                         variant="outlined"
                         sx={{ 
@@ -166,7 +241,6 @@ const SurveysPage = () => {
                     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                       <Button
                         variant="contained"
-                        startIcon={<PlayArrowIcon />}
                         onClick={handleStartSurvey}
                         sx={{
                           backgroundColor: '#633394',
@@ -179,12 +253,12 @@ const SurveysPage = () => {
                           fontSize: '1rem'
                         }}
                       >
-                        Start Survey
+                        ▶ Start Survey
                       </Button>
                       
                       <Box sx={{ ml: 2 }}>
                         <Typography variant="caption" color="text.secondary">
-                          Survey Code: {surveyCode}
+                          Survey Code: {surveyTemplate.survey_code || surveyCode || 'N/A'}
                         </Typography>
                       </Box>
                     </Box>
@@ -195,19 +269,28 @@ const SurveysPage = () => {
           ) : (
             <Card sx={{ textAlign: 'center', p: 4 }}>
               <CardContent>
-                <AssignmentIcon 
-                  sx={{ 
-                    fontSize: 60, 
-                    color: '#ccc', 
-                    mb: 2 
-                  }} 
-                />
+                <Box sx={{ fontSize: '4rem', mb: 2 }}>📋</Box>
                 <Typography variant="h6" gutterBottom>
                   No Surveys Available
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                   You don't have any surveys assigned at the moment. Please contact your administrator if you believe this is an error.
                 </Typography>
+                <Button
+                  variant="outlined"
+                  onClick={handleInitializeSurveyData}
+                  disabled={loading}
+                  sx={{
+                    borderColor: '#633394',
+                    color: '#633394',
+                    '&:hover': { 
+                      borderColor: '#7c52a5',
+                      backgroundColor: '#f3e5f5'
+                    }
+                  }}
+                >
+                  Initialize Sample Survey Data
+                </Button>
               </CardContent>
             </Card>
           )}

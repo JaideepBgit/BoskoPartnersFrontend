@@ -11,18 +11,16 @@ const UserLandingPage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Check if user already has a survey code in localStorage
+  // Remove the useEffect that pre-fills survey code
+  // Users should always enter their survey code manually
   useEffect(() => {
-    const existingSurveyCode = localStorage.getItem('surveyCode');
-    const userId = localStorage.getItem('userId');
-    
-    if (existingSurveyCode && userId) {
-      // Redirect to dashboard if user already has a survey code
-      navigate('/dashboard');
-    }
+    // No longer pre-filling survey code
+    console.log('UserLandingPage loaded - users must enter survey code manually');
   }, [navigate]);
 
   const handleEnterSurvey = async () => {
+    console.log('Attempting to validate survey code:', surveyCode);
+    
     if (!surveyCode.trim()) {
       setError('Please enter a survey code');
       return;
@@ -32,10 +30,16 @@ const UserLandingPage = () => {
     setError('');
 
     try {
+      console.log('Calling validateSurveyCode with:', surveyCode);
       const {survey} = await validateSurveyCode(surveyCode);
-      // pass the code (or entire survey) via location state
-      navigate('/form', { state: { survey } });
+      console.log('Survey validation successful:', survey);
+      
+      // Store the validated survey code and redirect to dashboard
+      localStorage.setItem('surveyCode', surveyCode);
+      console.log('Redirecting to dashboard...');
+      navigate('/dashboard');
     } catch (err) {
+      console.error('Survey validation failed:', err);
       setError(err.message || 'Invalid survey code');
     } finally {
       setLoading(false);
@@ -45,19 +49,9 @@ const UserLandingPage = () => {
   return (
     <Box
       sx={{
-        background: 'linear-gradient(135deg, #3B1C55 0%, #633394 25%, #61328E 50%, #967CB2 75%, #FBFAFA 100%)',
+        backgroundColor: 'white',
         minHeight: '100vh',
-        position: 'relative',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'radial-gradient(ellipse at top left, rgba(59, 28, 85, 0.1) 0%, transparent 50%), radial-gradient(ellipse at bottom right, rgba(150, 124, 178, 0.1) 0%, transparent 50%)',
-          pointerEvents: 'none'
-        }
+        position: 'relative'
       }}
     >
       <Navbar />
@@ -76,18 +70,20 @@ const UserLandingPage = () => {
         <Card sx={{
           width: '500px',
           minHeight: '450px',
-          backgroundColor: 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(10px)',
-          boxShadow: '0 20px 40px rgba(59, 28, 85, 0.15)',
+          backgroundColor: '#f5f5f5',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
           borderRadius: 3,
-          border: '1px solid rgba(255, 255, 255, 0.2)'
+          border: '1px solid #e0e0e0'
         }}>
           <CardContent sx={{ padding: '2rem' }}>
             <Typography variant="h4" align="center" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
               Welcome!
             </Typography>
             <Typography variant="h6" align="center" gutterBottom sx={{ mb: 3 }}>
-              Enter your survey code
+              Enter your survey code to get started
+            </Typography>
+            <Typography variant="body2" align="center" gutterBottom sx={{ mb: 3, color: 'text.secondary' }}>
+              Please enter the survey code provided in your welcome email or by your administrator.
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 2 }}>
               <TextField

@@ -117,40 +117,9 @@ const HomeComponent = () => {
         )}
 
         <Grid container spacing={isMobile ? 2 : 3}>
-          {/* Quick Actions Card */}
-          <Grid item xs={12} md={6}>
-            <Card sx={{ 
-              height: '100%', 
-              backgroundColor: '#f5f5f5',
-              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-              borderRadius: '8px'
-            }}>
-              <CardContent sx={{ p: isMobile ? 2 : 3 }}>
-                <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold' }}>
-                  Quick Actions
-                </Typography>
-                <Divider sx={{ mb: 2 }} />
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Button 
-                    variant="outlined" 
-                    onClick={() => navigate('/profile')}
-                    sx={{ 
-                      borderColor: '#633394', 
-                      color: '#633394',
-                      '&:hover': { borderColor: '#7c52a5', backgroundColor: 'rgba(99, 51, 148, 0.04)' }
-                    }}
-                  >
-                    View Profile
-                  </Button>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-
           {/* Personal Details Card */}
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12}>
             <Card sx={{ 
-              height: '100%', 
               backgroundColor: '#f5f5f5',
               boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
               borderRadius: '8px'

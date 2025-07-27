@@ -4,7 +4,7 @@ import PersonalDetailsPage from './PersonalDetailsPage';
 import OrganizationalDetailsPage from './OrganizationalDetailsPage';
 import SubmitPage from './SubmitPage';
 import { Paper, Box, Typography, LinearProgress, Container, useMediaQuery, useTheme } from '@mui/material';
-import { saveUserDetails, submitUserDetails } from '../../services/UserDetails/UserDetailsService';
+import { saveUserDetails, submitUserDetails, getUserDetails } from '../../services/UserDetails/UserDetailsService';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const FormContainer = () => {
@@ -19,10 +19,14 @@ const FormContainer = () => {
       phone: ''
     },
     organizational: {
+      organization: null,
       country: '',
-      region: '',
-      church: '',
-      school: ''
+      province: '',
+      city: '',
+      town: '',
+      address_line1: '',
+      address_line2: '',
+      postal_code: ''
     }
   });
   
@@ -50,6 +54,36 @@ const FormContainer = () => {
       localStorage.setItem('userId', survey.id || userId);
     }
   }, [survey, userId]);
+
+  // Load existing user details when form opens
+  useEffect(() => {
+    const loadUserDetails = async () => {
+      if (userId > 0) {
+        try {
+          const existingDetails = await getUserDetails(userId);
+          console.log('Loaded existing user details:', existingDetails);
+          
+          if (existingDetails && existingDetails.form_data) {
+            // Update form data with existing details
+            setFormData(existingDetails.form_data);
+            
+            // Set current page to the last page the user was on
+            if (existingDetails.last_page) {
+              setCurrentPage(existingDetails.last_page);
+            }
+            
+            // Calculate progress based on loaded data
+            calculateProgress(existingDetails.form_data, existingDetails.last_page || 1);
+          }
+        } catch (error) {
+          console.log('No existing user details found or error loading:', error);
+          // This is fine - user might be filling the form for the first time
+        }
+      }
+    };
+
+    loadUserDetails();
+  }, [userId]);
 
   if (!survey){
     navigate('/', {replace: true});
@@ -80,10 +114,10 @@ const FormContainer = () => {
     
     // Check all required fields across all pages
     const personalFieldsFilled = ['firstName', 'lastName'].filter(f => data.personal[f]).length;
-    const orgFieldsFilled = ['country', 'region', 'church', 'school'].filter(f => data.organizational[f]).length;
+    const orgFieldsFilled = ['organization', 'country', 'province', 'city', 'address_line1'].filter(f => data.organizational[f]).length;
     
     // Total required fields and how many are filled
-    const totalRequiredFields = 6; // 2 personal + 4 organizational
+    const totalRequiredFields = 7; // 2 personal + 5 organizational (organization, country, province, city, address_line1)
     const totalFieldsFilled = personalFieldsFilled + orgFieldsFilled;
     
     // Calculate field-based progress (up to 100%)
@@ -111,10 +145,12 @@ const FormContainer = () => {
       if (!formData.personal.lastName) errors.lastName = 'Last name is required';
       // Email and phone are optional
     } else if (page === 2) {
+      if (!formData.organizational.organization) errors.organization = 'Organization is required';
       if (!formData.organizational.country) errors.country = 'Country is required';
-      if (!formData.organizational.region) errors.region = 'Region is required';
-      if (!formData.organizational.church) errors.church = 'Church is required';
-      if (!formData.organizational.school) errors.school = 'School is required';
+      if (!formData.organizational.province) errors.province = 'Province is required';
+      if (!formData.organizational.city) errors.city = 'City is required';
+      if (!formData.organizational.address_line1) errors.address_line1 = 'Address line 1 is required';
+      // town, address_line2, and postal_code are optional
     }
     
     setFormErrors(errors);
