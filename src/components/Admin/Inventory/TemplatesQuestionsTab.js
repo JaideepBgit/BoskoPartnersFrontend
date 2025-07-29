@@ -190,7 +190,7 @@ const TemplatesQuestionsTab = () => {
         max: q.config?.max || 5,
         step: q.config?.step || 1
       });
-    } else if (q.question_type_id === 9) { // dropdown
+            } else if (q.question_type_id === 8) { // constant sum
       setDropdownOptions(q.config?.options || []);
     } else {
       // Reset dynamic field states for other types
@@ -216,8 +216,12 @@ const TemplatesQuestionsTab = () => {
       config = { options: choiceOptions };
     } else if (questionData.question_type_id === 5) { // rating
       config = ratingConfig;
-    } else if (questionData.question_type_id === 9) { // dropdown
-      config = { options: dropdownOptions };
+            } else if (questionData.question_type_id === 9) { // flexible input
+      config = { 
+        items: dropdownOptions.map(opt => ({ value: opt.value, label: opt.label })),
+        instructions: '',
+        placeholder: 'Enter your response'
+      };
     } else if (questionData.question_type_id === 6) { // date
       config = { format: "YYYY-MM-DD" };
     } else if (questionData.question_type_id === 12) { // matrix
@@ -648,7 +652,7 @@ const TemplatesQuestionsTab = () => {
                   Users will be presented with a date picker
                 </Typography>
               </Box>
-            ) : questionData.question_type_id === 9 ? (
+            ) : questionData.question_type_id === 8 ? (
               // Dropdown
               <Box sx={{ mt: 2, mb: 2 }}>
                 <Typography variant="subtitle2" gutterBottom>

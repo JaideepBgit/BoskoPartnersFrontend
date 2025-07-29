@@ -403,7 +403,43 @@ const TemplatesTab = ({
           </Box>
         );
       
-      case 9: // year_matrix
+      case 9: // flexible_input
+        return (
+          <Box sx={{ mt: 2 }}>
+            {question.config?.instructions && (
+              <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+                {question.config.instructions}
+              </Typography>
+            )}
+            {question.config?.items?.map((item, idx) => {
+              const itemValue = typeof item === 'object' ? item.value : item;
+              const itemLabel = typeof item === 'object' ? item.label : item;
+              const currentResponses = responses[question.id] || {};
+              
+              return (
+                <Box key={idx} sx={{ mb: 2 }}>
+                  <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                    {itemLabel}
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    value={currentResponses[itemValue] || ''}
+                    onChange={(e) => {
+                      handleResponseChange(question.id, {
+                        ...currentResponses,
+                        [itemValue]: e.target.value
+                      });
+                    }}
+                    placeholder={question.config?.placeholder || 'Enter your response'}
+                    size="small"
+                  />
+                </Box>
+              );
+            })}
+          </Box>
+        );
+      
+      case 10: // year_matrix
         return (
           <Box sx={{ mt: 2 }}>
             <Typography variant="body2" gutterBottom>

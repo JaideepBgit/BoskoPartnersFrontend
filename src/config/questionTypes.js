@@ -14,6 +14,7 @@ export const QUESTION_TYPES = Object.freeze([
   'paragraph',
   'numeric',
   'percentage',
+  'flexible_input',
   'year_matrix'
 ]);
 
@@ -118,8 +119,21 @@ export const QUESTION_TYPE_MAP = Object.freeze({
       required: false
     }
   },
-  year_matrix: {
+  flexible_input: {
     id: 9,
+    name: 'flexible_input',
+    display_name: 'Flexible Input',
+    description: 'Collect alphanumeric responses across multiple items',
+    category: 'Core Questions',
+    config_schema: {
+      items: [],
+      instructions: '',
+      placeholder: 'Enter your response',
+      required: false
+    }
+  },
+  year_matrix: {
+    id: 10,
     name: 'year_matrix',
     display_name: 'Year Matrix',
     description: 'Row-by-year grid for temporal data collection',

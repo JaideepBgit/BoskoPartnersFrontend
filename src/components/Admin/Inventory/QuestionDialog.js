@@ -113,6 +113,8 @@ const QuestionDialog = ({
         return renderNumericConfig();
       case 'percentage':
         return renderPercentageConfig();
+      case 'flexible_input':
+        return renderFlexibleInputConfig();
       case 'year_matrix':
         return renderYearMatrixConfig();
       default:
@@ -417,6 +419,83 @@ const QuestionDialog = ({
         <Button startIcon={<AddIcon />} onClick={addItem}>
           Add Item
         </Button>
+      </Box>
+    );
+  };
+
+  const renderFlexibleInputConfig = () => {
+    const items = questionConfig.items || [];
+
+    const addItem = () => {
+      const newItems = [...items, { value: `item_${items.length + 1}`, label: '' }];
+      handleConfigChange('items', newItems);
+    };
+
+    const updateItem = (index, field, value) => {
+      const newItems = [...items];
+      newItems[index] = { ...newItems[index], [field]: value };
+      handleConfigChange('items', newItems);
+    };
+
+    const removeItem = (index) => {
+      const newItems = items.filter((_, i) => i !== index);
+      handleConfigChange('items', newItems);
+    };
+
+    return (
+      <Box sx={{ mt: 2 }}>
+        <Typography variant="subtitle2" gutterBottom>Flexible Input Configuration</Typography>
+        
+        <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>Items:</Typography>
+        {items.map((item, index) => (
+          <Box key={index} sx={{ display: 'flex', gap: 1, mb: 1, alignItems: 'center' }}>
+            <TextField
+              size="small"
+              label="Value"
+              value={item.value || ''}
+              onChange={(e) => updateItem(index, 'value', e.target.value)}
+              sx={{ flex: 1 }}
+            />
+            <TextField
+              size="small"
+              label="Label"
+              value={item.label || ''}
+              onChange={(e) => updateItem(index, 'label', e.target.value)}
+              sx={{ flex: 1 }}
+            />
+            <IconButton size="small" onClick={() => removeItem(index)} color="error">
+              <DeleteIcon />
+            </IconButton>
+          </Box>
+        ))}
+        
+        <Button 
+          startIcon={<AddIcon />} 
+          onClick={addItem}
+          variant="outlined"
+          size="small"
+          sx={{ mt: 1, mb: 2 }}
+        >
+          Add Item
+        </Button>
+        
+        <TextField
+          fullWidth
+          label="Instructions"
+          value={questionConfig.instructions || ''}
+          onChange={(e) => handleConfigChange('instructions', e.target.value)}
+          placeholder="Instructions for respondents"
+          margin="normal"
+        />
+        
+        <TextField
+          fullWidth
+          label="Placeholder Text"
+          value={questionConfig.placeholder || ''}
+          onChange={(e) => handleConfigChange('placeholder', e.target.value)}
+          placeholder="Enter your response"
+          margin="normal"
+        />
       </Box>
     );
   };

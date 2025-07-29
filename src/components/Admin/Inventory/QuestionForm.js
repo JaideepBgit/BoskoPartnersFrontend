@@ -29,6 +29,7 @@ import {
 } from '@mui/icons-material';
 import { QUESTION_TYPE_MAP } from '../../../config/questionTypes';
 import QuestionTypeSelector from './QuestionTypeSelector';
+import ConstantSumInput from '../../shared/ConstantSumInput';
 
 /**
  * QuestionForm Component
@@ -72,7 +73,12 @@ const QuestionForm = ({
 
   const renderConfigForm = () => {
     const questionType = QUESTION_TYPE_MAP[questionData.type];
-    if (!questionType) return null;
+    if (!questionType) {
+      console.log('No question type found for:', questionData.type);
+      return null;
+    }
+
+    console.log('Rendering config for type:', questionData.type);
 
     switch (questionData.type) {
       case 'short_text':
@@ -91,9 +97,13 @@ const QuestionForm = ({
         return renderNumericConfig();
       case 'percentage':
         return renderPercentageConfig();
+      case 'flexible_input':
+        console.log('Rendering flexible input config');
+        return renderFlexibleInputConfig();
       case 'year_matrix':
         return renderYearMatrixConfig();
       default:
+        console.log('Unknown question type:', questionData.type);
         return null;
     }
   };
@@ -545,6 +555,137 @@ const QuestionForm = ({
     );
   };
 
+  const renderFlexibleInputConfig = () => {
+    console.log('renderFlexibleInputConfig called with localConfig:', localConfig);
+    const items = localConfig.items || [];
+    console.log('Items:', items);
+
+    const addItem = () => {
+      const newItems = [...items, { value: `item_${items.length + 1}`, label: '' }];
+      console.log('Adding item, new items:', newItems);
+      handleConfigChange('items', newItems);
+    };
+
+    const updateItem = (index, field, value) => {
+      const newItems = [...items];
+      newItems[index] = { ...newItems[index], [field]: value };
+      handleConfigChange('items', newItems);
+    };
+
+    const deleteItem = (index) => {
+      const newItems = items.filter((_, i) => i !== index);
+      handleConfigChange('items', newItems);
+    };
+
+    // Sample values for preview
+    const sampleValues = {};
+    items.forEach((item, index) => {
+      sampleValues[item.value] = `Sample response ${index + 1}`;
+    });
+
+    return (
+      <Box>
+        <Typography variant="subtitle2" gutterBottom>Categories to Allocate Points</Typography>
+        {items.length === 0 && (
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontStyle: 'italic' }}>
+            No categories added yet. Click "Add Category" to create categories for point allocation.
+          </Typography>
+        )}
+        <List>
+          {items.map((item, index) => (
+            <ListItem key={index} sx={{ px: 0 }}>
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={5}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Value"
+                    value={item.value}
+                    onChange={(e) => updateItem(index, 'value', e.target.value)}
+                    placeholder="category_1"
+                  />
+                </Grid>
+                <Grid item xs={5}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Label"
+                    value={item.label}
+                    onChange={(e) => updateItem(index, 'label', e.target.value)}
+                    placeholder="Category Name"
+                  />
+                </Grid>
+                <Grid item xs={2}>
+                  <IconButton 
+                    size="small" 
+                    color="error"
+                    onClick={() => deleteItem(index)}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Grid>
+              </Grid>
+            </ListItem>
+          ))}
+        </List>
+        <Button 
+          startIcon={<AddIcon />} 
+          onClick={addItem}
+          variant="outlined"
+          sx={{ mt: 1, mb: 2 }}
+        >
+          Add Category
+        </Button>
+        
+        <Grid container spacing={2} sx={{ mt: 2 }}>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Instructions"
+              value={localConfig.instructions || ''}
+              onChange={(e) => handleConfigChange('instructions', e.target.value)}
+              placeholder="e.g., 'Please provide your response for each item below'"
+              helperText="Instructions for respondents"
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Placeholder Text"
+              value={localConfig.placeholder || ''}
+              onChange={(e) => handleConfigChange('placeholder', e.target.value)}
+              placeholder="e.g., 'Enter your response'"
+              helperText="Placeholder text shown in input fields"
+            />
+          </Grid>
+        </Grid>
+
+        {/* Preview Section */}
+        {items.length > 0 && (
+          <Box sx={{ mt: 3 }}>
+            <Typography variant="subtitle2" gutterBottom sx={{ color: '#633394', fontWeight: 600 }}>
+              Preview:
+            </Typography>
+            {ConstantSumInput ? (
+              <ConstantSumInput
+                categories={items}
+                values={sampleValues}
+                onChange={() => {}} // Read-only preview
+                instructions={localConfig.instructions}
+                placeholder={localConfig.placeholder || 'Enter your response'}
+                disabled={true}
+              />
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                Preview not available - FlexibleInput component not found
+              </Typography>
+            )}
+          </Box>
+        )}
+      </Box>
+    );
+  };
+
   const renderYearMatrixConfig = () => {
     const rows = localConfig.rows || [];
 
@@ -723,14 +864,10 @@ const QuestionForm = ({
 
       {/* Type-specific Configuration */}
       {questionData.type && (
-        <Accordion sx={{ mt: 2 }}>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="h6">Configuration Options</Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            {renderConfigForm()}
-          </AccordionDetails>
-        </Accordion>
+        <Box sx={{ mt: 2, p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>Configuration Options</Typography>
+          {renderConfigForm()}
+        </Box>
       )}
     </Box>
   );

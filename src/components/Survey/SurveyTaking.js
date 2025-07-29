@@ -22,6 +22,7 @@ import {
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../shared/Navbar/Navbar';
+import ConstantSumInput from '../shared/ConstantSumInput';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -161,10 +162,35 @@ const SurveyTaking = () => {
   const handleNextQuestion = () => {
     const currentQuestion = selectedSection.questions[currentQuestionIndex];
     
-    // Check if question is required and has an answer
-    if (currentQuestion.is_required && !responses[currentQuestion.id]) {
-      alert('This question is required. Please provide an answer.');
-      return;
+    // Check if question is required and has a valid answer
+    if (currentQuestion.is_required) {
+      const response = responses[currentQuestion.id];
+      
+      // Handle constant-sum questions
+      if (currentQuestion.question_type_id === 8) {
+        if (!response || typeof response !== 'object') {
+          alert('This question is required. Please provide responses for all items.');
+          return;
+        }
+        
+        // Check if all items have responses (not empty)
+        const items = currentQuestion.config?.items || [];
+        const hasAllResponses = items.every(item => {
+          const itemId = item.id || item.text;
+          return response[itemId] && response[itemId].toString().trim() !== '';
+        });
+        
+        if (!hasAllResponses) {
+          alert('Please provide responses for all items.');
+          return;
+        }
+      } else {
+        // Handle other question types
+        if (!response || response.toString().trim() === '') {
+          alert('This question is required. Please provide an answer.');
+          return;
+        }
+      }
     }
     
     if (currentQuestionIndex < selectedSection.questions.length - 1) {
@@ -329,7 +355,24 @@ const SurveyTaking = () => {
     if (!surveyData || !surveyData.questions) return false;
     
     const requiredQuestions = surveyData.questions.filter(q => q.is_required);
-    return requiredQuestions.every(q => responses[q.id] && responses[q.id].toString().trim() !== '');
+    return requiredQuestions.every(q => {
+      const response = responses[q.id];
+      
+      // Handle constant-sum questions
+      if (q.question_type_id === 8) {
+        if (!response || typeof response !== 'object') return false;
+        
+        // Check if all items have responses (not empty)
+        const items = q.config?.items || [];
+        return items.every(item => {
+          const itemId = item.id || item.text;
+          return response[itemId] && response[itemId].toString().trim() !== '';
+        });
+      }
+      
+      // Handle other question types
+      return response && response.toString().trim() !== '';
+    });
   };
 
   const getTotalRequiredQuestions = () => {
@@ -340,7 +383,24 @@ const SurveyTaking = () => {
   const getAnsweredRequiredQuestions = () => {
     if (!surveyData || !surveyData.questions) return 0;
     const requiredQuestions = surveyData.questions.filter(q => q.is_required);
-    return requiredQuestions.filter(q => responses[q.id] && responses[q.id].toString().trim() !== '').length;
+    return requiredQuestions.filter(q => {
+      const response = responses[q.id];
+      
+      // Handle constant-sum questions
+      if (q.question_type_id === 8) {
+        if (!response || typeof response !== 'object') return false;
+        
+        // Check if all items have responses (not empty)
+        const items = q.config?.items || [];
+        return items.every(item => {
+          const itemId = item.id || item.text;
+          return response[itemId] && response[itemId].toString().trim() !== '';
+        });
+      }
+      
+      // Handle other question types
+      return response && response.toString().trim() !== '';
+    }).length;
   };
 
   const renderQuestion = (question) => {
@@ -417,6 +477,67 @@ const SurveyTaking = () => {
             required={question.is_required}
             sx={{ mt: 2 }}
           />
+        );
+
+      case 8: // Percentage
+        return (
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="body2" gutterBottom>
+              Allocate percentages (Total must equal {question.config?.total_percentage || 100}%)
+            </Typography>
+            {question.config?.items?.map((item, idx) => {
+              const itemValue = typeof item === 'object' ? item.value : item;
+              const itemLabel = typeof item === 'object' ? item.label : item;
+              const currentResponses = currentValue || {};
+              
+              return (
+                <Box key={idx} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Typography variant="body2" sx={{ flex: 1, mr: 2 }}>
+                    {itemLabel}
+                  </Typography>
+                  <TextField
+                    type="number"
+                    value={currentResponses[itemValue] || ''}
+                    onChange={(e) => {
+                      const newValue = parseFloat(e.target.value) || 0;
+                      handleResponseChange(questionId, {
+                        ...currentResponses,
+                        [itemValue]: newValue
+                      });
+                    }}
+                    inputProps={{
+                      min: 0,
+                      max: question.config?.total_percentage || 100,
+                      step: 1
+                    }}
+                    sx={{ width: 100 }}
+                    size="small"
+                  />
+                  <Typography variant="body2" sx={{ ml: 1 }}>%</Typography>
+                </Box>
+              );
+            })}
+            <Typography variant="body2" sx={{ mt: 1, color: '#666' }}>
+              Total: {Object.values(currentValue || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0)}%
+            </Typography>
+          </Box>
+        );
+
+      case 9: // Flexible Input
+        return (
+          <Box sx={{ mt: 2 }}>
+            <ConstantSumInput
+              categories={(question.config?.items || []).map(item => ({
+                value: item.value || item.id || item.text,
+                label: item.label || item.text
+              }))}
+              values={currentValue || {}}
+              onChange={(values) => handleResponseChange(questionId, values)}
+              instructions={question.config?.instructions || question.config?.labels?.instruction}
+              placeholder={question.config?.placeholder || 'Enter your response'}
+              required={question.is_required}
+            />
+          </Box>
         );
 
       default:
