@@ -20,6 +20,7 @@ import {
 // import GooglePlacesAutocomplete from '../common/GooglePlacesAutocompleteSimple';
 // import ManualAddressInput from '../common/ManualAddressInput';
 import MapAddressSelector from '../common/MapAddressSelector';
+import EnhancedAddressInput from '../common/EnhancedAddressInput';
 
 function UsersManagement() {
     const theme = useTheme();
@@ -1324,12 +1325,13 @@ This email was sent to ${email}. If you received this email in error, please con
                     </Typography>
                     
                     <Box sx={{ maxWidth: '900px', mx: 'auto' }}>
-                        {/* Map Address Selector */}
+                        {/* Enhanced Address Input */}
                         <Box sx={{ mb: 3 }}>
-                            <MapAddressSelector
+                            <EnhancedAddressInput
                                 onPlaceSelect={handlePlaceSelect}
                                 label="🔍 Address Information"
                                 fullWidth
+                                initialValue={formData.geo_location}
                             />
                         </Box>
 

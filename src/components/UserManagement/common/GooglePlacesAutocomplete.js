@@ -22,7 +22,7 @@ const GooglePlacesAutocomplete = ({
     const [showMapDialog, setShowMapDialog] = useState(false);
     const [selectedPlace, setSelectedPlace] = useState(null);
     
-    const GOOGLE_API_KEY = 'AIzaSyAgmQbrpdURf4s6jeyN2DQt6IVo_Fg7Hyg';
+    const GOOGLE_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'AIzaSyAA5PZQdpcY4NXonqUny2sGZzMLbFKE0Iw';
 
     // Load Google Maps API
     const loadGoogleMapsAPI = useCallback(() => {

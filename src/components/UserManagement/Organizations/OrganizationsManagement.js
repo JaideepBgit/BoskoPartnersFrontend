@@ -18,6 +18,7 @@ import {
     fetchUserOrganizationalRoles, updateUserOrganizationalRoles
 } from '../../../services/UserManagement/UserManagementService';
 import MapAddressSelector from '../common/MapAddressSelector';
+import EnhancedAddressInput from '../common/EnhancedAddressInput';
 
 function OrganizationsManagement() {
     const theme = useTheme();
@@ -1345,11 +1346,12 @@ function OrganizationsManagement() {
                             </Typography>
                             
                             <Box sx={{ maxWidth: '900px', mx: 'auto' }}>
-                                {/* Map Address Selector */}
-                                <MapAddressSelector
+                                {/* Enhanced Address Input */}
+                                <EnhancedAddressInput
                                     onPlaceSelect={handlePlaceSelect}
                                     label="🔍 Organization Address Information"
                                     fullWidth
+                                    initialValue={formData.geo_location}
                                 />
                             </Box>
                         </Paper>

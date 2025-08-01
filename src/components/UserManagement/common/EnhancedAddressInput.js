@@ -2,18 +2,21 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
     TextField, Box, Button, FormControl, InputLabel, Select, MenuItem, 
     Grid, Paper, Typography, Dialog, DialogTitle, DialogContent, 
-    DialogActions, IconButton, Chip, Alert
+    DialogActions, IconButton, Chip, Alert, Autocomplete
 } from '@mui/material';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import MapIcon from '@mui/icons-material/Map';
 import CloseIcon from '@mui/icons-material/Close';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
+import SearchIcon from '@mui/icons-material/Search';
+import GoogleMapsService from '../../../services/GoogleMapsService';
 
-const MapAddressSelector = ({ 
+const EnhancedAddressInput = ({ 
     onPlaceSelect, 
     label = "Address Information",
     fullWidth = true,
-    disabled = false 
+    disabled = false,
+    initialValue = null
 }) => {
     const [formData, setFormData] = useState({
         continent: '',
@@ -30,31 +33,77 @@ const MapAddressSelector = ({
     });
 
     const [searchText, setSearchText] = useState('');
+    const [suggestions, setSuggestions] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
     const [mapOpen, setMapOpen] = useState(false);
     const [mapLoaded, setMapLoaded] = useState(false);
     const [selectedLocation, setSelectedLocation] = useState(null);
     const [mapError, setMapError] = useState('');
+    const [showSuggestions, setShowSuggestions] = useState(false);
     
     const mapRef = useRef(null);
     const mapInstanceRef = useRef(null);
     const markerRef = useRef(null);
-    const geocoderRef = useRef(null);
+    const searchTimeoutRef = useRef(null);
+    const inputRef = useRef(null);
 
     const continents = [
         'Africa', 'Antarctica', 'Asia', 'Europe', 
         'North America', 'Oceania', 'South America'
     ];
 
+    // Initialize with initial value if provided
+    useEffect(() => {
+        if (initialValue) {
+            setFormData(initialValue);
+            setSearchText(generateFormattedAddress(initialValue));
+        }
+    }, [initialValue]);
+
+    // Load Google Maps API early to ensure Places service is available for autocomplete
+    useEffect(() => {
+        loadGoogleMapsAPIForAutocomplete();
+    }, []);
+
+    const loadGoogleMapsAPIForAutocomplete = () => {
+        if (window.google && window.google.maps && window.google.maps.places) {
+            return; // Already loaded
+        }
+
+        // Check if script already exists
+        const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+        if (existingScript) {
+            return; // Script already loading or loaded
+        }
+
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'AIzaSyAA5PZQdpcY4NXonqUny2sGZzMLbFKE0Iw'}&libraries=places,geometry`;
+        script.async = true;
+        script.defer = true;
+        
+        script.onload = () => {
+            console.log('Google Maps API loaded for autocomplete');
+        };
+        
+        script.onerror = () => {
+            console.error('Failed to load Google Maps API for autocomplete');
+        };
+        
+        document.head.appendChild(script);
+    };
+
     // Load Google Maps API
     useEffect(() => {
-        if (mapOpen && !window.google) {
+        if (mapOpen) {
             loadGoogleMapsAPI();
         }
     }, [mapOpen]);
 
     const loadGoogleMapsAPI = () => {
-        if (window.google) {
+        if (window.google && window.google.maps) {
             setMapLoaded(true);
+            setMapError('');
+            initializeMap();
             return;
         }
 
@@ -66,6 +115,7 @@ const MapAddressSelector = ({
         script.onload = () => {
             setMapLoaded(true);
             setMapError('');
+            initializeMap();
         };
         
         script.onerror = () => {
@@ -101,7 +151,6 @@ const MapAddressSelector = ({
             });
 
             mapInstanceRef.current = map;
-            geocoderRef.current = new window.google.maps.Geocoder();
 
             // Add existing marker if coordinates exist
             if (formData.latitude && formData.longitude) {
@@ -154,90 +203,163 @@ const MapAddressSelector = ({
         });
     };
 
-    const reverseGeocode = (location) => {
-        if (!geocoderRef.current) return;
-
-        geocoderRef.current.geocode(
-            { location: location },
-            (results, status) => {
-                if (status === 'OK' && results[0]) {
-                    const result = results[0];
-                    const addressComponents = result.address_components;
-                    
-                    const addressData = {
-                        continent: '',
-                        country: '',
-                        province: '',
-                        region: '',
-                        city: '',
-                        town: '',
-                        address_line1: '',
-                        address_line2: '',
-                        postal_code: '',
-                        latitude: location.lat.toString(),
-                        longitude: location.lng.toString()
-                    };
-
-                    // Parse address components
-                    addressComponents.forEach(component => {
-                        const types = component.types;
-                        
-                        if (types.includes('street_number')) {
-                            addressData.address_line1 = component.long_name + ' ' + (addressData.address_line1 || '');
-                        } else if (types.includes('route')) {
-                            addressData.address_line1 = (addressData.address_line1 || '') + component.long_name;
-                        } else if (types.includes('locality')) {
-                            addressData.city = component.long_name;
-                        } else if (types.includes('administrative_area_level_1')) {
-                            addressData.province = component.long_name;
-                        } else if (types.includes('administrative_area_level_2')) {
-                            addressData.region = component.long_name;
-                        } else if (types.includes('country')) {
-                            addressData.country = component.long_name;
-                        } else if (types.includes('postal_code')) {
-                            addressData.postal_code = component.long_name;
-                        } else if (types.includes('sublocality') || types.includes('neighborhood')) {
-                            addressData.town = component.long_name;
-                        }
-                    });
-
-                    // Auto-detect continent
-                    if (addressData.country) {
-                        addressData.continent = getContinent(addressData.country);
-                    }
-
-                    // Clean up address line 1
-                    addressData.address_line1 = addressData.address_line1?.trim() || '';
-
-                    setFormData(addressData);
-                } else {
-                    console.warn('Geocoding failed:', status);
-                }
-            }
-        );
+    const reverseGeocode = async (location) => {
+        try {
+            const result = await GoogleMapsService.reverseGeocode(location.lat, location.lng);
+            const geoLocationData = GoogleMapsService.convertPlaceToGeoLocation({
+                address_components: result.components,
+                geometry: { location: { lat: () => location.lat, lng: () => location.lng } }
+            });
+            
+            setFormData(geoLocationData);
+            setSearchText(result.address);
+        } catch (error) {
+            console.warn('Reverse geocoding failed:', error);
+        }
     };
 
-    const searchOnMap = () => {
-        if (!mapInstanceRef.current || !geocoderRef.current || !searchText.trim()) return;
+    const handleSearchInputChange = (e) => {
+        const value = e.target.value;
+        setSearchText(value);
+        setShowSuggestions(true);
 
-        geocoderRef.current.geocode(
-            { address: searchText },
-            (results, status) => {
-                if (status === 'OK' && results[0]) {
-                    const result = results[0];
-                    const location = result.geometry.location;
-                    const latLng = { lat: location.lat(), lng: location.lng() };
+        // Clear previous timeout
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current);
+        }
 
-                    mapInstanceRef.current.setCenter(latLng);
-                    mapInstanceRef.current.setZoom(15);
-                    
-                    addMarker(latLng, mapInstanceRef.current);
-                    reverseGeocode(latLng);
-                } else {
-                    setMapError('Location not found. Please try a different search term.');
-                }
+        // Debounce search
+        if (value.trim().length > 2) {
+            searchTimeoutRef.current = setTimeout(() => {
+                fetchSuggestions(value);
+            }, 300);
+        } else {
+            setSuggestions([]);
+        }
+    };
+
+    const fetchSuggestions = async (query) => {
+        if (!query.trim()) {
+            setSuggestions([]);
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            // Check if Google Maps API is loaded with Places library
+            if (!window.google || !window.google.maps || !window.google.maps.places) {
+                console.warn('Google Places API not loaded yet');
+                setSuggestions([]);
+                setIsLoading(false);
+                return;
             }
-        );
+
+            // Use Google Places AutocompleteService instead of direct API calls
+            const service = new window.google.maps.places.AutocompleteService();
+            
+            service.getPlacePredictions(
+                {
+                    input: query,
+                    types: ['address']
+                },
+                (predictions, status) => {
+                    if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+                        // Transform Google's prediction format to match our expected format
+                        const transformedSuggestions = predictions.map(prediction => ({
+                            description: prediction.description,
+                            placeId: prediction.place_id,
+                            structuredFormatting: prediction.structured_formatting,
+                            types: prediction.types
+                        }));
+                        setSuggestions(transformedSuggestions);
+                    } else {
+                        console.warn('AutocompleteService failed:', status);
+                        setSuggestions([]);
+                    }
+                    setIsLoading(false);
+                }
+            );
+        } catch (error) {
+            console.error('Error fetching suggestions:', error);
+            setSuggestions([]);
+            setIsLoading(false);
+        }
+    };
+
+    const handleSuggestionSelect = async (suggestion) => {
+        try {
+            // Check if Google Maps API is loaded
+            if (!window.google || !window.google.maps || !window.google.maps.places) {
+                console.error('Google Places API not loaded');
+                return;
+            }
+
+            // Create a PlacesService (requires a map or div element)
+            const tempDiv = document.createElement('div');
+            const placesService = new window.google.maps.places.PlacesService(tempDiv);
+            
+            // Get place details using the place ID
+            placesService.getDetails(
+                {
+                    placeId: suggestion.placeId,
+                    fields: ['address_components', 'formatted_address', 'geometry', 'name']
+                },
+                (place, status) => {
+                    if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
+                        // Convert place to our geo location format
+                        const geoLocationData = GoogleMapsService.convertPlaceToGeoLocation(place);
+                        
+                        setFormData(geoLocationData);
+                        setSearchText(place.formatted_address || suggestion.description);
+                        setSuggestions([]);
+                        setShowSuggestions(false);
+
+                        if (onPlaceSelect) {
+                            onPlaceSelect({
+                                formattedAddress: place.formatted_address || suggestion.description,
+                                geoLocationData: geoLocationData,
+                                placeDetails: place
+                            });
+                        }
+                    } else {
+                        console.error('PlacesService getDetails failed:', status);
+                        // Fallback: just use the description
+                        setSearchText(suggestion.description);
+                        setSuggestions([]);
+                        setShowSuggestions(false);
+                    }
+                }
+            );
+        } catch (error) {
+            console.error('Error getting place details:', error);
+            // Fallback: just use the description
+            setSearchText(suggestion.description);
+            setSuggestions([]);
+            setShowSuggestions(false);
+        }
+    };
+
+    const searchOnMap = async () => {
+        if (!mapInstanceRef.current || !searchText.trim()) return;
+
+        try {
+            const result = await GoogleMapsService.geocodeAddress(searchText);
+            const location = { lat: result.lat, lng: result.lng };
+
+            mapInstanceRef.current.setCenter(location);
+            mapInstanceRef.current.setZoom(15);
+            
+            addMarker(location, mapInstanceRef.current);
+            
+            const geoLocationData = GoogleMapsService.convertPlaceToGeoLocation({
+                address_components: result.addressComponents,
+                geometry: { location: { lat: () => result.lat, lng: () => result.lng } }
+            });
+            
+            setFormData(geoLocationData);
+        } catch (error) {
+            setMapError('Location not found. Please try a different search term.');
+        }
     };
 
     const getCurrentLocation = () => {
@@ -247,7 +369,7 @@ const MapAddressSelector = ({
         }
 
         navigator.geolocation.getCurrentPosition(
-            (position) => {
+            async (position) => {
                 const location = {
                     lat: position.coords.latitude,
                     lng: position.coords.longitude
@@ -257,7 +379,7 @@ const MapAddressSelector = ({
                     mapInstanceRef.current.setCenter(location);
                     mapInstanceRef.current.setZoom(15);
                     addMarker(location, mapInstanceRef.current);
-                    reverseGeocode(location);
+                    await reverseGeocode(location);
                 }
             },
             (error) => {
@@ -277,7 +399,7 @@ const MapAddressSelector = ({
 
         // Auto-update continent based on country
         if (field === 'country') {
-            const continent = getContinent(value);
+            const continent = GoogleMapsService.getContinent(value);
             if (continent) {
                 updatedData.continent = continent;
                 setFormData(updatedData);
@@ -292,75 +414,6 @@ const MapAddressSelector = ({
                 placeDetails: null
             });
         }
-    };
-
-    const getContinent = (country) => {
-        const countryToContinent = {
-            // North America
-            'United States': 'North America', 'USA': 'North America', 'Canada': 'North America',
-            'Mexico': 'North America', 'Guatemala': 'North America', 'Belize': 'North America',
-            'Costa Rica': 'North America', 'El Salvador': 'North America', 'Honduras': 'North America',
-            'Nicaragua': 'North America', 'Panama': 'North America',
-            
-            // Europe
-            'United Kingdom': 'Europe', 'UK': 'Europe', 'England': 'Europe', 'Scotland': 'Europe',
-            'Wales': 'Europe', 'Ireland': 'Europe', 'Germany': 'Europe', 'France': 'Europe',
-            'Spain': 'Europe', 'Italy': 'Europe', 'Netherlands': 'Europe', 'Belgium': 'Europe',
-            'Portugal': 'Europe', 'Greece': 'Europe', 'Poland': 'Europe', 'Sweden': 'Europe',
-            'Norway': 'Europe', 'Denmark': 'Europe', 'Finland': 'Europe', 'Switzerland': 'Europe',
-            'Austria': 'Europe', 'Czech Republic': 'Europe', 'Hungary': 'Europe', 'Romania': 'Europe',
-            'Bulgaria': 'Europe', 'Croatia': 'Europe', 'Serbia': 'Europe', 'Ukraine': 'Europe',
-            'Russia': 'Europe',
-            
-            // Asia
-            'China': 'Asia', 'Japan': 'Asia', 'India': 'Asia', 'South Korea': 'Asia',
-            'Singapore': 'Asia', 'Thailand': 'Asia', 'Philippines': 'Asia', 'Indonesia': 'Asia',
-            'Malaysia': 'Asia', 'Vietnam': 'Asia', 'Bangladesh': 'Asia', 'Pakistan': 'Asia',
-            'Sri Lanka': 'Asia', 'Myanmar': 'Asia', 'Cambodia': 'Asia', 'Laos': 'Asia',
-            'Mongolia': 'Asia', 'Kazakhstan': 'Asia', 'Uzbekistan': 'Asia', 'Afghanistan': 'Asia',
-            'Iran': 'Asia', 'Iraq': 'Asia', 'Saudi Arabia': 'Asia', 'United Arab Emirates': 'Asia',
-            'UAE': 'Asia', 'Kuwait': 'Asia', 'Qatar': 'Asia', 'Bahrain': 'Asia', 'Oman': 'Asia',
-            'Yemen': 'Asia', 'Jordan': 'Asia', 'Lebanon': 'Asia', 'Syria': 'Asia', 'Turkey': 'Asia',
-            'Israel': 'Asia', 'Palestine': 'Asia',
-            
-            // Oceania
-            'Australia': 'Oceania', 'New Zealand': 'Oceania', 'Fiji': 'Oceania',
-            'Papua New Guinea': 'Oceania', 'Solomon Islands': 'Oceania', 'Vanuatu': 'Oceania',
-            'Samoa': 'Oceania', 'Tonga': 'Oceania',
-            
-            // South America
-            'Brazil': 'South America', 'Argentina': 'South America', 'Chile': 'South America',
-            'Colombia': 'South America', 'Peru': 'South America', 'Venezuela': 'South America',
-            'Ecuador': 'South America', 'Bolivia': 'South America', 'Paraguay': 'South America',
-            'Uruguay': 'South America', 'Guyana': 'South America', 'Suriname': 'South America',
-            'French Guiana': 'South America',
-            
-            // Africa
-            'South Africa': 'Africa', 'Nigeria': 'Africa', 'Kenya': 'Africa', 'Egypt': 'Africa',
-            'Morocco': 'Africa', 'Ghana': 'Africa', 'Ethiopia': 'Africa', 'Tanzania': 'Africa',
-            'Uganda': 'Africa', 'Algeria': 'Africa', 'Sudan': 'Africa', 'Libya': 'Africa',
-            'Tunisia': 'Africa', 'Zimbabwe': 'Africa', 'Zambia': 'Africa', 'Botswana': 'Africa',
-            'Namibia': 'Africa', 'Mozambique': 'Africa', 'Madagascar': 'Africa', 'Cameroon': 'Africa',
-            'Ivory Coast': 'Africa', 'Senegal': 'Africa', 'Mali': 'Africa', 'Burkina Faso': 'Africa',
-            'Niger': 'Africa', 'Chad': 'Africa', 'Central African Republic': 'Africa',
-            'Democratic Republic of the Congo': 'Africa', 'Republic of the Congo': 'Africa',
-            'Gabon': 'Africa', 'Equatorial Guinea': 'Africa', 'Rwanda': 'Africa', 'Burundi': 'Africa'
-        };
-
-        // Try exact match first
-        if (countryToContinent[country]) {
-            return countryToContinent[country];
-        }
-
-        // Try partial match (case insensitive)
-        const lowerCountry = country.toLowerCase();
-        for (const [key, value] of Object.entries(countryToContinent)) {
-            if (key.toLowerCase().includes(lowerCountry) || lowerCountry.includes(key.toLowerCase())) {
-                return value;
-            }
-        }
-
-        return '';
     };
 
     const generateFormattedAddress = (data) => {
@@ -384,6 +437,8 @@ const MapAddressSelector = ({
         setFormData(emptyData);
         setSearchText('');
         setSelectedLocation(null);
+        setSuggestions([]);
+        setShowSuggestions(false);
 
         // Clear map marker
         if (markerRef.current) {
@@ -397,38 +452,6 @@ const MapAddressSelector = ({
                 geoLocationData: emptyData,
                 placeDetails: null
             });
-        }
-    };
-
-    const handleQuickSearch = () => {
-        if (searchText.trim()) {
-            // Parse simple search text
-            const parts = searchText.split(',').map(p => p.trim());
-            const updatedData = { ...formData };
-            
-            if (parts.length >= 1) updatedData.address_line1 = parts[0];
-            if (parts.length >= 2) updatedData.city = parts[1];
-            if (parts.length >= 3) updatedData.province = parts[2];
-            if (parts.length >= 4) updatedData.country = parts[3];
-            
-            // Auto-detect continent
-            if (updatedData.country) {
-                const continent = getContinent(updatedData.country);
-                if (continent) {
-                    updatedData.continent = continent;
-                }
-            }
-
-            setFormData(updatedData);
-            setSearchText('');
-
-            if (onPlaceSelect) {
-                onPlaceSelect({
-                    formattedAddress: generateFormattedAddress(updatedData),
-                    geoLocationData: updatedData,
-                    placeDetails: null
-                });
-            }
         }
     };
 
@@ -458,68 +481,105 @@ const MapAddressSelector = ({
         handleMapClose();
     };
 
+    useEffect(() => {
+        return () => {
+            if (searchTimeoutRef.current) {
+                clearTimeout(searchTimeoutRef.current);
+            }
+        };
+    }, []);
+
     return (
         <Box>
-            {/* Quick Search and Map Button */}
-            <Box sx={{ mb: 2, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-                <TextField
-                    fullWidth
-                    label="🔍 Quick Address Search"
-                    value={searchText}
-                    onChange={(e) => setSearchText(e.target.value)}
-                    placeholder="e.g., 123 Main St, New York, NY, USA"
-                    helperText="Enter address separated by commas"
-                    onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                            handleQuickSearch();
-                        }
-                    }}
-                    sx={{ flex: 3, minWidth: 220 }}
-                />
-                <Button 
-                    variant="outlined"
-                    onClick={handleQuickSearch}
-                    disabled={!searchText.trim()}
-                    sx={{ 
-                        minWidth: '80px',
-                        maxWidth: '100px',
-                        height: '56px',
-                        color: '#633394',
-                        borderColor: '#633394',
-                        flex: 1
-                    }}
-                >
-                    Parse
-                </Button>
-                <Button 
-                    variant="contained"
-                    onClick={() => setMapOpen(true)}
-                    startIcon={<MapIcon />}
-                    sx={{ 
-                        minWidth: '50px',
-                        maxWidth: '100px',
-                        height: '56px',
-                        backgroundColor: '#633394',
-                        '&:hover': { backgroundColor: '#7c52a5' },
-                        flex: 1
-                    }}
-                >
-                    Map Search
-                </Button>
-                <Button 
-                    variant="outlined"
-                    onClick={handleClear}
-                    sx={{ 
-                        minWidth: '60px',
-                        maxWidth: '100px',
-                        height: '56px',
-                        color: '#633394',
-                        borderColor: '#633394',
-                        flex: 1
-                    }}
-                >
-                    Clear
-                </Button>
+            {/* Enhanced Search Input with Autocomplete */}
+            <Box sx={{ mb: 2, position: 'relative' }}>
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
+                    <Box sx={{ flex: 1, position: 'relative' }}>
+                        <TextField
+                            ref={inputRef}
+                            fullWidth
+                            label="🔍 Search Address"
+                            value={searchText}
+                            onChange={handleSearchInputChange}
+                            placeholder="Start typing an address..."
+                            helperText="Type to search or click map icon to select on map"
+                            disabled={disabled}
+                            onFocus={() => setShowSuggestions(true)}
+                            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                        />
+                        
+                        {/* Suggestions Dropdown */}
+                        {showSuggestions && suggestions.length > 0 && (
+                            <Box sx={{
+                                position: 'absolute',
+                                top: '100%',
+                                left: 0,
+                                right: 0,
+                                backgroundColor: 'white',
+                                border: '1px solid #ddd',
+                                borderRadius: '4px',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                zIndex: 1000,
+                                maxHeight: '200px',
+                                overflowY: 'auto'
+                            }}>
+                                {suggestions.map((suggestion, index) => (
+                                    <Box
+                                        key={index}
+                                        onClick={() => handleSuggestionSelect(suggestion)}
+                                        sx={{
+                                            padding: '10px 12px',
+                                            cursor: 'pointer',
+                                            borderBottom: '1px solid #eee',
+                                            '&:hover': { backgroundColor: '#f5f5f5' }
+                                        }}
+                                    >
+                                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                            {suggestion.structuredFormatting?.main_text || suggestion.description.split(',')[0]}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: '#666' }}>
+                                            {suggestion.structuredFormatting?.secondary_text || suggestion.description}
+                                        </Typography>
+                                    </Box>
+                                ))}
+                            </Box>
+                        )}
+                    </Box>
+                    
+                    <Button 
+                        variant="contained"
+                        onClick={() => setMapOpen(true)}
+                        startIcon={<MapIcon />}
+                        sx={{ 
+                            minWidth: '50px',
+                            maxWidth: '100px',
+                            height: '56px',
+                            backgroundColor: '#633394',
+                            '&:hover': { backgroundColor: '#7c52a5' }
+                        }}
+                    >
+                        Map
+                    </Button>
+                    <Button 
+                        variant="outlined"
+                        onClick={handleClear}
+                        sx={{ 
+                            minWidth: '60px',
+                            maxWidth: '100px',
+                            height: '56px',
+                            color: '#633394',
+                            borderColor: '#633394'
+                        }}
+                    >
+                        Clear
+                    </Button>
+                </Box>
+                
+                {isLoading && (
+                    <Typography variant="caption" sx={{ color: '#666', mt: 1 }}>
+                        Searching...
+                    </Typography>
+                )}
             </Box>
 
             {/* Current Location Display */}
@@ -548,7 +608,7 @@ const MapAddressSelector = ({
                 
                 <Grid container spacing={2}>
                     {/* Row 1 */}
-                    <Grid item xs={12} sm={6} sx={{ minWidth: 220 }}>
+                    <Grid item xs={12} sm={6}>
                         <FormControl fullWidth>
                             <InputLabel>Continent</InputLabel>
                             <Select
@@ -721,6 +781,7 @@ const MapAddressSelector = ({
                                 variant="contained"
                                 onClick={searchOnMap}
                                 disabled={!searchText.trim() || !mapLoaded}
+                                startIcon={<SearchIcon />}
                                 sx={{ 
                                     backgroundColor: '#633394',
                                     minWidth: '100px'
@@ -809,4 +870,4 @@ const MapAddressSelector = ({
     );
 };
 
-export default MapAddressSelector; 
+export default EnhancedAddressInput; 
