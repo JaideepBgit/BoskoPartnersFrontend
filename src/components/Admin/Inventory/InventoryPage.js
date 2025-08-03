@@ -378,7 +378,7 @@ const InventoryPage = () => {
             }}
           >
             <Tab label={isMobile ? "Versions" : "Template Versions"} />
-            <Tab label={isMobile ? "Questions" : "Questions Inventory"} />
+            <Tab label={isMobile ? "Questions" : "Template Questions"} />
             <Tab label={isMobile ? "Preview" : "Preview Templates"} />
           </Tabs>
         </Paper>
@@ -395,7 +395,7 @@ const InventoryPage = () => {
                 fontSize: isMobile ? '1.1rem' : '1.25rem'
               }}
             >
-              Template Versions
+              Organization Templates
             </Typography>
             
             <Paper sx={{ p: isMobile ? 1.5 : 2, mb: 3, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
@@ -425,7 +425,7 @@ const InventoryPage = () => {
                   }
                 }}
               >
-                Add New Version
+                Add New Template
               </Button>
             </Paper>
             
