@@ -35,6 +35,7 @@ import Navbar from '../../shared/Navbar/Navbar';
 import QuestionsTab from './QuestionsTab';
 import TemplatesTab from './TemplatesTab';
 import CopyTemplateVersionDialog from './CopyTemplateVersionDialog';
+import EmailTemplatesTab from './EmailTemplatesTab';
 
 const InventoryPage = () => {
   const { templateId } = useParams();
@@ -79,7 +80,19 @@ const InventoryPage = () => {
   });
   
   // Responses
-  const [responses, setResponses] = useState([]);
+    const [responses, setResponses] = useState([]);
+
+    // Email Templates
+    const [emailTemplates, setEmailTemplates] = useState([]);
+
+    const fetchEmailTemplates = async () => {
+      try {
+        const data = await InventoryService.getEmailTemplates();
+        setEmailTemplates(data);
+      } catch (err) {
+        console.error('Error fetching email templates:', err.response || err);
+      }
+    };
 
   // Fetch organizations
   const fetchOrganizations = async () => {
@@ -137,6 +150,7 @@ const InventoryPage = () => {
     fetchTemplateVersions();
     fetchTemplates();
     fetchResponses();
+    fetchEmailTemplates();
   }, []);
 
   // Load specific template if ID is provided
@@ -404,6 +418,7 @@ const InventoryPage = () => {
             <Tab label={isMobile ? "Versions" : "Template Versions"} />
             <Tab label={isMobile ? "Questions" : "Template Questions"} />
             <Tab label={isMobile ? "Preview" : "Preview Templates"} />
+            <Tab label={isMobile ? "Emails" : "Email Templates"} />
           </Tabs>
         </Paper>
       
@@ -615,6 +630,14 @@ const InventoryPage = () => {
           />
         )}
       
+        {/* Email Templates Tab */}
+        {activeTab === 3 && (
+          <EmailTemplatesTab 
+            emailTemplates={emailTemplates}
+            onRefreshData={fetchEmailTemplates}
+          />
+        )}
+        
         {/* Legacy Question Dialog - This should be removed and replaced with QuestionDialog component */}
 
         {/* Template Version Edit Dialog */}
