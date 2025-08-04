@@ -11,7 +11,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { 
-    fetchUsersWithRoleUser, addUser, updateUser, deleteUser, 
+    fetchUsers, addUser, updateUser, deleteUser, 
     fetchOrganizations, fetchRoles, uploadUserFile, addRole,
     addUserOrganizationalRole, fetchUserOrganizationalRoles,
     updateUserOrganizationalRoles, fetchTemplatesByOrganization
@@ -274,7 +274,7 @@ This email was sent to ${email}. If you received this email in error, please con
     // Load users from API
     const loadUsers = async () => {
         try {
-            const data = await fetchUsersWithRoleUser();
+            const data = await fetchUsers();
             console.log(data);
             setUsers(data);
             setTotalUsers(data.length);

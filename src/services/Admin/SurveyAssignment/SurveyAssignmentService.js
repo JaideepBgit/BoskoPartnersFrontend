@@ -12,16 +12,38 @@ class SurveyAssignmentService {
      */
     static async assignSurvey(userIds, templateId, adminId) {
         try {
+            // Ensure input is treated as an array then strip out primitive IDs only
+            const idsArray = Array.isArray(userIds)
+                ? userIds
+                : userIds !== undefined && userIds !== null
+                    ? [userIds]
+                    : [];
+
+            const cleanUserIds = idsArray.map((u) => {
+                if (u && typeof u === 'object') {
+                    return u.id || u.user_id || null;
+                }
+                return u;
+            }).filter(Boolean);
+
+            const parsedTemplateId = templateId !== undefined && templateId !== null && templateId !== ''
+                ? Number(templateId)
+                : null;
+
+            const payload = {
+                user_ids: cleanUserIds,
+                template_id: parsedTemplateId,
+                admin_id: adminId ? Number(adminId) : undefined,
+            };
+
+            console.log('AssignSurvey payload', payload);
+
             const response = await fetch(`${API_BASE_URL}/api/assign-survey`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    user_ids: userIds,
-                    template_id: templateId,
-                    admin_id: adminId
-                }),
+                body: JSON.stringify(payload),
             });
 
             if (!response.ok) {

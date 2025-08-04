@@ -307,7 +307,11 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
                                                 hover
                                                 sx={{ 
                                                     cursor: 'pointer',
-                                                    backgroundColor: selectedUserForView && selectedUserForView.id === user.id ? '#f3e5f5' : 'inherit'
+                                                    backgroundColor: selectedUserForView && selectedUserForView.id === user.id
+                                                       ? '#f3e5f5'
+                                                       : selectedUsers.includes(user.id)
+                                                           ? '#e3f2fd'
+                                                           : 'inherit'
                                                 }}
                                                 onClick={() => handleUserSelection(user.id)}
                                                 onDoubleClick={() => handleUserSelectionForView(user)}
@@ -316,6 +320,7 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
                                                     <Checkbox
                                                         checked={selectedUsers.includes(user.id)}
                                                         onChange={() => handleUserSelection(user.id)}
+                                                        onClick={(e) => e.stopPropagation()}
                                                     />
                                                 </TableCell>
                                                 <TableCell>
