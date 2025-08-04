@@ -21,6 +21,7 @@ import {
 // import ManualAddressInput from '../common/ManualAddressInput';
 import MapAddressSelector from '../common/MapAddressSelector';
 import EnhancedAddressInput from '../common/EnhancedAddressInput';
+import SurveyAssignmentCard from './SurveyAssignmentCard';
 
 function UsersManagement() {
     const theme = useTheme();
@@ -1538,6 +1539,12 @@ This email was sent to ${email}. If you received this email in error, please con
             </Card>
 
             {renderUsersTable()}
+
+            {/* Survey Assignment Card */}
+            <SurveyAssignmentCard 
+                users={users} 
+                onRefreshUsers={loadUsers}
+            />
 
             {/* Add User Dialog */}
             <Dialog open={openAddDialog} onClose={handleCloseDialogs} maxWidth="md" fullWidth>

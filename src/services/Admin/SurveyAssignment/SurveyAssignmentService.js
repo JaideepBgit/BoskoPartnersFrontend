@@ -1,0 +1,205 @@
+// SurveyAssignmentService.js - Service for handling survey assignment API calls
+
+const API_BASE_URL = 'http://localhost:5000';
+
+class SurveyAssignmentService {
+    /**
+     * Assign a survey to multiple users
+     * @param {Array} userIds - Array of user IDs to assign the survey to
+     * @param {number} templateId - ID of the survey template to assign
+     * @param {number} adminId - ID of the admin making the assignment
+     * @returns {Promise<Object>} Assignment result
+     */
+    static async assignSurvey(userIds, templateId, adminId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/assign-survey`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_ids: userIds,
+                    template_id: templateId,
+                    admin_id: adminId
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to assign survey');
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error assigning survey:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get all survey assignments for a specific user
+     * @param {number} userId - ID of the user
+     * @returns {Promise<Object>} User's survey assignments
+     */
+    static async getUserSurveyAssignments(userId) {
+        try {
+            console.log(`Fetching assignments for user ${userId} from: ${API_BASE_URL}/api/users/${userId}/survey-assignments`);
+            const response = await fetch(`${API_BASE_URL}/api/users/${userId}/survey-assignments`);
+
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+                console.error('API error response:', errorData);
+                throw new Error(errorData.error || `Failed to get user survey assignments (${response.status})`);
+            }
+
+            const data = await response.json();
+            console.log('Successfully fetched assignments:', data);
+            return data;
+        } catch (error) {
+            console.error('Error getting user survey assignments:', error);
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                throw new Error('Cannot connect to backend server. Please check if the server is running.');
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * Get all users for assignment selection
+     * @returns {Promise<Array>} List of users
+     */
+    static async getUsers() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/users`);
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch users');
+            }
+
+            const users = await response.json();
+            // Filter out admin users for assignment
+            return users.filter(user => user.role !== 'admin');
+        } catch (error) {
+            console.error('Error getting users:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get all survey templates for assignment
+     * @returns {Promise<Array>} List of survey templates
+     */
+    static async getSurveyTemplates() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/templates`);
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch survey templates');
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error getting survey templates:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get all organizations for filtering
+     * @returns {Promise<Array>} List of organizations
+     */
+    static async getOrganizations() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/organizations`);
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch organizations');
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error getting organizations:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Send a reminder email for a specific user's survey assignment
+     * @param {number} userId - ID of the user
+     * @returns {Promise<Object>} Result of the reminder email
+     */
+    static async sendReminderEmail(userId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/users/${userId}/reminder-email`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to send reminder email');
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error sending reminder email:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get users with pending surveys for reminder purposes
+     * @returns {Promise<Object>} Users with pending surveys
+     */
+    static async getUsersWithPendingSurveys() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/users/pending-surveys`);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to get users with pending surveys');
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error getting users with pending surveys:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Send bulk reminder emails to multiple users
+     * @param {Array} userIds - Array of user IDs to send reminders to
+     * @returns {Promise<Object>} Result of the bulk reminder operation
+     */
+    static async sendBulkReminderEmails(userIds) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/send-bulk-reminder-emails`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_ids: userIds
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to send bulk reminder emails');
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error sending bulk reminder emails:', error);
+            throw error;
+        }
+    }
+}
+
+export default SurveyAssignmentService;

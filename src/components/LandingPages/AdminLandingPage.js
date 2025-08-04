@@ -141,6 +141,19 @@ const AdminLandingPage = () => {
                 >
                   <Typography>Survey Inventory</Typography>
                 </Card>
+                <Card 
+                  sx={{ 
+                    p: 2, 
+                    cursor: 'pointer', 
+                    minWidth: '200px',
+                    backgroundColor: '#633394',
+                    color: 'white',
+                    '&:hover': { backgroundColor: '#967CB2' }
+                  }}
+                  onClick={() => navigate('/users')}
+                >
+                  <Typography>Assign Surveys</Typography>
+                </Card>
               </Box>
             </Paper>
           </Grid>
