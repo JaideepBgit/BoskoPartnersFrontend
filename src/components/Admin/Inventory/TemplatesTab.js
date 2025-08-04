@@ -35,6 +35,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CloseIcon from '@mui/icons-material/Close';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import TemplateUtils from './shared/TemplateUtils';
+import InventoryService from '../../../services/Admin/Inventory/InventoryService';
 
 const TemplatesTab = ({ 
   templateVersions: parentTemplateVersions = [], 
@@ -80,6 +81,8 @@ const TemplatesTab = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [parentTemplateVersions.length, parentTemplates.length]);
+
+
 
   // Save responses to localStorage whenever they change
   useEffect(() => {
@@ -191,6 +194,8 @@ const TemplatesTab = ({
       [questionId]: value
     }));
   };
+
+
 
   const renderQuestionContent = (question) => {
     switch (question.question_type_id) {
@@ -639,7 +644,7 @@ const TemplatesTab = ({
                                   border: '1px solid rgba(99, 51, 148, 0.2)',
                                 }} 
                               />
-                              <Typography variant="caption" sx={{ color: '#666', fontSize: '0.75rem' }}>
+                              <Typography variant="caption" sx={{ color: '#666', fontSize: '0.7rem' }}>
                                 {new Date(template.created_at).toLocaleDateString()}
                               </Typography>
                             </Box>
@@ -1066,6 +1071,7 @@ const TemplatesTab = ({
           </Paper>
         )}
       </Box>
+
     </Box>
   );
 };

@@ -30,9 +30,11 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import Navbar from '../../shared/Navbar/Navbar';
 import QuestionsTab from './QuestionsTab';
 import TemplatesTab from './TemplatesTab';
+import CopyTemplateVersionDialog from './CopyTemplateVersionDialog';
 
 const InventoryPage = () => {
   const { templateId } = useParams();
@@ -51,6 +53,10 @@ const InventoryPage = () => {
   
   // Organizations
   const [organizations, setOrganizations] = useState([]);
+  
+  // Copy template version state
+  const [copyVersionDialogOpen, setCopyVersionDialogOpen] = useState(false);
+  const [versionToCopy, setVersionToCopy] = useState(null);
   
   // Templates
   const [templates, setTemplates] = useState([]);
@@ -211,6 +217,24 @@ const InventoryPage = () => {
     setNewVersionName('');
     setNewVersionDesc('');
     setSelectedOrganizationId('');
+  };
+
+  // Copy template version handlers
+  const handleCopyTemplateVersion = (version) => {
+    setVersionToCopy(version);
+    setCopyVersionDialogOpen(true);
+  };
+
+  const handleCloseCopyVersionDialog = () => {
+    setCopyVersionDialogOpen(false);
+    setVersionToCopy(null);
+  };
+
+  const handleCopyVersionSuccess = (result) => {
+    console.log('Template version copied successfully:', result);
+    // Refresh data to show the new template version
+    fetchTemplateVersions();
+    fetchTemplates();
   };
   
   // Template handlers - commented out unused functions
@@ -490,6 +514,27 @@ const InventoryPage = () => {
                           size={isMobile ? "small" : "medium"}
                           onClick={(e) => {
                             e.stopPropagation();
+                            handleCopyTemplateVersion(v);
+                          }}
+                          sx={{
+                            mr: 1,
+                            transition: 'all 0.2s ease-in-out',
+                            color: '#633394',
+                            '&:hover': {
+                              backgroundColor: 'rgba(99, 51, 148, 0.08)',
+                              transform: 'scale(1.1)',
+                            }
+                          }}
+                          title="Copy to another organization"
+                        >
+                          <ContentCopyIcon fontSize={isMobile ? "small" : "medium"} />
+                        </IconButton>
+                        <IconButton 
+                          edge="end" 
+                          color="primary"
+                          size={isMobile ? "small" : "medium"}
+                          onClick={(e) => {
+                            e.stopPropagation();
                             handleEditTemplateVersion(v);
                           }}
                           sx={{
@@ -673,6 +718,16 @@ const InventoryPage = () => {
             </Button>
           </DialogActions>
         </Dialog>
+
+        {/* Copy Template Version Dialog */}
+        <CopyTemplateVersionDialog
+          open={copyVersionDialogOpen}
+          onClose={handleCloseCopyVersionDialog}
+          templateVersion={versionToCopy}
+          organizations={organizations}
+          templates={templates}
+          onCopySuccess={handleCopyVersionSuccess}
+        />
       </Box>
       </>
   );

@@ -16,6 +16,11 @@ const InventoryService = {
     return axios.put(`${BASE_URL}/template-versions/${versionId}`, data);
   },
   deleteTemplateVersion: (versionId) => axios.delete(`${BASE_URL}/template-versions/${versionId}`),
+  copyTemplateVersion: (versionId, targetOrganizationId, newVersionName = '') => 
+    axios.post(`${BASE_URL}/template-versions/${versionId}/copy`, {
+      target_organization_id: targetOrganizationId,
+      new_version_name: newVersionName
+    }).then(res => res.data),
   
   // Templates
   getTemplates: () => axios.get(`${BASE_URL}/templates`).then(res => res.data),
@@ -24,6 +29,12 @@ const InventoryService = {
   updateTemplate: (templateId, payload) => axios.put(`${BASE_URL}/templates/${templateId}`, payload),
   deleteTemplate: (templateId) => axios.delete(`${BASE_URL}/templates/${templateId}`),
   deleteTemplateQuestion: (templateId, questionId) => axios.delete(`${BASE_URL}/templates/${templateId}/questions/${questionId}`),
+  copyTemplate: (templateId, targetOrganizationId, targetVersionName = 'Copied Templates', newSurveyCode = '') => 
+    axios.post(`${BASE_URL}/templates/${templateId}/copy`, {
+      target_organization_id: targetOrganizationId,
+      target_version_name: targetVersionName,
+      new_survey_code: newSurveyCode
+    }).then(res => res.data),
   
   // Template Sections
   getTemplateSections: (templateId) => axios.get(`${BASE_URL}/templates/${templateId}/sections`).then(res => res.data),
