@@ -16,6 +16,8 @@ import {
   useTheme,
   Autocomplete
 } from '@mui/material';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
+import { GoogleMap, Marker, useLoadScript, StandaloneSearchBox } from '@react-google-maps/api';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import axios from 'axios';
@@ -26,6 +28,14 @@ const OrganizationalDetailsPage = ({ formData, updateFormData, saveAndContinue, 
   const [organizations, setOrganizations] = useState([]);
   const [loadingOrganizations, setLoadingOrganizations] = useState(true);
   const [addressSearchValue, setAddressSearchValue] = useState('');
+  const [mapCenter, setMapCenter] = useState({ lat: 37.7749, lng: -122.4194 });
+  const [markerPosition, setMarkerPosition] = useState(null);
+  const [searchBox, setSearchBox] = useState(null);
+
+  const { isLoaded } = useLoadScript({
+    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY || '',
+    libraries: ['places']
+  });
   
   // Fetch organizations from backend
   useEffect(() => {
@@ -56,21 +66,94 @@ const OrganizationalDetailsPage = ({ formData, updateFormData, saveAndContinue, 
     updateFormData('organizational', 'organization', newValue);
   };
 
-  const handleAddressSelect = (addressData) => {
-    console.log('Selected address data:', addressData);
-    
-    // Update form data with parsed address information
-    const geoData = addressData.geoLocationData;
-    
-    updateFormData('organizational', 'country', geoData.country);
-    updateFormData('organizational', 'province', geoData.province);
-    updateFormData('organizational', 'city', geoData.city);
-    updateFormData('organizational', 'town', geoData.town);
-    updateFormData('organizational', 'address_line1', geoData.address_line1);
-    updateFormData('organizational', 'postal_code', geoData.postal_code);
-    
-    // Update the search field value to show the formatted address
-    setAddressSearchValue(addressData.formattedAddress);
+  const parsePlaceToAddress = (place) => {
+    const components = place.address_components || [];
+    const find = (type) => {
+      const comp = components.find(c => c.types.includes(type));
+      return comp ? comp.long_name : '';
+    };
+    return {
+      address_line1: `${find('street_number')} ${find('route')}`.trim(),
+      city: find('locality') || find('sublocality') || find('administrative_area_level_2'),
+      province: find('administrative_area_level_1'),
+      country: find('country'),
+      postal_code: find('postal_code'),
+      lat: place.geometry?.location?.lat(),
+      lng: place.geometry?.location?.lng(),
+      formatted: place.formatted_address || ''
+    };
+  };
+
+  const onPlacesChanged = () => {
+    const places = searchBox.getPlaces();
+    if (!places || places.length === 0) return;
+    const place = places[0];
+    const parsed = parsePlaceToAddress(place);
+    setAddressSearchValue(parsed.formatted);
+    setMapCenter({ lat: parsed.lat, lng: parsed.lng });
+    setMarkerPosition({ lat: parsed.lat, lng: parsed.lng });
+    updateFormData('organizational', 'country', parsed.country);
+    updateFormData('organizational', 'province', parsed.province);
+    updateFormData('organizational', 'city', parsed.city);
+    updateFormData('organizational', 'town', parsed.town || '');
+    updateFormData('organizational', 'address_line1', parsed.address_line1);
+    updateFormData('organizational', 'postal_code', parsed.postal_code);
+    updateFormData('organizational', 'latitude', parsed.lat);
+    updateFormData('organizational', 'longitude', parsed.lng);
+  };
+
+  const reverseGeocode = (lat, lng) => {
+    if (!window.google || !window.google.maps) return;
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder
+      .geocode({ location: { lat, lng } })
+      .then(({ results }) => {
+        if (!results || results.length === 0) return;
+        const place = results[0];
+        const parsed = parsePlaceToAddress(place);
+        setAddressSearchValue(parsed.formatted);
+        updateFormData('organizational', 'country', parsed.country);
+        updateFormData('organizational', 'province', parsed.province);
+        updateFormData('organizational', 'city', parsed.city);
+        updateFormData('organizational', 'town', parsed.town || '');
+        updateFormData('organizational', 'address_line1', parsed.address_line1);
+        updateFormData('organizational', 'postal_code', parsed.postal_code);
+        updateFormData('organizational', 'latitude', parsed.lat || lat);
+        updateFormData('organizational', 'longitude', parsed.lng || lng);
+      })
+      .catch((err) => {
+        console.error('Reverse geocoding failed', err);
+      });
+  };
+
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setMapCenter({ lat: latitude, lng: longitude });
+        setMarkerPosition({ lat: latitude, lng: longitude });
+        updateFormData('organizational', 'latitude', latitude);
+        updateFormData('organizational', 'longitude', longitude);
+        reverseGeocode(latitude, longitude);
+      },
+      (err) => {
+        console.error(err);
+        alert('Unable to retrieve your location');
+      }
+    );
+  };
+
+  const handleMapClick = (e) => {
+    const lat = e.latLng.lat();
+    const lng = e.latLng.lng();
+    setMarkerPosition({ lat, lng });
+    updateFormData('organizational', 'latitude', lat);
+    updateFormData('organizational', 'longitude', lng);
+    reverseGeocode(lat, lng);
   };
 
   const handleAddressSearchChange = (event) => {
@@ -91,12 +174,18 @@ const OrganizationalDetailsPage = ({ formData, updateFormData, saveAndContinue, 
   ];
   
   return (
-    <Box sx={{ px: isMobile ? 1 : 2, maxWidth: '800px', mx: 'auto' }}>
-      <Typography variant="h5" component="h2" gutterBottom>
+    <Box sx={{ px: isMobile ? 2 : 2, maxWidth: '800px', mx: 'auto' }}>
+      <Typography 
+        variant="h5" 
+        component="h2" 
+        gutterBottom 
+        align="center"
+        sx={{ fontWeight: 'bold', color: '#633394' }}
+      >
         Organizational Details
       </Typography>
       
-      <Grid container spacing={3} maxWidth={700} margin="auto">
+      <Grid container spacing={3} sx={{ maxWidth: 700, mx: 'auto' }}>
         {/* Organization Selection - Full Width Row */}
         <Grid item xs={12}>
           <Autocomplete
@@ -109,6 +198,7 @@ const OrganizationalDetailsPage = ({ formData, updateFormData, saveAndContinue, 
             renderInput={(params) => (
               <TextField
                 {...params}
+                fullWidth
                 label="Select Organization"
                 required
                 error={!!formErrors.organization}
@@ -116,7 +206,6 @@ const OrganizationalDetailsPage = ({ formData, updateFormData, saveAndContinue, 
                 size={isMobile ? "small" : "medium"}
                 sx={{ 
                   backgroundColor: 'white',
-                  minWidth: '300px',
                   '& .MuiOutlinedInput-root': {
                     '& fieldset': {
                       borderColor: '#e0e0e0',
@@ -149,40 +238,51 @@ const OrganizationalDetailsPage = ({ formData, updateFormData, saveAndContinue, 
         </Grid>
 
 
-        {/* Address Search Field */}
+        {/* Address Search + Map */}
         <Grid item xs={12}>
-        <Typography variant="h6" sx={{ color: '#633394' }}>
+          <Typography variant="h6" sx={{ color: '#633394', mb: 1 }}>
             Your Address
           </Typography>
-          <TextField
-            fullWidth
-            label="Enter your address"
-            value={addressSearchValue}
-            onChange={handleAddressSearchChange}
-            variant="outlined"
-            size={isMobile ? "small" : "medium"}
-            placeholder="Type your address here..."
-            helperText="Enter your address manually (auto-suggestions temporarily disabled)"
-            sx={{ 
-              backgroundColor: 'white',
-              minWidth: '300px',
-              '& .MuiOutlinedInput-root': {
-                '& fieldset': {
-                  borderColor: '#e0e0e0',
-                },
-                '&:hover fieldset': {
-                  borderColor: '#633394',
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: '#633394',
-                },
-              },
-              '& .MuiFormHelperText-root': {
-                color: '#633394',
-                fontSize: '0.75rem'
-              }
-            }}
-          />
+          <Box sx={{ display: 'flex', gap: 1, mb: 1, flexDirection: isMobile ? 'column' : 'row' }}>
+            {isLoaded ? (
+              <StandaloneSearchBox onLoad={ref => setSearchBox(ref)} onPlacesChanged={onPlacesChanged}>
+                <TextField
+                  fullWidth
+                  label="Search your address"
+                  value={addressSearchValue}
+                  onChange={(e) => setAddressSearchValue(e.target.value)}
+                  variant="outlined"
+                  size={isMobile ? 'small' : 'medium'}
+                  placeholder="Start typing your address..."
+                  sx={{ backgroundColor: 'white' }}
+                />
+              </StandaloneSearchBox>
+            ) : (
+              <TextField fullWidth disabled label="Loading Google Maps..." size={isMobile ? 'small' : 'medium'} />
+            )}
+            <Button variant="outlined" startIcon={<MyLocationIcon />} onClick={handleUseMyLocation}>
+              Use My Location
+            </Button>
+          </Box>
+          <Box sx={{ height: 300, width: '100%', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e0e0e0' }}>
+            {isLoaded && (
+              <GoogleMap
+                center={mapCenter}
+                zoom={12}
+                mapContainerStyle={{ width: '100%', height: '100%' }}
+                onClick={handleMapClick}
+              >
+                {markerPosition && <Marker position={markerPosition} draggable onDragEnd={(e) => {
+                  const lat = e.latLng.lat();
+                  const lng = e.latLng.lng();
+                  setMarkerPosition({ lat, lng });
+                  updateFormData('organizational', 'latitude', lat);
+                  updateFormData('organizational', 'longitude', lng);
+                  reverseGeocode(lat, lng);
+                }} />}
+              </GoogleMap>
+            )}
+          </Box>
         </Grid>
 
         {/* Address Fields - 2 Column Layout */}
@@ -206,7 +306,6 @@ const OrganizationalDetailsPage = ({ formData, updateFormData, saveAndContinue, 
                 size={isMobile ? "small" : "medium"}
                 sx={{ 
                   backgroundColor: 'white',
-                  minWidth: '280px',
                   '& .MuiOutlinedInput-root': {
                     '& fieldset': {
                       borderColor: '#e0e0e0',
@@ -247,7 +346,6 @@ const OrganizationalDetailsPage = ({ formData, updateFormData, saveAndContinue, 
             size={isMobile ? "small" : "medium"}
             sx={{ 
               backgroundColor: 'white',
-              minWidth: '280px',
               '& .MuiOutlinedInput-root': {
                 '& fieldset': {
                   borderColor: '#e0e0e0',
@@ -278,7 +376,6 @@ const OrganizationalDetailsPage = ({ formData, updateFormData, saveAndContinue, 
             size={isMobile ? "small" : "medium"}
             sx={{ 
               backgroundColor: 'white',
-              minWidth: '280px',
               '& .MuiOutlinedInput-root': {
                 '& fieldset': {
                   borderColor: '#e0e0e0',
@@ -305,7 +402,6 @@ const OrganizationalDetailsPage = ({ formData, updateFormData, saveAndContinue, 
             size={isMobile ? "small" : "medium"}
             sx={{ 
               backgroundColor: 'white',
-              minWidth: '280px',
               '& .MuiOutlinedInput-root': {
                 '& fieldset': {
                   borderColor: '#e0e0e0',
@@ -336,7 +432,6 @@ const OrganizationalDetailsPage = ({ formData, updateFormData, saveAndContinue, 
             size={isMobile ? "small" : "medium"}
             sx={{ 
               backgroundColor: 'white',
-              minWidth: '280px',
               '& .MuiOutlinedInput-root': {
                 '& fieldset': {
                   borderColor: '#e0e0e0',
@@ -363,7 +458,6 @@ const OrganizationalDetailsPage = ({ formData, updateFormData, saveAndContinue, 
             size={isMobile ? "small" : "medium"}
             sx={{ 
               backgroundColor: 'white',
-              minWidth: '280px',
               '& .MuiOutlinedInput-root': {
                 '& fieldset': {
                   borderColor: '#e0e0e0',
@@ -391,7 +485,6 @@ const OrganizationalDetailsPage = ({ formData, updateFormData, saveAndContinue, 
             size={isMobile ? "small" : "medium"}
             sx={{ 
               backgroundColor: 'white',
-              minWidth: '280px',
               '& .MuiOutlinedInput-root': {
                 '& fieldset': {
                   borderColor: '#e0e0e0',

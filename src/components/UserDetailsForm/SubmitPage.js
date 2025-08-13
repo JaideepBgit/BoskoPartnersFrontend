@@ -10,7 +10,13 @@ const SubmitPage = ({ formData, submitForm, goBack, isSaving }) => {
   
   return (
     <Box sx={{ px: isMobile ? 1 : 2 }}>
-      <Typography variant="h5" component="h2" gutterBottom>
+      <Typography 
+        variant="h5" 
+        component="h2" 
+        gutterBottom 
+        align="center"
+        sx={{ fontWeight: 'bold', color: '#633394' }}
+      >
         Review and Submit
       </Typography>
       

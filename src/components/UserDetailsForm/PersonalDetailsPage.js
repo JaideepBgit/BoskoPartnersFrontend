@@ -11,12 +11,18 @@ const PersonalDetailsPage = ({ formData, updateFormData, saveAndContinue, saveAn
   };
 
   return (
-    <Box sx={{ px: isMobile ? 1 : 2, maxWidth: '700px', mx: 'auto' }}>
-      <Typography variant="h5" component="h2" gutterBottom>
+    <Box sx={{ px: isMobile ? 2 : 2, maxWidth: '700px', mx: 'auto' }}>
+      <Typography 
+        variant="h5" 
+        component="h2" 
+        gutterBottom 
+        align="center"
+        sx={{ fontWeight: 'bold', color: '#633394' }}
+      >
         Personal Details
       </Typography>
       
-      <Grid container spacing={3}>
+      <Grid container spacing={3} sx={{ mx: 'auto' }}>
         {/* First row - First Name and Last Name */}
         <Grid item xs={12} md={6}>
           <TextField
@@ -32,7 +38,6 @@ const PersonalDetailsPage = ({ formData, updateFormData, saveAndContinue, saveAn
             size={isMobile ? "small" : "medium"}
             sx={{ 
               backgroundColor: 'white',
-              minWidth: '280px',
               '& .MuiOutlinedInput-root': {
                 '& fieldset': {
                   borderColor: '#e0e0e0',
@@ -62,7 +67,6 @@ const PersonalDetailsPage = ({ formData, updateFormData, saveAndContinue, saveAn
             size={isMobile ? "small" : "medium"}
             sx={{ 
               backgroundColor: 'white',
-              minWidth: '280px',
               '& .MuiOutlinedInput-root': {
                 '& fieldset': {
                   borderColor: '#e0e0e0',
@@ -93,7 +97,6 @@ const PersonalDetailsPage = ({ formData, updateFormData, saveAndContinue, saveAn
             size={isMobile ? "small" : "medium"}
             sx={{ 
               backgroundColor: 'white',
-              minWidth: '280px',
               '& .MuiOutlinedInput-root': {
                 '& fieldset': {
                   borderColor: '#e0e0e0',
@@ -123,7 +126,6 @@ const PersonalDetailsPage = ({ formData, updateFormData, saveAndContinue, saveAn
             size={isMobile ? "small" : "medium"}
             sx={{ 
               backgroundColor: 'white',
-              minWidth: '280px',
               '& .MuiOutlinedInput-root': {
                 '& fieldset': {
                   borderColor: '#e0e0e0',

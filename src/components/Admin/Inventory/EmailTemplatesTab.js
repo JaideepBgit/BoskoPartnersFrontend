@@ -28,7 +28,7 @@ import InventoryService from '../../../services/Admin/Inventory/InventoryService
  * Focus is on MVP functionality: list, add, edit & delete templates.
  * More advanced features (preview, placeholders, rich-text editor) can be added later.
  */
-const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData }) => {
+const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId = null }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -67,7 +67,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData }) => {
       if (editingTemplate) {
         await InventoryService.updateEmailTemplate(editingTemplate.id, formData);
       } else {
-        await InventoryService.addEmailTemplate(formData);
+        await InventoryService.addEmailTemplate({ ...formData, organization_id: organizationId });
       }
       closeDialog();
       onRefreshData && onRefreshData();

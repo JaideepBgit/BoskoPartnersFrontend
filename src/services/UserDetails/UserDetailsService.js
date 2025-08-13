@@ -72,20 +72,25 @@ export const getUserDetailsStatus = async (userId) => {
       const personal = localData.form_data?.personal || {};
       const organizational = localData.form_data?.organizational || {};
       
-      return {
+      const derived = {
         user_id: localData.user_id,
         personal_details_filled: !!(personal.firstName && personal.lastName),
         organizational_details_filled: !!(
-          organizational.organization && 
           organizational.country && 
-          organizational.province && 
-          organizational.city && 
-          organizational.address_line1
+          organizational.region && 
+          organizational.church && 
+          organizational.school
         ),
         is_submitted: localData.is_submitted || false,
         last_page: localData.last_page || 1,
         form_data: localData.form_data
       };
+      // If submitted flag is true, consider it completed regardless
+      if (derived.is_submitted) {
+        derived.personal_details_filled = true;
+        derived.organizational_details_filled = true;
+      }
+      return derived;
     }
     
     throw error;

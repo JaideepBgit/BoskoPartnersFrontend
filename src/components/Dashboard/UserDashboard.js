@@ -75,12 +75,13 @@ const HomeComponent = () => {
     }
   };
 
-  // Check if personal details are filled
-  const isPersonalDetailsFilled = () => {
-    if (!userDetails) {
-      return false;
-    }
-    return userDetails.personal_details_filled;
+  // Consider the user details "Completed" when both sections are filled OR backend says submitted
+  const isUserDetailsCompleted = () => {
+    if (!userDetails) return false;
+    return !!(
+      (userDetails.personal_details_filled && userDetails.organizational_details_filled) ||
+      userDetails.is_submitted
+    );
   };
 
   if (loading) {
@@ -136,9 +137,9 @@ const HomeComponent = () => {
                     Personal Details
                   </Typography>
                   <Chip 
-                    icon={isPersonalDetailsFilled() ? <CheckCircleIcon /> : <ErrorIcon />} 
-                    label={isPersonalDetailsFilled() ? "Completed" : "Not Completed"} 
-                    color={isPersonalDetailsFilled() ? "success" : "error"}
+                    icon={isUserDetailsCompleted() ? <CheckCircleIcon /> : <ErrorIcon />} 
+                    label={isUserDetailsCompleted() ? "Completed" : "Not Completed"} 
+                    color={isUserDetailsCompleted() ? "success" : "error"}
                     variant="outlined"
                     size={isMobile ? "small" : "medium"}
                   />
@@ -185,7 +186,7 @@ const HomeComponent = () => {
                   <Button 
                     variant="contained" 
                     fullWidth={isMobile}
-                    startIcon={isPersonalDetailsFilled() ? <EditIcon /> : <AddIcon />}
+                    startIcon={isUserDetailsCompleted() ? <EditIcon /> : <AddIcon />}
                     onClick={handleEditDetails}
                     sx={{
                       backgroundColor: '#633394',
@@ -194,7 +195,7 @@ const HomeComponent = () => {
                       }
                     }}
                   >
-                    {isPersonalDetailsFilled() ? 'Edit Details' : 'Fill Details'}
+                    {isUserDetailsCompleted() ? 'Edit Details' : 'Fill Details'}
                   </Button>
                 </Box>
               </CardContent>

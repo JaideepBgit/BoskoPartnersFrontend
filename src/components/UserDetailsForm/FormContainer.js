@@ -26,7 +26,9 @@ const FormContainer = () => {
       town: '',
       address_line1: '',
       address_line2: '',
-      postal_code: ''
+      postal_code: '',
+      latitude: null,
+      longitude: null
     }
   });
   
@@ -270,7 +272,7 @@ const FormContainer = () => {
               variant="determinate" 
               value={formProgress} 
               sx={{ 
-                height: isMobile ? 8 : 10, 
+                height: isMobile ? 10 : 10, 
                 borderRadius: 5,
                 backgroundColor: '#e0e0e0',
                 '& .MuiLinearProgress-bar': {

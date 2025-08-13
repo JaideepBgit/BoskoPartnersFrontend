@@ -313,8 +313,7 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
                                                            ? '#e3f2fd'
                                                            : 'inherit'
                                                 }}
-                                                onClick={() => handleUserSelection(user.id)}
-                                                onDoubleClick={() => handleUserSelectionForView(user)}
+                                                onClick={() => handleUserSelectionForView(user)}
                                             >
                                                 <TableCell padding="checkbox">
                                                     <Checkbox

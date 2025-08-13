@@ -47,7 +47,10 @@ const InventoryService = {
   updateResponse: (responseId, payload) => axios.put(`${BASE_URL}/responses/${responseId}`, payload),
   
   // Email Templates
-  getEmailTemplates: () => axios.get(`${BASE_URL}/email-templates`).then(res => res.data),
+  getEmailTemplates: (organizationId = null) => {
+    const url = organizationId ? `${BASE_URL}/email-templates?organization_id=${organizationId}` : `${BASE_URL}/email-templates`;
+    return axios.get(url).then(res => res.data);
+  },
   getEmailTemplate: (templateId) => axios.get(`${BASE_URL}/email-templates/${templateId}`).then(res => res.data),
   addEmailTemplate: (payload) => axios.post(`${BASE_URL}/email-templates`, payload).then(res => res.data),
   updateEmailTemplate: (templateId, payload) => axios.put(`${BASE_URL}/email-templates/${templateId}`, payload),

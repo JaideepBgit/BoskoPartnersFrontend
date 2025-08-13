@@ -87,7 +87,7 @@ const InventoryPage = () => {
 
     const fetchEmailTemplates = async () => {
       try {
-        const data = await InventoryService.getEmailTemplates();
+        const data = await InventoryService.getEmailTemplates(selectedOrganizationId || null);
         setEmailTemplates(data);
       } catch (err) {
         console.error('Error fetching email templates:', err.response || err);
@@ -415,7 +415,7 @@ const InventoryPage = () => {
               }
             }}
           >
-            <Tab label={isMobile ? "Versions" : "Template Versions"} />
+            <Tab label={isMobile ? "Versions" : "Organization Templates"} />
             <Tab label={isMobile ? "Questions" : "Template Questions"} />
             <Tab label={isMobile ? "Preview" : "Preview Templates"} />
             <Tab label={isMobile ? "Emails" : "Email Templates"} />
@@ -635,6 +635,7 @@ const InventoryPage = () => {
           <EmailTemplatesTab 
             emailTemplates={emailTemplates}
             onRefreshData={fetchEmailTemplates}
+            organizationId={selectedOrganizationId || null}
           />
         )}
         
