@@ -34,7 +34,12 @@ function RoleBasedDashboard() {
     }
   }
   
-  // For regular users, always show UserDashboard
+  // For regular users on /dashboard, redirect to their profile
+  if (userRole === 'user' && location.pathname === '/dashboard') {
+    return <Navigate to="/profile" replace />;
+  }
+  
+  // For regular users, show UserDashboard only on /home or /profile
   return <UserDashboard />;
 }
 
@@ -109,6 +114,13 @@ function Main({ isAuthenticated, userRole, login, logout }) {
         <Route path="/admin" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <AdminLandingPage onLogout={logout} />
+          </ProtectedRoute>
+        } />
+        
+        {/* User Profile Route - for user details management */}
+        <Route path="/profile" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <UserDashboard onLogout={logout} />
           </ProtectedRoute>
         } />
         <Route path="/inventory" element={

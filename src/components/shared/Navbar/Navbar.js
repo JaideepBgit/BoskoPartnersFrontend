@@ -64,7 +64,7 @@ const Navbar = () => {
     } else {
       // For regular users
       const p = location.pathname.toLowerCase();
-      if (p.includes('/home') || p.includes('/dashboard'))    setUserTabValue(0);
+      if (p.includes('/profile') || p.includes('/home'))    setUserTabValue(0);
       else if (p.includes('/survey')) setUserTabValue(1); // This covers both /surveys and /survey
       else if (p.includes('/reports')) setUserTabValue(2);
       else                             setUserTabValue(0);
@@ -88,10 +88,10 @@ const Navbar = () => {
   const handleUserTabChange = (_, v) => {
     setUserTabValue(v);
     switch (v) {
-      case 0: navigate('/home'); break; // Navigate to home for regular users
+      case 0: navigate('/profile'); break; // Navigate to profile for regular users
       case 1: navigate('/surveys');   break;
       case 2: navigate('/reports');   break;
-      default: navigate('/home');
+      default: navigate('/profile');
     }
   };
 
@@ -144,9 +144,9 @@ const Navbar = () => {
         </List>
       ) : (
         <List>
-          <ListItem button onClick={() => navigate('/home')} selected={userTabValue === 0}>
+          <ListItem button onClick={() => navigate('/profile')} selected={userTabValue === 0}>
             <ListItemIcon><HomeIcon color={userTabValue === 0 ? 'primary' : 'inherit'} /></ListItemIcon>
-            <ListItemText primary="Home" />
+            <ListItemText primary="Profile" />
           </ListItem>
           <ListItem button onClick={() => navigate('/surveys')} selected={userTabValue === 1}>
             <ListItemIcon><AssignmentIcon color={userTabValue === 1 ? 'primary' : 'inherit'} /></ListItemIcon>
@@ -241,7 +241,7 @@ const Navbar = () => {
                   },
                 }}
               >
-                <Tab icon={<HomeIcon />} label="Home" iconPosition="start" />
+                <Tab icon={<HomeIcon />} label="Profile" iconPosition="start" />
                 <Tab icon={<AssignmentIcon />} label="Surveys" iconPosition="start" />
                 <Tab icon={<BarChartIcon />} label="Reports" iconPosition="start" />
               </Tabs>

@@ -213,9 +213,9 @@ const FormContainer = () => {
         action: 'exit'
       });
       
-      alert('Form data saved successfully! Redirecting to dashboard...');
-      // Redirect to dashboard
-      navigate('/dashboard');
+      alert('Form data saved successfully! Redirecting to your profile...');
+      // Redirect to user profile
+      navigate('/profile');
     } catch (error) {
       console.error('Error saving form data:', error);
       alert('Failed to save form data. Your data has been saved locally.');
@@ -241,9 +241,9 @@ const FormContainer = () => {
           form_data: formData
         });
         
-        alert('Form submitted successfully! Redirecting to dashboard...');
-        // Redirect to dashboard after successful submission
-        navigate('/dashboard');
+        alert('Form submitted successfully! Redirecting to your profile...');
+        // Redirect to user profile after successful submission
+        navigate('/profile');
       } catch (error) {
         console.error('Error submitting form:', error);
         alert('Failed to submit form. Please try again.');

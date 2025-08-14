@@ -107,8 +107,15 @@ const HomeComponent = () => {
         >
           {userDetails && userDetails.form_data && userDetails.form_data.personal && 
            userDetails.form_data.personal.firstName ? 
-            `Welcome ${userDetails.form_data.personal.firstName}!` : 
-            'Welcome to Bosko Partners!'}
+            `${userDetails.form_data.personal.firstName}'s Profile` : 
+            'Your Profile'}
+        </Typography>
+        
+        <Typography 
+          variant="body1" 
+          sx={{ mb: isMobile ? 2 : 3, color: 'text.secondary' }}
+        >
+          Manage your personal and organizational details here. To take surveys, navigate to the Surveys tab.
         </Typography>
         
         {error && (

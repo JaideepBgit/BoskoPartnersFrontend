@@ -153,6 +153,10 @@ const SurveyTaking = () => {
     setSelectedSection(null);
   };
 
+  const handleCloseSurvey = () => {
+    navigate('/surveys');
+  };
+
   const handlePreviousQuestion = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
@@ -605,13 +609,23 @@ const SurveyTaking = () => {
             p: 3,
             minHeight: 'calc(100vh - 250px)'
           }}>
-            <Typography variant="h4" sx={{ 
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="h4" sx={{ 
               color: '#633394', 
               fontWeight: 'bold',
               mb: 1
             }}>
               {survey.template_name || surveyData.survey_code}
             </Typography>
+              <IconButton 
+                aria-label="close"
+                onClick={handleCloseSurvey}
+                sx={{ color: '#633394' }}
+                title="Close and go back to My Surveys"
+              >
+                <CloseIcon />
+              </IconButton>
+            </Box>
             
             <Typography variant="h6" sx={{ 
               color: '#666', 

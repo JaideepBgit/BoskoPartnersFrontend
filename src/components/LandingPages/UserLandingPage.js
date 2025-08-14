@@ -34,10 +34,10 @@ const UserLandingPage = () => {
       const {survey} = await validateSurveyCode(surveyCode);
       console.log('Survey validation successful:', survey);
       
-      // Store the validated survey code and redirect to dashboard
+      // Store the validated survey code and redirect to user profile
       localStorage.setItem('surveyCode', surveyCode);
-      console.log('Redirecting to dashboard...');
-      navigate('/dashboard');
+      console.log('Redirecting to user profile...');
+      navigate('/profile');
     } catch (err) {
       console.error('Survey validation failed:', err);
       setError(err.message || 'Invalid survey code');

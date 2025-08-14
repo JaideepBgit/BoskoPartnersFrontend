@@ -187,7 +187,10 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
 
     const getTemplateName = (templateId) => {
         const template = templates.find(t => t.id === parseInt(templateId));
-        return template ? template.version_name || 'Survey' : 'Unknown';
+        if (!template) return 'Unknown';
+        const versionPart = template.version_name || 'Survey';
+        const codePart = template.survey_code ? ` - ${template.survey_code}` : '';
+        return `${versionPart}${codePart}`;
     };
 
     const getAvailableTemplatesForUser = () => {
@@ -418,7 +421,7 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
                                                 {userAssignments.map((assignment) => (
                                                     <Box key={assignment.id} sx={{ mb: 1, p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
                                                         <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                                            {assignment.template_name}
+                                                            {`${assignment.template_name}${assignment.survey_code ? ` - ${assignment.survey_code}` : ''}`}
                                                         </Typography>
                                                         <Typography variant="caption" color="text.secondary">
                                                             Status: {assignment.status} | Assigned: {new Date(assignment.created_at).toLocaleDateString()}
@@ -446,7 +449,7 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
                                             >
                                                 {getAvailableTemplatesForUser().map((template) => (
                                                     <MenuItem key={template.id} value={template.id}>
-                                                        {template.version_name || `Template ${template.id}`}
+                                                        {`${template.version_name || 'Survey'}${template.survey_code ? ` - ${template.survey_code}` : ''}`}
                                                     </MenuItem>
                                                 ))}
                                             </Select>
@@ -501,7 +504,7 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
                                             >
                                                 {templates.map((template) => (
                                                     <MenuItem key={template.id} value={template.id}>
-                                                        {template.version_name || `Template ${template.id}`}
+                                                        {`${template.version_name || 'Survey'}${template.survey_code ? ` - ${template.survey_code}` : ''}`}
                                                     </MenuItem>
                                                 ))}
                                             </Select>
