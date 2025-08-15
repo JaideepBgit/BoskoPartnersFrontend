@@ -47,17 +47,124 @@ const InventoryService = {
   updateResponse: (responseId, payload) => axios.put(`${BASE_URL}/responses/${responseId}`, payload),
   
   // Email Templates
-  getEmailTemplates: (organizationId = null) => {
-    const url = organizationId ? `${BASE_URL}/email-templates?organization_id=${organizationId}` : `${BASE_URL}/email-templates`;
-    return axios.get(url).then(res => res.data);
+  getEmailTemplates: (organizationId = null, surveyTemplateId = null, filterOrganizationId = null, roleId = null) => {
+    let url = `${BASE_URL}/email-templates`;
+    const params = new URLSearchParams();
+    
+    if (organizationId) params.append('organization_id', organizationId);
+    if (surveyTemplateId) params.append('survey_template_id', surveyTemplateId);
+    if (filterOrganizationId) params.append('filter_organization_id', filterOrganizationId);
+    if (roleId) params.append('role_id', roleId);
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+    
+    return axios.get(url)
+      .then(res => res.data.templates || res.data)
+      .catch(error => {
+        console.error('Error fetching email templates:', error);
+        throw new Error(error.response?.data?.error || 'Failed to fetch email templates');
+      });
   },
-  getEmailTemplate: (templateId) => axios.get(`${BASE_URL}/email-templates/${templateId}`).then(res => res.data),
-  addEmailTemplate: (payload) => axios.post(`${BASE_URL}/email-templates`, payload).then(res => res.data),
-  updateEmailTemplate: (templateId, payload) => axios.put(`${BASE_URL}/email-templates/${templateId}`, payload),
-  deleteEmailTemplate: (templateId) => axios.delete(`${BASE_URL}/email-templates/${templateId}`),
+  getEmailTemplate: (templateId) => {
+    return axios.get(`${BASE_URL}/email-templates/${templateId}`)
+      .then(res => res.data)
+      .catch(error => {
+        console.error('Error fetching email template:', error);
+        throw new Error(error.response?.data?.error || 'Failed to fetch email template');
+      });
+  },
+  addEmailTemplate: (payload) => {
+    // Validate payload structure for new fields
+    const validatedPayload = {
+      ...payload,
+      survey_template_ids: payload.survey_template_ids || [],
+      // roles removed from UI; backend accepts absence
+    };
+    
+    return axios.post(`${BASE_URL}/email-templates`, validatedPayload)
+      .then(res => res.data)
+      .catch(error => {
+        console.error('Error creating email template:', error);
+        const errorMessage = error.response?.data?.error || 'Failed to create email template';
+        const errorDetails = error.response?.data?.details;
+        
+        if (errorDetails) {
+          const detailMessages = Object.entries(errorDetails)
+            .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+            .join('; ');
+          throw new Error(`${errorMessage} - ${detailMessages}`);
+        }
+        
+        throw new Error(errorMessage);
+      });
+  },
+  updateEmailTemplate: (templateId, payload) => {
+    // Validate payload structure for new fields
+    const validatedPayload = {
+      ...payload,
+      survey_template_ids: payload.survey_template_ids || []
+    };
+    
+    return axios.put(`${BASE_URL}/email-templates/${templateId}`, validatedPayload)
+      .catch(error => {
+        console.error('Error updating email template:', error);
+        const errorMessage = error.response?.data?.error || 'Failed to update email template';
+        const errorDetails = error.response?.data?.details;
+        
+        if (errorDetails) {
+          const detailMessages = Object.entries(errorDetails)
+            .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+            .join('; ');
+          throw new Error(`${errorMessage} - ${detailMessages}`);
+        }
+        
+        throw new Error(errorMessage);
+      });
+  },
+  deleteEmailTemplate: (templateId) => {
+    return axios.delete(`${BASE_URL}/email-templates/${templateId}`)
+      .catch(error => {
+        console.error('Error deleting email template:', error);
+        throw new Error(error.response?.data?.error || 'Failed to delete email template');
+      });
+  },
+  
+  // Survey Templates
+  getSurveyTemplatesByOrganization: (organizationId) => {
+    if (!organizationId) {
+      return Promise.reject(new Error('Organization ID is required'));
+    }
+    
+    return axios.get(`${BASE_URL}/survey-templates/by-organization/${organizationId}`)
+      .then(res => {
+        const data = res.data;
+        // Backend returns an object { organization_id, ..., survey_templates: [...] }
+        // Normalize to an array of survey templates for the UI
+        if (Array.isArray(data)) {
+          return data;
+        }
+        if (data && Array.isArray(data.survey_templates)) {
+          return data.survey_templates;
+        }
+        // Fallback to empty array
+        return [];
+      })
+      .catch(error => {
+        console.error('Error fetching survey templates by organization:', error);
+        if (error.response?.status === 404) {
+          throw new Error('Organization not found or has no survey templates');
+        }
+        throw new Error(error.response?.data?.error || 'Failed to fetch survey templates');
+      });
+  },
   
   // Organizations
   getOrganizations: () => axios.get(`${BASE_URL}/organizations`).then(res => res.data),
+  
+  // Roles
+  getRoles: () => axios.get(`${BASE_URL}/roles`).then(res => res.data),
   
   // Question Types
   getQuestionTypes: (category = null) => {

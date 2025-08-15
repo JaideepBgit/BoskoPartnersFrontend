@@ -31,6 +31,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ClearIcon from '@mui/icons-material/Clear';
 import Navbar from '../../shared/Navbar/Navbar';
 import QuestionsTab from './QuestionsTab';
 import TemplatesTab from './TemplatesTab';
@@ -49,6 +50,7 @@ const InventoryPage = () => {
   const [newVersionName, setNewVersionName] = useState('');
   const [newVersionDesc, setNewVersionDesc] = useState('');
   const [selectedOrganizationId, setSelectedOrganizationId] = useState('');
+  // Removed global organization filter
   const [editingVersion, setEditingVersion] = useState(null);
   const [openVersionDialog, setOpenVersionDialog] = useState(false);
   
@@ -87,10 +89,11 @@ const InventoryPage = () => {
 
     const fetchEmailTemplates = async () => {
       try {
-        const data = await InventoryService.getEmailTemplates(selectedOrganizationId || null);
-        setEmailTemplates(data);
+        const data = await InventoryService.getEmailTemplates(null);
+        setEmailTemplates(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error('Error fetching email templates:', err.response || err);
+        setEmailTemplates([]);
       }
     };
 
@@ -151,7 +154,7 @@ const InventoryPage = () => {
     fetchTemplates();
     fetchResponses();
     fetchEmailTemplates();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load specific template if ID is provided
   useEffect(() => {
@@ -159,6 +162,11 @@ const InventoryPage = () => {
       fetchTemplate(templateId);
     }
   }, [templateId]);
+
+  // Refresh email templates periodically or on demand (filter removed)
+  useEffect(() => {
+    fetchEmailTemplates();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Template version handlers
   const handleAddTemplateVersion = async () => {
@@ -390,6 +398,8 @@ const InventoryPage = () => {
           Survey Management
         </Typography>
         
+        {/* Global Organization Filter removed */}
+        
         <Paper sx={{ mb: 3 }}>
           <Tabs 
             value={activeTab} 
@@ -478,7 +488,8 @@ const InventoryPage = () => {
                 }}
               >
                 <List dense={isMobile}>
-                  {templateVersions.map(v => (
+                  {templateVersions
+                    .map(v => (
                     <ListItem 
                       key={v.id} 
                       button 
@@ -596,7 +607,7 @@ const InventoryPage = () => {
                           fontSize: isMobile ? '0.875rem' : '1rem'
                         }}
                       >
-                        No template versions available
+                        {'No template versions available'}
                       </Typography>
                     </Box>
                   )}
@@ -615,6 +626,7 @@ const InventoryPage = () => {
               fetchTemplateVersions();
               fetchTemplates();
             }}
+            organizationFilter={''}
           />
         )}
       
@@ -627,6 +639,7 @@ const InventoryPage = () => {
               fetchTemplateVersions();
               fetchTemplates();
             }}
+            organizationFilter={''}
           />
         )}
       
@@ -634,8 +647,14 @@ const InventoryPage = () => {
         {activeTab === 3 && (
           <EmailTemplatesTab 
             emailTemplates={emailTemplates}
-            onRefreshData={fetchEmailTemplates}
-            organizationId={selectedOrganizationId || null}
+            onRefreshData={() => {
+              fetchEmailTemplates();
+              // Also refresh template data in case email template operations affect survey template associations
+              fetchTemplateVersions();
+              fetchTemplates();
+            }}
+            organizationId={null}
+            organizations={organizations}
           />
         )}
         
