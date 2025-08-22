@@ -73,10 +73,7 @@
         "non_formal_programs": 150,
         "full_time_percentage": 65,
         "courses_per_year": 8,
-        "gender": {
-          "male": 180,
-          "female": 140
-        },
+        "gender": {"male": 180, "female": 140},
         "age_demographics": {
           "18_25": 25,
           "26_30": 35,
@@ -159,10 +156,7 @@
         "non_formal_programs": 200,
         "full_time_percentage": 70,
         "courses_per_year": 6,
-        "gender": {
-          "male": 280,
-          "female": 170
-        },
+        "gender": {"male": 280, "female": 170},
         "age_demographics": {
           "18_25": 30,
           "26_30": 40,
@@ -241,10 +235,7 @@
         "non_formal_programs": 180,
         "full_time_percentage": 75,
         "courses_per_year": 6,
-        "gender": {
-          "male": 220,
-          "female": 160
-        },
+        "gender": {"male": 220, "female": 160},
         "age_demographics": {
           "18_25": 35,
           "26_30": 38,
@@ -252,12 +243,7 @@
           "41_50": 5,
           "60_plus": 2
         }
-      },
-      "latitude": -1.2365131,
-      "longitude": 36.806999,
-      "state": "Nairobi County",
-      "timezone": "Africa/Nairobi",
-      "formatted_address": "Limuru Rd, Nairobi, Kenya"
+      }
     }
   ]
-}
+} 

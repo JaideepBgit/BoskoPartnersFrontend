@@ -47,14 +47,12 @@ const InventoryService = {
   updateResponse: (responseId, payload) => axios.put(`${BASE_URL}/responses/${responseId}`, payload),
   
   // Email Templates
-  getEmailTemplates: (organizationId = null, surveyTemplateId = null, filterOrganizationId = null, roleId = null) => {
+  getEmailTemplates: (organizationId = null, filterOrganizationId = null) => {
     let url = `${BASE_URL}/email-templates`;
     const params = new URLSearchParams();
     
     if (organizationId) params.append('organization_id', organizationId);
-    if (surveyTemplateId) params.append('survey_template_id', surveyTemplateId);
     if (filterOrganizationId) params.append('filter_organization_id', filterOrganizationId);
-    if (roleId) params.append('role_id', roleId);
     
     if (params.toString()) {
       url += `?${params.toString()}`;
@@ -76,50 +74,40 @@ const InventoryService = {
       });
   },
   addEmailTemplate: (payload) => {
-    // Validate payload structure for new fields
-    const validatedPayload = {
-      ...payload,
-      survey_template_ids: payload.survey_template_ids || [],
-      // roles removed from UI; backend accepts absence
+    // Clean payload - only basic email template fields
+    const cleanPayload = {
+      name: payload.name,
+      subject: payload.subject,
+      html_body: payload.html_body,
+      text_body: payload.text_body || '',
+      organization_id: payload.organization_id,
+      is_public: payload.is_public || false
     };
     
-    return axios.post(`${BASE_URL}/email-templates`, validatedPayload)
+    return axios.post(`${BASE_URL}/email-templates`, cleanPayload)
       .then(res => res.data)
       .catch(error => {
         console.error('Error creating email template:', error);
         const errorMessage = error.response?.data?.error || 'Failed to create email template';
-        const errorDetails = error.response?.data?.details;
-        
-        if (errorDetails) {
-          const detailMessages = Object.entries(errorDetails)
-            .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
-            .join('; ');
-          throw new Error(`${errorMessage} - ${detailMessages}`);
-        }
-        
         throw new Error(errorMessage);
       });
   },
   updateEmailTemplate: (templateId, payload) => {
-    // Validate payload structure for new fields
-    const validatedPayload = {
-      ...payload,
-      survey_template_ids: payload.survey_template_ids || []
+    // Clean payload - only basic email template fields
+    const cleanPayload = {
+      name: payload.name,
+      subject: payload.subject,
+      html_body: payload.html_body,
+      text_body: payload.text_body || '',
+      organization_id: payload.organization_id,
+      is_public: payload.is_public || false
     };
     
-    return axios.put(`${BASE_URL}/email-templates/${templateId}`, validatedPayload)
+    return axios.put(`${BASE_URL}/email-templates/${templateId}`, cleanPayload)
+      .then(res => res.data)
       .catch(error => {
         console.error('Error updating email template:', error);
         const errorMessage = error.response?.data?.error || 'Failed to update email template';
-        const errorDetails = error.response?.data?.details;
-        
-        if (errorDetails) {
-          const detailMessages = Object.entries(errorDetails)
-            .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
-            .join('; ');
-          throw new Error(`${errorMessage} - ${detailMessages}`);
-        }
-        
         throw new Error(errorMessage);
       });
   },

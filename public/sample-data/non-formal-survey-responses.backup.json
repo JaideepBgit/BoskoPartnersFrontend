@@ -131,12 +131,7 @@
       "improve_ongoing_support": "Access to formal theological courses and leadership training",
       "further_training_needs": "Church administration, systematic theology, and leadership development",
       "still_choose_non_formal": "Would prefer combination of formal and non-formal training",
-      "recommend_non_formal": "Yes, but recommend supplementing with formal theological education",
-      "latitude": 6.1513662,
-      "longitude": 6.782790899999999,
-      "state": "Anambra",
-      "timezone": "Africa/Lagos",
-      "formatted_address": "45 New Market Rd, City Centre, Onitsha 431108, Anambra, Nigeria"
+      "recommend_non_formal": "Yes, but recommend supplementing with formal theological education"
     },
     {
       "id": 3,
@@ -153,7 +148,7 @@
       "years_in_ministry": "8-10 YRS",
       "non_formal_education_types": [
         "Church-based training programs",
-        "Denominational training programs",
+        "Denominational training programs", 
         "Conferences, workshops, or seminars",
         "Bible study leadership training",
         "Self-study (books, podcasts, video teachings, etc.)"
@@ -204,19 +199,14 @@
       "improve_ongoing_support": "Access to continuing education and advanced theological training",
       "further_training_needs": "Advanced biblical studies, leadership development, and counseling",
       "still_choose_non_formal": "Would prefer formal theological education for deeper understanding",
-      "recommend_non_formal": "Good starting point, but recommend pursuing formal education later",
-      "latitude": 5.6760322,
-      "longitude": -0.0184815,
-      "state": "Greater Accra Region",
-      "timezone": "Africa/Accra",
-      "formatted_address": "Station Rd, Tema, Ghana"
+      "recommend_non_formal": "Good starting point, but recommend pursuing formal education later"
     },
     {
       "id": 4,
       "survey_type": "non_formal",
       "response_date": "2024-01-18",
       "ministry_name": "Maranatha Community Church",
-      "leader_name": "Pastor Grace Wanjiku",
+      "leader_name": "Pastor Grace Wanjiku", 
       "physical_address": "Ngong Road, Karen",
       "town": "Karen",
       "city": "Nairobi",
@@ -284,12 +274,7 @@
       "improve_ongoing_support": "Access to formal theological education and advanced training",
       "further_training_needs": "Formal theological education, biblical languages, and advanced leadership training",
       "still_choose_non_formal": "No, would now choose formal theological education",
-      "recommend_non_formal": "Only as a starting point, strongly recommend formal education for long-term ministry",
-      "latitude": -1.3295838,
-      "longitude": 36.6874109,
-      "state": "Nairobi County",
-      "timezone": "Africa/Nairobi",
-      "formatted_address": "Ngong Rd, Nairobi, Kenya"
+      "recommend_non_formal": "Only as a starting point, strongly recommend formal education for long-term ministry"
     },
     {
       "id": 5,
@@ -351,12 +336,7 @@
       "improve_ongoing_support": "Need access to theological resources and continuing education programs",
       "further_training_needs": "Formal theological education, leadership development, and contemporary ministry training",
       "still_choose_non_formal": "Would prefer formal education if available",
-      "recommend_non_formal": "Only when formal education is not accessible, but recommend seeking formal training when possible",
-      "latitude": 9.018253699999999,
-      "longitude": 38.8029421,
-      "state": "Addis Ababa",
-      "timezone": "Africa/Addis_Ababa",
-      "formatted_address": "2R93+854, Addis Ababa, Ethiopia"
+      "recommend_non_formal": "Only when formal education is not accessible, but recommend seeking formal training when possible"
     }
   ]
-}
+} 

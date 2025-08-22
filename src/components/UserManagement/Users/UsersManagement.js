@@ -6,6 +6,7 @@ import {
     InputLabel, TablePagination, Card, CardContent, Grid, Chip, useTheme,
     Autocomplete, CircularProgress, Tooltip, Stack
 } from '@mui/material';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -16,11 +17,14 @@ import {
     addUserOrganizationalRole, fetchUserOrganizationalRoles,
     updateUserOrganizationalRoles, fetchTemplatesByOrganization
 } from '../../../services/UserManagement/UserManagementService';
+import InventoryService from '../../../services/Admin/Inventory/InventoryService';
+import EmailService from '../../../services/EmailService';
 // import GooglePlacesAutocomplete from '../common/GooglePlacesAutocomplete';
 // import GooglePlacesAutocomplete from '../common/GooglePlacesAutocompleteSimple';
 // import ManualAddressInput from '../common/ManualAddressInput';
 import MapAddressSelector from '../common/MapAddressSelector';
 import EnhancedAddressInput from '../common/EnhancedAddressInput';
+import EmailPreviewDialog from '../common/EmailPreviewDialog';
 import SurveyAssignmentCard from './SurveyAssignmentCard';
 
 function UsersManagement() {
@@ -31,6 +35,7 @@ function UsersManagement() {
     const [organizations, setOrganizations] = useState([]);
     const [roles, setRoles] = useState([]);
     const [templates, setTemplates] = useState([]);
+    const [emailTemplates, setEmailTemplates] = useState([]);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [totalUsers, setTotalUsers] = useState(0);
@@ -41,6 +46,7 @@ function UsersManagement() {
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [openUploadDialog, setOpenUploadDialog] = useState(false);
     const [openEmailDialog, setOpenEmailDialog] = useState(false);
+    const [openEmailPreviewDialog, setOpenEmailPreviewDialog] = useState(false);
     
     // Form states
     const [formData, setFormData] = useState({
@@ -53,6 +59,7 @@ function UsersManagement() {
         phone: '',
         organization_id: '',
         template_id: '',
+        email_template_id: '',
         roles: [],
         geo_location: {
             continent: '',
@@ -77,6 +84,9 @@ function UsersManagement() {
     const [isAddingNewRole, setIsAddingNewRole] = useState(false);
     const [roleLoading, setRoleLoading] = useState(false);
     const [addingOrganizationalRole, setAddingOrganizationalRole] = useState(false);
+    const [emailPreviewLoading, setEmailPreviewLoading] = useState(false);
+    const [selectedEmailTemplate, setSelectedEmailTemplate] = useState(null);
+    const [emailPreviewDialogOpen, setEmailPreviewDialogOpen] = useState(false);
 
     // New state variables for improved organizational roles workflow
     const [selectedOrganizationId, setSelectedOrganizationId] = useState('');
@@ -324,6 +334,43 @@ This email was sent to ${email}. If you received this email in error, please con
         }
     };
 
+    // Load email templates by organization
+    const loadEmailTemplates = async (organizationId) => {
+        if (!organizationId) {
+            setEmailTemplates([]);
+            return;
+        }
+        try {
+            const data = await InventoryService.getEmailTemplates(organizationId);
+            setEmailTemplates(data || []);
+        } catch (error) {
+            console.error('Failed to fetch email templates:', error);
+            setEmailTemplates([]);
+        }
+    };
+
+    // Handle email template preview
+    const handleEmailTemplatePreview = () => {
+        if (!formData.email_template_id) {
+            // Preview default template
+            setSelectedEmailTemplate(null);
+            setEmailPreviewDialogOpen(true);
+            return;
+        }
+
+        const template = emailTemplates.find(t => t.id.toString() === formData.email_template_id.toString());
+        if (template) {
+            setSelectedEmailTemplate(template);
+            setEmailPreviewDialogOpen(true);
+        }
+    };
+
+    // Close email preview dialog
+    const handleCloseEmailPreview = () => {
+        setEmailPreviewDialogOpen(false);
+        setSelectedEmailTemplate(null);
+    };
+
     // Handle form input changes
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -342,10 +389,12 @@ This email was sent to ${email}. If you received this email in error, please con
             // Handle organization change - load templates
             if (name === 'organization_id') {
                 loadTemplates(value);
+                loadEmailTemplates(value);
                 setFormData({
                     ...formData,
                     [name]: value,
-                    template_id: '' // Reset template selection when organization changes
+                    template_id: '', // Reset template selection when organization changes
+                    email_template_id: '' // Reset email template selection when organization changes
                 });
             } else {
                 setFormData({
@@ -446,6 +495,7 @@ This email was sent to ${email}. If you received this email in error, please con
             phone: '',
             organization_id: '',
             template_id: '',
+            email_template_id: '',
             roles: [],
             geo_location: {
                 continent: '',
@@ -490,6 +540,7 @@ This email was sent to ${email}. If you received this email in error, please con
             phone: user.phone || '',
             organization_id: user.organization_id || '',
             template_id: user.template_id || '',
+            email_template_id: user.email_template_id || '',
             roles: userRoles,
             geo_location: user.geo_location ? {
                 continent: user.geo_location.continent || '',
@@ -1181,6 +1232,56 @@ This email was sent to ${email}. If you received this email in error, please con
                                 </Select>
                             </FormControl>
                         )}
+
+                        {/* Email Template Selection - Only shown when organization is selected */}
+                        {formData.organization_id && (
+                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
+                                <FormControl fullWidth variant="outlined">
+                                    <InputLabel>Welcome Email Template</InputLabel>
+                                    <Select
+                                        name="email_template_id"
+                                        value={formData.email_template_id}
+                                        onChange={handleInputChange}
+                                        label="Welcome Email Template"
+                                        MenuProps={{
+                                            PaperProps: {
+                                                style: {
+                                                    maxWidth: '400px', // Limit dropdown width
+                                                },
+                                            },
+                                        }}
+                                    >
+                                        <MenuItem value="">Use Default Welcome Email</MenuItem>
+                                        {emailTemplates.map((template) => (
+                                            <MenuItem 
+                                                key={template.id} 
+                                                value={template.id}
+                                                title={`${template.name} - ${template.subject}`} // Show full text on hover
+                                            >
+                                                {truncateText(`${template.name} - ${template.subject}`, 35)}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                                <Button
+                                    variant="outlined"
+                                    onClick={handleEmailTemplatePreview}
+                                    sx={{ 
+                                        minWidth: '120px',
+                                        height: '56px', // Match FormControl height
+                                        borderColor: '#633394',
+                                        color: '#633394',
+                                        '&:hover': {
+                                            borderColor: '#7c52a5',
+                                            backgroundColor: 'rgba(99, 51, 148, 0.04)'
+                                        }
+                                    }}
+                                    startIcon={<VisibilityIcon />}
+                                >
+                                    Preview
+                                </Button>
+                            </Box>
+                        )}
                     </Box>
                 </Box>
                 </Paper>
@@ -1557,6 +1658,21 @@ This email was sent to ${email}. If you received this email in error, please con
                 <DialogActions>
                     <Button onClick={handleCloseDialogs} color="secondary">Cancel</Button>
                     <Button 
+                        onClick={() => setOpenEmailPreviewDialog(true)}
+                        variant="outlined"
+                        disabled={!formData.username || !formData.email}
+                        sx={{ 
+                            color: '#633394', 
+                            borderColor: '#633394',
+                            '&:hover': { 
+                                backgroundColor: '#f5f5f5',
+                                borderColor: '#7c52a5'
+                            }
+                        }}
+                    >
+                        Preview Welcome Email
+                    </Button>
+                    <Button 
                         onClick={handleAddUser} 
                         variant="contained" 
                         sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
@@ -1777,6 +1893,38 @@ This email was sent to ${email}. If you received this email in error, please con
                     </Button>
                 </DialogActions>
             </Dialog>
+            
+            {/* Email Template Preview Dialog */}
+            <EmailPreviewDialog
+                open={emailPreviewDialogOpen}
+                onClose={handleCloseEmailPreview}
+                templateType="welcome"
+                userVariables={{
+                    username: formData.username || 'john_doe',
+                    email: formData.email || 'john.doe@example.com',
+                    firstname: formData.firstname || 'John',
+                    lastname: formData.lastname || 'Doe',
+                    password: '[Generated Password]',
+                    survey_code: '[Generated Survey Code]',
+                    organization_name: organizations.find(org => org.id.toString() === formData.organization_id?.toString())?.name || 'Sample Organization'
+                }}
+                selectedTemplate={selectedEmailTemplate}
+            />
+            
+            {/* Email Preview Dialog */}
+            <EmailPreviewDialog
+                open={openEmailPreviewDialog}
+                onClose={() => setOpenEmailPreviewDialog(false)}
+                templateType="welcome"
+                userVariables={{
+                    username: formData.username,
+                    email: formData.email,
+                    firstname: formData.firstname,
+                    password: '[Generated Password]',
+                    survey_code: '[Generated Survey Code]',
+                    organization_name: organizations.find(org => org.id === formData.organization_id)?.name || ''
+                }}
+            />
         </Box>
     );
 }

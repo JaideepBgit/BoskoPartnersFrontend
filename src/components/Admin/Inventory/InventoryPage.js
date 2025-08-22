@@ -87,9 +87,11 @@ const InventoryPage = () => {
     // Email Templates
     const [emailTemplates, setEmailTemplates] = useState([]);
 
-    const fetchEmailTemplates = async () => {
+    const fetchEmailTemplates = async (filterOrgId = null) => {
       try {
-        const data = await InventoryService.getEmailTemplates(null);
+        console.log('Fetching email templates from email_templates table...');
+        const data = await InventoryService.getEmailTemplates(null, filterOrgId);
+        console.log('Fetched email templates:', data);
         setEmailTemplates(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error('Error fetching email templates:', err.response || err);
@@ -647,9 +649,9 @@ const InventoryPage = () => {
         {activeTab === 3 && (
           <EmailTemplatesTab 
             emailTemplates={emailTemplates}
-            onRefreshData={() => {
-              fetchEmailTemplates();
-              // Also refresh template data in case email template operations affect survey template associations
+            onRefreshData={(filterOrgId = null) => {
+              fetchEmailTemplates(filterOrgId);
+              // Also refresh template data for consistency
               fetchTemplateVersions();
               fetchTemplates();
             }}

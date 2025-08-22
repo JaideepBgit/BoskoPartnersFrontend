@@ -25,6 +25,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import SettingsIcon from '@mui/icons-material/Settings';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 import MenuIcon from '@mui/icons-material/Menu';
 
 const Navbar = () => {
@@ -59,7 +60,8 @@ const Navbar = () => {
       else if (p.includes('/users'))     setTabValue(3);
       else if (p.includes('/reports'))   setTabValue(4);
       else if (p.includes('/visual-builder')) setTabValue(5);
-      else if (p.includes('/settings'))  setTabValue(6);
+      else if (p.includes('/user-reports')) setTabValue(6);
+      else if (p.includes('/settings'))  setTabValue(7);
       else                                setTabValue(0);
     } else {
       // For regular users
@@ -80,7 +82,8 @@ const Navbar = () => {
       case 3: navigate('/users');     break;
       case 4: navigate('/reports');   break;
       case 5: navigate('/visual-builder'); break;
-      case 6: navigate('/settings');  break;
+      case 6: navigate('/user-reports'); break;
+      case 7: navigate('/settings');  break;
       default: navigate('/home');
     }
   };
@@ -137,8 +140,12 @@ const Navbar = () => {
             <ListItemIcon><BarChartIcon color={tabValue === 5 ? 'primary' : 'inherit'} /></ListItemIcon>
             <ListItemText primary="Visual Builder" />
           </ListItem>
-          <ListItem button onClick={() => navigate('/settings')} selected={tabValue === 6}>
-            <ListItemIcon><SettingsIcon color={tabValue === 6 ? 'primary' : 'inherit'} /></ListItemIcon>
+          <ListItem button onClick={() => navigate('/user-reports')} selected={tabValue === 6}>
+            <ListItemIcon><AssessmentIcon color={tabValue === 6 ? 'primary' : 'inherit'} /></ListItemIcon>
+            <ListItemText primary="User Reports" />
+          </ListItem>
+          <ListItem button onClick={() => navigate('/settings')} selected={tabValue === 7}>
+            <ListItemIcon><SettingsIcon color={tabValue === 7 ? 'primary' : 'inherit'} /></ListItemIcon>
             <ListItemText primary="Settings" />
           </ListItem>
         </List>
@@ -221,6 +228,7 @@ const Navbar = () => {
                 <Tab icon={<PeopleIcon />} label="Users Management" iconPosition="start" />
                 <Tab icon={<BarChartIcon />} label="Reports Page" iconPosition="start" />
                 <Tab icon={<BarChartIcon />} label="Visual Builder" iconPosition="start" />
+                <Tab icon={<AssessmentIcon />} label="User Reports" iconPosition="start" />
                 <Tab icon={<SettingsIcon />} label="Settings" iconPosition="start" />
               </Tabs>
             )}

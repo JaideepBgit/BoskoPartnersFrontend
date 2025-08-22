@@ -121,18 +121,12 @@ function AdminDashboard({ onLogout }) {
                 const users = await usersResponse.json();
                 console.log('Fetched Users:', users);
 
-                // Fetch user details to determine completion status
-                const userDetailsResponse = await fetch('/api/user-details');
-                const userDetailsData = await userDetailsResponse.json();
-                
-                // Process users data with correct field names and completion status
+                // Process users data with status based on survey_responses.status
                 const processedUsers = users.map(user => {
-                    const userDetails = userDetailsData.find(detail => detail.user_id === user.id);
-                    const isCompleted = userDetails?.is_submitted === true;
-                    
                     // Find associated survey response for this user
                     const surveyResponse = responsesData.find(response => response.user_id === user.id);
-                    
+                    const displayStatus = surveyResponse?.status === 'completed' ? 'Filled' : 'Not-Filled';
+
                     return {
                         id: user.id,
                         name: `${user.firstname} ${user.lastname}`,
@@ -142,7 +136,7 @@ function AdminDashboard({ onLogout }) {
                         company_id: user.organization_id,
                         company_name: user.organization?.name,
                         reminder: 0,
-                        status: isCompleted ? 'Filled' : 'Not-Filled',
+                        status: displayStatus,
                         survey_code: user.survey_code,
                         // Add survey response information
                         response_id: surveyResponse?.id || null,
@@ -1230,7 +1224,9 @@ Visit: www.saurara.org | Email: support@saurara.org`;
                                             .map((user) => {
                                                 const pendingUser = pendingUsers.find(p => p.id === user.id);
                                                 const daysSinceCreated = pendingUser?.days_since_creation || 0;
-                                                const hasStartedSurvey = pendingUser?.has_started_survey || false;
+                                                const progressStatus = user.response_status || 'pending';
+                                                const progressLabel = progressStatus === 'completed' ? 'Completed' : (progressStatus === 'in_progress' ? 'In Progress' : 'Not Started');
+                                                const progressColor = progressStatus === 'completed' ? 'success' : (progressStatus === 'in_progress' ? 'info' : 'default');
                                                 const isSelectable = user.status === 'Not-Filled';
                                                 
                                                 return (
@@ -1290,21 +1286,12 @@ Visit: www.saurara.org | Email: support@saurara.org`;
                                                             </Box>
                                                         </TableCell>
                                                         <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}` }}>
-                                                            {hasStartedSurvey ? (
-                                                                <Chip 
-                                                                    label={`Page ${pendingUser?.last_page || 1}`}
-                                                                    size="small"
-                                                                    color="info"
-                                                                    variant="outlined"
-                                                                />
-                                                            ) : (
-                                                                <Chip 
-                                                                    label="Not Started"
-                                                                    size="small"
-                                                                    color="default"
-                                                                    variant="outlined"
-                                                                />
-                                                            )}
+                                                            <Chip 
+                                                                label={progressLabel}
+                                                                size="small"
+                                                                color={progressColor}
+                                                                variant="outlined"
+                                                            />
                                                         </TableCell>
                                                         <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}` }}>
                                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

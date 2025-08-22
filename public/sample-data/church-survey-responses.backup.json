@@ -168,12 +168,7 @@
       "church_support_looks_like": "Quarterly church visits and support materials",
       "ongoing_learning_needs": "Leadership development and church growth",
       "retrain_where": "Would supplement with additional theological education",
-      "recommend_where": "Combination of denominational and formal theological training",
-      "latitude": 4.8491824,
-      "longitude": 7.0513889,
-      "state": "Rivers",
-      "timezone": "Africa/Lagos",
-      "formatted_address": "15 Port Harcourt - Aba Expy, Elelenwo, Port Harcourt 500102, Rivers, Nigeria"
+      "recommend_where": "Combination of denominational and formal theological training"
     },
     {
       "id": 4,
@@ -227,12 +222,7 @@
       "church_support_looks_like": "Regular training materials and church support",
       "ongoing_learning_needs": "Leadership development and counseling skills",
       "retrain_where": "Would consider additional formal theological education",
-      "recommend_where": "Formal theological seminary for broader perspective",
-      "latitude": 6.4351103,
-      "longitude": 7.5248175,
-      "state": "Enugu",
-      "timezone": "Africa/Lagos",
-      "formatted_address": "Independence Layout, Enugu, Nigeria"
+      "recommend_where": "Formal theological seminary for broader perspective"
     },
     {
       "id": 5,
@@ -286,12 +276,7 @@
       "church_support_looks_like": "Church planting support and materials",
       "ongoing_learning_needs": "Contemporary ministry issues and counseling",
       "retrain_where": "Same institution with additional training",
-      "recommend_where": "Deeper Life Bible Training School for biblical foundation",
-      "latitude": 6.149896099999999,
-      "longitude": 6.7742168,
-      "state": "Anambra",
-      "timezone": "Africa/Lagos",
-      "formatted_address": "Market, 12 Bida Rd, near Nze Shopping Plaza, City Centre, Onitsha 431108, Anambra, Nigeria"
+      "recommend_where": "Deeper Life Bible Training School for biblical foundation"
     },
     {
       "id": 6,
@@ -305,7 +290,7 @@
       "state": "Greater Accra Region",
       "country": "Ghana",
       "latitude": 5.6037,
-      "longitude": -0.187,
+      "longitude": -0.1870,
       "timezone": "Africa/Accra",
       "is_senior_pastor": "Yes",
       "age_group": "51-60 YRS",
@@ -403,12 +388,7 @@
       "church_support_looks_like": "Diocesan support and resource sharing",
       "ongoing_learning_needs": "Leadership in changing contexts and youth ministry",
       "retrain_where": "Same institution with additional specialization",
-      "recommend_where": "St. Paul's University for Anglican ministry",
-      "latitude": -1.2866945,
-      "longitude": 36.816937,
-      "state": "Nairobi County",
-      "timezone": "Africa/Nairobi",
-      "formatted_address": "Kenyatta Ave, Nairobi, Kenya"
+      "recommend_where": "St. Paul's University for Anglican ministry"
     },
     {
       "id": 8,
@@ -462,12 +442,7 @@
       "church_support_looks_like": "Hierarchical church support system",
       "ongoing_learning_needs": "Contemporary ministry approaches and counseling",
       "retrain_where": "Would supplement with modern ministry training",
-      "recommend_where": "Combination of traditional and modern theological education",
-      "latitude": 9.018253699999999,
-      "longitude": 38.8029421,
-      "state": "Addis Ababa",
-      "timezone": "Africa/Addis_Ababa",
-      "formatted_address": "2R93+854, Addis Ababa, Ethiopia"
+      "recommend_where": "Combination of traditional and modern theological education"
     },
     {
       "id": 9,
@@ -521,12 +496,7 @@
       "church_support_looks_like": "",
       "ongoing_learning_needs": "Leadership development and church growth",
       "retrain_where": "Would seek additional specialized training",
-      "recommend_where": "Larger theological institution with more resources",
-      "latitude": 0.3201561,
-      "longitude": 32.5738548,
-      "state": "Central Region",
-      "timezone": "Africa/Kampala",
-      "formatted_address": "12 Bombo Rd, Kampala, Uganda"
+      "recommend_where": "Larger theological institution with more resources"
     },
     {
       "id": 10,
@@ -580,12 +550,7 @@
       "church_support_looks_like": "Synodical support and resource sharing",
       "ongoing_learning_needs": "Multicultural ministry and social justice",
       "retrain_where": "Same institution with additional contemporary training",
-      "recommend_where": "University of Stellenbosch for academic rigor",
-      "latitude": -33.923929,
-      "longitude": 18.4199531,
-      "state": "Western Cape",
-      "timezone": "Africa/Johannesburg",
-      "formatted_address": "15 Church St, Cape Town City Centre, Cape Town, 8000, South Africa"
+      "recommend_where": "University of Stellenbosch for academic rigor"
     },
     {
       "id": 11,
@@ -639,12 +604,7 @@
       "church_support_looks_like": "Conference oversight and resource sharing",
       "ongoing_learning_needs": "Digital ministry and contemporary theology",
       "retrain_where": "Same institution - excellent foundation",
-      "recommend_where": "Immanuel College for Methodist ministry",
-      "latitude": 6.448996500000001,
-      "longitude": 3.3952086,
-      "state": "Lagos",
-      "timezone": "Africa/Lagos",
-      "formatted_address": "23 Broad St, Lagos Island, Lagos 102273, Lagos, Nigeria"
+      "recommend_where": "Immanuel College for Methodist ministry"
     },
     {
       "id": 12,
@@ -698,12 +658,7 @@
       "church_support_looks_like": "",
       "ongoing_learning_needs": "Leadership development and church growth",
       "retrain_where": "Same institution with additional training",
-      "recommend_where": "West Africa Theological Seminary for quality training",
-      "latitude": 11.9600029,
-      "longitude": 8.5573876,
-      "state": "Kano",
-      "timezone": "Africa/Lagos",
-      "formatted_address": "45 Zaria Rd, Kano 700101, Kano, Nigeria"
+      "recommend_where": "West Africa Theological Seminary for quality training"
     }
   ]
-}
+} 
