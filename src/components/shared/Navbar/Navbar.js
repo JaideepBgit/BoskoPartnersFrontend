@@ -4,8 +4,6 @@ import {
   Toolbar, 
   Button, 
   Box, 
-  Tabs, 
-  Tab, 
   IconButton, 
   Drawer, 
   List, 
@@ -34,14 +32,14 @@ const Navbar = () => {
   const [user, setUser] = useState(null);
   const [tabValue, setTabValue] = useState(0);
   const [userTabValue, setUserTabValue] = useState(0);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const logoImage = process.env.PUBLIC_URL + '/assets/saurara-high-resolution-logo-transparent.png';
   
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
+  const handleSidebarToggle = () => {
+    setSidebarOpen(!sidebarOpen);
   };
 
   // load user once
@@ -73,29 +71,9 @@ const Navbar = () => {
     }
   }, [location, user]);
 
-  const handleTabChange = (_, v) => {
-    setTabValue(v);
-    switch (v) {
-      case 0: navigate('/home'); break; // Navigate to home page
-      case 1: navigate('/dashboard'); break; // Navigate to dashboard
-      case 2: navigate('/inventory'); break;
-      case 3: navigate('/users');     break;
-      case 4: navigate('/reports');   break;
-      case 5: navigate('/visual-builder'); break;
-      case 6: navigate('/user-reports'); break;
-      case 7: navigate('/settings');  break;
-      default: navigate('/home');
-    }
-  };
-
-  const handleUserTabChange = (_, v) => {
-    setUserTabValue(v);
-    switch (v) {
-      case 0: navigate('/profile'); break; // Navigate to profile for regular users
-      case 1: navigate('/surveys');   break;
-      case 2: navigate('/reports');   break;
-      default: navigate('/profile');
-    }
+  const handleNavigation = (path) => {
+    navigate(path);
+    setSidebarOpen(false); // Close sidebar after navigation
   };
 
   const handleLogout = () => {
@@ -103,195 +81,394 @@ const Navbar = () => {
     navigate('/login');
   };
 
-  // Mobile drawer content
-  const drawerContent = (
-    <Box sx={{ width: 250 }} role="presentation" onClick={handleDrawerToggle}>
-      <Box sx={{ p: 2, display: 'flex', justifyContent: 'center' }}>
+  // Sidebar content
+  const sidebarContent = (
+    <Box sx={{ width: 280 }} role="presentation">
+      <Box sx={{ p: 3, display: 'flex', justifyContent: 'center', borderBottom: '1px solid #e0e0e0' }}>
         <img
           src={logoImage}
           alt="SAURARA Logo"
-          style={{ maxWidth: '150px', height: 'auto' }}
+          style={{ maxWidth: '180px', height: 'auto' }}
         />
       </Box>
-      <Divider />
       {user?.role === 'admin' ? (
-        <List>
-          <ListItem button onClick={() => navigate('/home')} selected={tabValue === 0}>
-            <ListItemIcon><HomeIcon color={tabValue === 0 ? 'primary' : 'inherit'} /></ListItemIcon>
+        <List sx={{ pt: 2 }}>
+          <ListItem 
+            button 
+            onClick={() => handleNavigation('/home')} 
+            selected={tabValue === 0}
+            sx={{
+              '&.Mui-selected': {
+                backgroundColor: '#633394',
+                color: 'white',
+                '& .MuiListItemIcon-root': {
+                  color: 'white',
+                },
+                '&:hover': {
+                  backgroundColor: '#533082',
+                },
+              },
+              '&:hover': {
+                backgroundColor: '#f5f5f5',
+              },
+              borderRadius: '8px',
+              mx: 1,
+              mb: 0.5,
+            }}
+          >
+            <ListItemIcon><HomeIcon /></ListItemIcon>
             <ListItemText primary="Home" />
           </ListItem>
-          <ListItem button onClick={() => navigate('/dashboard')} selected={tabValue === 1}>
-            <ListItemIcon><DashboardIcon color={tabValue === 1 ? 'primary' : 'inherit'} /></ListItemIcon>
+          <ListItem 
+            button 
+            onClick={() => handleNavigation('/dashboard')} 
+            selected={tabValue === 1}
+            sx={{
+              '&.Mui-selected': {
+                backgroundColor: '#633394',
+                color: 'white',
+                '& .MuiListItemIcon-root': {
+                  color: 'white',
+                },
+                '&:hover': {
+                  backgroundColor: '#533082',
+                },
+              },
+              '&:hover': {
+                backgroundColor: '#f5f5f5',
+              },
+              borderRadius: '8px',
+              mx: 1,
+              mb: 0.5,
+            }}
+          >
+            <ListItemIcon><DashboardIcon /></ListItemIcon>
             <ListItemText primary="Dashboard" />
           </ListItem>
-          <ListItem button onClick={() => navigate('/inventory')} selected={tabValue === 2}>
-            <ListItemIcon><Inventory2Icon color={tabValue === 2 ? 'primary' : 'inherit'} /></ListItemIcon>
+          <ListItem 
+            button 
+            onClick={() => handleNavigation('/inventory')} 
+            selected={tabValue === 2}
+            sx={{
+              '&.Mui-selected': {
+                backgroundColor: '#633394',
+                color: 'white',
+                '& .MuiListItemIcon-root': {
+                  color: 'white',
+                },
+                '&:hover': {
+                  backgroundColor: '#533082',
+                },
+              },
+              '&:hover': {
+                backgroundColor: '#f5f5f5',
+              },
+              borderRadius: '8px',
+              mx: 1,
+              mb: 0.5,
+            }}
+          >
+            <ListItemIcon><Inventory2Icon /></ListItemIcon>
             <ListItemText primary="Inventory Page" />
           </ListItem>
-          <ListItem button onClick={() => navigate('/users')} selected={tabValue === 3}>
-            <ListItemIcon><PeopleIcon color={tabValue === 3 ? 'primary' : 'inherit'} /></ListItemIcon>
+          <ListItem 
+            button 
+            onClick={() => handleNavigation('/users')} 
+            selected={tabValue === 3}
+            sx={{
+              '&.Mui-selected': {
+                backgroundColor: '#633394',
+                color: 'white',
+                '& .MuiListItemIcon-root': {
+                  color: 'white',
+                },
+                '&:hover': {
+                  backgroundColor: '#533082',
+                },
+              },
+              '&:hover': {
+                backgroundColor: '#f5f5f5',
+              },
+              borderRadius: '8px',
+              mx: 1,
+              mb: 0.5,
+            }}
+          >
+            <ListItemIcon><PeopleIcon /></ListItemIcon>
             <ListItemText primary="Users Management" />
           </ListItem>
-          <ListItem button onClick={() => navigate('/reports')} selected={tabValue === 4}>
-            <ListItemIcon><BarChartIcon color={tabValue === 4 ? 'primary' : 'inherit'} /></ListItemIcon>
+          <ListItem 
+            button 
+            onClick={() => handleNavigation('/reports')} 
+            selected={tabValue === 4}
+            sx={{
+              '&.Mui-selected': {
+                backgroundColor: '#633394',
+                color: 'white',
+                '& .MuiListItemIcon-root': {
+                  color: 'white',
+                },
+                '&:hover': {
+                  backgroundColor: '#533082',
+                },
+              },
+              '&:hover': {
+                backgroundColor: '#f5f5f5',
+              },
+              borderRadius: '8px',
+              mx: 1,
+              mb: 0.5,
+            }}
+          >
+            <ListItemIcon><BarChartIcon /></ListItemIcon>
             <ListItemText primary="Reports Page" />
           </ListItem>
-          <ListItem button onClick={() => navigate('/visual-builder')} selected={tabValue === 5}>
-            <ListItemIcon><BarChartIcon color={tabValue === 5 ? 'primary' : 'inherit'} /></ListItemIcon>
+          <ListItem 
+            button 
+            onClick={() => handleNavigation('/visual-builder')} 
+            selected={tabValue === 5}
+            sx={{
+              '&.Mui-selected': {
+                backgroundColor: '#633394',
+                color: 'white',
+                '& .MuiListItemIcon-root': {
+                  color: 'white',
+                },
+                '&:hover': {
+                  backgroundColor: '#533082',
+                },
+              },
+              '&:hover': {
+                backgroundColor: '#f5f5f5',
+              },
+              borderRadius: '8px',
+              mx: 1,
+              mb: 0.5,
+            }}
+          >
+            <ListItemIcon><BarChartIcon /></ListItemIcon>
             <ListItemText primary="Visual Builder" />
           </ListItem>
-          <ListItem button onClick={() => navigate('/user-reports')} selected={tabValue === 6}>
-            <ListItemIcon><AssessmentIcon color={tabValue === 6 ? 'primary' : 'inherit'} /></ListItemIcon>
+          <ListItem 
+            button 
+            onClick={() => handleNavigation('/user-reports')} 
+            selected={tabValue === 6}
+            sx={{
+              '&.Mui-selected': {
+                backgroundColor: '#633394',
+                color: 'white',
+                '& .MuiListItemIcon-root': {
+                  color: 'white',
+                },
+                '&:hover': {
+                  backgroundColor: '#533082',
+                },
+              },
+              '&:hover': {
+                backgroundColor: '#f5f5f5',
+              },
+              borderRadius: '8px',
+              mx: 1,
+              mb: 0.5,
+            }}
+          >
+            <ListItemIcon><AssessmentIcon /></ListItemIcon>
             <ListItemText primary="User Reports" />
           </ListItem>
-          <ListItem button onClick={() => navigate('/settings')} selected={tabValue === 7}>
-            <ListItemIcon><SettingsIcon color={tabValue === 7 ? 'primary' : 'inherit'} /></ListItemIcon>
+          <ListItem 
+            button 
+            onClick={() => handleNavigation('/settings')} 
+            selected={tabValue === 7}
+            sx={{
+              '&.Mui-selected': {
+                backgroundColor: '#633394',
+                color: 'white',
+                '& .MuiListItemIcon-root': {
+                  color: 'white',
+                },
+                '&:hover': {
+                  backgroundColor: '#533082',
+                },
+              },
+              '&:hover': {
+                backgroundColor: '#f5f5f5',
+              },
+              borderRadius: '8px',
+              mx: 1,
+              mb: 0.5,
+            }}
+          >
+            <ListItemIcon><SettingsIcon /></ListItemIcon>
             <ListItemText primary="Settings" />
           </ListItem>
         </List>
       ) : (
-        <List>
-          <ListItem button onClick={() => navigate('/profile')} selected={userTabValue === 0}>
-            <ListItemIcon><HomeIcon color={userTabValue === 0 ? 'primary' : 'inherit'} /></ListItemIcon>
+        <List sx={{ pt: 2 }}>
+          <ListItem 
+            button 
+            onClick={() => handleNavigation('/profile')} 
+            selected={userTabValue === 0}
+            sx={{
+              '&.Mui-selected': {
+                backgroundColor: '#633394',
+                color: 'white',
+                '& .MuiListItemIcon-root': {
+                  color: 'white',
+                },
+                '&:hover': {
+                  backgroundColor: '#533082',
+                },
+              },
+              '&:hover': {
+                backgroundColor: '#f5f5f5',
+              },
+              borderRadius: '8px',
+              mx: 1,
+              mb: 0.5,
+            }}
+          >
+            <ListItemIcon><HomeIcon /></ListItemIcon>
             <ListItemText primary="Profile" />
           </ListItem>
-          <ListItem button onClick={() => navigate('/surveys')} selected={userTabValue === 1}>
-            <ListItemIcon><AssignmentIcon color={userTabValue === 1 ? 'primary' : 'inherit'} /></ListItemIcon>
+          <ListItem 
+            button 
+            onClick={() => handleNavigation('/surveys')} 
+            selected={userTabValue === 1}
+            sx={{
+              '&.Mui-selected': {
+                backgroundColor: '#633394',
+                color: 'white',
+                '& .MuiListItemIcon-root': {
+                  color: 'white',
+                },
+                '&:hover': {
+                  backgroundColor: '#533082',
+                },
+              },
+              '&:hover': {
+                backgroundColor: '#f5f5f5',
+              },
+              borderRadius: '8px',
+              mx: 1,
+              mb: 0.5,
+            }}
+          >
+            <ListItemIcon><AssignmentIcon /></ListItemIcon>
             <ListItemText primary="Surveys" />
           </ListItem>
-          <ListItem button onClick={() => navigate('/reports')} selected={userTabValue === 2}>
-            <ListItemIcon><BarChartIcon color={userTabValue === 2 ? 'primary' : 'inherit'} /></ListItemIcon>
+          <ListItem 
+            button 
+            onClick={() => handleNavigation('/reports')} 
+            selected={userTabValue === 2}
+            sx={{
+              '&.Mui-selected': {
+                backgroundColor: '#633394',
+                color: 'white',
+                '& .MuiListItemIcon-root': {
+                  color: 'white',
+                },
+                '&:hover': {
+                  backgroundColor: '#533082',
+                },
+              },
+              '&:hover': {
+                backgroundColor: '#f5f5f5',
+              },
+              borderRadius: '8px',
+              mx: 1,
+              mb: 0.5,
+            }}
+          >
+            <ListItemIcon><BarChartIcon /></ListItemIcon>
             <ListItemText primary="Reports" />
           </ListItem>
         </List>
       )}
-      <Divider />
-      <List>
-        <ListItem button onClick={handleLogout}>
-          <ListItemIcon><LogoutIcon /></ListItemIcon>
-          <ListItemText primary="Logout" />
-        </ListItem>
-      </List>
+      <Box sx={{ position: 'absolute', bottom: 0, width: '100%' }}>
+        <Divider />
+        <List>
+          <ListItem 
+            button 
+            onClick={handleLogout}
+            sx={{
+              '&:hover': {
+                backgroundColor: '#ffebee',
+                color: '#d32f2f',
+                '& .MuiListItemIcon-root': {
+                  color: '#d32f2f',
+                },
+              },
+              borderRadius: '8px',
+              mx: 1,
+              my: 1,
+            }}
+          >
+            <ListItemIcon><LogoutIcon /></ListItemIcon>
+            <ListItemText primary="Logout" />
+          </ListItem>
+        </List>
+      </Box>
     </Box>
   );
 
   return (
-    <AppBar position="static" sx={{ backgroundColor: '#f5f5f5' }}>
-      <Toolbar>
-        {/* Mobile menu button */}
-        {isMobile && (
+    <>
+      <AppBar position="static" sx={{ backgroundColor: '#f5f5f5', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+        <Toolbar>
+          {/* Hamburger menu button - always visible */}
           <IconButton
             color="inherit"
             aria-label="open drawer"
             edge="start"
-            onClick={handleDrawerToggle}
+            onClick={handleSidebarToggle}
             sx={{ mr: 2, color: '#633394' }}
           >
             <MenuIcon />
           </IconButton>
-        )}
 
-        {/* Logo on left */}
-        <Box
-          sx={{ display: 'flex', alignItems: 'center', mr: 2, cursor: 'pointer' }}
-          onClick={() => navigate('/')}
-        >
-          <img
-            src={logoImage}
-            alt="SAURARA Logo"
-            style={{ maxWidth: isMobile ? '120px' : '180px', height: 'auto', margin: 4 }}
-          />
-        </Box>
-
-        {/* Desktop navigation */}
-        {!isMobile && (
-          <>
-            {/* Admin-only tabs */}
-            {user?.role === 'admin' && (
-              <Tabs
-                value={tabValue}
-                onChange={handleTabChange}
-                sx={{
-                  '& .MuiTab-root': {
-                    color: '#633394',
-                    fontWeight: 500,
-                    '&.Mui-selected': { fontWeight: 700 },
-                  },
-                  '& .MuiTabs-indicator': {
-                    backgroundColor: '#633394',
-                  },
-                }}
-              >
-                <Tab icon={<HomeIcon />} label="Home" iconPosition="start" />
-                <Tab icon={<DashboardIcon />} label="Dashboard" iconPosition="start" />
-                <Tab icon={<Inventory2Icon />} label="Inventory Page" iconPosition="start" />
-                <Tab icon={<PeopleIcon />} label="Users Management" iconPosition="start" />
-                <Tab icon={<BarChartIcon />} label="Reports Page" iconPosition="start" />
-                <Tab icon={<BarChartIcon />} label="Visual Builder" iconPosition="start" />
-                <Tab icon={<AssessmentIcon />} label="User Reports" iconPosition="start" />
-                <Tab icon={<SettingsIcon />} label="Settings" iconPosition="start" />
-              </Tabs>
-            )}
-
-            {/* User tabs */}
-            {(!user || user?.role === 'user') && (
-              <Tabs
-                value={userTabValue}
-                onChange={handleUserTabChange}
-                sx={{
-                  '& .MuiTab-root': {
-                    color: '#633394',
-                    fontWeight: 500,
-                    '&.Mui-selected': { fontWeight: 700 },
-                  },
-                  '& .MuiTabs-indicator': {
-                    backgroundColor: '#633394',
-                  },
-                }}
-              >
-                <Tab icon={<HomeIcon />} label="Profile" iconPosition="start" />
-                <Tab icon={<AssignmentIcon />} label="Surveys" iconPosition="start" />
-                <Tab icon={<BarChartIcon />} label="Reports" iconPosition="start" />
-              </Tabs>
-            )}
-          </>
-        )}
-
-        {/* <-- Spacer pushes Logout to the right --> */}
-        <Box sx={{ flexGrow: 1 }} />
-
-        {/* Logout always on the right - only show on desktop */}
-        {!isMobile && (
-          <Button
-            onClick={handleLogout}
-            startIcon={<LogoutIcon />}
-            sx={{
-              color: '#633394',
-              fontWeight: 700,
-              '&:hover': { color: '#967CB2' },
+          {/* Logo in center */}
+          <Box
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              flexGrow: 1, 
+              justifyContent: 'center',
+              cursor: 'pointer' 
             }}
+            onClick={() => navigate('/')}
           >
-            Logout
-          </Button>
-        )}
-      </Toolbar>
+            <img
+              src={logoImage}
+              alt="SAURARA Logo"
+              style={{ maxWidth: isMobile ? '140px' : '200px', height: 'auto', margin: 4 }}
+            />
+          </Box>
 
-      {/* Mobile drawer */}
+          {/* Empty box to balance the layout */}
+          <Box sx={{ width: 48 }} />
+        </Toolbar>
+      </AppBar>
+
+      {/* Sidebar */}
       <Drawer
         variant="temporary"
-        open={mobileOpen}
-        onClose={handleDrawerToggle}
+        open={sidebarOpen}
+        onClose={handleSidebarToggle}
         ModalProps={{
-          keepMounted: true, // Better open performance on mobile
+          keepMounted: true, // Better open performance
         }}
         sx={{
-          display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 250 },
+          '& .MuiDrawer-paper': { 
+            boxSizing: 'border-box', 
+            width: 280,
+            height: '100vh',
+            position: 'relative'
+          },
         }}
       >
-        {drawerContent}
+        {sidebarContent}
       </Drawer>
-    </AppBar>
+    </>
   );
 };
 

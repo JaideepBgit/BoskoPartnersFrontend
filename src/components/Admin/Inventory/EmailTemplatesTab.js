@@ -35,7 +35,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import InventoryService from '../../../services/Admin/Inventory/InventoryService';
-import EmailService from '../../../services/EmailService';
+import { EmailService } from '../../../services/EmailService';
 
 /**
  * A simple CRUD interface for managing email templates from the admin inventory page.
@@ -258,7 +258,8 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
     try {
       setLoadingSampleTemplates(true);
       // Fetch public templates and default templates as samples
-      const data = await InventoryService.getEmailTemplates();
+      const response = await EmailService.getTemplates();
+      const data = response.templates || response;
       const samples = (data || []).filter(template => 
         template.is_public || 
         (template.name && (template.name.includes('Default') || template.name.includes('Sample')))
@@ -320,58 +321,60 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
     setDialogOpen(true);
   };
 
-  // Replace template variables with sample data
-  const replaceTemplateVariables = (htmlContent, organizationName = 'Sample Organization') => {
-    // Define comprehensive sample variables
-    const sampleVariables = {
-      // Single brace format
-      '{greeting}': 'Dear John Doe',
-      '{username}': 'johndoe',
-      '{email}': 'john.doe@example.com',
-      '{password}': '********',
-      '{survey_code}': 'SURVEY123',
-      '{organization_name}': organizationName,
-      '{first_name}': 'John',
-      '{last_name}': 'Doe',
-      '{login_url}': 'https://platform.saurara.com/login',
-      '{survey_url}': 'https://platform.saurara.com/survey/SURVEY123',
-      '{support_email}': 'support@saurara.com',
-      '{user_fullname}': 'John Doe',
-      '{platform_name}': 'Saurara Platform',
-      '{current_date}': new Date().toLocaleDateString(),
-      '{current_year}': new Date().getFullYear().toString(),
-      
-      // Double brace format  
-      '{{greeting}}': 'Dear John Doe',
-      '{{username}}': 'johndoe',
-      '{{email}}': 'john.doe@example.com',
-      '{{password}}': '********',
-      '{{survey_code}}': 'SURVEY123',
-      '{{organization_name}}': organizationName,
-      '{{first_name}}': 'John',
-      '{{last_name}}': 'Doe',
-      '{{login_url}}': 'https://platform.saurara.com/login',
-      '{{survey_url}}': 'https://platform.saurara.com/survey/SURVEY123',
-      '{{support_email}}': 'support@saurara.com',
-      '{{user_fullname}}': 'John Doe',
-      '{{platform_name}}': 'Saurara Platform',
-      '{{current_date}}': new Date().toLocaleDateString(),
-      '{{current_year}}': new Date().getFullYear().toString()
+  // Generate sample variables for template preview (using backend rendering)
+  const getSampleVariables = (organizationName = 'Sample Organization') => {
+    return {
+      greeting: 'Dear John Doe',
+      username: 'johndoe',
+      email: 'john.doe@example.com',
+      password: '********',
+      survey_code: 'SURVEY123',
+      organization_name: organizationName,
+      first_name: 'John',
+      last_name: 'Doe',
+      login_url: 'https://platform.saurara.com/login',
+      survey_url: 'https://platform.saurara.com/survey/SURVEY123',
+      support_email: 'support@saurara.com',
+      user_fullname: 'John Doe',
+      platform_name: 'Saurara Platform',
+      current_date: new Date().toLocaleDateString(),
+      current_year: new Date().getFullYear().toString(),
     };
-    
-    // Replace variables in content
-    let processedHtml = htmlContent;
-    Object.entries(sampleVariables).forEach(([variable, value]) => {
-      // Create a global regex to replace all occurrences
-      const regex = new RegExp(variable.replace(/[{}]/g, '\\$&'), 'gi');
-      processedHtml = processedHtml.replace(regex, value);
-    });
-    
-    return processedHtml;
+  };
+
+  // Render template content with variables using backend service
+  const renderTemplateContent = async (templateType, htmlContent, organizationName = 'Sample Organization') => {
+    try {
+      // For default template types (welcome, reminder), use the backend render service
+      if (templateType === 'welcome' || templateType === 'reminder') {
+        const variables = getSampleVariables(organizationName);
+        const renderedPreview = await EmailService.renderPreview(templateType, variables);
+        return renderedPreview.html_body || htmlContent;
+      }
+      
+      // For custom templates, we can't use backend rendering since they don't match template types
+      // Fall back to simple variable replacement (this is a limitation until backend supports custom template rendering)
+      const variables = getSampleVariables(organizationName);
+      let processedHtml = htmlContent;
+      
+      // Replace common template variables manually as fallback
+      Object.entries(variables).forEach(([key, value]) => {
+        const singleBrace = new RegExp(`{${key}}`, 'gi');
+        const doubleBrace = new RegExp(`{{${key}}}`, 'gi');
+        processedHtml = processedHtml.replace(singleBrace, value);
+        processedHtml = processedHtml.replace(doubleBrace, value);
+      });
+      
+      return processedHtml;
+    } catch (error) {
+      console.error('Error rendering template:', error);
+      // Fallback to original content if rendering fails
+      return htmlContent;
+    }
   };
 
   // Generate preview content with sample variables
-  const generatePreviewContent = () => {
+  const generatePreviewContent = async () => {
     let htmlContent = formData.html_body;
     
     // If auto-generating HTML and we have text content, use that
@@ -387,14 +390,29 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
     const selectedOrg = orgOptions.find(org => org.id.toString() === formData.organization_id?.toString());
     const organizationName = selectedOrg?.name || 'Sample Organization';
     
-    return replaceTemplateVariables(htmlContent, organizationName);
+    // Determine template type based on name (for backend rendering)
+    const templateName = formData.name?.toLowerCase() || '';
+    let templateType = 'custom';
+    if (templateName.includes('welcome')) {
+      templateType = 'welcome';
+    } else if (templateName.includes('reminder')) {
+      templateType = 'reminder';
+    }
+    
+    return await renderTemplateContent(templateType, htmlContent, organizationName);
   };
 
   // Open preview dialog
-  const openPreview = () => {
-    const content = generatePreviewContent();
-    setPreviewContent(content);
-    setPreviewDialogOpen(true);
+  const openPreview = async () => {
+    try {
+      const content = await generatePreviewContent();
+      setPreviewContent(content);
+      setPreviewDialogOpen(true);
+    } catch (error) {
+      console.error('Error generating preview:', error);
+      setPreviewContent('<p style="color: #f44336; text-align: center; padding: 40px;">Error generating preview. Please check your template content.</p>');
+      setPreviewDialogOpen(true);
+    }
   };
 
   // Close preview dialog
@@ -404,12 +422,21 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
   };
 
   // Preview an existing template
-  const previewExistingTemplate = (template) => {
+  const previewExistingTemplate = async (template) => {
     let previewHtml = template.html_body || '<p style="color: #666; text-align: center; padding: 40px;">No HTML content available for this template.</p>';
     
     // Use the centralized variable replacement function
     const organizationName = template.organization_name || 'Sample Organization';
-    previewHtml = replaceTemplateVariables(previewHtml, organizationName);
+    // Determine template type based on name (for backend rendering)
+    const templateName = template.name?.toLowerCase() || '';
+    let templateType = 'custom';
+    if (templateName.includes('welcome')) {
+      templateType = 'welcome';
+    } else if (templateName.includes('reminder')) {
+      templateType = 'reminder';
+    }
+    
+    previewHtml = await renderTemplateContent(templateType, previewHtml, organizationName);
 
     // Temporarily set form data for preview display
     const tempFormData = {
@@ -616,9 +643,9 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
       };
 
       if (editingTemplate) {
-        await InventoryService.updateEmailTemplate(editingTemplate.id, payload);
+        await EmailService.updateTemplate(editingTemplate.id, payload);
       } else {
-        await InventoryService.addEmailTemplate(payload);
+        await EmailService.createTemplate(payload);
       }
       closeDialog();
       onRefreshData && onRefreshData();
@@ -644,7 +671,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
   const handleDelete = async (templateId) => {
     if (!window.confirm('Are you sure you want to delete this template?')) return;
     try {
-      await InventoryService.deleteEmailTemplate(templateId);
+      await EmailService.deleteTemplate(templateId);
       onRefreshData && onRefreshData();
     } catch (err) {
       console.error('Failed to delete email template:', err.response || err);
@@ -879,7 +906,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
                     <ListItemSecondaryAction>
                       <IconButton 
                         edge="end" 
-                        onClick={() => previewExistingTemplate(tpl)}
+                        onClick={async () => await previewExistingTemplate(tpl)}
                         title="Preview this template"
                         sx={{ mr: 0.5 }}
                       >

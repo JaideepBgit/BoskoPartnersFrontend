@@ -14,6 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../shared/Navbar/Navbar';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
+import { EmailService } from '../../services/EmailService';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -372,150 +373,58 @@ function AdminDashboard({ onLogout }) {
         setWelcomeEmailPreviewType('text');
     };
 
-    // Generate email preview content
-    const generateEmailPreview = (user, pendingUser) => {
-        if (!user) return { text: '', html: '' };
+    // Generate email preview content using backend EmailService
+    const generateEmailPreview = async (user, pendingUser) => {
+        if (!user) return { text: '', html: '', subject: '' };
 
-        const username = user.username;
-        const email = user.email;
-        const surveyCode = pendingUser?.survey_code || user.survey_code || 'N/A';
-        const firstname = user.name.split(' ')[0];
-        const organizationName = user.company_name;
-        const daysRemaining = pendingUser?.days_since_creation ? Math.max(30 - pendingUser.days_since_creation, 0) : null;
-        
-        const greeting = firstname ? `Dear ${firstname}` : `Dear ${username}`;
-        const orgText = organizationName ? ` from ${organizationName}` : "";
-        const deadlineText = daysRemaining ? ` You have ${daysRemaining} days remaining to complete it.` : "";
-
-        const textContent = `${greeting},
-
-We hope this message finds you well!
-
-This is a friendly reminder that you have a pending survey${orgText} on the Saurara Platform that requires your attention.${deadlineText}
-
-Your Survey Details:
-• Username: ${username}
-• Survey Code: ${surveyCode}
-• Survey Link: www.saurara.org
-
-Why Your Response Matters:
-Your input is invaluable in helping us understand and improve educational and community initiatives. Every response contributes to meaningful research that can make a real difference in communities like yours.
-
-What You Need to Do:
-1. Visit www.saurara.org
-2. Enter your survey code: ${surveyCode}
-3. Complete the survey at your convenience
-4. Submit your responses
-
-The survey typically takes 15-20 minutes to complete, and you can save your progress and return later if needed.
-
-Need Help?
-If you're experiencing any difficulties or have questions about the survey, please don't hesitate to reach out to our support team. We're here to help!
-
-We truly appreciate your time and participation. Your voice matters, and we look forward to receiving your valuable insights.
-
-Thank you for being part of the Saurara community!
-
-Best regards,
-The Saurara Research Team
-
----
-This is an automated reminder. If you have already completed the survey, please disregard this message.
-Visit: www.saurara.org | Email: support@saurara.org`;
-
-        const htmlContent = `<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px 20px; text-align: center; border-radius: 10px 10px 0 0; }
-        .content { background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; }
-        .footer { background: #f8f9fa; padding: 20px; border-radius: 0 0 10px 10px; border: 1px solid #e0e0e0; border-top: none; }
-        .highlight { background: #f0f8ff; padding: 15px; border-left: 4px solid #667eea; margin: 20px 0; }
-        .survey-details { background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0; }
-        .button { display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 10px 0; }
-        .steps { background: #fff9e6; padding: 20px; border-radius: 8px; margin: 20px 0; }
-        .steps ol { margin: 0; padding-left: 20px; }
-        .steps li { margin: 8px 0; }
-        .reminder-tag { background: #ff6b6b; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1 style="margin: 0; font-size: 28px;">🔔 Survey Reminder</h1>
-            <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Saurara Research Platform</p>
-        </div>
-        
-        <div class="content">
-            <p style="font-size: 18px; margin-bottom: 20px;">${greeting},</p>
+        try {
+            const username = user.username;
+            const email = user.email;
+            const surveyCode = pendingUser?.survey_code || user.survey_code || 'N/A';
+            const firstname = user.name.split(' ')[0];
+            const organizationName = user.company_name;
+            const daysRemaining = pendingUser?.days_since_creation ? Math.max(30 - pendingUser.days_since_creation, 0) : null;
             
-            <p>We hope this message finds you well!</p>
+            // Prepare variables for email template
+            const templateVariables = {
+                greeting: firstname ? `Dear ${firstname}` : `Dear ${username}`,
+                username: username,
+                email: email,
+                survey_code: surveyCode,
+                organization_name: organizationName || '',
+                first_name: firstname || '',
+                days_remaining: daysRemaining,
+                // Additional variables for reminder emails
+                org_text: organizationName ? ` from ${organizationName}` : '',
+                deadline_text: daysRemaining ? ` You have ${daysRemaining} days remaining to complete it.` : '',
+                platform_name: 'Saurara Platform',
+                support_email: 'support@saurara.org',
+                survey_url: 'https://www.saurara.org'
+            };
             
-            <div class="highlight">
-                <p><strong>📋 Pending Survey Reminder</strong></p>
-                <p>You have a pending survey${orgText} on the Saurara Platform that requires your attention.${deadlineText}</p>
-            </div>
+            // Get rendered email template from backend
+            const renderedPreview = await EmailService.renderPreview('reminder', templateVariables);
             
-            <div class="survey-details">
-                <h3 style="color: #2c5530; margin-top: 0;">📊 Your Survey Details</h3>
-                <ul style="list-style-type: none; padding-left: 0;">
-                    <li><strong>👤 Username:</strong> ${username}</li>
-                    <li><strong>🔑 Survey Code:</strong> <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-family: monospace;">${surveyCode}</code></li>
-                    <li><strong>🌐 Platform:</strong> <a href="http://www.saurara.org" style="color: #667eea;">www.saurara.org</a></li>
-                </ul>
-            </div>
+            return {
+                text: renderedPreview.text_body || 'No text version available',
+                html: renderedPreview.html_body || 'No HTML version available',
+                subject: renderedPreview.subject || '🔔 Reminder: Complete Your Saurara Survey'
+            };
             
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="http://www.saurara.org" class="button">🚀 Complete Survey Now</a>
-            </div>
+        } catch (error) {
+            console.error('Error generating email preview:', error);
             
-            <h3 style="color: #667eea;">🎯 Why Your Response Matters</h3>
-            <p>Your input is invaluable in helping us understand and improve educational and community initiatives. Every response contributes to meaningful research that can make a real difference in communities like yours.</p>
+            // Fallback to simple preview on error
+            const username = user.username;
+            const surveyCode = pendingUser?.survey_code || user.survey_code || 'N/A';
+            const firstname = user.name.split(' ')[0];
             
-            <div class="steps">
-                <h3 style="color: #b8860b; margin-top: 0;">📝 Quick Steps to Complete</h3>
-                <ol>
-                    <li>Visit <a href="http://www.saurara.org" style="color: #667eea;">www.saurara.org</a></li>
-                    <li>Enter your survey code: <strong>${surveyCode}</strong></li>
-                    <li>Complete the survey at your convenience</li>
-                    <li>Submit your responses</li>
-                </ol>
-                <p style="margin-bottom: 0;"><em>⏱️ Typically takes 15-20 minutes • 💾 Save progress and return later</em></p>
-            </div>
-            
-            <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #1565c0; margin-top: 0;">🆘 Need Help?</h3>
-                <p style="margin-bottom: 0;">If you're experiencing any difficulties or have questions about the survey, please don't hesitate to reach out to our support team. We're here to help!</p>
-            </div>
-            
-            <p>We truly appreciate your time and participation. Your voice matters, and we look forward to receiving your valuable insights.</p>
-            
-            <p style="font-weight: bold; color: #667eea;">Thank you for being part of the Saurara community! 🌟</p>
-        </div>
-        
-        <div class="footer">
-            <p style="margin: 0; text-align: center; color: #666; font-size: 14px;">
-                <strong>Best regards,<br>The Saurara Research Team</strong>
-            </p>
-            <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 15px 0;">
-            <p style="margin: 0; text-align: center; color: #888; font-size: 12px;">
-                <span class="reminder-tag">REMINDER</span><br><br>
-                This is an automated reminder. If you have already completed the survey, please disregard this message.<br>
-                <a href="http://www.saurara.org" style="color: #667eea;">www.saurara.org</a> | 
-                <a href="mailto:support@saurara.org" style="color: #667eea;">support@saurara.org</a>
-            </p>
-        </div>
-    </div>
-</body>
-</html>`;
-
-        return {
-            text: textContent,
-            html: htmlContent,
-            subject: "🔔 Reminder: Complete Your Saurara Survey"
-        };
+            return {
+                text: `Dear ${firstname || username},\n\nThis is a friendly reminder that you have a pending survey on the Saurara Platform.\n\nSurvey Code: ${surveyCode}\nVisit: www.saurara.org\n\nBest regards,\nThe Saurara Team`,
+                html: `<h2>Survey Reminder</h2><p>Dear ${firstname || username},</p><p>This is a friendly reminder that you have a pending survey on the Saurara Platform.</p><p><strong>Survey Code:</strong> ${surveyCode}<br><strong>Website:</strong> <a href="http://www.saurara.org">www.saurara.org</a></p><p>Best regards,<br>The Saurara Team</p>`,
+                subject: '🔔 Reminder: Complete Your Saurara Survey'
+            };
+        }
     };
 
     // Generate welcome email preview content

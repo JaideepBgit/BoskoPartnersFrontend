@@ -18,7 +18,7 @@ import {
     updateUserOrganizationalRoles, fetchTemplatesByOrganization
 } from '../../../services/UserManagement/UserManagementService';
 import InventoryService from '../../../services/Admin/Inventory/InventoryService';
-import EmailService from '../../../services/EmailService';
+import { EmailService } from '../../../services/EmailService';
 // import GooglePlacesAutocomplete from '../common/GooglePlacesAutocomplete';
 // import GooglePlacesAutocomplete from '../common/GooglePlacesAutocompleteSimple';
 // import ManualAddressInput from '../common/ManualAddressInput';
@@ -118,160 +118,63 @@ function UsersManagement() {
     // Google Places state
     const [addressSearch, setAddressSearch] = useState('');
 
-    // Generate email preview content
-    const generateWelcomeEmailPreview = () => {
-        const firstname = formData.firstname || 'User';
-        const username = formData.username || 'your-username';
-        const email = formData.email || 'user@example.com';
-        const password = formData.password || 'auto-generated-password';
-        const organizationName = formData.organization_id ? 
-            organizations.find(org => org.id === parseInt(formData.organization_id))?.name || 'Organization' : 
-            'Organization';
-        
-        // Generate a sample survey code (UUID format)
-        const surveyCode = `survey-${Math.random().toString(36).substr(2, 9)}-${Date.now().toString(36)}`;
-        
-        const subject = `🎉 Welcome to Saurara! Your Account is Ready`;
-        
-        // Text version
-        const textVersion = `Welcome to Saurara, ${firstname}!
-
-We're thrilled to have you join our community! We have created an account for you and you can now take surveys.
-
-=== YOUR ACCOUNT DETAILS ===
-📧 Email: ${email}
-👤 Username: ${username}
-🔑 Password: ${password}
-🏢 Organization: ${organizationName}
-🎯 Survey Code: ${surveyCode}
-
-=== GETTING STARTED ===
-1. Visit our platform at: https://saurara.com
-2. Log in using your credentials above
-3. Use your Survey Code (${surveyCode}) to access your assigned surveys
-4. Complete your profile setup
-5. Please complete your survey and use reports to generate reports
-
-=== IMPORTANT: YOUR SURVEY CODE ===
-Your unique Survey Code is: ${surveyCode}
-
-This code is required to access your assigned surveys and assessments. 
-Keep it safe and use it whenever you need to participate in surveys.
-
-=== WHAT'S NEXT? ===
-• Complete your user profile
-• Take part in surveys and assessments using your Survey Code
-• Connect with your organization
-• Use reports to generate insights
-
-Welcome aboard, ${firstname}! We're excited to see what you'll accomplish with Saurara.
-
-Best regards,
-The Saurara Team
-
----
-© ${new Date().getFullYear()} Saurara. All rights reserved.
-This email was sent to ${email}. If you received this email in error, please contact support@saurara.com`;
-
-        // HTML version
-        const htmlVersion = `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Saurara</title>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #633394 0%, #7c52a5 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-        .content { background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .details-box { background: #f8f9fa; border: 2px solid #633394; border-radius: 8px; padding: 20px; margin: 20px 0; }
-        .details-title { color: #633394; font-weight: bold; margin-bottom: 15px; font-size: 18px; }
-        .detail-item { margin: 8px 0; padding: 8px; background: white; border-radius: 4px; }
-        .section { margin: 25px 0; }
-        .section-title { color: #633394; font-weight: bold; font-size: 16px; margin-bottom: 10px; border-bottom: 2px solid #633394; padding-bottom: 5px; }
-        .steps { background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 10px 0; }
-        .step { margin: 5px 0; padding: 5px 0; }
-        .footer { text-align: center; margin-top: 30px; padding: 20px; background: #f5f5f5; border-radius: 8px; color: #666; }
-        .btn { background: #633394; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0; }
-        .btn:hover { background: #7c52a5; }
-        .emoji { font-size: 1.2em; margin-right: 5px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🎉 Welcome to Saurara!</h1>
-            <p>Your account is ready to use, ${firstname}!</p>
-        </div>
-        
-        <div class="content">
-            <p>We're thrilled to have you join our community! We have created an account for you and you can now take surveys.</p>
+    // Generate email preview content using backend EmailService
+    const generateWelcomeEmailPreview = async () => {
+        try {
+            setEmailPreviewLoading(true);
             
-            <div class="details-box">
-                <div class="details-title"><span class="emoji">🔐</span>Your Account Details</div>
-                <div class="detail-item"><strong>📧 Email:</strong> ${email}</div>
-                <div class="detail-item"><strong>👤 Username:</strong> ${username}</div>
-                <div class="detail-item"><strong>🔑 Password:</strong> ${password}</div>
-                <div class="detail-item"><strong>🏢 Organization:</strong> ${organizationName}</div>
-                <div class="detail-item"><strong>🎯 Survey Code:</strong> ${surveyCode}</div>
-            </div>
+            const firstname = formData.firstname || 'User';
+            const username = formData.username || 'your-username';
+            const email = formData.email || 'user@example.com';
+            const password = formData.password || 'auto-generated-password';
+            const organizationName = formData.organization_id ? 
+                organizations.find(org => org.id === parseInt(formData.organization_id))?.name || 'Organization' : 
+                'Organization';
             
-            <div class="section">
-                <div class="section-title"><span class="emoji">🚀</span>Getting Started</div>
-                <div class="steps">
-                    <div class="step">1. Visit our platform at: <strong>https://saurara.com</strong></div>
-                    <div class="step">2. Log in using your credentials above</div>
-                    <div class="step">3. Use your Survey Code (<strong>${surveyCode}</strong>) to access your assigned surveys</div>
-                    <div class="step">4. Complete your profile setup</div>
-                    <div class="step">5. Please complete your survey and use reports to generate reports</div>
-                </div>
-                <a href="https://saurara.com" class="btn">Access Saurara Platform</a>
-            </div>
+            // Generate a sample survey code (UUID format)
+            const surveyCode = `survey-${Math.random().toString(36).substr(2, 9)}-${Date.now().toString(36)}`;
             
-            <div class="section">
-                <div class="section-title"><span class="emoji">🎯</span>Important: Your Survey Code</div>
-                <div class="details-box" style="background: #fff3e0; border: 2px solid #ff9800;">
-                    <div style="text-align: center; padding: 10px;">
-                        <p style="font-size: 18px; font-weight: bold; color: #e65100; margin: 0;">
-                            Your unique Survey Code is: <span style="background: #ffcc02; padding: 5px 10px; border-radius: 4px; color: #000;">${surveyCode}</span>
-                        </p>
-                        <p style="margin: 10px 0 0 0; color: #e65100;">
-                            This code is required to access your assigned surveys and assessments. Keep it safe and use it whenever you need to participate in surveys.
-                        </p>
-                    </div>
-                </div>
-            </div>
+            // Prepare variables for email template
+            const templateVariables = {
+                greeting: `Dear ${firstname}`,
+                username: username,
+                email: email,
+                password: password,
+                survey_code: surveyCode,
+                organization_name: organizationName,
+                first_name: firstname,
+                last_name: formData.lastname || '',
+                login_url: 'https://platform.saurara.com/login',
+                survey_url: `https://platform.saurara.com/survey/${surveyCode}`,
+                support_email: 'support@saurara.com',
+                user_fullname: `${firstname} ${formData.lastname || ''}`.trim(),
+                platform_name: 'Saurara Platform',
+                current_date: new Date().toLocaleDateString(),
+                current_year: new Date().getFullYear().toString(),
+            };
             
-            <div class="section">
-                <div class="section-title"><span class="emoji">📋</span>What's Next?</div>
-                <ul>
-                    <li>Complete your user profile</li>
-                    <li>Take part in surveys and assessments using your Survey Code</li>
-                    <li>Connect with your organization</li>
-                    <li>Use reports to generate insights</li>
-                </ul>
-            </div>
+            // Get rendered email template from backend
+            const renderedPreview = await EmailService.renderPreview('welcome', templateVariables);
             
-            <p>Welcome aboard, ${firstname}! We're excited to see what you'll accomplish with Saurara.</p>
+            setEmailPreviewData({
+                textVersion: renderedPreview.text_body || 'No text version available',
+                htmlVersion: renderedPreview.html_body || 'No HTML version available',
+                subject: renderedPreview.subject || 'Welcome to Saurara!',
+                to: email
+            });
             
-            <p><strong>Best regards,</strong><br>The Saurara Team</p>
-            
-            <div class="footer">
-                <p>© ${new Date().getFullYear()} Saurara. All rights reserved.</p>
-                <p>This email was sent to ${email}. If you received this email in error, please contact support@saurara.com</p>
-            </div>
-        </div>
-    </div>
-</body>
-</html>`;
-
-        setEmailPreviewData({
-            textVersion,
-            htmlVersion,
-            subject,
-            to: email
-        });
+        } catch (error) {
+            console.error('Error generating email preview:', error);
+            // Fallback to simple preview on error
+            setEmailPreviewData({
+                textVersion: `Welcome to Saurara!\n\nDear ${formData.firstname || 'User'},\n\nYour account has been created successfully.\nUsername: ${formData.username || 'your-username'}\nEmail: ${formData.email || 'user@example.com'}\n\nBest regards,\nThe Saurara Team`,
+                htmlVersion: `<h2>Welcome to Saurara!</h2><p>Dear ${formData.firstname || 'User'},</p><p>Your account has been created successfully.</p><p><strong>Username:</strong> ${formData.username || 'your-username'}<br><strong>Email:</strong> ${formData.email || 'user@example.com'}</p><p>Best regards,<br>The Saurara Team</p>`,
+                subject: 'Welcome to Saurara!',
+                to: formData.email || 'user@example.com'
+            });
+        } finally {
+            setEmailPreviewLoading(false);
+        }
     };
 
     // Load data on component mount
@@ -1449,9 +1352,9 @@ This email was sent to ${email}. If you received this email in error, please con
                             </Typography>
                             <Button
                                 variant="contained"
-                                onClick={() => {
+                                onClick={async () => {
                                     if (!showEmailPreview) {
-                                        generateWelcomeEmailPreview();
+                                        await generateWelcomeEmailPreview();
                                     }
                                     setShowEmailPreview(!showEmailPreview);
                                 }}

@@ -20,6 +20,100 @@ export const EmailService = {
     },
 
     /**
+     * Get all email templates with optional filters
+     */
+    getTemplates: async (options = {}) => {
+        try {
+            const params = new URLSearchParams();
+            if (options.organizationId) {
+                params.append('organization_id', options.organizationId);
+            }
+            if (options.filterOrganizationId) {
+                params.append('filter_organization_id', options.filterOrganizationId);
+            }
+            
+            const url = `${API_BASE_URL}/api/email-templates${params.toString() ? `?${params.toString()}` : ''}`;
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`Failed to get templates: ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Error getting email templates:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Create a new email template
+     */
+    createTemplate: async (templateData) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/email-templates`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(templateData)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Failed to create template: ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Error creating email template:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Update an existing email template
+     */
+    updateTemplate: async (templateId, templateData) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/email-templates/${templateId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(templateData)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Failed to update template: ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Error updating email template:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Delete an email template
+     */
+    deleteTemplate: async (templateId) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/email-templates/${templateId}`, {
+                method: 'DELETE',
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Failed to delete template: ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Error deleting email template:', error);
+            throw error;
+        }
+    },
+
+    /**
      * Render email template preview
      */
     renderPreview: async (templateType, variables) => {
@@ -63,6 +157,63 @@ export const EmailService = {
             return await response.json();
         } catch (error) {
             console.error('Error initializing email templates:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Check if email service is active for an organization
+     */
+    isEmailServiceActive: async (organizationId) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/organizations/${organizationId}/email-service-status`);
+            if (!response.ok) {
+                throw new Error(`Failed to check email service status: ${response.status}`);
+            }
+            const result = await response.json();
+            return result.isActive;
+        } catch (error) {
+            console.error('Error checking email service status:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Get organization email service configuration
+     */
+    getEmailServiceConfig: async (organizationId) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/organizations/${organizationId}/email-service-config`);
+            if (!response.ok) {
+                throw new Error(`Failed to get email service config: ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Error getting email service config:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Update organization email service configuration
+     */
+    updateEmailServiceConfig: async (organizationId, config) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/organizations/${organizationId}/email-service-config`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(config)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Failed to update email service config: ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Error updating email service config:', error);
             throw error;
         }
     }
