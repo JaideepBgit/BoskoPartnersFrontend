@@ -154,7 +154,17 @@ function UsersManagement() {
             };
             
             // Get rendered email template from backend
-            const renderedPreview = await EmailService.renderPreview('welcome', templateVariables);
+            let renderedPreview;
+            
+            if (formData.email_template_id) {
+                // Use specific template if selected
+                renderedPreview = await EmailService.renderPreview(null, templateVariables, parseInt(formData.email_template_id));
+            } else {
+                // Use default template for organization or system default
+                const organizationId = formData.organization_id ? parseInt(formData.organization_id) : null;
+                console.log(`Using organization ID: ${organizationId} for template lookup`);
+                renderedPreview = await EmailService.renderPreview('welcome', templateVariables, null, organizationId);
+            }
             
             setEmailPreviewData({
                 textVersion: renderedPreview.text_body || 'No text version available',
@@ -244,8 +254,24 @@ function UsersManagement() {
             return;
         }
         try {
+            console.log(`Loading email templates for organization: ${organizationId}`);
             const data = await InventoryService.getEmailTemplates(organizationId);
-            setEmailTemplates(data || []);
+            console.log('Email templates loaded:', data);
+            
+            // Filter for welcome templates specifically
+            const welcomeTemplates = (data || []).filter(template => 
+                template.name && (
+                    template.name.toLowerCase().includes('welcome') ||
+                    template.name.toLowerCase().includes('default welcome')
+                )
+            );
+            
+            console.log('Welcome templates found:', welcomeTemplates);
+            setEmailTemplates(welcomeTemplates);
+            
+            if (welcomeTemplates.length === 0) {
+                console.warn('No welcome email templates found for this organization');
+            }
         } catch (error) {
             console.error('Failed to fetch email templates:', error);
             setEmailTemplates([]);

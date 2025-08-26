@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Container, Typography, Box, Select, MenuItem, FormControl,
     InputLabel, Table, TableBody, TableCell, TableContainer,
     TableHead, TableRow, TablePagination, Card, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, TextField, Grid, Checkbox, Alert, CircularProgress, Chip } from '@mui/material';
@@ -86,6 +86,23 @@ function AdminDashboard({ onLogout }) {
     const [welcomeEmailPreviewType, setWelcomeEmailPreviewType] = useState('text'); // 'text' or 'html'
     const [welcomeEmailPreviewUser, setWelcomeEmailPreviewUser] = useState(null);
     
+    // Add states for welcome email template selection
+    const [availableWelcomeTemplates, setAvailableWelcomeTemplates] = useState([]);
+    const [selectedWelcomeTemplateId, setSelectedWelcomeTemplateId] = useState('');
+    const [welcomeTemplatePreview, setWelcomeTemplatePreview] = useState(null);
+    const [loadingWelcomeTemplates, setLoadingWelcomeTemplates] = useState(false);
+    const [welcomeEmailPreviewContent, setWelcomeEmailPreviewContent] = useState(null);
+    const [loadingWelcomeEmailPreview, setLoadingWelcomeEmailPreview] = useState(false);
+    
+    // Add states for template selection
+    const [availableTemplates, setAvailableTemplates] = useState([]);
+    const [selectedTemplateId, setSelectedTemplateId] = useState('');
+    const [currentUserOrganization, setCurrentUserOrganization] = useState(null);
+    const [templatePreview, setTemplatePreview] = useState(null);
+    const [loadingTemplates, setLoadingTemplates] = useState(false);
+    const [emailPreviewContent, setEmailPreviewContent] = useState(null);
+    const [loadingEmailPreview, setLoadingEmailPreview] = useState(false);
+    
     // Add states for survey response dates
     const [surveyResponses, setSurveyResponses] = useState([]);
     const [dateEditDialog, setDateEditDialog] = useState(false);
@@ -94,6 +111,36 @@ function AdminDashboard({ onLogout }) {
     
     const highlightStyle = { fontWeight: 'bold', color: adminColors.secondary };
     const highlightStyleBackgroundColor = adminColors.highlightBg;
+
+    // Load email preview for the selected user and template
+    const loadEmailPreview = useCallback(async () => {
+        if (!selectedRecipient) return;
+        
+        setLoadingEmailPreview(true);
+        try {
+            const pendingUser = pendingUsers.find(p => p.id === selectedRecipient.id);
+            const preview = await generateEmailPreview(selectedRecipient, pendingUser, selectedTemplateId || null);
+            setEmailPreviewContent(preview);
+        } catch (error) {
+            console.error('Error loading email preview:', error);
+            setEmailPreviewContent({
+                text: 'Error loading preview',
+                html: 'Error loading preview',
+                subject: 'Error'
+            });
+        } finally {
+            setLoadingEmailPreview(false);
+        }
+    }, [selectedRecipient, pendingUsers, selectedTemplateId]);
+
+    // Auto-load email preview when dialog opens or template changes
+    useEffect(() => {
+        if (showEmailPreview && selectedRecipient && openReminderDialog) {
+            loadEmailPreview();
+        }
+    }, [showEmailPreview, selectedRecipient, openReminderDialog, loadEmailPreview]);
+
+
 
     useEffect(() => {
         const loadData = async () => {
@@ -287,19 +334,27 @@ function AdminDashboard({ onLogout }) {
             const pendingUser = pendingUsers.find(p => p.id === selectedId);
             const surveyCode = pendingUser?.survey_code || user.survey_code || 'N/A';
 
+            const requestBody = {
+                to_email: user.email,
+                username: user.username,
+                survey_code: surveyCode,
+                firstname: user.name.split(' ')[0], // Extract first name
+                organization_name: user.company_name,
+                days_remaining: pendingUser?.days_since_creation ? Math.max(30 - pendingUser.days_since_creation, 0) : null,
+                organization_id: user.organization_id
+            };
+
+            // Add template_id if a specific template is selected
+            if (selectedTemplateId) {
+                requestBody.template_id = parseInt(selectedTemplateId);
+            }
+
             const response = await fetch('/api/send-reminder-email', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    to_email: user.email,
-                    username: user.username,
-                    survey_code: surveyCode,
-                    firstname: user.name.split(' ')[0], // Extract first name
-                    organization_name: user.company_name,
-                    days_remaining: pendingUser?.days_since_creation ? Math.max(30 - pendingUser.days_since_creation, 0) : null
-                }),
+                body: JSON.stringify(requestBody),
             });
 
             const result = await response.json();
@@ -342,7 +397,50 @@ function AdminDashboard({ onLogout }) {
         }
     };
 
-    const handleOpenReminderDialog = (userId) => {
+    // Load available reminder templates
+    const loadReminderTemplates = async (userOrgId = null) => {
+        setLoadingTemplates(true);
+        try {
+            const response = await fetch('/api/email-templates/public-reminder-templates');
+            if (response.ok) {
+                const result = await response.json();
+                setAvailableTemplates(result.templates || []);
+            } else {
+                console.error('Failed to load reminder templates');
+                setAvailableTemplates([]);
+            }
+        } catch (error) {
+            console.error('Error loading reminder templates:', error);
+            setAvailableTemplates([]);
+        } finally {
+            setLoadingTemplates(false);
+        }
+    };
+
+    // Handle template selection change
+    const handleTemplateChange = async (templateId) => {
+        setSelectedTemplateId(templateId);
+        if (templateId && selectedRecipient) {
+            // Load template preview
+            try {
+                const template = availableTemplates.find(t => t.id.toString() === templateId);
+                if (template) {
+                    setTemplatePreview(template);
+                }
+            } catch (error) {
+                console.error('Error loading template preview:', error);
+            }
+        } else {
+            setTemplatePreview(null);
+        }
+        
+        // Reload email preview if it's currently being shown
+        if (showEmailPreview && selectedRecipient) {
+            await loadEmailPreview();
+        }
+    };
+
+    const handleOpenReminderDialog = async (userId) => {
         const user = data.users.find(u => u.id === userId);
         if (!user) {
             console.error('User not found');
@@ -350,6 +448,13 @@ function AdminDashboard({ onLogout }) {
         }
         setSelectedId(userId);
         setSelectedRecipient(user);
+        setCurrentUserOrganization(user.organization_id);
+        setSelectedTemplateId(''); // Reset template selection
+        setTemplatePreview(null);
+        
+        // Load available templates
+        await loadReminderTemplates(user.organization_id);
+        
         setOpenReminderDialog(true);
     };
 
@@ -359,11 +464,205 @@ function AdminDashboard({ onLogout }) {
         setSelectedId(null);
         setReminderStatus({ sending: false, results: null });
         setShowEmailPreview(false);
+        setSelectedTemplateId('');
+        setTemplatePreview(null);
+        setAvailableTemplates([]);
+        setCurrentUserOrganization(null);
+        setEmailPreviewContent(null);
+        setLoadingEmailPreview(false);
+    };
+
+    // Load available welcome templates
+    const loadWelcomeTemplates = async (userOrgId = null) => {
+        setLoadingWelcomeTemplates(true);
+        try {
+            const response = await fetch('/api/email-templates/public-welcome-templates');
+            if (response.ok) {
+                const result = await response.json();
+                setAvailableWelcomeTemplates(result.templates || []);
+            } else {
+                console.error('Failed to load welcome templates');
+                setAvailableWelcomeTemplates([]);
+            }
+        } catch (error) {
+            console.error('Error loading welcome templates:', error);
+            setAvailableWelcomeTemplates([]);
+        } finally {
+            setLoadingWelcomeTemplates(false);
+        }
+    };
+
+    // Generate welcome email preview content
+    const generateWelcomeEmailPreview = async (user, templateId = null) => {
+        if (!user) return { text: '', html: '', subject: '' };
+
+        try {
+            // Prepare variables for email template
+            const firstname = user.name.split(' ')[0] || '';
+            const templateVariables = {
+                greeting: firstname ? `Dear ${firstname}` : `Dear ${user.username}`,
+                username: user.username,
+                email: user.email,
+                password: '********', // Placeholder password for preview
+                first_name: firstname,
+                firstname: firstname,
+                organization_name: user.company_name || '',
+                survey_code: user.survey_code || 'N/A',
+                platform_name: 'Saurara Platform',
+                support_email: 'support@saurara.org',
+                survey_url: 'https://www.saurara.org'
+            };
+            
+            let renderedPreview;
+            
+            // If a specific template is selected, use it
+            if (templateId) {
+                const response = await fetch('/api/email-templates/render-preview', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        template_id: parseInt(templateId),
+                        variables: templateVariables
+                    }),
+                });
+                
+                if (response.ok) {
+                    renderedPreview = await response.json();
+                } else {
+                    throw new Error('Failed to render template preview');
+                }
+            } else {
+                // Use default template logic with organization awareness
+                const organizationParam = user.organization_id ? `?organization_id=${user.organization_id}` : '';
+                const templateResponse = await fetch(`/api/email-templates/by-type/welcome${organizationParam}`);
+                
+                if (templateResponse.ok) {
+                    const templateData = await templateResponse.json();
+                    
+                    // Render the template with variables
+                    const renderResponse = await fetch('/api/email-templates/render-preview', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            template_id: templateData.id,
+                            variables: templateVariables
+                        }),
+                    });
+                    
+                    if (renderResponse.ok) {
+                        renderedPreview = await renderResponse.json();
+                    } else {
+                        throw new Error('Failed to render default template');
+                    }
+                } else {
+                    // Fallback to old API if available
+                    const fallbackResponse = await fetch('/api/generate-welcome-email-preview', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(templateVariables)
+                    });
+
+                    if (fallbackResponse.ok) {
+                        const result = await fallbackResponse.json();
+                        if (result.success) {
+                            return {
+                                text: result.preview.text,
+                                html: result.preview.html,
+                                subject: result.preview.subject
+                            };
+                        }
+                    }
+                    throw new Error('No welcome template available');
+                }
+            }
+            
+            return {
+                text: renderedPreview.text_body || 'No text version available',
+                html: renderedPreview.html_body || 'No HTML version available',
+                subject: renderedPreview.subject || 'Welcome to Saurara Platform'
+            };
+            
+        } catch (error) {
+            console.error('Error generating welcome email preview:', error);
+            
+            // Fallback to simple preview on error
+            const username = user.username;
+            const firstname = user.name.split(' ')[0] || username;
+            
+            return {
+                text: `Dear ${firstname},\n\nWelcome to the Saurara Platform!\n\nYour account has been created successfully.\n\nUsername: ${username}\nSurvey Code: ${user.survey_code || 'N/A'}\nWebsite: www.saurara.org\n\nBest regards,\nThe Saurara Team`,
+                html: `<h2>Welcome to Saurara!</h2><p>Dear ${firstname},</p><p>Welcome to the Saurara Platform! Your account has been created successfully.</p><p><strong>Username:</strong> ${username}<br><strong>Survey Code:</strong> ${user.survey_code || 'N/A'}<br><strong>Website:</strong> <a href="http://www.saurara.org">www.saurara.org</a></p><p>Best regards,<br>The Saurara Team</p>`,
+                subject: 'Welcome to Saurara Platform'
+            };
+        }
+    };
+
+    // Load welcome email preview for the selected user and template
+    const loadWelcomeEmailPreview = useCallback(async () => {
+        if (!welcomeEmailPreviewUser) return;
+        
+        setLoadingWelcomeEmailPreview(true);
+        try {
+            const preview = await generateWelcomeEmailPreview(welcomeEmailPreviewUser, selectedWelcomeTemplateId || null);
+            setWelcomeEmailPreviewContent(preview);
+        } catch (error) {
+            console.error('Error loading welcome email preview:', error);
+            setWelcomeEmailPreviewContent({
+                text: 'Error loading preview',
+                html: 'Error loading preview',
+                subject: 'Error'
+            });
+        } finally {
+            setLoadingWelcomeEmailPreview(false);
+        }
+    }, [welcomeEmailPreviewUser, selectedWelcomeTemplateId]);
+
+    // Auto-load welcome email preview when dialog opens or template changes
+    useEffect(() => {
+        if (showWelcomeEmailPreview && welcomeEmailPreviewUser) {
+            loadWelcomeEmailPreview();
+        }
+    }, [showWelcomeEmailPreview, welcomeEmailPreviewUser, selectedWelcomeTemplateId, loadWelcomeEmailPreview]);
+
+    // Handle welcome template selection change
+    const handleWelcomeTemplateChange = async (templateId) => {
+        setSelectedWelcomeTemplateId(templateId);
+        if (templateId && welcomeEmailPreviewUser) {
+            // Load template preview
+            try {
+                const template = availableWelcomeTemplates.find(t => t.id.toString() === templateId);
+                if (template) {
+                    setWelcomeTemplatePreview(template);
+                }
+            } catch (error) {
+                console.error('Error loading welcome template preview:', error);
+            }
+        } else {
+            setWelcomeTemplatePreview(null);
+        }
+        
+        // Reload email preview if it's currently being shown
+        if (showWelcomeEmailPreview && welcomeEmailPreviewUser) {
+            await loadWelcomeEmailPreview();
+        }
     };
 
     // Add welcome email preview handlers
-    const handleOpenWelcomeEmailPreview = (user) => {
+    const handleOpenWelcomeEmailPreview = async (user) => {
         setWelcomeEmailPreviewUser(user);
+        setSelectedWelcomeTemplateId(''); // Reset template selection
+        setWelcomeTemplatePreview(null);
+        setWelcomeEmailPreviewContent(null);
+        
+        // Load available templates
+        await loadWelcomeTemplates(user.organization_id);
+        
         setShowWelcomeEmailPreview(true);
     };
 
@@ -371,10 +670,15 @@ function AdminDashboard({ onLogout }) {
         setShowWelcomeEmailPreview(false);
         setWelcomeEmailPreviewUser(null);
         setWelcomeEmailPreviewType('text');
+        setSelectedWelcomeTemplateId('');
+        setWelcomeTemplatePreview(null);
+        setAvailableWelcomeTemplates([]);
+        setWelcomeEmailPreviewContent(null);
+        setLoadingWelcomeEmailPreview(false);
     };
 
-    // Generate email preview content using backend EmailService
-    const generateEmailPreview = async (user, pendingUser) => {
+    // Generate email preview content using backend
+    const generateEmailPreview = async (user, pendingUser, templateId = null) => {
         if (!user) return { text: '', html: '', subject: '' };
 
         try {
@@ -402,8 +706,56 @@ function AdminDashboard({ onLogout }) {
                 survey_url: 'https://www.saurara.org'
             };
             
-            // Get rendered email template from backend
-            const renderedPreview = await EmailService.renderPreview('reminder', templateVariables);
+            let renderedPreview;
+            
+            // If a specific template is selected, use it
+            if (templateId) {
+                const response = await fetch('/api/email-templates/render-preview', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        template_id: parseInt(templateId),
+                        variables: templateVariables
+                    }),
+                });
+                
+                if (response.ok) {
+                    renderedPreview = await response.json();
+                } else {
+                    throw new Error('Failed to render template preview');
+                }
+            } else {
+                // Use default template logic with organization awareness
+                const organizationParam = user.organization_id ? `?organization_id=${user.organization_id}` : '';
+                const templateResponse = await fetch(`/api/email-templates/by-type/reminder${organizationParam}`);
+                
+                if (templateResponse.ok) {
+                    const templateData = await templateResponse.json();
+                    
+                    // Render the template with variables
+                    const renderResponse = await fetch('/api/email-templates/render-preview', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            template_id: templateData.id,
+                            variables: templateVariables
+                        }),
+                    });
+                    
+                    if (renderResponse.ok) {
+                        renderedPreview = await renderResponse.json();
+                    } else {
+                        throw new Error('Failed to render default template');
+                    }
+                } else {
+                    // Use the original EmailService fallback
+                    renderedPreview = await EmailService.renderPreview('reminder', templateVariables);
+                }
+            }
             
             return {
                 text: renderedPreview.text_body || 'No text version available',
@@ -427,42 +779,9 @@ function AdminDashboard({ onLogout }) {
         }
     };
 
-    // Generate welcome email preview content
-    const generateWelcomeEmailPreview = async (user) => {
-        if (!user) return { text: '', html: '', subject: '' };
 
-        try {
-            const response = await fetch('/api/generate-welcome-email-preview', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    username: user.username,
-                    email: user.email,
-                    password: '********', // Placeholder password for preview
-                    firstname: user.name.split(' ')[0],
-                    survey_code: user.survey_code
-                }),
-            });
 
-            const result = await response.json();
 
-            if (response.ok) {
-                return {
-                    text: result.preview.text,
-                    html: result.preview.html,
-                    subject: result.preview.subject
-                };
-            } else {
-                console.error('Failed to generate welcome email preview:', result.error);
-                return { text: 'Failed to generate preview', html: 'Failed to generate preview', subject: 'Welcome Email Preview' };
-            }
-        } catch (error) {
-            console.error('Error generating welcome email preview:', error);
-            return { text: 'Error generating preview', html: 'Error generating preview', subject: 'Welcome Email Preview' };
-        }
-    };
 
     // Add bulk reminder functionality
     const handleSendBulkReminders = async () => {
@@ -1347,6 +1666,63 @@ function AdminDashboard({ onLogout }) {
                         </Box>
                     )}
 
+                    {/* Template Selection */}
+                    <Box sx={{ mb: 3 }}>
+                        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
+                            Email Template Selection
+                        </Typography>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>Select Email Template</InputLabel>
+                            <Select
+                                value={selectedTemplateId}
+                                onChange={(e) => handleTemplateChange(e.target.value)}
+                                label="Select Email Template"
+                                disabled={loadingTemplates}
+                            >
+                                <MenuItem value="">
+                                    <em>Use Default (Institution-specific or System Default)</em>
+                                </MenuItem>
+                                {availableTemplates.map((template) => (
+                                    <MenuItem key={template.id} value={template.id.toString()}>
+                                        {template.name} 
+                                        <Typography variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
+                                            ({template.organization_name})
+                                        </Typography>
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                            {loadingTemplates && (
+                                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                                    <CircularProgress size={16} sx={{ mr: 1 }} />
+                                    <Typography variant="caption" color="text.secondary">
+                                        Loading templates...
+                                    </Typography>
+                                </Box>
+                            )}
+                        </FormControl>
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                            {selectedTemplateId 
+                                ? 'Using selected custom template' 
+                                : 'Will automatically use institution-specific template if available, otherwise system default'
+                            }
+                        </Typography>
+                    </Box>
+
+                    {/* Template Preview */}
+                    {templatePreview && (
+                        <Box sx={{ mb: 2, p: 2, bgcolor: '#f8f9fa', borderRadius: 1, border: '1px solid #e0e0e0' }}>
+                            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold', color: adminColors.primary }}>
+                                Template Preview: {templatePreview.name}
+                            </Typography>
+                            <Typography variant="body2" sx={{ mb: 1 }}>
+                                <strong>Subject:</strong> {templatePreview.subject}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                                This template will be personalized with the user's information before sending.
+                            </Typography>
+                        </Box>
+                    )}
+
                     {reminderStatus.sending && (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                             <CircularProgress size={20} />
@@ -1407,59 +1783,70 @@ function AdminDashboard({ onLogout }) {
 
                                 {/* Email Content Preview */}
                                 <Box sx={{ p: 2 }}>
-                                    {(() => {
-                                        const pendingUser = pendingUsers.find(p => p.id === selectedRecipient.id);
-                                        const emailContent = generateEmailPreview(selectedRecipient, pendingUser);
-                                        
-                                        return (
-                                            <Box>
-                                                {/* Subject Line */}
-                                                <Box sx={{ mb: 2, p: 1, bgcolor: '#f5f5f5', borderRadius: 1 }}>
-                                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                                        Subject: {emailContent.subject}
+                                    {loadingEmailPreview ? (
+                                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', p: 4 }}>
+                                            <CircularProgress size={24} sx={{ mr: 2 }} />
+                                            <Typography>Loading email preview...</Typography>
+                                        </Box>
+                                    ) : emailPreviewContent ? (
+                                        <Box>
+                                            {/* Subject Line */}
+                                            <Box sx={{ mb: 2, p: 1, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+                                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                                    Subject: {emailPreviewContent.subject}
+                                                </Typography>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    To: {selectedRecipient.email}
+                                                </Typography>
+                                                {selectedTemplateId && (
+                                                    <Typography variant="caption" color="primary" sx={{ display: 'block', mt: 0.5 }}>
+                                                        Using selected template: {templatePreview?.name}
                                                     </Typography>
-                                                    <Typography variant="body2" color="text.secondary">
-                                                        To: {selectedRecipient.email}
-                                                    </Typography>
-                                                </Box>
-
-                                                {/* Email Body */}
-                                                {emailPreviewType === 'text' ? (
-                                                    <Box sx={{ 
-                                                        bgcolor: '#fafafa', 
-                                                        p: 2, 
-                                                        borderRadius: 1, 
-                                                        maxHeight: 400, 
-                                                        overflow: 'auto',
-                                                        fontFamily: 'monospace',
-                                                        fontSize: '0.875rem',
-                                                        whiteSpace: 'pre-wrap'
-                                                    }}>
-                                                        {emailContent.text}
-                                                    </Box>
-                                                ) : (
-                                                    <Box sx={{ 
-                                                        border: 1, 
-                                                        borderColor: 'divider', 
-                                                        borderRadius: 1, 
-                                                        maxHeight: 400, 
-                                                        overflow: 'auto'
-                                                    }}>
-                                                        <iframe
-                                                            srcDoc={emailContent.html}
-                                                            style={{
-                                                                width: '100%',
-                                                                height: '400px',
-                                                                border: 'none',
-                                                                borderRadius: '4px'
-                                                            }}
-                                                            title="Email HTML Preview"
-                                                        />
-                                                    </Box>
                                                 )}
                                             </Box>
-                                        );
-                                    })()}
+
+                                            {/* Email Body */}
+                                            {emailPreviewType === 'text' ? (
+                                                <Box sx={{ 
+                                                    bgcolor: '#fafafa', 
+                                                    p: 2, 
+                                                    borderRadius: 1, 
+                                                    maxHeight: 400, 
+                                                    overflow: 'auto',
+                                                    fontFamily: 'monospace',
+                                                    fontSize: '0.875rem',
+                                                    whiteSpace: 'pre-wrap'
+                                                }}>
+                                                    {emailPreviewContent.text}
+                                                </Box>
+                                            ) : (
+                                                <Box sx={{ 
+                                                    border: 1, 
+                                                    borderColor: 'divider', 
+                                                    borderRadius: 1, 
+                                                    maxHeight: 400, 
+                                                    overflow: 'auto'
+                                                }}>
+                                                    <iframe
+                                                        srcDoc={emailPreviewContent.html}
+                                                        style={{
+                                                            width: '100%',
+                                                            height: '400px',
+                                                            border: 'none',
+                                                            borderRadius: '4px'
+                                                        }}
+                                                        title="Email HTML Preview"
+                                                    />
+                                                </Box>
+                                            )}
+                                        </Box>
+                                    ) : (
+                                        <Box sx={{ p: 4, textAlign: 'center' }}>
+                                            <Typography color="text.secondary">
+                                                Email preview will appear here
+                                            </Typography>
+                                        </Box>
+                                    )}
                                 </Box>
                             </Box>
                         )}
@@ -1845,6 +2232,63 @@ function AdminDashboard({ onLogout }) {
                         </Box>
                     )}
 
+                    {/* Welcome Template Selection */}
+                    <Box sx={{ mb: 3 }}>
+                        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
+                            Welcome Email Template Selection
+                        </Typography>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>Select Welcome Email Template</InputLabel>
+                            <Select
+                                value={selectedWelcomeTemplateId}
+                                onChange={(e) => handleWelcomeTemplateChange(e.target.value)}
+                                label="Select Welcome Email Template"
+                                disabled={loadingWelcomeTemplates}
+                            >
+                                <MenuItem value="">
+                                    <em>Use Default (Institution-specific or System Default)</em>
+                                </MenuItem>
+                                {availableWelcomeTemplates.map((template) => (
+                                    <MenuItem key={template.id} value={template.id.toString()}>
+                                        {template.name} 
+                                        <Typography variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
+                                            ({template.organization_name})
+                                        </Typography>
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                            {loadingWelcomeTemplates && (
+                                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                                    <CircularProgress size={16} sx={{ mr: 1 }} />
+                                    <Typography variant="caption" color="text.secondary">
+                                        Loading templates...
+                                    </Typography>
+                                </Box>
+                            )}
+                        </FormControl>
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                            {selectedWelcomeTemplateId 
+                                ? 'Using selected custom template' 
+                                : 'Will automatically use institution-specific template if available, otherwise system default'
+                            }
+                        </Typography>
+                    </Box>
+
+                    {/* Welcome Template Preview */}
+                    {welcomeTemplatePreview && (
+                        <Box sx={{ mb: 2, p: 2, bgcolor: '#f8f9fa', borderRadius: 1, border: '1px solid #e0e0e0' }}>
+                            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold', color: adminColors.primary }}>
+                                Template Preview: {welcomeTemplatePreview.name}
+                            </Typography>
+                            <Typography variant="body2" sx={{ mb: 1 }}>
+                                <strong>Subject:</strong> {welcomeTemplatePreview.subject}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                                This template will be personalized with the user's information before sending.
+                            </Typography>
+                        </Box>
+                    )}
+
                     <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
                         {/* Email Preview Header */}
                         <Box sx={{ bgcolor: adminColors.headerBg, p: 2, borderBottom: 1, borderColor: 'divider' }}>
@@ -1874,12 +2318,69 @@ function AdminDashboard({ onLogout }) {
 
                         {/* Email Content Preview */}
                         <Box sx={{ p: 2 }}>
-                            {welcomeEmailPreviewUser && (
-                                <WelcomeEmailPreviewContent 
-                                    user={welcomeEmailPreviewUser}
-                                    previewType={welcomeEmailPreviewType}
-                                    generateWelcomeEmailPreview={generateWelcomeEmailPreview}
-                                />
+                            {loadingWelcomeEmailPreview ? (
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', p: 4 }}>
+                                    <CircularProgress size={24} sx={{ mr: 2 }} />
+                                    <Typography>Loading welcome email preview...</Typography>
+                                </Box>
+                            ) : welcomeEmailPreviewContent ? (
+                                <Box>
+                                    {/* Subject Line */}
+                                    <Box sx={{ mb: 2, p: 1, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+                                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                            Subject: {welcomeEmailPreviewContent.subject}
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary">
+                                            To: {welcomeEmailPreviewUser.email}
+                                        </Typography>
+                                        {selectedWelcomeTemplateId && (
+                                            <Typography variant="caption" color="primary" sx={{ display: 'block', mt: 0.5 }}>
+                                                Using selected template: {welcomeTemplatePreview?.name}
+                                            </Typography>
+                                        )}
+                                    </Box>
+
+                                    {/* Email Body */}
+                                    {welcomeEmailPreviewType === 'text' ? (
+                                        <Box sx={{ 
+                                            bgcolor: '#fafafa', 
+                                            p: 2, 
+                                            borderRadius: 1, 
+                                            maxHeight: 400, 
+                                            overflow: 'auto',
+                                            fontFamily: 'monospace',
+                                            fontSize: '0.875rem',
+                                            whiteSpace: 'pre-wrap'
+                                        }}>
+                                            {welcomeEmailPreviewContent.text}
+                                        </Box>
+                                    ) : (
+                                        <Box sx={{ 
+                                            border: 1, 
+                                            borderColor: 'divider', 
+                                            borderRadius: 1, 
+                                            maxHeight: 400, 
+                                            overflow: 'auto'
+                                        }}>
+                                            <iframe
+                                                srcDoc={welcomeEmailPreviewContent.html}
+                                                style={{
+                                                    width: '100%',
+                                                    height: '400px',
+                                                    border: 'none',
+                                                    borderRadius: '4px'
+                                                }}
+                                                title="Welcome Email HTML Preview"
+                                            />
+                                        </Box>
+                                    )}
+                                </Box>
+                            ) : (
+                                <Box sx={{ p: 4, textAlign: 'center' }}>
+                                    <Typography color="text.secondary">
+                                        Welcome email preview will appear here
+                                    </Typography>
+                                </Box>
                             )}
                         </Box>
                     </Box>
@@ -1898,79 +2399,6 @@ function AdminDashboard({ onLogout }) {
     );
 }
 
-// Welcome Email Preview Component
-function WelcomeEmailPreviewContent({ user, previewType, generateWelcomeEmailPreview }) {
-    const [emailContent, setEmailContent] = useState({ text: '', html: '', subject: '' });
-    const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const loadPreview = async () => {
-            if (user) {
-                setLoading(true);
-                const content = await generateWelcomeEmailPreview(user);
-                setEmailContent(content);
-                setLoading(false);
-            }
-        };
-        loadPreview();
-    }, [user, generateWelcomeEmailPreview]);
-
-    if (loading) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-                <CircularProgress />
-            </Box>
-        );
-    }
-
-    return (
-        <Box>
-            {/* Subject Line */}
-            <Box sx={{ mb: 2, p: 1, bgcolor: '#f5f5f5', borderRadius: 1 }}>
-                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                    Subject: {emailContent.subject}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                    To: {user.email}
-                </Typography>
-            </Box>
-
-            {/* Email Body */}
-            {previewType === 'text' ? (
-                <Box sx={{ 
-                    bgcolor: '#fafafa', 
-                    p: 2, 
-                    borderRadius: 1, 
-                    maxHeight: 400, 
-                    overflow: 'auto',
-                    fontFamily: 'monospace',
-                    fontSize: '0.875rem',
-                    whiteSpace: 'pre-wrap'
-                }}>
-                    {emailContent.text}
-                </Box>
-            ) : (
-                <Box sx={{ 
-                    border: 1, 
-                    borderColor: 'divider', 
-                    borderRadius: 1, 
-                    maxHeight: 400, 
-                    overflow: 'auto'
-                }}>
-                    <iframe
-                        srcDoc={emailContent.html}
-                        style={{
-                            width: '100%',
-                            height: '400px',
-                            border: 'none',
-                            borderRadius: '4px'
-                        }}
-                        title="Welcome Email HTML Preview"
-                    />
-                </Box>
-            )}
-        </Box>
-    );
-}
 
 export default AdminDashboard; 

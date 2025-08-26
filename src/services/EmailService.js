@@ -1,6 +1,6 @@
 // services/EmailService.js
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || '';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 export const EmailService = {
     /**
@@ -8,7 +8,7 @@ export const EmailService = {
      */
     getTemplateByType: async (templateType) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/email-templates/by-type/${templateType}`);
+            const response = await fetch(`${API_BASE_URL}/email-templates/by-type/${templateType}`);
             if (!response.ok) {
                 throw new Error(`Failed to get template: ${response.status}`);
             }
@@ -32,7 +32,7 @@ export const EmailService = {
                 params.append('filter_organization_id', options.filterOrganizationId);
             }
             
-            const url = `${API_BASE_URL}/api/email-templates${params.toString() ? `?${params.toString()}` : ''}`;
+            const url = `${API_BASE_URL}/email-templates${params.toString() ? `?${params.toString()}` : ''}`;
             const response = await fetch(url);
             
             if (!response.ok) {
@@ -50,7 +50,7 @@ export const EmailService = {
      */
     createTemplate: async (templateData) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/email-templates`, {
+            const response = await fetch(`${API_BASE_URL}/email-templates`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -74,7 +74,7 @@ export const EmailService = {
      */
     updateTemplate: async (templateId, templateData) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/email-templates/${templateId}`, {
+            const response = await fetch(`${API_BASE_URL}/email-templates/${templateId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -98,7 +98,7 @@ export const EmailService = {
      */
     deleteTemplate: async (templateId) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/email-templates/${templateId}`, {
+            const response = await fetch(`${API_BASE_URL}/email-templates/${templateId}`, {
                 method: 'DELETE',
             });
             
@@ -116,17 +116,27 @@ export const EmailService = {
     /**
      * Render email template preview
      */
-    renderPreview: async (templateType, variables) => {
+    renderPreview: async (templateType, variables, templateId = null, organizationId = null) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/email-templates/render-preview`, {
+            const requestBody = {
+                variables: variables
+            };
+            
+            if (templateId) {
+                requestBody.template_id = templateId;
+            } else {
+                requestBody.template_type = templateType;
+                if (organizationId) {
+                    requestBody.organization_id = organizationId;
+                }
+            }
+            
+            const response = await fetch(`${API_BASE_URL}/email-templates/render-preview`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    template_type: templateType,
-                    variables: variables
-                })
+                body: JSON.stringify(requestBody)
             });
             
             if (!response.ok) {
@@ -144,7 +154,7 @@ export const EmailService = {
      */
     initializeDefaultTemplates: async () => {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/initialize-default-email-templates`, {
+            const response = await fetch(`${API_BASE_URL}/initialize-default-email-templates`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -166,7 +176,7 @@ export const EmailService = {
      */
     isEmailServiceActive: async (organizationId) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/organizations/${organizationId}/email-service-status`);
+            const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/email-service-status`);
             if (!response.ok) {
                 throw new Error(`Failed to check email service status: ${response.status}`);
             }
@@ -183,7 +193,7 @@ export const EmailService = {
      */
     getEmailServiceConfig: async (organizationId) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/organizations/${organizationId}/email-service-config`);
+            const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/email-service-config`);
             if (!response.ok) {
                 throw new Error(`Failed to get email service config: ${response.status}`);
             }
@@ -199,7 +209,7 @@ export const EmailService = {
      */
     updateEmailServiceConfig: async (organizationId, config) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/organizations/${organizationId}/email-service-config`, {
+            const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/email-service-config`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
