@@ -226,6 +226,77 @@ export const EmailService = {
             console.error('Error updating email service config:', error);
             throw error;
         }
+    },
+
+    /**
+     * Send invitation email to a user
+     */
+    sendInvitationEmail: async (emailData) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/send-invitation-email`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(emailData)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Failed to send invitation email: ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Error sending invitation email:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Send invitation email to multiple users
+     */
+    sendBulkInvitationEmails: async (usersData) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/send-bulk-invitation-emails`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(usersData)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Failed to send bulk invitation emails: ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Error sending bulk invitation emails:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Send invitation email to a specific user by ID
+     */
+    sendUserInvitationEmail: async (userId) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/users/${userId}/invitation-email`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Failed to send invitation email: ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Error sending invitation email to user:', error);
+            throw error;
+        }
     }
 };
 
