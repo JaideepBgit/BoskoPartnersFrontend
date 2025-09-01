@@ -46,6 +46,34 @@ export const EmailService = {
     },
 
     /**
+     * Get all email templates using dedicated endpoint with enhanced debugging
+     */
+    getAllTemplates: async () => {
+        try {
+            console.log('[EmailService] Calling dedicated /api/email-templates/all endpoint');
+            const response = await fetch(`${API_BASE_URL}/email-templates/all`);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error(`[EmailService] Failed to get all templates: ${response.status} - ${errorText}`);
+                throw new Error(`Failed to get all templates: ${response.status} - ${errorText}`);
+            }
+            
+            const result = await response.json();
+            console.log(`[EmailService] Successfully fetched ${result.count || 0} templates from dedicated endpoint`);
+            
+            if (result.conversion_errors && result.conversion_errors.length > 0) {
+                console.warn('[EmailService] Some templates had conversion errors:', result.conversion_errors);
+            }
+            
+            return result;
+        } catch (error) {
+            console.error('[EmailService] Error getting all email templates:', error);
+            throw error;
+        }
+    },
+
+    /**
      * Create a new email template
      */
     createTemplate: async (templateData) => {
@@ -295,6 +323,29 @@ export const EmailService = {
             return await response.json();
         } catch (error) {
             console.error('Error sending invitation email to user:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Debug email templates - check database and table status
+     */
+    debugEmailTemplates: async () => {
+        try {
+            console.log('[EmailService] Calling debug endpoint for email templates');
+            const response = await fetch(`${API_BASE_URL}/email-templates/debug`);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error(`[EmailService] Debug endpoint failed: ${response.status} - ${errorText}`);
+                throw new Error(`Debug endpoint failed: ${response.status} - ${errorText}`);
+            }
+            
+            const result = await response.json();
+            console.log('[EmailService] Debug info:', result);
+            return result;
+        } catch (error) {
+            console.error('[EmailService] Error calling debug endpoint:', error);
             throw error;
         }
     }

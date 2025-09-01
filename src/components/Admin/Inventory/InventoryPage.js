@@ -89,13 +89,32 @@ const InventoryPage = () => {
 
     const fetchEmailTemplates = async (filterOrgId = null) => {
       try {
-        console.log('Fetching email templates from email_templates table...');
-        const data = await InventoryService.getEmailTemplates(null, filterOrgId);
-        console.log('Fetched email templates:', data);
+        console.log('[InventoryPage] Fetching email templates from email_templates table...');
+        
+        let data;
+        if (filterOrgId) {
+          // Use filtered endpoint when organization filter is applied
+          console.log(`[InventoryPage] Using filtered endpoint for organization: ${filterOrgId}`);
+          data = await InventoryService.getEmailTemplates(null, filterOrgId);
+        } else {
+          // Use dedicated endpoint for all templates
+          console.log('[InventoryPage] Using dedicated /all endpoint for all templates');
+          data = await InventoryService.getAllEmailTemplates();
+        }
+        
+        console.log('[InventoryPage] Fetched email templates:', data);
+        console.log(`[InventoryPage] Template count: ${Array.isArray(data) ? data.length : 'Not an array'}`);
+        
         setEmailTemplates(Array.isArray(data) ? data : []);
       } catch (err) {
-        console.error('Error fetching email templates:', err.response || err);
+        console.error('[InventoryPage] Error fetching email templates:', err.response || err);
+        console.error('[InventoryPage] Error message:', err.message);
         setEmailTemplates([]);
+        
+        // Show user-friendly error message
+        if (err.message && err.message.includes('Failed to fetch')) {
+          console.warn('[InventoryPage] Email templates fetch failed - this might be a server connectivity issue');
+        }
       }
     };
 

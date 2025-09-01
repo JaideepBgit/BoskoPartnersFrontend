@@ -495,6 +495,10 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
   
   // State for initializing default templates
   const [initializingTemplates, setInitializingTemplates] = useState(false);
+  
+  // State for debugging
+  const [debugInfo, setDebugInfo] = useState(null);
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
 
   // Removed survey template loading; email templates no longer associate to survey templates here
 
@@ -697,6 +701,19 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
     }
   };
 
+  const handleDebugEmailTemplates = async () => {
+    try {
+      console.log('[EmailTemplatesTab] Running debug check...');
+      const debug = await EmailService.debugEmailTemplates();
+      setDebugInfo(debug);
+      setShowDebugInfo(true);
+      console.log('[EmailTemplatesTab] Debug info retrieved:', debug);
+    } catch (err) {
+      console.error('[EmailTemplatesTab] Debug check failed:', err);
+      alert(`Debug check failed: ${err.message}`);
+    }
+  };
+
   return (
     <Box>
       <Typography
@@ -747,6 +764,22 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
             }}
           >
             {initializingTemplates ? 'Initializing...' : 'Initialize Defaults'}
+          </Button>
+          <Button
+            variant="outlined"
+            size={isMobile ? 'small' : 'medium'}
+            onClick={handleDebugEmailTemplates}
+            sx={{ 
+              color: '#ff9800', 
+              borderColor: '#ff9800',
+              fontSize: isMobile ? '0.75rem' : '0.875rem',
+              '&:hover': { 
+                backgroundColor: '#fff3e0',
+                borderColor: '#f57c00'
+              }
+            }}
+          >
+            Debug Info
           </Button>
         </Box>
       </Paper>
@@ -1263,6 +1296,142 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
             }}
           >
             Copy HTML
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Debug Info Dialog */}
+      <Dialog 
+        open={showDebugInfo} 
+        onClose={() => setShowDebugInfo(false)} 
+        fullWidth 
+        maxWidth="md"
+        fullScreen={isMobile}
+      >
+        <DialogTitle sx={{ borderBottom: '1px solid #e0e0e0' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Typography variant="h6">Email Templates Debug Information</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {debugInfo?.timestamp}
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3 }}>
+          {debugInfo && (
+            <Box>
+              {/* Connection Status */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ mb: 1, color: '#633394' }}>
+                  System Status
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ 
+                      width: 12, 
+                      height: 12, 
+                      borderRadius: '50%', 
+                      backgroundColor: debugInfo.database_connection ? '#4caf50' : '#f44336' 
+                    }} />
+                    <Typography variant="body2">
+                      Database Connection: {debugInfo.database_connection ? 'Connected' : 'Failed'}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ 
+                      width: 12, 
+                      height: 12, 
+                      borderRadius: '50%', 
+                      backgroundColor: debugInfo.table_exists ? '#4caf50' : '#f44336' 
+                    }} />
+                    <Typography variant="body2">
+                      Email Templates Table: {debugInfo.table_exists ? 'Exists' : 'Missing'}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+
+              {/* Counts */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ mb: 1, color: '#633394' }}>
+                  Data Counts
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 3 }}>
+                  <Typography variant="body2">
+                    <strong>Email Templates:</strong> {debugInfo.template_count}
+                  </Typography>
+                  <Typography variant="body2">
+                    <strong>Organizations:</strong> {debugInfo.organization_count}
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Sample Templates */}
+              {debugInfo.sample_templates && debugInfo.sample_templates.length > 0 && (
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h6" sx={{ mb: 1, color: '#633394' }}>
+                    Sample Templates
+                  </Typography>
+                  {debugInfo.sample_templates.map((template, index) => (
+                    <Box key={index} sx={{ 
+                      p: 2, 
+                      mb: 1, 
+                      backgroundColor: '#f5f5f5', 
+                      borderRadius: 1,
+                      border: '1px solid #e0e0e0'
+                    }}>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                        {template.name} (ID: {template.id})
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Org ID: {template.organization_id} | Public: {template.is_public ? 'Yes' : 'No'} | 
+                        HTML: {template.has_html_body ? 'Yes' : 'No'} | Text: {template.has_text_body ? 'Yes' : 'No'}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              )}
+
+              {/* Errors */}
+              {debugInfo.errors && debugInfo.errors.length > 0 && (
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h6" sx={{ mb: 1, color: '#f44336' }}>
+                    Errors
+                  </Typography>
+                  {debugInfo.errors.map((error, index) => (
+                    <Box key={index} sx={{ 
+                      p: 2, 
+                      mb: 1, 
+                      backgroundColor: '#ffebee', 
+                      borderRadius: 1,
+                      border: '1px solid #ffcdd2'
+                    }}>
+                      <Typography variant="body2" color="error">
+                        {error}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowDebugInfo(false)}>Close</Button>
+          <Button 
+            variant="outlined"
+            onClick={() => {
+              navigator.clipboard.writeText(JSON.stringify(debugInfo, null, 2)).then(() => {
+                alert('Debug info copied to clipboard!');
+              }).catch(() => {
+                alert('Failed to copy to clipboard');
+              });
+            }}
+            sx={{ 
+              borderColor: '#633394',
+              color: '#633394'
+            }}
+          >
+            Copy Debug Info
           </Button>
         </DialogActions>
       </Dialog>

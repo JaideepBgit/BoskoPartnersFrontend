@@ -65,6 +65,24 @@ const InventoryService = {
         throw new Error(error.response?.data?.error || 'Failed to fetch email templates');
       });
   },
+  
+  // Get all email templates using dedicated endpoint with enhanced debugging
+  getAllEmailTemplates: () => {
+    console.log('[InventoryService] Calling dedicated /api/email-templates/all endpoint');
+    return axios.get(`${BASE_URL}/email-templates/all`)
+      .then(res => {
+        console.log(`[InventoryService] Successfully fetched ${res.data.count || 0} templates from dedicated endpoint`);
+        if (res.data.conversion_errors && res.data.conversion_errors.length > 0) {
+          console.warn('[InventoryService] Some templates had conversion errors:', res.data.conversion_errors);
+        }
+        return res.data.templates || [];
+      })
+      .catch(error => {
+        console.error('[InventoryService] Error fetching all email templates:', error);
+        console.error('[InventoryService] Error details:', error.response?.data);
+        throw new Error(error.response?.data?.error || 'Failed to fetch all email templates');
+      });
+  },
   getEmailTemplate: (templateId) => {
     return axios.get(`${BASE_URL}/email-templates/${templateId}`)
       .then(res => res.data)
