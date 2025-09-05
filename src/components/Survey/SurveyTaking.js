@@ -15,6 +15,7 @@ import {
   TextField,
   Checkbox,
   FormGroup,
+  FormLabel,
   Alert,
   Paper,
   Divider,
@@ -439,9 +440,9 @@ const SurveyTaking = () => {
               {question.config?.options?.map((option, index) => (
                 <FormControlLabel
                   key={index}
-                  value={option.value}
+                  value={typeof option === 'object' ? option.value : option}
                   control={<Radio />}
-                  label={option.label}
+                  label={typeof option === 'object' ? option.label : option}
                   sx={{ my: 0.5 }}
                 />
               ))}
@@ -469,6 +470,76 @@ const SurveyTaking = () => {
                 label={question.config?.no_label || 'No'}
               />
             </RadioGroup>
+          </FormControl>
+        );
+
+      case 4: // Likert Scale
+        return (
+          <FormControl component="fieldset" sx={{ mt: 2, width: '100%' }} required={question.is_required}>
+            <RadioGroup
+              value={currentValue}
+              onChange={(e) => handleResponseChange(questionId, e.target.value)}
+            >
+              {[1, 2, 3, 4, 5].map((value) => {
+                const defaultLabels = {
+                  1: 'None',
+                  2: 'A little', 
+                  3: 'A moderate amount',
+                  4: 'A lot',
+                  5: 'A great deal'
+                };
+                
+                const labels = question.config?.scale_labels || defaultLabels;
+                const labelText = labels[value] || defaultLabels[value] || `Option ${value}`;
+                
+                return (
+                  <FormControlLabel
+                    key={value}
+                    value={value.toString()}
+                    control={<Radio />}
+                    label={`${value} - ${labelText}`}
+                    sx={{ my: 0.5 }}
+                  />
+                );
+              })}
+            </RadioGroup>
+          </FormControl>
+        );
+
+      case 5: // Multiple choice
+        return (
+          <FormControl component="fieldset" sx={{ mt: 2, width: '100%' }} required={question.is_required}>
+            <FormGroup>
+              <FormLabel component="legend">Select all that apply</FormLabel>
+              {question.config?.options?.map((option, idx) => {
+                const selectedOptions = currentValue || [];
+                const optionValue = typeof option === 'object' ? option.value : option;
+                const optionLabel = typeof option === 'object' ? option.label : option;
+                
+                return (
+                  <FormControlLabel
+                    key={idx}
+                    control={
+                      <Checkbox 
+                        checked={selectedOptions.includes(optionValue)}
+                        onChange={(e) => {
+                          const current = currentValue || [];
+                          let newValue;
+                          if (e.target.checked) {
+                            newValue = [...current, optionValue];
+                          } else {
+                            newValue = current.filter(item => item !== optionValue);
+                          }
+                          handleResponseChange(questionId, newValue);
+                        }}
+                      />
+                    }
+                    label={optionLabel}
+                    sx={{ my: 0.5 }}
+                  />
+                );
+              })}
+            </FormGroup>
           </FormControl>
         );
 
@@ -534,17 +605,46 @@ const SurveyTaking = () => {
       case 9: // Flexible Input
         return (
           <Box sx={{ mt: 2 }}>
-            <ConstantSumInput
-              categories={(question.config?.items || []).map(item => ({
-                value: item.value || item.id || item.text,
-                label: item.label || item.text
-              }))}
-              values={currentValue || {}}
-              onChange={(values) => handleResponseChange(questionId, values)}
-              instructions={question.config?.instructions || question.config?.labels?.instruction}
-              placeholder={question.config?.placeholder || 'Enter your response'}
-              required={question.is_required}
-            />
+            {question.config?.instructions && (
+              <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+                {question.config.instructions}
+              </Typography>
+            )}
+            {question.config?.items?.map((item, idx) => {
+              // Create unique keys for each item - use multiple fallbacks
+              const itemValue = typeof item === 'object' 
+                ? (item.value || item.id || item.text || `item_${idx}`)
+                : (item || `item_${idx}`);
+              const itemLabel = typeof item === 'object' 
+                ? (item.label || item.text || item.value || `Item ${idx + 1}`)
+                : (item || `Item ${idx + 1}`);
+              const currentResponses = currentValue || {};
+              
+              console.log(`Flexible Input - Item ${idx}:`, { item, itemValue, itemLabel, currentValue: currentResponses[itemValue] });
+              
+              return (
+                <Box key={`${questionId}_${itemValue}_${idx}`} sx={{ mb: 2 }}>
+                  <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                    {itemLabel}
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    value={currentResponses[itemValue] || ''}
+                    onChange={(e) => {
+                      const newResponses = {
+                        ...currentResponses,
+                        [itemValue]: e.target.value
+                      };
+                      console.log(`Updating flexible input for ${itemValue}:`, newResponses);
+                      handleResponseChange(questionId, newResponses);
+                    }}
+                    placeholder={question.config?.placeholder || 'Enter your response'}
+                    size="small"
+                    required={question.is_required}
+                  />
+                </Box>
+              );
+            })}
           </Box>
         );
 
