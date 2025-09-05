@@ -35,12 +35,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import SaveIcon from '@mui/icons-material/Save';
 
 // API Base URL from environment variable
-const API_BASE_URL = '/api'; // Temporarily hardcoded for testing
-// const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-
-// Debug: Log the API_BASE_URL to see what it's actually using
-console.log('🔍 API_BASE_URL:', API_BASE_URL);
-console.log('🔍 process.env.REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const SurveyTaking = () => {
   const navigate = useNavigate();
