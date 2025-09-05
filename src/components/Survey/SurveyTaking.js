@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+
 import {
   Container,
   Typography,
@@ -32,6 +33,9 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import CloseIcon from '@mui/icons-material/Close';
 import SaveIcon from '@mui/icons-material/Save';
+
+// API Base URL from environment variable
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const SurveyTaking = () => {
   const navigate = useNavigate();
@@ -74,7 +78,7 @@ const SurveyTaking = () => {
       setLoading(true);
       
       if (survey && survey.template_id) {
-        const response = await fetch(`http://localhost:5000/api/templates/${survey.template_id}`);
+        const response = await fetch(`${API_BASE_URL}/templates/${survey.template_id}`);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch template: ${response.status} ${response.statusText}`);
@@ -224,7 +228,7 @@ const SurveyTaking = () => {
       console.log(`Checking for existing response for user ${userId} and template ${survey.template_id}`);
 
       // First, try to find existing survey response for this user and template
-      const existingResponseUrl = `http://localhost:5000/api/users/${userId}/templates/${survey.template_id}/response`;
+      const existingResponseUrl = `${API_BASE_URL}/users/${userId}/templates/${survey.template_id}/response`;
       
       try {
         const existingResponse = await fetch(existingResponseUrl);
@@ -254,7 +258,7 @@ const SurveyTaking = () => {
 
       // Only reach here if no existing response was found (404)
       console.log('🔄 Creating new survey response...');
-      const createResponse = await fetch(`http://localhost:5000/api/templates/${survey.template_id}/responses`, {
+      const createResponse = await fetch(`${API_BASE_URL}/templates/${survey.template_id}/responses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -292,7 +296,7 @@ const SurveyTaking = () => {
       console.log('Saving draft for response ID:', surveyResponseId);
       console.log('Current responses:', responses);
 
-      const response = await fetch(`http://localhost:5000/api/responses/${surveyResponseId}`, {
+      const response = await fetch(`${API_BASE_URL}/responses/${surveyResponseId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -331,7 +335,7 @@ const SurveyTaking = () => {
       }
 
       // Submit all responses to the backend
-      const response = await fetch(`http://localhost:5000/api/responses/${surveyResponseId}`, {
+      const response = await fetch(`${API_BASE_URL}/responses/${surveyResponseId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
