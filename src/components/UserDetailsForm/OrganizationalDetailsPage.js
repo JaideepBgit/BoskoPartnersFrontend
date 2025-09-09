@@ -241,7 +241,7 @@ const OrganizationalDetailsPage = ({ formData, updateFormData, saveAndContinue, 
         {/* Address Search + Map */}
         <Grid item xs={12}>
           <Typography variant="h6" sx={{ color: '#633394', mb: 1 }}>
-            Your Address
+            Your Physical Address
           </Typography>
           <Box sx={{ display: 'flex', gap: 1, mb: 1, flexDirection: isMobile ? 'column' : 'row' }}>
             {isLoaded ? (

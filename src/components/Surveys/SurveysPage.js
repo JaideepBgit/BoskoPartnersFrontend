@@ -9,10 +9,13 @@ import {
   CircularProgress,
   Alert,
   Chip,
-  LinearProgress
+  LinearProgress,
+  Badge
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../shared/Navbar/Navbar';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 import axios from 'axios';
 
 const SurveysPage = () => {
@@ -128,6 +131,15 @@ const SurveysPage = () => {
     }
   };
 
+  const handleViewReports = () => {
+    navigate('/reports');
+  };
+
+  // Check if survey is completed (100%)
+  const isCompleted = (assignmentId) => {
+    return (progressMap[assignmentId] ?? 0) === 100;
+  };
+
   if (loading) {
     return (
       <>
@@ -148,6 +160,24 @@ const SurveysPage = () => {
 
   return (
     <>
+      <style>
+        {`
+          @keyframes pulse {
+            0% {
+              transform: scale(1);
+              box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+            }
+            70% {
+              transform: scale(1.05);
+              box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+            }
+            100% {
+              transform: scale(1);
+              box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+            }
+          }
+        `}
+      </style>
       <Navbar />
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
         <Typography 
@@ -177,8 +207,10 @@ const SurveysPage = () => {
                 sx={{ 
                   boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
                   borderRadius: 2,
-                  border: '1px solid #e0e0e0',
+                  border: isCompleted(a.id) ? '2px solid #4caf50' : '1px solid #e0e0e0',
                   overflow: 'hidden',
+                  position: 'relative',
+                  backgroundColor: isCompleted(a.id) ? '#f8fff8' : 'white',
                   '&:hover': {
                     boxShadow: '0 6px 16px rgba(0, 0, 0, 0.15)',
                     transform: 'translateY(-2px)',
@@ -186,14 +218,45 @@ const SurveysPage = () => {
                   }
                 }}
               >
+                {/* Completion Badge */}
+                {isCompleted(a.id) && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 16,
+                      right: 16,
+                      zIndex: 1
+                    }}
+                  >
+                    <Badge
+                      badgeContent={<CheckCircleIcon sx={{ fontSize: 16 }} />}
+                      sx={{
+                        '& .MuiBadge-badge': {
+                          backgroundColor: '#4caf50',
+                          color: 'white',
+                          borderRadius: '50%',
+                          width: 32,
+                          height: 32,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          animation: 'pulse 2s infinite'
+                        }
+                      }}
+                    >
+                      <Box />
+                    </Badge>
+                  </Box>
+                )}
+
                 <CardContent sx={{ p: 4 }}>
                   <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap' }}>
                     <Box sx={{ 
-                      color: '#633394', 
+                      color: isCompleted(a.id) ? '#4caf50' : '#633394', 
                       fontSize: '2.0rem',
                       mt: 0.5
                     }}>
-                      📋
+                      {isCompleted(a.id) ? '✅' : '📋'}
                     </Box>
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography 
@@ -228,8 +291,9 @@ const SurveysPage = () => {
                           size="small" 
                           variant="outlined"
                           sx={{ 
-                            borderColor: '#633394',
-                            color: '#633394'
+                            borderColor: isCompleted(a.id) ? '#4caf50' : '#633394',
+                            color: isCompleted(a.id) ? '#4caf50' : '#633394',
+                            backgroundColor: isCompleted(a.id) ? '#e8f5e8' : 'transparent'
                           }} 
                         />
                         <Chip 
@@ -241,7 +305,46 @@ const SurveysPage = () => {
                             color: '#633394'
                           }} 
                         />
+                        {isCompleted(a.id) && (
+                          <Chip 
+                            icon={<CheckCircleIcon />}
+                            label="Survey Complete!"
+                            size="small" 
+                            sx={{ 
+                              backgroundColor: '#4caf50',
+                              color: 'white',
+                              fontWeight: 600,
+                              animation: 'pulse 2s infinite'
+                            }} 
+                          />
+                        )}
                       </Box>
+
+                      {/* Completion Message for 100% surveys */}
+                      {isCompleted(a.id) && (
+                        <Box sx={{ 
+                          mb: 2, 
+                          p: 2, 
+                          backgroundColor: '#e8f5e8', 
+                          borderRadius: 2,
+                          border: '1px solid #4caf50'
+                        }}>
+                          <Typography variant="body2" sx={{ 
+                            color: '#2e7d32', 
+                            fontWeight: 600,
+                            mb: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1
+                          }}>
+                            <CheckCircleIcon sx={{ fontSize: 18 }} />
+                            Congratulations! Survey completed successfully.
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: '#2e7d32' }}>
+                            You can now view your results in the Reports section.
+                          </Typography>
+                        </Box>
+                      )}
 
                       {/* Progress Bar */}
                       <Box sx={{ mb: 2 }}>
@@ -261,7 +364,7 @@ const SurveysPage = () => {
                             borderRadius: 3,
                             backgroundColor: '#f0f0f0',
                             '& .MuiLinearProgress-bar': {
-                              backgroundColor: '#633394'
+                              backgroundColor: isCompleted(a.id) ? '#4caf50' : '#633394'
                             }
                           }}
                         />
@@ -284,6 +387,32 @@ const SurveysPage = () => {
                         >
                           {a.status === 'in_progress' ? 'Resume Survey' : a.status === 'completed' ? 'View Survey' : 'Start Survey'}
                         </Button>
+                        
+                        {/* View Reports Button for Completed Surveys */}
+                        {isCompleted(a.id) && (
+                          <Button
+                            variant="outlined"
+                            startIcon={<AssignmentIcon />}
+                            onClick={handleViewReports}
+                            sx={{
+                              borderColor: '#4caf50',
+                              color: '#4caf50',
+                              '&:hover': { 
+                                borderColor: '#2e7d32',
+                                backgroundColor: '#e8f5e8',
+                                color: '#2e7d32'
+                              },
+                              px: 3,
+                              py: 1,
+                              borderRadius: 2,
+                              textTransform: 'none',
+                              fontWeight: 600,
+                              fontSize: '1rem'
+                            }}
+                          >
+                            View Reports
+                          </Button>
+                        )}
                         
                         <Box sx={{ ml: { xs: 0, sm: 2 } }}>
                           <Typography variant="caption" color="text.secondary" sx={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>

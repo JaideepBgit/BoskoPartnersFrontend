@@ -14,7 +14,8 @@ import SurveyTaking from './components/Survey/SurveyTaking';
 import ReportBuilder from './components/Admin/Reports/ReportBuilder';
 import ReportsPage from './components/Admin/Reports/ReportsPage';
 import VisualReportBuilder from './components/Admin/Reports/VisualReportBuilder';
-import UserReports from './components/Admin/Reports/UserReports';
+import AdminUserReports from './components/Admin/Reports/UserReports';
+import RoleBasedReports from './components/Reports/RoleBasedReports';
 
 import './App.css';
 import './styles/form.css';
@@ -151,10 +152,10 @@ function Main({ isAuthenticated, userRole, login, logout }) {
           </ProtectedRoute>
         } />
         
-        {/* Reports Route */}
+        {/* Reports Route - Role-based */}
         <Route path="/reports" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
-            <ReportsPage onLogout={logout} />
+            <RoleBasedReports onLogout={logout} />
           </ProtectedRoute>
         } />
         
@@ -172,10 +173,10 @@ function Main({ isAuthenticated, userRole, login, logout }) {
           </ProtectedRoute>
         } />
         
-        {/* User Reports Route */}
+        {/* Admin User Reports Route */}
         <Route path="/user-reports" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
-            <UserReports onLogout={logout} />
+            <AdminUserReports onLogout={logout} />
           </ProtectedRoute>
         } />
         

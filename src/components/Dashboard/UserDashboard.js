@@ -20,6 +20,8 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 
 // Home Component - This will be the default landing page for non-admin users
 const HomeComponent = () => {
@@ -73,6 +75,10 @@ const HomeComponent = () => {
       setError('Survey code not found. Please enter your survey code again.');
       navigate('/user');
     }
+  };
+
+  const handleStartSurvey = () => {
+    navigate('/surveys');
   };
 
   // Consider the user details "Completed" when both sections are filled OR backend says submitted
@@ -208,6 +214,72 @@ const HomeComponent = () => {
               </CardContent>
             </Card>
           </Grid>
+
+          {/* Survey Start Card - Only show when personal details are completed */}
+          {isUserDetailsCompleted() && (
+            <Grid item xs={12}>
+              <Card 
+                elevation={3} 
+                sx={{ 
+                  backgroundColor: '#f8f9fa',
+                  border: '2px solid #633394',
+                  borderRadius: '12px',
+                  boxShadow: '0 6px 12px rgba(99, 51, 148, 0.15)'
+                }}
+              >
+                <CardContent sx={{ textAlign: 'center', p: isMobile ? 2 : 3 }}>
+                  <AssignmentIcon 
+                    sx={{ 
+                      fontSize: isMobile ? 40 : 48, 
+                      color: '#633394', 
+                      mb: 2 
+                    }} 
+                  />
+                  <Typography 
+                    variant={isMobile ? "h6" : "h5"} 
+                    component="h3" 
+                    gutterBottom 
+                    sx={{ 
+                      fontWeight: 'bold', 
+                      color: '#633394',
+                      mb: 2
+                    }}
+                  >
+                    Ready to Begin Your Survey?
+                  </Typography>
+                  <Typography 
+                    variant="body1" 
+                    color="text.secondary" 
+                    paragraph
+                    sx={{ mb: 3 }}
+                  >
+                    Great! Your personal details are complete. You can now proceed to take your assigned surveys.
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<PlayArrowIcon />}
+                    onClick={handleStartSurvey}
+                    fullWidth={isMobile}
+                    sx={{
+                      backgroundColor: '#633394',
+                      color: 'white',
+                      px: isMobile ? 2 : 4,
+                      py: 1.5,
+                      fontSize: isMobile ? '1rem' : '1.1rem',
+                      fontWeight: 'bold',
+                      borderRadius: '8px',
+                      '&:hover': {
+                        backgroundColor: '#4a2570',
+                      }
+                    }}
+                  >
+                    Start the Survey
+                  </Button>
+                </CardContent>
+              </Card>
+            </Grid>
+          )}
         </Grid>
       </Container>
     </>

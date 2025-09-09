@@ -25,6 +25,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../shared/Navbar/Navbar';
 import ConstantSumInput from '../shared/ConstantSumInput';
+import SurveyCompletionGuidance from '../shared/SurveyCompletionGuidance/SurveyCompletionGuidance';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -50,6 +51,7 @@ const SurveyTaking = () => {
   const [surveyProgress, setSurveyProgress] = useState(0);
   const [surveyResponseId, setSurveyResponseId] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [showCompletionGuidance, setShowCompletionGuidance] = useState(false);
 
   // Get survey data from navigation state
   const survey = location.state?.survey;
@@ -160,6 +162,16 @@ const SurveyTaking = () => {
 
   const handleCloseSurvey = () => {
     navigate('/surveys');
+  };
+
+  const handleCloseGuidance = () => {
+    setShowCompletionGuidance(false);
+    navigate('/surveys');
+  };
+
+  const handleNavigateToReports = () => {
+    setShowCompletionGuidance(false);
+    navigate('/reports', { state: { fromSurveyCompletion: true } });
   };
 
   const handlePreviousQuestion = () => {
@@ -349,8 +361,8 @@ const SurveyTaking = () => {
       });
 
       if (response.ok) {
-        alert('Survey submitted successfully! Thank you for your participation.');
-        navigate('/surveys');
+        // Show completion guidance instead of alert and immediate navigation
+        setShowCompletionGuidance(true);
       } else {
         throw new Error('Failed to submit survey');
       }
@@ -704,6 +716,14 @@ const SurveyTaking = () => {
     <>
       <Navbar />
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4, minHeight: 'calc(100vh - 200px)' }}>
+        
+        {/* Survey Completion Guidance Modal */}
+        <SurveyCompletionGuidance
+          open={showCompletionGuidance}
+          onClose={handleCloseGuidance}
+          surveyTitle={survey?.template_name || surveyData?.survey_code || "Survey"}
+          onNavigateToReports={handleNavigateToReports}
+        />
         
         {/* Survey Intro Card - When no section is selected */}
         {!selectedSection && (
