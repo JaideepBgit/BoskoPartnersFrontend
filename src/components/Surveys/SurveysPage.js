@@ -96,7 +96,7 @@ const SurveysPage = () => {
             template_id: assignment.template_id,
             survey_code: assignment.survey_code,
             template_name: assignment.template_name,
-            organization_type: 'Survey',
+            organization_type: assignment.organization_type || 'Survey',
             user_id: userId,
             username: user.username,
             email: user.email,
@@ -153,9 +153,9 @@ const SurveysPage = () => {
 
   // Format the survey name and organization type from backend data
   const getAssignmentTitle = (a) => {
-    const name = a.template_name || 'Survey';
+    const name = a.survey_code ; //a.template_name || 'Survey';
     const code = a.survey_code ? ` - ${a.survey_code}` : '';
-    return `${name}${code}`;
+    return `${name}`;
   };
 
   return (
@@ -388,7 +388,7 @@ const SurveysPage = () => {
                           {a.status === 'in_progress' ? 'Resume Survey' : a.status === 'completed' ? 'View Survey' : 'Start Survey'}
                         </Button>
                         
-                        {/* View Reports Button for Completed Surveys */}
+                        {/* View Reports Button for Completed Surveys 
                         {isCompleted(a.id) && (
                           <Button
                             variant="outlined"
@@ -412,13 +412,13 @@ const SurveysPage = () => {
                           >
                             View Reports
                           </Button>
-                        )}
+                        )}*/}
                         
-                        <Box sx={{ ml: { xs: 0, sm: 2 } }}>
+                        {/*<Box sx={{ ml: { xs: 0, sm: 2 } }}>
                           <Typography variant="caption" color="text.secondary" sx={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                             Survey Code: {a.survey_code || surveyCode || 'N/A'}
                           </Typography>
-                        </Box>
+                        </Box>*/}
                       </Box>
                     </Box>
                   </Box>

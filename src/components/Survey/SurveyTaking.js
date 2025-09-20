@@ -54,6 +54,7 @@ const SurveyTaking = () => {
   const [showCompletionGuidance, setShowCompletionGuidance] = useState(false);
 
   // Get survey data from navigation state
+  console.log('SurveyTaking location.state:', location);
   const survey = location.state?.survey;
 
   useEffect(() => {
@@ -739,7 +740,7 @@ const SurveyTaking = () => {
               fontWeight: 'bold',
               mb: 1
             }}>
-              {survey.template_name || surveyData.survey_code}
+              {survey.survey_code || surveyData.survey_code}
             </Typography>
               <IconButton 
                 aria-label="close"

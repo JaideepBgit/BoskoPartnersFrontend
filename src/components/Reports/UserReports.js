@@ -14,7 +14,9 @@ import {
   Alert,
   CircularProgress,
   Chip,
-  Divider
+  Divider,
+  Autocomplete,
+  TextField
 } from '@mui/material';
 import Navbar from '../shared/Navbar/Navbar';
 import SimpleBarChart from '../Admin/Reports/Charts/SimpleBarChart';
@@ -35,14 +37,18 @@ const UserReports = ({ onLogout }) => {
     age_group: ''
   });
   const [selectedMapSurveys, setSelectedMapSurveys] = useState([]);
+  const [userOrganizations, setUserOrganizations] = useState([]);
+  const [selectedOrganization, setSelectedOrganization] = useState(null);
+  const [loadingOrganizations, setLoadingOrganizations] = useState(true);
 
   // Helper functions for robust type comparison
   const normType = (t) => (t || '').toString().toLowerCase().replace(/[\s_-]/g, '');
   const isSameType = (s) => normType(s.survey_type || s.surveyType) === normType(selectedSurveyType);
 
-  // Load user's survey responses on component mount
+  // Load user's survey responses and organizations on component mount
   useEffect(() => {
     loadUserSurveyResponses();
+    loadUserOrganizations();
   }, []);
 
   const loadUserSurveyResponses = async () => {
@@ -147,6 +153,73 @@ const UserReports = ({ onLogout }) => {
     }
   };
 
+  const loadUserOrganizations = async () => {
+    try {
+      setLoadingOrganizations(true);
+      const userId = localStorage.getItem('userId');
+      const token = localStorage.getItem('token');
+      
+      if (!userId) {
+        console.log('No user ID found for loading organizations');
+        return;
+      }
+
+      // Get user data to fetch their primary organization
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiUrl}/users/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        }
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        
+        // If user has an organization_id, fetch that organization
+        if (userData.organization_id) {
+          const orgResponse = await fetch(`${apiUrl}/organizations/${userData.organization_id}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token && { 'Authorization': `Bearer ${token}` })
+            }
+          });
+          
+          if (orgResponse.ok) {
+            const orgData = await orgResponse.json();
+            const userOrg = {
+              id: orgData.id,
+              name: orgData.name,
+              organization_type: {
+                type: orgData.organization_type?.type || null
+              },
+              geo_location: {
+                city: orgData.geo_location?.city || null,
+                country: orgData.geo_location?.country || null
+              },
+              is_primary: true
+            };
+            
+            setUserOrganizations([userOrg]);
+            setSelectedOrganization(userOrg);
+          }
+        } else {
+          // User has no organization
+          setUserOrganizations([]);
+          setSelectedOrganization(null);
+        }
+      } else {
+        console.error('Failed to load user data');
+      }
+    } catch (err) {
+      console.error('Error loading user organizations:', err);
+    } finally {
+      setLoadingOrganizations(false);
+    }
+  };
+
   // Update comparison data when survey type or selected response changes
   useEffect(() => {
     if (userSurveyData[selectedSurveyType] && selectedResponseId) {
@@ -207,6 +280,12 @@ const UserReports = ({ onLogout }) => {
     if (userSurveyData[newType] && userSurveyData[newType].length > 0) {
       setSelectedResponseId(String(userSurveyData[newType][0].id));
     }
+  };
+
+  const handleOrganizationChange = (event) => {
+    const orgId = event.target.value;
+    const organization = userOrganizations.find(org => org.id === orgId);
+    setSelectedOrganization(organization);
   };
 
   const getFilteredResponses = () => {
@@ -362,7 +441,16 @@ const UserReports = ({ onLogout }) => {
           </Card>
         </Box>
 
-        {totalResponses === 0 ? (
+        {userOrganizations.length === 0 && !loadingOrganizations ? (
+          <Alert severity="warning" sx={{ mb: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              No Organizations Found
+            </Typography>
+            <Typography variant="body2">
+              You are not associated with any organizations. Please contact your administrator to be assigned to an organization before you can view reports.
+            </Typography>
+          </Alert>
+        ) : totalResponses === 0 ? (
           <Alert severity="info" sx={{ mb: 3 }}>
             <Typography variant="h6" gutterBottom>
               No Survey Responses Found
@@ -377,7 +465,15 @@ const UserReports = ({ onLogout }) => {
             <Card sx={{ mb: 3 }}>
               <CardContent>
                 {/* Status */}
-                <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                  {selectedOrganization && (
+                    <Chip 
+                      label={`Organization: ${selectedOrganization.name}${selectedOrganization.is_primary ? ' (Primary)' : ''}`}
+                      color="primary"
+                      size="small"
+                      variant="outlined"
+                    />
+                  )}
                   <Chip 
                     label={`${availableResponses.length} ${selectedSurveyType} responses`}
                     color="info"
@@ -397,6 +493,29 @@ const UserReports = ({ onLogout }) => {
                 
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={3}>
+                    <TextField
+                      fullWidth
+                      label="Your Organization"
+                      value={selectedOrganization ? selectedOrganization.name : (loadingOrganizations ? 'Loading...' : 'No organization assigned')}
+                      InputProps={{
+                        readOnly: true,
+                      }}
+                      size="medium"
+                      sx={{ 
+                        backgroundColor: 'white',
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: '#e0e0e0',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: userColors.primary,
+                          },
+                        }
+                      }}
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12} md={3}>
                     <FormControl fullWidth>
                       <InputLabel>Survey Type</InputLabel>
                       <Select
@@ -411,7 +530,7 @@ const UserReports = ({ onLogout }) => {
                     </FormControl>
                   </Grid>
                   
-                  <Grid item xs={12} md={4}>
+                  <Grid item xs={12} md={3}>
                     <FormControl fullWidth>
                       <InputLabel>Select Response to Analyze</InputLabel>
                       <Select
@@ -428,7 +547,7 @@ const UserReports = ({ onLogout }) => {
                     </FormControl>
                   </Grid>
 
-                  <Grid item xs={12} md={2}>
+                  <Grid item xs={12} md={3}>
                     <FormControl fullWidth>
                       <InputLabel>Country</InputLabel>
                       <Select
@@ -525,22 +644,25 @@ const UserReports = ({ onLogout }) => {
                   How to Use Your Survey Reports
                 </Typography>
                 <Typography variant="body2" paragraph>
-                  1. <strong>Select Survey Type:</strong> Choose between Church, Institution, or Non-Formal surveys
+                  1. <strong>Select Organization:</strong> Choose from your associated organizations (only organizations you belong to are shown)
                 </Typography>
                 <Typography variant="body2" paragraph>
-                  2. <strong>Select Your Response:</strong> Pick one of your completed surveys to analyze
+                  2. <strong>Select Survey Type:</strong> Choose between Church, Institution, or Non-Formal surveys
                 </Typography>
                 <Typography variant="body2" paragraph>
-                  3. <strong>Apply Filters:</strong> Filter comparison data by country or other criteria
+                  3. <strong>Select Your Response:</strong> Pick one of your completed surveys to analyze
                 </Typography>
                 <Typography variant="body2" paragraph>
-                  4. <strong>View Comparisons:</strong> See how your responses compare to similar surveys
+                  4. <strong>Apply Filters:</strong> Filter comparison data by country or other criteria
                 </Typography>
                 <Typography variant="body2" paragraph>
-                  5. <strong>Select on Map:</strong> Click on map markers to focus on specific geographic areas
+                  5. <strong>View Comparisons:</strong> See how your responses compare to similar surveys
+                </Typography>
+                <Typography variant="body2" paragraph>
+                  6. <strong>Select on Map:</strong> Click on map markers to focus on specific geographic areas
                 </Typography>
                 <Typography variant="body2">
-                  6. <strong>Analyze Results:</strong> Use the charts to understand your survey results in context
+                  7. <strong>Analyze Results:</strong> Use the charts to understand your survey results in context
                 </Typography>
               </CardContent>
             </Card>

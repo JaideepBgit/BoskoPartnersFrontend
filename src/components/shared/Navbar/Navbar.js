@@ -356,32 +356,6 @@ const Navbar = () => {
             <ListItemIcon><AssignmentIcon /></ListItemIcon>
             <ListItemText primary="Surveys" />
           </ListItem>
-          <ListItem 
-            button 
-            onClick={() => handleNavigation('/reports')} 
-            selected={userTabValue === 2}
-            sx={{
-              '&.Mui-selected': {
-                backgroundColor: '#633394',
-                color: 'white',
-                '& .MuiListItemIcon-root': {
-                  color: 'white',
-                },
-                '&:hover': {
-                  backgroundColor: '#533082',
-                },
-              },
-              '&:hover': {
-                backgroundColor: '#f5f5f5',
-              },
-              borderRadius: '8px',
-              mx: 1,
-              mb: 0.5,
-            }}
-          >
-            <ListItemIcon><BarChartIcon /></ListItemIcon>
-            <ListItemText primary="Reports" />
-          </ListItem>
         </List>
       )}
       <Box sx={{ position: 'absolute', bottom: 0, width: '100%' }}>
