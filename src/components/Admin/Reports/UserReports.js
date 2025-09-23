@@ -28,6 +28,7 @@ import ChartSelectorCard from './Charts/ChartSelectorCard';
 import CustomChart from './Charts/CustomChart';
 import ChartEditDialog from './Charts/ChartEditDialog';
 import SurveyMapCard from './Charts/SurveyMapCard';
+import QualitativeAnalysis from './Charts/QualitativeAnalysis';
 
 const UserReports = () => {
   const [loading, setLoading] = useState(true);
@@ -667,6 +668,18 @@ const UserReports = () => {
                 maxValue={5}
               />
             </Grid>
+
+            {/* Qualitative Insights */}
+            <Grid item xs={12}>
+              <QualitativeAnalysis
+                surveyType={selectedSurveyType}
+                selectedResponseId={selectedResponseId}
+                selectedMapSurveys={selectedMapSurveys}
+                userColors={adminColors}
+                apiUrl={process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}
+                isTestMode={isTestMode}
+              />
+            </Grid>
           </Grid>
         )}
 
@@ -718,10 +731,13 @@ const UserReports = () => {
               6. <strong>Select Surveys on Map:</strong> Click on map markers to select specific surveys. When surveys are selected, all graphs will be recomputed using only the selected data
             </Typography>
             <Typography variant="body2" paragraph>
-              7. <strong>Create Custom Charts:</strong> Use the Chart Builder to create custom visualizations
+              7. <strong>Qualitative Insights:</strong> View AI-powered analysis of open-ended responses including sentiment analysis, topic modeling, and response clustering
+            </Typography>
+            <Typography variant="body2" paragraph>
+              8. <strong>Create Custom Charts:</strong> Use the Chart Builder to create custom visualizations
             </Typography>
             <Typography variant="body2">
-              8. <strong>Edit Charts:</strong> Click the menu (⋮) on any chart to edit, duplicate, or delete it
+              9. <strong>Edit Charts:</strong> Click the menu (⋮) on any chart to edit, duplicate, or delete it
             </Typography>
           </CardContent>
         </Card>
