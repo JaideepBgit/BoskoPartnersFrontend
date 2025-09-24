@@ -29,6 +29,7 @@ import CustomChart from './Charts/CustomChart';
 import ChartEditDialog from './Charts/ChartEditDialog';
 import SurveyMapCard from './Charts/SurveyMapCard';
 import QualitativeAnalysis from './Charts/QualitativeAnalysis';
+import QualitativeComparisonAnalysis from './Charts/QualitativeComparisonAnalysis';
 
 const UserReports = () => {
   const [loading, setLoading] = useState(true);
@@ -341,7 +342,10 @@ const UserReports = () => {
     text: '#212121',
     headerBg: '#ede7f6',
     borderColor: '#e0e0e0',
-    highlightBg: '#f3e5f5'
+    highlightBg: '#f3e5f5',
+    cardBg: '#ffffff',
+    lightPurple: '#f3e5f5',
+    darkPurple: '#4a148c'
   };
 
   if (loading) {
@@ -376,9 +380,9 @@ const UserReports = () => {
             </Box>
             
             {/* Data Mode Toggle - Always Visible */}
-            <Card sx={{ p: 2, minWidth: 200 }}>
+            <Card sx={{ p: 2, minWidth: 200, backgroundColor: adminColors.cardBg, border: `1px solid ${adminColors.borderColor}` }}>
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <Typography variant="subtitle2" gutterBottom>
+                <Typography variant="subtitle2" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
                   Data Source
                 </Typography>
                 <FormControlLabel
@@ -386,7 +390,15 @@ const UserReports = () => {
                     <Switch
                       checked={isTestMode}
                       onChange={handleModeToggle}
-                      color="primary"
+                      sx={{
+                        '& .MuiSwitch-switchBase.Mui-checked': {
+                          color: adminColors.primary,
+                          '&:hover': { backgroundColor: `${adminColors.primary}20` }
+                        },
+                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                          backgroundColor: adminColors.primary
+                        }
+                      }}
                     />
                   }
                   label={
@@ -454,10 +466,10 @@ const UserReports = () => {
             </Typography>
           </Box>
           
-          {/* Data Mode Toggle */}
-          <Card sx={{ p: 2, minWidth: 200 }}>
+            {/* Data Mode Toggle */}
+            <Card sx={{ p: 2, minWidth: 200, backgroundColor: adminColors.cardBg, border: `1px solid ${adminColors.borderColor}` }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <Typography variant="subtitle2" gutterBottom>
+              <Typography variant="subtitle2" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
                 Data Source
               </Typography>
               <FormControlLabel
@@ -465,7 +477,15 @@ const UserReports = () => {
                   <Switch
                     checked={isTestMode}
                     onChange={handleModeToggle}
-                    color="primary"
+                    sx={{
+                      '& .MuiSwitch-switchBase.Mui-checked': {
+                        color: adminColors.primary,
+                        '&:hover': { backgroundColor: `${adminColors.primary}20` }
+                      },
+                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                        backgroundColor: adminColors.primary
+                      }
+                    }}
                   />
                 }
                 label={
@@ -509,7 +529,7 @@ const UserReports = () => {
         )}
 
         {/* Control Panel */}
-        <Card sx={{ mb: 3 }}>
+        <Card sx={{ mb: 3, backgroundColor: adminColors.cardBg, border: `1px solid ${adminColors.borderColor}` }}>
           <CardContent>
             {/* Data Source Status */}
             <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -521,29 +541,36 @@ const UserReports = () => {
               />
               <Chip 
                 label={`${availableResponses.length} ${selectedSurveyType} responses`}
-                color="info"
+                sx={{ backgroundColor: adminColors.secondary, color: 'white' }}
                 size="small"
               />
               {selectedMapSurveys.length > 0 && (
                 <Chip 
                   label={`Using ${selectedMapSurveys.filter(isSameType).length} of ${selectedMapSurveys.length} selected surveys`}
-                  color="warning"
+                  sx={{ backgroundColor: adminColors.highlightBg, color: adminColors.primary, border: `1px solid ${adminColors.primary}` }}
                   size="small"
                   variant="outlined"
                   onDelete={() => setSelectedMapSurveys([])}
                 />
               )}
             </Box>
-            <Divider sx={{ mb: 2 }} />
+            <Divider sx={{ mb: 2, borderColor: adminColors.borderColor }} />
             
             <Grid container spacing={3}>
               <Grid item xs={12} md={3}>
                 <FormControl fullWidth>
-                  <InputLabel>Survey Type</InputLabel>
+                  <InputLabel sx={{ color: adminColors.text }}>Survey Type</InputLabel>
                   <Select
                     value={selectedSurveyType}
                     label="Survey Type"
                     onChange={handleSurveyTypeChange}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': { borderColor: adminColors.borderColor },
+                        '&:hover fieldset': { borderColor: adminColors.primary },
+                        '&.Mui-focused fieldset': { borderColor: adminColors.primary }
+                      }
+                    }}
                   >
                     <MenuItem value="church">Church Survey</MenuItem>
                     <MenuItem value="institution">Institution Survey</MenuItem>
@@ -554,11 +581,18 @@ const UserReports = () => {
               
               <Grid item xs={12} md={4}>
                 <FormControl fullWidth>
-                  <InputLabel>Select Response to Analyze</InputLabel>
+                  <InputLabel sx={{ color: adminColors.text }}>Select Response to Analyze</InputLabel>
                   <Select
                     value={selectedResponseId || ''}
                     label="Select Response to Analyze"
                     onChange={(e) => setSelectedResponseId(String(e.target.value))}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': { borderColor: adminColors.borderColor },
+                        '&:hover fieldset': { borderColor: adminColors.primary },
+                        '&.Mui-focused fieldset': { borderColor: adminColors.primary }
+                      }
+                    }}
                   >
                     {availableResponses.map((response) => (
                       <MenuItem key={response.id} value={String(response.id)}>
@@ -573,11 +607,18 @@ const UserReports = () => {
 
               <Grid item xs={12} md={2}>
                 <FormControl fullWidth>
-                  <InputLabel>Country</InputLabel>
+                  <InputLabel sx={{ color: adminColors.text }}>Country</InputLabel>
                   <Select
                     value={filters.country}
                     label="Country"
                     onChange={(e) => setFilters({...filters, country: e.target.value})}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': { borderColor: adminColors.borderColor },
+                        '&:hover fieldset': { borderColor: adminColors.primary },
+                        '&.Mui-focused fieldset': { borderColor: adminColors.primary }
+                      }
+                    }}
                   >
                     <MenuItem value="">All Countries</MenuItem>
                     {getUniqueValues('country').map((country) => (
@@ -591,13 +632,13 @@ const UserReports = () => {
                 <Box display="flex" gap={1} flexWrap="wrap" alignItems="center" pt={1}>
                   <Chip 
                     label={`${filteredResponses.length} Filtered Results`} 
-                    color="secondary" 
+                    sx={{ backgroundColor: adminColors.primary, color: 'white' }}
                     size="small" 
                   />
                   {filters.country && (
                     <Chip 
                       label={`Country: ${filters.country}`} 
-                      color="default" 
+                      sx={{ backgroundColor: adminColors.lightPurple, color: adminColors.primary, border: `1px solid ${adminColors.primary}` }}
                       size="small" 
                       variant="outlined"
                     />
@@ -609,25 +650,44 @@ const UserReports = () => {
         </Card>
 
         {/* Survey Map Card */}
-        <Box sx={{ mb: 3 }}>
-          <SurveyMapCard
-            surveyData={surveyData}
-            targetSurveyId={selectedResponseId}
-            onSurveySelection={handleMapSurveySelection}
-            onAreaSelection={handleMapAreaSelection}
-            adminColors={adminColors}
-          />
-        </Box>
+        <Card sx={{ mb: 3, p: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
+          <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
+            Survey Response Map
+          </Typography>
+          <Typography variant="body2" color="text.secondary" paragraph>
+            Interactive map showing survey response locations. Click markers to select specific surveys for comparison.
+          </Typography>
+          <Box sx={{ mt: 2 }}>
+            <SurveyMapCard
+              surveyData={surveyData}
+              targetSurveyId={selectedResponseId}
+              onSurveySelection={handleMapSurveySelection}
+              onAreaSelection={handleMapAreaSelection}
+              adminColors={adminColors}
+              hideTitle={true}
+            />
+          </Box>
+        </Card>
 
         {/* Chart Builder Card */}
-        <Box sx={{ mb: 3 }}>
-          <ChartSelectorCard
-            onCreateChart={handleCreateCustomChart}
-            surveyType={selectedSurveyType}
-            isExpanded={chartBuilderExpanded}
-            onToggleExpand={() => setChartBuilderExpanded(!chartBuilderExpanded)}
-          />
-        </Box>
+        <Card sx={{ mb: 3, p: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
+          <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
+            Custom Chart Builder
+          </Typography>
+          <Typography variant="body2" color="text.secondary" paragraph>
+            Create custom visualizations from your survey data. Choose chart types, data fields, and filters.
+          </Typography>
+          <Box sx={{ mt: 2 }}>
+            <ChartSelectorCard
+              onCreateChart={handleCreateCustomChart}
+              surveyType={selectedSurveyType}
+              isExpanded={chartBuilderExpanded}
+              onToggleExpand={() => setChartBuilderExpanded(!chartBuilderExpanded)}
+              adminColors={adminColors}
+              hideTitle={true}
+            />
+          </Box>
+        </Card>
 
         {/* Analytics Dashboard */}
         {comparisonData && (
@@ -638,78 +698,152 @@ const UserReports = () => {
                 title="Individual vs Group Comparison"
                 targetResponse={comparisonData.target}
                 comparisonStats={comparisonData.stats}
+                adminColors={adminColors}
               />
             </Grid>
 
             {/* Score Comparison Chart */}
             <Grid item xs={12} md={8}>
-              <SimpleBarChart
-                title="Training Scores: Individual vs Average"
-                data={comparisonData.averages}
-                targetData={comparisonData.targetScores}
-                showComparison={true}
-                maxValue={5}
-              />
+              <Card sx={{ p: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
+                <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
+                  Training Scores: Individual vs Average
+                </Typography>
+                <Box sx={{ mt: 2 }}>
+                  <SimpleBarChart
+                    title=""
+                    data={comparisonData.averages}
+                    targetData={comparisonData.targetScores}
+                    showComparison={true}
+                    maxValue={5}
+                    adminColors={adminColors}
+                  />
+                </Box>
+              </Card>
             </Grid>
 
             {/* Geographic Distribution */}
             <Grid item xs={12} md={6}>
-              <GeographicChart
-                title="Geographic Distribution of Responses"
-                data={geographicData}
-              />
+              <Card sx={{ p: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
+                <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
+                  Geographic Distribution of Responses
+                </Typography>
+                <Box sx={{ mt: 2 }}>
+                  <GeographicChart
+                    title=""
+                    data={geographicData}
+                    adminColors={adminColors}
+                  />
+                </Box>
+              </Card>
             </Grid>
 
             {/* Group Averages */}
             <Grid item xs={12} md={6}>
-              <SimpleBarChart
-                title="Overall Group Averages"
-                data={comparisonData.averages}
-                maxValue={5}
-              />
+              <Card sx={{ p: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
+                <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
+                  Overall Group Averages
+                </Typography>
+                <Box sx={{ mt: 2 }}>
+                  <SimpleBarChart
+                    title=""
+                    data={comparisonData.averages}
+                    maxValue={5}
+                    adminColors={adminColors}
+                  />
+                </Box>
+              </Card>
             </Grid>
 
             {/* Qualitative Insights */}
             <Grid item xs={12}>
-              <QualitativeAnalysis
-                surveyType={selectedSurveyType}
-                selectedResponseId={selectedResponseId}
-                selectedMapSurveys={selectedMapSurveys}
-                userColors={adminColors}
-                apiUrl={process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}
-                isTestMode={isTestMode}
-              />
+              <Card sx={{ p: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
+                <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
+                  Qualitative Insights
+                </Typography>
+                <Box sx={{ mt: 2 }}>
+                  <QualitativeAnalysis
+                    surveyType={selectedSurveyType}
+                    selectedResponseId={selectedResponseId}
+                    selectedResponseLabel={availableResponses.find(r => String(r.id) === String(selectedResponseId)) 
+                      ? (SampleDataService.getResponseDisplayName ? 
+                          SampleDataService.getResponseDisplayName(availableResponses.find(r => String(r.id) === String(selectedResponseId))) : 
+                          `Response ${availableResponses.find(r => String(r.id) === String(selectedResponseId)).id}`) + 
+                        ` - ${availableResponses.find(r => String(r.id) === String(selectedResponseId)).city}, ${availableResponses.find(r => String(r.id) === String(selectedResponseId)).country}`
+                      : 'Selected Response'}
+                    selectedMapSurveys={selectedMapSurveys}
+                    userColors={adminColors}
+                    apiUrl={process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}
+                    isTestMode={isTestMode}
+                    hideTitle={true}
+                  />
+                </Box>
+              </Card>
+            </Grid>
+
+            {/* Qualitative Insights Comparison */}
+            <Grid item xs={12}>
+              <Card sx={{ p: 3, backgroundColor: adminColors.headerBg }}>
+                <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
+                  Qualitative Insights Comparison
+                </Typography>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  Compare the selected response against all other responses in the dataset
+                </Typography>
+                
+                <Box sx={{ mt: 2 }}>
+                  <QualitativeComparisonAnalysis
+                    surveyType={selectedSurveyType}
+                    selectedResponseId={selectedResponseId}
+                    selectedResponseLabel={availableResponses.find(r => String(r.id) === String(selectedResponseId)) 
+                      ? (SampleDataService.getResponseDisplayName ? 
+                          SampleDataService.getResponseDisplayName(availableResponses.find(r => String(r.id) === String(selectedResponseId))) : 
+                          `Response ${availableResponses.find(r => String(r.id) === String(selectedResponseId)).id}`) + 
+                        ` - ${availableResponses.find(r => String(r.id) === String(selectedResponseId)).city}, ${availableResponses.find(r => String(r.id) === String(selectedResponseId)).country}`
+                      : 'Selected Response'}
+                    surveyData={surveyData}
+                    adminColors={adminColors}
+                    apiUrl={process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}
+                    isTestMode={isTestMode}
+                  />
+                </Box>
+              </Card>
             </Grid>
           </Grid>
         )}
 
         {/* Custom Charts Section */}
         {customCharts.length > 0 && (
-          <>
-            <Typography variant="h5" component="h2" gutterBottom sx={{ mt: 4, mb: 2 }}>
+          <Card sx={{ mt: 4, p: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
+            <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
               Custom Charts
             </Typography>
-            <Grid container spacing={3}>
-              {customCharts.map((chart) => (
-                <Grid item xs={12} md={6} lg={4} key={chart.id}>
-                  <CustomChart
-                    chartConfig={chart}
-                    data={surveyData[chart.surveyType] || []}
-                    onRemove={() => handleRemoveCustomChart(chart.id)}
-                    onEdit={handleEditChart}
-                    onDuplicate={handleDuplicateChart}
-                    height={350}
-                  />
-                </Grid>
-              ))}
-            </Grid>
-          </>
+            <Typography variant="body2" color="text.secondary" paragraph>
+              Your custom visualizations created from survey data.
+            </Typography>
+            <Box sx={{ mt: 2 }}>
+              <Grid container spacing={3}>
+                {customCharts.map((chart) => (
+                  <Grid item xs={12} md={6} lg={4} key={chart.id}>
+                    <CustomChart
+                      chartConfig={chart}
+                      data={surveyData[chart.surveyType] || []}
+                      onRemove={() => handleRemoveCustomChart(chart.id)}
+                      onEdit={handleEditChart}
+                      onDuplicate={handleDuplicateChart}
+                      height={350}
+                      adminColors={adminColors}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          </Card>
         )}
 
         {/* Instructions */}
-        <Card sx={{ mt: 3, backgroundColor: '#f8f9fa' }}>
+        <Card sx={{ mt: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
           <CardContent>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
               How to Use This Analytics Dashboard
             </Typography>
             <Typography variant="body2" paragraph>

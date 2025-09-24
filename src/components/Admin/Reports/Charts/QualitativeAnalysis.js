@@ -32,11 +32,13 @@ import {
 
 const QualitativeAnalysis = ({ 
   surveyType, 
-  selectedResponseId, 
+  selectedResponseId,
+  selectedResponseLabel = 'Selected Response',
   selectedMapSurveys = [], 
   userColors = {},
   apiUrl = 'http://localhost:5000/api',
-  isTestMode = false
+  isTestMode = false,
+  hideTitle = false
 }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -279,26 +281,28 @@ const QualitativeAnalysis = ({
   }
 
   return (
-    <Card>
-      <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6" component="h3">
-            Qualitative Insights
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Chip 
-              label={`Data Source: ${isTestMode ? 'Sample Data' : 'Backend API'}`}
-              color={isTestMode ? 'warning' : 'success'}
-              variant="outlined"
-              size="small"
-            />
-            <Chip 
-              label={`${analysisData.totalResponses} Text Responses`}
-              color="primary"
-              size="small"
-            />
-          </Box>
-        </Box>
+    <Box>
+      {!hideTitle && (
+        <Card>
+          <CardContent>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" component="h3">
+                Qualitative Insights - {selectedResponseLabel}
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Chip 
+                  label={`Data Source: ${isTestMode ? 'Sample Data' : 'Backend API'}`}
+                  color={isTestMode ? 'warning' : 'success'}
+                  variant="outlined"
+                  size="small"
+                />
+              </Box>
+            </Box>
+          </CardContent>
+        </Card>
+      )}
+      
+      <Box sx={hideTitle ? {} : { mt: 2 }}>
 
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
           Analysis of open-ended survey responses using sentiment analysis, topic modeling, and clustering.
@@ -442,10 +446,7 @@ const QualitativeAnalysis = ({
 
         <Divider sx={{ my: 2 }} />
         
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="caption" color="text.secondary">
-            Analysis based on {analysisData.totalResponses} text responses using AI-powered sentiment analysis and topic modeling
-          </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
           <Box>
             {refreshing && <CircularProgress size={16} sx={{ mr: 1 }} />}
             <Typography 
@@ -461,8 +462,8 @@ const QualitativeAnalysis = ({
             </Typography>
           </Box>
         </Box>
-      </CardContent>
-    </Card>
+      </Box>
+    </Box>
   );
 };
 
