@@ -36,6 +36,15 @@ const OrganizationalDetailsPage = ({ formData, updateFormData, saveAndContinue, 
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY || '',
     libraries: ['places']
   });
+
+  // Cleanup function to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (searchBox) {
+        setSearchBox(null);
+      }
+    };
+  }, [searchBox]);
   
   // Fetch organizations from backend
   useEffect(() => {
@@ -85,21 +94,36 @@ const OrganizationalDetailsPage = ({ formData, updateFormData, saveAndContinue, 
   };
 
   const onPlacesChanged = () => {
-    const places = searchBox.getPlaces();
-    if (!places || places.length === 0) return;
-    const place = places[0];
-    const parsed = parsePlaceToAddress(place);
-    setAddressSearchValue(parsed.formatted);
-    setMapCenter({ lat: parsed.lat, lng: parsed.lng });
-    setMarkerPosition({ lat: parsed.lat, lng: parsed.lng });
-    updateFormData('organizational', 'country', parsed.country);
-    updateFormData('organizational', 'province', parsed.province);
-    updateFormData('organizational', 'city', parsed.city);
-    updateFormData('organizational', 'town', parsed.town || '');
-    updateFormData('organizational', 'address_line1', parsed.address_line1);
-    updateFormData('organizational', 'postal_code', parsed.postal_code);
-    updateFormData('organizational', 'latitude', parsed.lat);
-    updateFormData('organizational', 'longitude', parsed.lng);
+    try {
+      if (!searchBox) {
+        console.warn('SearchBox is null in onPlacesChanged');
+        return;
+      }
+      
+      const places = searchBox.getPlaces();
+      if (!places || places.length === 0) {
+        console.warn('No places found');
+        return;
+      }
+      
+      const place = places[0];
+      console.log('Selected place:', place);
+      
+      const parsed = parsePlaceToAddress(place);
+      setAddressSearchValue(parsed.formatted);
+      setMapCenter({ lat: parsed.lat, lng: parsed.lng });
+      setMarkerPosition({ lat: parsed.lat, lng: parsed.lng });
+      updateFormData('organizational', 'country', parsed.country);
+      updateFormData('organizational', 'province', parsed.province);
+      updateFormData('organizational', 'city', parsed.city);
+      updateFormData('organizational', 'town', parsed.town || '');
+      updateFormData('organizational', 'address_line1', parsed.address_line1);
+      updateFormData('organizational', 'postal_code', parsed.postal_code);
+      updateFormData('organizational', 'latitude', parsed.lat);
+      updateFormData('organizational', 'longitude', parsed.lng);
+    } catch (error) {
+      console.error('Error in onPlacesChanged:', error);
+    }
   };
 
   const reverseGeocode = (lat, lng) => {
@@ -245,7 +269,13 @@ const OrganizationalDetailsPage = ({ formData, updateFormData, saveAndContinue, 
           </Typography>
           <Box sx={{ display: 'flex', gap: 1, mb: 1, flexDirection: isMobile ? 'column' : 'row' }}>
             {isLoaded ? (
-              <StandaloneSearchBox onLoad={ref => setSearchBox(ref)} onPlacesChanged={onPlacesChanged}>
+              <StandaloneSearchBox 
+                onLoad={ref => {
+                  console.log('SearchBox loaded:', ref);
+                  setSearchBox(ref);
+                }} 
+                onPlacesChanged={onPlacesChanged}
+              >
                 <TextField
                   fullWidth
                   label="Search your address"

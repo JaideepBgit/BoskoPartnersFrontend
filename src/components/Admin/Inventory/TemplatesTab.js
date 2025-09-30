@@ -679,18 +679,30 @@ const TemplatesTab = ({
                 display: 'flex',
                 flexDirection: 'column'
               }}>
-                <Typography variant="h6" sx={{ 
-                  color: '#333', 
-                  fontWeight: 600,
-                  fontSize: '1rem',
-                  mb: 2
-                }}>
-                  {selectedTemplate.survey_code} - Survey Structure
-                </Typography>
-                
-                <Typography variant="body2" sx={{ mb: 3, color: '#666' }}>
-                  Review the survey structure below
-                </Typography>
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h6" sx={{ 
+                    color: '#633394', 
+                    fontWeight: 600,
+                    fontSize: '1.125rem',
+                    mb: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1
+                  }}>
+                    <AssignmentIcon sx={{ fontSize: '1.25rem' }} />
+                    {selectedTemplate.survey_code} - Template Preview
+                  </Typography>
+                  
+                  <Typography variant="body1" sx={{ mb: 2, color: '#555', lineHeight: 1.6 }}>
+                    🔍 <strong>Admin Preview Mode:</strong> This is how your survey template will appear to respondents. 
+                    You can navigate through sections and test question interactions to ensure everything works as expected.
+                  </Typography>
+                  
+                  <Typography variant="body2" sx={{ color: '#666', lineHeight: 1.5 }}>
+                    💡 <strong>Tip:</strong> Click on any section below to experience the survey flow from a user's perspective. 
+                    Your test responses won't be saved to the database.
+                  </Typography>
+                </Box>
                 
                 <Box sx={{ 
                   backgroundColor: '#f8f9fa',
@@ -1060,14 +1072,35 @@ const TemplatesTab = ({
             textAlign: 'center', 
             backgroundColor: '#f5f5f5', 
             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', 
-            flex: 1 
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center'
           }}>
-            <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold', mb: 2 }}>
-              Survey Management
+            <Box sx={{ mb: 3 }}>
+              <AssignmentIcon sx={{ fontSize: '3rem', color: '#633394', mb: 2 }} />
+            </Box>
+            
+            <Typography variant="h5" sx={{ color: '#633394', fontWeight: 'bold', mb: 2 }}>
+              📋 Survey Template Preview Center
             </Typography>
-            <Typography variant="body1" sx={{ color: '#666', fontSize: '0.95rem' }}>
-              Select a template version from the left panel to view templates
+            
+            <Typography variant="body1" sx={{ color: '#555', fontSize: '1rem', mb: 2, maxWidth: '600px', lineHeight: 1.6 }}>
+              Welcome to the template preview interface! Here you can test and experience your survey templates 
+              exactly as your respondents will see them.
             </Typography>
+            
+            <Typography variant="body2" sx={{ color: '#666', fontSize: '0.9rem', maxWidth: '500px', lineHeight: 1.5 }}>
+              <strong>Getting Started:</strong> Select a template version from the left panel to view available templates, 
+              then click on any template to start the preview experience.
+            </Typography>
+            
+            <Box sx={{ mt: 3, p: 2, backgroundColor: '#e8f4fd', borderRadius: '8px', maxWidth: '500px' }}>
+              <Typography variant="caption" sx={{ color: '#1976d2', fontWeight: 500 }}>
+                💡 Pro Tip: Use this preview to quality-check your surveys before assigning them to users!
+              </Typography>
+            </Box>
           </Paper>
         )}
       </Box>

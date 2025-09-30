@@ -43,8 +43,10 @@ import GoogleMapsService from '../../../../services/GoogleMapsService';
 const SurveyMapCard = ({ 
     surveyData = {},
     targetSurveyId = null,
+    selectedSurveyType = 'church',
     onSurveySelection = () => {},
     onAreaSelection = () => {},
+    onSurveyTypeChange = () => {},
     adminColors = {
         primary: '#633394',
         secondary: '#967CB2',
@@ -56,7 +58,6 @@ const SurveyMapCard = ({
     const [mapLoaded, setMapLoaded] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [selectedSurveyType, setSelectedSurveyType] = useState('church');
     const [markers, setMarkers] = useState([]);
     const [selectedMarkers, setSelectedMarkers] = useState([]);
     const [drawingMode, setDrawingMode] = useState(false);
@@ -69,7 +70,7 @@ const SurveyMapCard = ({
         ageGroup: '',
         institutionType: ''
     });
-    const [showAllTypes, setShowAllTypes] = useState(false);
+    const showAllTypes = selectedSurveyType === 'all';
 
     const mapRef = useRef(null);
     const mapInstanceRef = useRef(null);
@@ -504,7 +505,7 @@ const SurveyMapCard = ({
         const responsesToShow = showAllTypes 
             ? Object.values(surveyData).flat()
             : (surveyData[selectedSurveyType] || []);
-
+        console.log(responsesToShow, surveyData);
         responsesToShow.forEach((response, index) => {
             const lat = parseFloat(response.latitude);
             const lng = parseFloat(response.longitude);
@@ -513,7 +514,7 @@ const SurveyMapCard = ({
 
             // Apply filters
             if (!passesFilters(response)) return;
-
+            console.log(response, lat, lng);
             const position = { lat, lng };
             const surveyType = response.survey_type || selectedSurveyType;
             const config = surveyTypeConfig[surveyType] || surveyTypeConfig.church;
@@ -941,7 +942,7 @@ const SurveyMapCard = ({
                         control={
                             <Switch
                                 checked={showAllTypes}
-                                onChange={(e) => setShowAllTypes(e.target.checked)}
+                                onChange={(e) => onSurveyTypeChange(e.target.checked ? 'all' : 'church')}
                                 size="small"
                             />
                         }
@@ -960,7 +961,7 @@ const SurveyMapCard = ({
                             <InputLabel>Survey Type</InputLabel>
                             <Select
                                 value={selectedSurveyType}
-                                onChange={(e) => setSelectedSurveyType(e.target.value)}
+                                onChange={(e) => onSurveyTypeChange(e.target.value)}
                                 label="Survey Type"
                             >
                                 {Object.entries(surveyTypeConfig).map(([key, config]) => (

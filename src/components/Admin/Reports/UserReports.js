@@ -35,26 +35,61 @@ const UserReports = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [surveyData, setSurveyData] = useState({});
-  const [selectedSurveyType, setSelectedSurveyType] = useState('church');
+  const [selectedSurveyType, setSelectedSurveyType] = useState('all');
   const [selectedResponseId, setSelectedResponseId] = useState(null);
   const [comparisonData, setComparisonData] = useState(null);
   const [filters, setFilters] = useState({
     country: '',
     education_level: '',
-    age_group: ''
+    age_group: '',
+    survey_type: ''
   });
+  const [surveyTypes, setSurveyTypes] = useState([]);
   const [customCharts, setCustomCharts] = useState([]);
   const [chartBuilderExpanded, setChartBuilderExpanded] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingChart, setEditingChart] = useState(null);
-  const [isTestMode, setIsTestMode] = useState(true); // Default to test mode
-  const [dataSource, setDataSource] = useState('sample'); // 'sample' or 'backend'
+  const [isTestMode, setIsTestMode] = useState(false); // Default to normal mode
+  const [dataSource, setDataSource] = useState('backend'); // 'sample' or 'backend'
   const [selectedMapSurveys, setSelectedMapSurveys] = useState([]);
   const [selectedMapArea, setSelectedMapArea] = useState([]);
 
   // Helper functions for robust type comparison
   const normType = (t) => (t || '').toString().toLowerCase().replace(/[\s_-]/g, '');
-  const isSameType = (s) => normType(s.survey_type || s.surveyType) === normType(selectedSurveyType);
+  const isSameType = (s) => {
+    if (selectedSurveyType === 'all') return true; // All types match when "all" is selected
+    return normType(s.survey_type || s.surveyType) === normType(selectedSurveyType);
+  };
+
+  // Helper function to get enhanced response display name with geographic info
+  const getEnhancedResponseDisplayName = (response) => {
+    let displayName = '';
+    
+    // Get the primary name based on survey type
+    if (dataSource === 'sample' && SampleDataService.getResponseDisplayName) {
+      displayName = SampleDataService.getResponseDisplayName(response);
+    } else {
+      // For backend data, use the survey-type specific names from the geo-enabled API
+      if (response.survey_type === 'church') {
+        displayName = response.pastor_name || response.church_name || response.user_name || `Response ${response.id}`;
+      } else if (response.survey_type === 'institution') {
+        displayName = response.president_name || response.institution_name || response.user_name || `Response ${response.id}`;
+      } else if (response.survey_type === 'nonFormal' || response.survey_type === 'non_formal') {
+        displayName = response.leader_name || response.ministry_name || response.user_name || `Response ${response.id}`;
+      } else {
+        displayName = response.user_name || `Response ${response.id}`;
+      }
+    }
+    
+    // Add enhanced geographic information from geo-enabled API
+    const locationParts = [];
+    if (response.city) locationParts.push(response.city);
+    if (response.state && response.state !== response.city) locationParts.push(response.state);
+    if (response.country) locationParts.push(response.country);
+    
+    const locationString = locationParts.join(', ');
+    return locationString ? `${displayName} - ${locationString}` : displayName;
+  };
 
   // Load data on component mount and when mode changes
   useEffect(() => {
@@ -63,27 +98,82 @@ const UserReports = () => {
 
   // Handle mode change
   useEffect(() => {
-    setDataSource(isTestMode ? 'sample' : 'backend');
+    const newDataSource = isTestMode ? 'sample' : 'backend';
+    console.log('🔄 Mode change useEffect triggered');
+    console.log('🔄 isTestMode:', isTestMode);
+    console.log('🔄 Previous dataSource:', dataSource);
+    console.log('🔄 New dataSource:', newDataSource);
+    setDataSource(newDataSource);
   }, [isTestMode]);
+
+  // Reload data when survey type filter changes (only for backend data)
+  useEffect(() => {
+    if (dataSource === 'backend' && filters.survey_type !== '') {
+      loadData();
+    }
+  }, [filters.survey_type]);
 
   const loadData = async () => {
     try {
+      console.log('🔄 UserReports.loadData called');
+      console.log('🔄 Data source:', dataSource);
+      console.log('🔄 Current filters:', filters);
+      
       setLoading(true);
       setError(null); // Clear previous errors
       let data;
       
       if (dataSource === 'sample') {
+        console.log('🔄 Loading sample data...');
         data = await SampleDataService.loadSampleData();
+        console.log('🔄 Sample data loaded:', data);
       } else {
-        data = await BackendDataService.loadSurveyResponses();
+        console.log('🔄 Loading backend data...');
+        
+        // Load survey types first if using backend data
+        if (surveyTypes.length === 0) {
+          try {
+            console.log('🔄 Loading survey types...');
+            const types = BackendDataService.getSurveyTypes();
+            setSurveyTypes(types);
+            console.log('🔄 Survey types loaded:', types);
+          } catch (typeError) {
+            console.warn('Failed to load survey types:', typeError);
+          }
+        }
+        
+        // Load survey responses with optional survey type filter
+        const surveyTypeFilter = filters.survey_type || null;
+        console.log('🔄 Loading survey responses with filter:', surveyTypeFilter);
+        data = await BackendDataService.loadSurveyResponses(surveyTypeFilter);
+        console.log('🔄 Backend data loaded:', data);
       }
       
+      console.log('🔄 Setting survey data:', {
+        church: data.church?.length || 0,
+        institution: data.institution?.length || 0,
+        nonFormal: data.nonFormal?.length || 0
+      });
       setSurveyData(data);
       
       // Set default selected response
-      if (data[selectedSurveyType] && data[selectedSurveyType].length > 0) {
-        setSelectedResponseId(String(data[selectedSurveyType][0].id));
+      if (selectedSurveyType === 'all') {
+        // For "all" types, find the first available response from any survey type
+        const allResponses = Object.values(data).flat();
+        if (allResponses.length > 0) {
+          const newSelectedId = String(allResponses[0].id);
+          console.log('🔄 Setting selected response ID for all types:', newSelectedId);
+          setSelectedResponseId(newSelectedId);
+        } else {
+          console.log('🔄 No responses found for all types');
+          setSelectedResponseId(null);
+        }
+      } else if (data[selectedSurveyType] && data[selectedSurveyType].length > 0) {
+        const newSelectedId = String(data[selectedSurveyType][0].id);
+        console.log('🔄 Setting selected response ID:', newSelectedId);
+        setSelectedResponseId(newSelectedId);
       } else {
+        console.log('🔄 No responses found for survey type:', selectedSurveyType);
         setSelectedResponseId(null);
       }
       
@@ -91,23 +181,33 @@ const UserReports = () => {
       const errorMessage = dataSource === 'sample' 
         ? 'Failed to load sample data. Please check the console for details.'
         : 'Failed to load data from backend. Please check your connection and try again.';
+      console.error('❌ Error in loadData:', err);
+      console.error('❌ Error message:', errorMessage);
       setError(errorMessage);
-      console.error(`Error loading ${dataSource} data:`, err);
       
       // Keep existing data if switching modes fails
       // This prevents complete data loss on mode switch errors
     } finally {
       setLoading(false);
+      console.log('🔄 loadData completed, loading set to false');
     }
   };
 
   const handleModeToggle = (event) => {
-    setIsTestMode(event.target.checked);
+    const newTestMode = event.target.checked;
+    console.log('🔄 Mode toggle clicked');
+    console.log('🔄 Previous test mode:', isTestMode);
+    console.log('🔄 New test mode:', newTestMode);
+    console.log('🔄 New data source will be:', newTestMode ? 'sample' : 'backend');
+    
+    setIsTestMode(newTestMode);
     // Clear any existing data and reset selections
     setSurveyData({});
     setSelectedResponseId(null);
     setComparisonData(null);
     setCustomCharts([]);
+    
+    console.log('🔄 Data cleared, mode toggle complete');
   };
 
   // Update comparison data when survey type or selected response changes
@@ -216,12 +316,34 @@ const UserReports = () => {
     setSelectedSurveyType(newType);
     
     // Reset selected response for new survey type
-    if (surveyData[newType] && surveyData[newType].length > 0) {
+    if (newType === 'all') {
+      // For "all" types, find the first available response from any survey type
+      const allResponses = Object.values(surveyData).flat();
+      if (allResponses.length > 0) {
+        setSelectedResponseId(String(allResponses[0].id));
+      }
+    } else if (surveyData[newType] && surveyData[newType].length > 0) {
       setSelectedResponseId(String(surveyData[newType][0].id));
     }
   };
 
   const getFilteredResponses = () => {
+    // Handle "all" survey types
+    if (selectedSurveyType === 'all') {
+      const allResponses = Object.values(surveyData).flat();
+      
+      // If surveys are selected from the map, use only those
+      if (selectedMapSurveys.length > 0) {
+        return selectedMapSurveys;
+      }
+      
+      if (dataSource === 'sample') {
+        return SampleDataService.filterResponsesWithBase(allResponses, filters);
+      } else {
+        return BackendDataService.filterResponses(allResponses, filters);
+      }
+    }
+    
     if (!surveyData[selectedSurveyType]) return [];
     
     // Start with all responses or selected surveys
@@ -241,6 +363,26 @@ const UserReports = () => {
   };
 
   const getGeographicData = () => {
+    // Handle "all" survey types
+    if (selectedSurveyType === 'all') {
+      const allResponses = Object.values(surveyData).flat();
+      
+      // If surveys are selected from the map, use only those
+      if (selectedMapSurveys.length > 0) {
+        if (dataSource === 'sample') {
+          return SampleDataService.getGeographicDistributionWithBase(selectedMapSurveys);
+        } else {
+          return BackendDataService.getGeographicDistribution(selectedMapSurveys);
+        }
+      }
+      
+      if (dataSource === 'sample') {
+        return SampleDataService.getGeographicDistributionWithBase(allResponses);
+      } else {
+        return BackendDataService.getGeographicDistribution(allResponses);
+      }
+    }
+    
     if (!surveyData[selectedSurveyType]) return {};
     
     // Use selected surveys if available, otherwise use all responses
@@ -259,6 +401,26 @@ const UserReports = () => {
   };
 
   const getUniqueValues = (fieldName) => {
+    // Handle "all" survey types
+    if (selectedSurveyType === 'all') {
+      const allResponses = Object.values(surveyData).flat();
+      
+      // If surveys are selected from the map, use only those
+      if (selectedMapSurveys.length > 0) {
+        if (dataSource === 'sample') {
+          return SampleDataService.getUniqueValuesWithBase(selectedMapSurveys, fieldName);
+        } else {
+          return BackendDataService.getUniqueValues(selectedMapSurveys, fieldName);
+        }
+      }
+      
+      if (dataSource === 'sample') {
+        return SampleDataService.getUniqueValuesWithBase(allResponses, fieldName);
+      } else {
+        return BackendDataService.getUniqueValues(allResponses, fieldName);
+      }
+    }
+    
     if (!surveyData[selectedSurveyType]) return [];
     
     // Use selected surveys if available, otherwise use all responses
@@ -450,7 +612,9 @@ const UserReports = () => {
 
   const filteredResponses = getFilteredResponses();
   const geographicData = getGeographicData();
-  const availableResponses = surveyData[selectedSurveyType] || [];
+  const availableResponses = selectedSurveyType === 'all' 
+    ? Object.values(surveyData).flat() 
+    : (surveyData[selectedSurveyType] || []);
 
   return (
     <Box>
@@ -540,7 +704,7 @@ const UserReports = () => {
                 size="small"
               />
               <Chip 
-                label={`${availableResponses.length} ${selectedSurveyType} responses`}
+                label={`${availableResponses.length} ${selectedSurveyType === 'all' ? 'total' : selectedSurveyType} responses`}
                 sx={{ backgroundColor: adminColors.secondary, color: 'white' }}
                 size="small"
               />
@@ -572,6 +736,7 @@ const UserReports = () => {
                       }
                     }}
                   >
+                    <MenuItem value="all">All Types</MenuItem>
                     <MenuItem value="church">Church Survey</MenuItem>
                     <MenuItem value="institution">Institution Survey</MenuItem>
                     <MenuItem value="nonFormal">Non-Formal Survey</MenuItem>
@@ -579,7 +744,7 @@ const UserReports = () => {
                 </FormControl>
               </Grid>
               
-              <Grid item xs={12} md={4}>
+              <Grid item xs={12} md={3}>
                 <FormControl fullWidth>
                   <InputLabel sx={{ color: adminColors.text }}>Select Response to Analyze</InputLabel>
                   <Select
@@ -596,16 +761,15 @@ const UserReports = () => {
                   >
                     {availableResponses.map((response) => (
                       <MenuItem key={response.id} value={String(response.id)}>
-                        {SampleDataService.getResponseDisplayName ? 
-                          SampleDataService.getResponseDisplayName(response) : 
-                          `Response ${response.id}`} - {response.city}, {response.country}
+                        {getEnhancedResponseDisplayName(response)}
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
               </Grid>
 
-              <Grid item xs={12} md={2}>
+
+              <Grid item xs={12} md={3}>
                 <FormControl fullWidth>
                   <InputLabel sx={{ color: adminColors.text }}>Country</InputLabel>
                   <Select
@@ -635,12 +799,22 @@ const UserReports = () => {
                     sx={{ backgroundColor: adminColors.primary, color: 'white' }}
                     size="small" 
                   />
+                  {filters.survey_type && (
+                    <Chip 
+                      label={`Survey Type: ${surveyTypes.find(t => t.value === filters.survey_type)?.label || filters.survey_type}`} 
+                      sx={{ backgroundColor: adminColors.lightPurple, color: adminColors.primary, border: `1px solid ${adminColors.primary}` }}
+                      size="small" 
+                      variant="outlined"
+                      onDelete={() => setFilters({...filters, survey_type: ''})}
+                    />
+                  )}
                   {filters.country && (
                     <Chip 
                       label={`Country: ${filters.country}`} 
                       sx={{ backgroundColor: adminColors.lightPurple, color: adminColors.primary, border: `1px solid ${adminColors.primary}` }}
                       size="small" 
                       variant="outlined"
+                      onDelete={() => setFilters({...filters, country: ''})}
                     />
                   )}
                 </Box>
@@ -661,8 +835,10 @@ const UserReports = () => {
             <SurveyMapCard
               surveyData={surveyData}
               targetSurveyId={selectedResponseId}
+              selectedSurveyType={selectedSurveyType}
               onSurveySelection={handleMapSurveySelection}
               onAreaSelection={handleMapAreaSelection}
+              onSurveyTypeChange={setSelectedSurveyType}
               adminColors={adminColors}
               hideTitle={true}
             />
@@ -765,10 +941,7 @@ const UserReports = () => {
                     surveyType={selectedSurveyType}
                     selectedResponseId={selectedResponseId}
                     selectedResponseLabel={availableResponses.find(r => String(r.id) === String(selectedResponseId)) 
-                      ? (SampleDataService.getResponseDisplayName ? 
-                          SampleDataService.getResponseDisplayName(availableResponses.find(r => String(r.id) === String(selectedResponseId))) : 
-                          `Response ${availableResponses.find(r => String(r.id) === String(selectedResponseId)).id}`) + 
-                        ` - ${availableResponses.find(r => String(r.id) === String(selectedResponseId)).city}, ${availableResponses.find(r => String(r.id) === String(selectedResponseId)).country}`
+                      ? getEnhancedResponseDisplayName(availableResponses.find(r => String(r.id) === String(selectedResponseId)))
                       : 'Selected Response'}
                     selectedMapSurveys={selectedMapSurveys}
                     userColors={adminColors}
@@ -795,10 +968,7 @@ const UserReports = () => {
                     surveyType={selectedSurveyType}
                     selectedResponseId={selectedResponseId}
                     selectedResponseLabel={availableResponses.find(r => String(r.id) === String(selectedResponseId)) 
-                      ? (SampleDataService.getResponseDisplayName ? 
-                          SampleDataService.getResponseDisplayName(availableResponses.find(r => String(r.id) === String(selectedResponseId))) : 
-                          `Response ${availableResponses.find(r => String(r.id) === String(selectedResponseId)).id}`) + 
-                        ` - ${availableResponses.find(r => String(r.id) === String(selectedResponseId)).city}, ${availableResponses.find(r => String(r.id) === String(selectedResponseId)).country}`
+                      ? getEnhancedResponseDisplayName(availableResponses.find(r => String(r.id) === String(selectedResponseId)))
                       : 'Selected Response'}
                     surveyData={surveyData}
                     adminColors={adminColors}

@@ -149,6 +149,20 @@ const SurveyTaking = () => {
     return { sectionCount, questionCount, estimatedTime };
   };
 
+  const getQuestionTypeName = (typeId) => {
+    const typeMap = {
+      1: 'Short Text',
+      2: 'Single Choice',
+      3: 'Yes/No',
+      4: 'Likert Scale',
+      5: 'Multiple Choice',
+      6: 'Long Text',
+      8: 'Percentage',
+      9: 'Flexible Input'
+    };
+    return typeMap[typeId] || 'Other';
+  };
+
   const handleOpenSection = (sectionName, questions) => {
     setSelectedSection({
       name: sectionName,
@@ -170,9 +184,9 @@ const SurveyTaking = () => {
     navigate('/surveys');
   };
 
-  const handleNavigateToReports = () => {
+  const handleNavigateToProfile = () => {
     setShowCompletionGuidance(false);
-    navigate('/reports', { state: { fromSurveyCompletion: true } });
+    navigate('/profile', { state: { fromSurveyCompletion: true } });
   };
 
   const handlePreviousQuestion = () => {
@@ -723,7 +737,7 @@ const SurveyTaking = () => {
           open={showCompletionGuidance}
           onClose={handleCloseGuidance}
           surveyTitle={survey?.template_name || surveyData?.survey_code || "Survey"}
-          onNavigateToReports={handleNavigateToReports}
+          onNavigateToProfile={handleNavigateToProfile}
         />
         
         {/* Survey Intro Card - When no section is selected */}
@@ -760,9 +774,27 @@ const SurveyTaking = () => {
               {survey.organization_type} Survey
             </Typography>
 
-            <Typography variant="body1" sx={{ mb: 4, color: '#666', lineHeight: 1.6 }}>
-              Welcome to the survey. Please review the overview below and click on any section to begin answering questions.
-            </Typography>
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="body1" sx={{ mb: 2, color: '#333', lineHeight: 1.7, fontWeight: 500 }}>
+                🌟 Welcome to Your Survey Experience!
+              </Typography>
+              
+              <Typography variant="body1" sx={{ mb: 2, color: '#555', lineHeight: 1.6 }}>
+                Thank you for participating in this important research initiative. Your insights and experiences are valuable 
+                in helping us understand and improve our community services and programs.
+              </Typography>
+              
+              <Typography variant="body1" sx={{ mb: 2, color: '#555', lineHeight: 1.6 }}>
+                <strong>What to expect:</strong> This survey is designed to gather meaningful data about your organization, 
+                community involvement, and experiences. Your responses will contribute to research that helps shape better 
+                policies and programs for communities like yours.
+              </Typography>
+              
+              <Typography variant="body1" sx={{ color: '#633394', lineHeight: 1.6, fontWeight: 500 }}>
+                📋 <strong>How to proceed:</strong> Review the survey overview below, then click on any section to begin. 
+                You can complete sections in any order and save your progress at any time.
+              </Typography>
+            </Box>
 
             {/* Progress Bar */}
             <Box sx={{ mb: 4 }}>
@@ -788,51 +820,144 @@ const SurveyTaking = () => {
               />
             </Box>
 
-            {/* Survey Overview */}
+            {/* Enhanced Survey Overview */}
             <Box sx={{ 
               backgroundColor: '#f8f9fa',
-              borderRadius: '4px',
+              borderRadius: '8px',
               mb: 3,
-              p: 2
+              p: 3,
+              border: '1px solid #e0e0e0'
             }}>
-              <Typography variant="subtitle2" sx={{ mb: 2, color: '#333', fontWeight: 600 }}>
-                Survey Overview:
-              </Typography>
-              
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                <AssignmentIcon sx={{ color: '#633394', fontSize: '1.5rem', mr: 1.5 }} />
+                <Typography variant="h6" sx={{ color: '#333', fontWeight: 700 }}>
+                  📋 Survey Overview & Guide
+                </Typography>
+              </Box>
+
+              {/* Survey Purpose */}
+              <Box sx={{ mb: 3, p: 2, backgroundColor: '#fff', borderRadius: '6px', border: '1px solid #e8e8e8' }}>
+                <Typography variant="body1" sx={{ color: '#555', lineHeight: 1.6, mb: 1.5 }}>
+                  <strong>About This Survey:</strong> Your responses contribute to important research that helps improve 
+                  community services and programs. Each section focuses on different aspects of your organization and experiences.
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#633394', fontWeight: 500 }}>
+                  💡 Take your time and provide thoughtful responses. Your insights are valuable to our research.
+                </Typography>
+              </Box>
+
+              {/* Statistics Grid */}
               <Box
                 sx={{
                   p: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  borderRadius: '4px',
-                  mb: 1,
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(4, 1fr)' },
+                  gap: { xs: 2, sm: 1.5 },
+                  borderRadius: '6px',
+                  mb: 3,
                   backgroundColor: '#fff',
                   border: '1px solid #e0e0e0'
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <ListAltIcon sx={{ color: '#633394', fontSize: '1.25rem', mr: 1 }}/>
-                  <Typography variant="body2" sx={{ color: '#333', fontWeight: 500 }}>
-                    <strong>{stats.sectionCount}</strong> Sections
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  textAlign: 'center',
+                  p: 1
+                }}>
+                  <ListAltIcon sx={{ color: '#633394', fontSize: '1.5rem', mb: 0.5 }}/>
+                  <Typography variant="h6" sx={{ color: '#633394', fontWeight: 700, mb: 0.5 }}>
+                    {stats.sectionCount}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#666', fontWeight: 500 }}>
+                    Sections
                   </Typography>
                 </Box>
 
-                <Divider orientation="vertical" flexItem sx={{ mx: 2, height: '20px' }} />
-
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <QuizIcon sx={{ color: '#633394', fontSize: '1.25rem', mr: 1 }}/>
-                  <Typography variant="body2" sx={{ color: '#333', fontWeight: 500 }}>
-                    <strong>{stats.questionCount}</strong> Questions
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  textAlign: 'center',
+                  p: 1
+                }}>
+                  <QuizIcon sx={{ color: '#633394', fontSize: '1.5rem', mb: 0.5 }}/>
+                  <Typography variant="h6" sx={{ color: '#633394', fontWeight: 700, mb: 0.5 }}>
+                    {stats.questionCount}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#666', fontWeight: 500 }}>
+                    Questions
                   </Typography>
                 </Box>
 
-                <Divider orientation="vertical" flexItem sx={{ mx: 2, height: '20px' }} />
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  textAlign: 'center',
+                  p: 1
+                }}>
+                  <AccessTimeIcon sx={{ color: '#633394', fontSize: '1.5rem', mb: 0.5 }}/>
+                  <Typography variant="h6" sx={{ color: '#633394', fontWeight: 700, mb: 0.5 }}>
+                    {stats.estimatedTime}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#666', fontWeight: 500 }}>
+                    Minutes
+                  </Typography>
+                </Box>
 
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <AccessTimeIcon sx={{ color: '#633394', fontSize: '1.25rem', mr: 1 }}/>
-                  <Typography variant="body2" sx={{ color: '#333', fontWeight: 500 }}>
-                    <strong>{stats.estimatedTime}</strong> min
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  textAlign: 'center',
+                  p: 1
+                }}>
+                  <CheckCircleIcon sx={{ color: '#633394', fontSize: '1.5rem', mb: 0.5 }}/>
+                  <Typography variant="h6" sx={{ color: '#633394', fontWeight: 700, mb: 0.5 }}>
+                    {getTotalRequiredQuestions()}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#666', fontWeight: 500 }}>
+                    Required
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Helpful Tips */}
+              <Box sx={{ 
+                p: 2, 
+                backgroundColor: 'rgba(99, 51, 148, 0.05)', 
+                borderRadius: '6px', 
+                border: '1px solid rgba(99, 51, 148, 0.15)' 
+              }}>
+                <Typography variant="subtitle2" sx={{ mb: 2, color: '#633394', fontWeight: 600 }}>
+                  📝 How to Complete This Survey:
+                </Typography>
+                <Box sx={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, 
+                  gap: 1.5 
+                }}>
+                  <Typography variant="body2" sx={{ color: '#555', display: 'flex', alignItems: 'flex-start' }}>
+                    <span style={{ marginRight: '8px', color: '#633394' }}>✓</span>
+                    Click any section below to begin
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#555', display: 'flex', alignItems: 'flex-start' }}>
+                    <span style={{ marginRight: '8px', color: '#633394' }}>✓</span>
+                    Save progress with "Save Draft" button
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#555', display: 'flex', alignItems: 'flex-start' }}>
+                    <span style={{ marginRight: '8px', color: '#633394' }}>✓</span>
+                    Complete sections in any order
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#555', display: 'flex', alignItems: 'flex-start' }}>
+                    <span style={{ marginRight: '8px', color: '#633394' }}>✓</span>
+                    Review answers before submitting
                   </Typography>
                 </Box>
               </Box>

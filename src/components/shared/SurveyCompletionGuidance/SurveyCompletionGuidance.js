@@ -15,9 +15,12 @@ import {
 import {
   CheckCircle as CheckCircleIcon,
   Close as CloseIcon,
-  Assessment as ReportsIcon,
+  Person as PersonIcon,
+  Menu as MenuIcon,
   ArrowForward as ArrowForwardIcon,
-  Celebration as CelebrationIcon
+  Celebration as CelebrationIcon,
+  Logout as LogoutIcon,
+  ContactSupport as ContactSupportIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
@@ -25,7 +28,7 @@ const SurveyCompletionGuidance = ({
   open, 
   onClose, 
   surveyTitle = "Survey",
-  onNavigateToReports 
+  onNavigateToProfile 
 }) => {
   const navigate = useNavigate();
   const [showSecondStep, setShowSecondStep] = useState(false);
@@ -42,12 +45,12 @@ const SurveyCompletionGuidance = ({
     }
   }, [open]);
 
-  const handleViewReports = () => {
+  const handleViewProfile = () => {
     onClose();
-    if (onNavigateToReports) {
-      onNavigateToReports();
+    if (onNavigateToProfile) {
+      onNavigateToProfile();
     } else {
-      navigate('/reports');
+      navigate('/profile');
     }
   };
 
@@ -66,7 +69,7 @@ const SurveyCompletionGuidance = ({
         sx: {
           borderRadius: '16px',
           overflow: 'visible',
-          background: 'linear-gradient(135deg, #633394 0%, #7c52a5 100%)',
+          background: 'linear-gradient(135deg, #633394 0%, #967CB2 100%)',
           color: 'white',
           position: 'relative'
         }
@@ -79,10 +82,10 @@ const SurveyCompletionGuidance = ({
           top: -30,
           left: '50%',
           transform: 'translateX(-50%)',
-          backgroundColor: '#4caf50',
+          backgroundColor: '#633394',
           borderRadius: '50%',
           p: 2,
-          boxShadow: '0 4px 20px rgba(76, 175, 80, 0.3)'
+          boxShadow: '0 4px 20px rgba(99, 51, 148, 0.3)'
         }}
       >
         <CelebrationIcon sx={{ fontSize: 40, color: 'white' }} />
@@ -108,9 +111,9 @@ const SurveyCompletionGuidance = ({
             <CheckCircleIcon 
               sx={{ 
                 fontSize: 60, 
-                color: '#4caf50', 
+                color: '#633394', 
                 mb: 2,
-                filter: 'drop-shadow(0 2px 8px rgba(76, 175, 80, 0.3))'
+                filter: 'drop-shadow(0 2px 8px rgba(99, 51, 148, 0.3))'
               }} 
             />
             <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
@@ -125,7 +128,7 @@ const SurveyCompletionGuidance = ({
           </Box>
         </Fade>
 
-        {/* Step 2: Reports Guidance */}
+        {/* Step 2: Profile & Logout Guidance */}
         <Slide direction="up" in={showSecondStep} timeout={600}>
           <Paper
             sx={{
@@ -138,36 +141,97 @@ const SurveyCompletionGuidance = ({
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-              <ReportsIcon sx={{ fontSize: 32, mr: 1, color: '#ffd54f' }} />
+              <PersonIcon sx={{ fontSize: 32, mr: 1, color: '#967CB2' }} />
               <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
                 What's Next?
               </Typography>
             </Box>
             
             <Typography variant="body1" sx={{ mb: 3, opacity: 0.9 }}>
-              View your survey results and analytics in the Reports section
+              Visit your Profile page to manage your account or log out
             </Typography>
+            
+            {/* Reports Contact Information */}
+            <Box sx={{ 
+              mb: 3, 
+              p: 2, 
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '8px',
+              border: '1px solid rgba(255, 255, 255, 0.1)'
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
+                <ContactSupportIcon sx={{ fontSize: 20, mr: 1, color: '#967CB2' }} />
+                <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
+                  Need Survey Reports?
+                </Typography>
+              </Box>
+              <Typography variant="body2" sx={{ opacity: 0.8, textAlign: 'center', fontSize: '0.85rem' }}>
+                Please contact your administrator to request survey reports and analytics
+              </Typography>
+            </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-              <Chip
-                icon={<ReportsIcon />}
-                label="Click on Reports Tab"
-                sx={{
-                  backgroundColor: '#ffd54f',
-                  color: '#333',
-                  fontWeight: 'bold',
-                  fontSize: '0.9rem',
-                  px: 2,
-                  py: 1,
-                  '& .MuiChip-icon': {
-                    color: '#333'
-                  },
-                  animation: 'pulse 2s infinite'
-                }}
-              />
-              <ArrowForwardIcon sx={{ mx: 1, opacity: 0.7 }} />
-              <Typography variant="body2" sx={{ opacity: 0.8 }}>
-                in the navigation menu
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2 }}>
+              {/* Profile guidance */}
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Chip
+                  icon={<PersonIcon />}
+                  label="Go to Profile"
+                  sx={{
+                    backgroundColor: '#967CB2',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    fontSize: '0.9rem',
+                    px: 2,
+                    py: 1,
+                    '& .MuiChip-icon': {
+                      color: 'white'
+                    },
+                    animation: 'pulse 2s infinite'
+                  }}
+                />
+                <ArrowForwardIcon sx={{ mx: 1, opacity: 0.7 }} />
+                <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                  to manage your account
+                </Typography>
+              </Box>
+              
+              {/* Logout guidance */}
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Chip
+                  icon={<MenuIcon />}
+                  label="Click Menu (☰)"
+                  sx={{
+                    backgroundColor: '#633394',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    fontSize: '0.8rem',
+                    px: 1.5,
+                    py: 0.5,
+                    '& .MuiChip-icon': {
+                      color: 'white'
+                    }
+                  }}
+                />
+                <ArrowForwardIcon sx={{ mx: 1, opacity: 0.7 }} />
+                <Chip
+                  icon={<LogoutIcon />}
+                  label="Logout"
+                  sx={{
+                    backgroundColor: '#967CB2',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    fontSize: '0.8rem',
+                    px: 1.5,
+                    py: 0.5,
+                    '& .MuiChip-icon': {
+                      color: 'white'
+                    }
+                  }}
+                />
+              </Box>
+              
+              <Typography variant="body2" sx={{ opacity: 0.7, textAlign: 'center', fontSize: '0.85rem' }}>
+                💡 Tip: Click the hamburger menu (☰) in the top navigation to access logout
               </Typography>
             </Box>
           </Paper>
@@ -190,19 +254,19 @@ const SurveyCompletionGuidance = ({
           Close
         </Button>
         <Button
-          onClick={handleViewReports}
+          onClick={handleViewProfile}
           variant="contained"
-          startIcon={<ReportsIcon />}
+          startIcon={<PersonIcon />}
           sx={{
-            backgroundColor: '#ffd54f',
-            color: '#333',
+            backgroundColor: '#967CB2',
+            color: 'white',
             fontWeight: 'bold',
             '&:hover': {
-              backgroundColor: '#ffcc02'
+              backgroundColor: '#633394'
             }
           }}
         >
-          View Reports
+          Go to Profile
         </Button>
       </DialogActions>
 
@@ -210,15 +274,15 @@ const SurveyCompletionGuidance = ({
         @keyframes pulse {
           0% {
             transform: scale(1);
-            box-shadow: 0 0 0 0 rgba(255, 213, 79, 0.7);
+            box-shadow: 0 0 0 0 rgba(150, 124, 178, 0.7);
           }
           70% {
             transform: scale(1.05);
-            box-shadow: 0 0 0 10px rgba(255, 213, 79, 0);
+            box-shadow: 0 0 0 10px rgba(150, 124, 178, 0);
           }
           100% {
             transform: scale(1);
-            box-shadow: 0 0 0 0 rgba(255, 213, 79, 0);
+            box-shadow: 0 0 0 0 rgba(150, 124, 178, 0);
           }
         }
       `}</style>
