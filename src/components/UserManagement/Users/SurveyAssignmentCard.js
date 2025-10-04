@@ -4,7 +4,8 @@ import {
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
     Checkbox, Alert, CircularProgress, Dialog, DialogTitle, DialogContent,
     DialogActions, FormControl, InputLabel, Select, MenuItem, Chip,
-    Paper, Divider, Accordion, AccordionSummary, AccordionDetails, Collapse
+    Paper, Divider, Accordion, AccordionSummary, AccordionDetails, Collapse,
+    IconButton, Tooltip
 } from '@mui/material';
 import {
     Send as SendIcon,
@@ -15,7 +16,9 @@ import {
     People as PeopleIcon,
     Quiz as QuizIcon,
     KeyboardArrowDown as KeyboardArrowDownIcon,
-    KeyboardArrowUp as KeyboardArrowUpIcon
+    KeyboardArrowUp as KeyboardArrowUpIcon,
+    Delete as DeleteIcon,
+    Warning as WarningIcon
 } from '@mui/icons-material';
 import SurveyAssignmentService from '../../../services/Admin/SurveyAssignment/SurveyAssignmentService';
 
@@ -39,6 +42,11 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
     const [selectedUserForView, setSelectedUserForView] = useState(null);
     const [userAssignments, setUserAssignments] = useState([]);
     const [loadingAssignments, setLoadingAssignments] = useState(false);
+    
+    // Assignment removal states
+    const [showRemoveDialog, setShowRemoveDialog] = useState(false);
+    const [assignmentToRemove, setAssignmentToRemove] = useState(null);
+    const [removingAssignment, setRemovingAssignment] = useState(false);
 
     // Load initial data
     useEffect(() => {
@@ -212,11 +220,51 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
         }
     };
 
+    const handleRemoveAssignment = (assignment) => {
+        setAssignmentToRemove(assignment);
+        setShowRemoveDialog(true);
+    };
+
+    const confirmRemoveAssignment = async () => {
+        if (!assignmentToRemove || !selectedUserForView) return;
+
+        setRemovingAssignment(true);
+        try {
+            const result = await SurveyAssignmentService.removeSurveyAssignment(
+                selectedUserForView.id,
+                assignmentToRemove.id
+            );
+            
+            showAlert(result.message, 'success');
+            
+            // Refresh the user's assignments
+            loadUserAssignments(selectedUserForView.id);
+            
+            // Refresh users list if callback provided
+            if (onRefreshUsers) {
+                onRefreshUsers();
+            }
+        } catch (error) {
+            console.error('Error removing assignment:', error);
+            showAlert(`Failed to remove assignment: ${error.message}`, 'error');
+        } finally {
+            setRemovingAssignment(false);
+            setShowRemoveDialog(false);
+            setAssignmentToRemove(null);
+        }
+    };
+
+    const cancelRemoveAssignment = () => {
+        setShowRemoveDialog(false);
+        setAssignmentToRemove(null);
+    };
+
     const filteredUsers = getFilteredUsers();
     const selectedUsersInfo = getSelectedUsersInfo();
 
     return (
-        <Card sx={{ mt: 3, boxShadow: 3 }}>
+        <>
+            <Card sx={{ mt: 3, boxShadow: 3 }}>
             <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                     <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', color: '#633394' }}>
@@ -419,13 +467,27 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
                                         ) : userAssignments.length > 0 ? (
                                             <Box sx={{ mb: 2, maxHeight: 150, overflow: 'auto' }}>
                                                 {userAssignments.map((assignment) => (
-                                                    <Box key={assignment.id} sx={{ mb: 1, p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-                                                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                                            {`${assignment.template_name}${assignment.survey_code ? ` - ${assignment.survey_code}` : ''}`}
-                                                        </Typography>
-                                                        <Typography variant="caption" color="text.secondary">
-                                                            Status: {assignment.status} | Assigned: {new Date(assignment.created_at).toLocaleDateString()}
-                                                        </Typography>
+                                                    <Box key={assignment.id} sx={{ mb: 1, p: 1, border: '1px solid #e0e0e0', borderRadius: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                        <Box sx={{ flex: 1 }}>
+                                                            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                                                {`${assignment.template_name}${assignment.survey_code ? ` - ${assignment.survey_code}` : ''}`}
+                                                            </Typography>
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                Status: {assignment.status} | Assigned: {new Date(assignment.created_at).toLocaleDateString()}
+                                                            </Typography>
+                                                        </Box>
+                                                        <Tooltip title="Remove Assignment">
+                                                            <IconButton
+                                                                size="small"
+                                                                onClick={() => handleRemoveAssignment(assignment)}
+                                                                sx={{ 
+                                                                    color: '#d32f2f',
+                                                                    '&:hover': { backgroundColor: '#ffebee' }
+                                                                }}
+                                                            >
+                                                                <DeleteIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
                                                     </Box>
                                                 ))}
                                             </Box>
@@ -596,9 +658,10 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
                     </Box>
                 )}
             </CardContent>
+        </Card>
 
-            {/* Assignment Results Dialog */}
-            <Dialog 
+        {/* Assignment Results Dialog */}
+        <Dialog 
                 open={showResultDialog} 
                 onClose={() => setShowResultDialog(false)}
                 maxWidth="md"
@@ -705,7 +768,68 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
                     <Button onClick={() => setShowResultDialog(false)}>Close</Button>
                 </DialogActions>
             </Dialog>
-        </Card>
+
+            {/* Remove Assignment Confirmation Dialog */}
+        <Dialog 
+                open={showRemoveDialog} 
+                onClose={cancelRemoveAssignment}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <WarningIcon sx={{ mr: 2, color: '#d32f2f' }} />
+                        Confirm Assignment Removal
+                    </Box>
+                </DialogTitle>
+                <DialogContent>
+                    {assignmentToRemove && (
+                        <Box>
+                            <Typography variant="body1" sx={{ mb: 2 }}>
+                                Are you sure you want to remove this survey assignment?
+                            </Typography>
+                            <Box sx={{ p: 2, backgroundColor: '#f5f5f5', borderRadius: 1, mb: 2 }}>
+                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                    Survey: {assignmentToRemove.template_name}
+                                    {assignmentToRemove.survey_code && ` - ${assignmentToRemove.survey_code}`}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Status: {assignmentToRemove.status}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Assigned: {new Date(assignmentToRemove.created_at).toLocaleDateString()}
+                                </Typography>
+                            </Box>
+                            <Alert severity="warning" sx={{ mb: 2 }}>
+                                <Typography variant="body2">
+                                    <strong>Warning:</strong> This action will permanently delete the survey assignment 
+                                    and all associated survey response data. This cannot be undone.
+                                </Typography>
+                            </Alert>
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button 
+                        onClick={cancelRemoveAssignment}
+                        sx={{ color: '#666' }}
+                    >
+                        Cancel
+                    </Button>
+                    <Button 
+                        onClick={confirmRemoveAssignment}
+                        disabled={removingAssignment}
+                        startIcon={removingAssignment ? <CircularProgress size={16} /> : <DeleteIcon />}
+                        sx={{ 
+                            color: '#d32f2f',
+                            '&:hover': { backgroundColor: '#ffebee' }
+                        }}
+                    >
+                        {removingAssignment ? 'Removing...' : 'Remove Assignment'}
+                    </Button>
+                </DialogActions>
+        </Dialog>
+        </>
     );
 };
 

@@ -134,7 +134,9 @@ const CopyTemplateVersionDialog = ({
           <Box sx={{ textAlign: 'center', py: 3 }}>
             <CheckCircleIcon sx={{ fontSize: 48, color: '#4caf50', mb: 2 }} />
             <Typography variant="h6" sx={{ color: '#4caf50', mb: 1 }}>
-              Template Version Copied Successfully!
+              {copyResult?.version_action === 'updated' 
+                ? 'Template Version Updated Successfully!' 
+                : 'Template Version Copied Successfully!'}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               {copyResult?.message}
@@ -142,16 +144,19 @@ const CopyTemplateVersionDialog = ({
             {copyResult && (
               <Box sx={{ textAlign: 'left', p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                  Copy Summary:
+                  {copyResult.version_action === 'updated' ? 'Update Summary:' : 'Copy Summary:'}
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 0.5 }}>
-                  <strong>New Version:</strong> {copyResult.copied_version?.name}
+                  <strong>Version:</strong> {copyResult.copied_version?.name}
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 0.5 }}>
                   <strong>Target Organization:</strong> {copyResult.copied_version?.organization_name}
                 </Typography>
-                <Typography variant="body2">
-                  <strong>Templates Copied:</strong> {copyResult.copied_version?.template_count || 0}
+                <Typography variant="body2" sx={{ mb: 0.5, color: '#2e7d32' }}>
+                  <strong>Templates Created:</strong> {copyResult.copied_version?.templates_created || 0}
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#1976d2' }}>
+                  <strong>Templates Updated:</strong> {copyResult.copied_version?.templates_updated || 0}
                 </Typography>
               </Box>
             )}
@@ -262,12 +267,25 @@ const CopyTemplateVersionDialog = ({
               }}
             />
 
-            {versionTemplates.length > 0 && (
-              <Alert severity="info" sx={{ mt: 2 }}>
-                This will copy the template version and all {versionTemplates.length} template(s) 
-                within it to the target organization. Each template will get a unique survey code.
-              </Alert>
-            )}
+            <Alert severity="info" sx={{ mt: 2 }}>
+              <Typography variant="body2">
+                <strong>Smart Copy Behavior:</strong>
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                • If a version with this name exists in the target organization, it will be <strong>used</strong> (not replaced)
+              </Typography>
+              <Typography variant="body2">
+                • Templates with matching survey codes will be <strong>updated</strong>
+              </Typography>
+              <Typography variant="body2">
+                • New templates will be <strong>created</strong> for non-matching survey codes
+              </Typography>
+              {versionTemplates.length > 0 && (
+                <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
+                  This version contains {versionTemplates.length} template(s) to copy
+                </Typography>
+              )}
+            </Alert>
           </>
         )}
       </DialogContent>

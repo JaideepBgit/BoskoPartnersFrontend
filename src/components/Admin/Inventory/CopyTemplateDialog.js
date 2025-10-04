@@ -28,7 +28,6 @@ const CopyTemplateDialog = ({
   organizations = [], 
   onCopySuccess 
 }) => {
-  const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
   const [selectedOrganizationId, setSelectedOrganizationId] = useState('');
@@ -37,6 +36,7 @@ const CopyTemplateDialog = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [copyResult, setCopyResult] = useState(null);
   
   // Reset state when dialog opens
   useEffect(() => {
@@ -74,6 +74,7 @@ const CopyTemplateDialog = ({
         newSurveyCode
       );
       
+      setCopyResult(result);
       setSuccess(true);
       
       // Call success callback after a short delay to show success message
@@ -82,7 +83,7 @@ const CopyTemplateDialog = ({
           onCopySuccess(result);
         }
         onClose();
-      }, 1500);
+      }, 2000);
       
     } catch (err) {
       console.error('Error copying template:', err);
@@ -130,11 +131,26 @@ const CopyTemplateDialog = ({
           <Box sx={{ textAlign: 'center', py: 3 }}>
             <CheckCircleIcon sx={{ fontSize: 48, color: '#4caf50', mb: 2 }} />
             <Typography variant="h6" sx={{ color: '#4caf50', mb: 1 }}>
-              Template Copied Successfully!
+              {copyResult?.action === 'updated' ? 'Template Updated Successfully!' : 'Template Copied Successfully!'}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              The template has been copied to the selected organization.
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              {copyResult?.action === 'updated' 
+                ? 'The existing template has been updated with the new questions and sections.'
+                : 'A new template has been created in the target organization.'}
             </Typography>
+            {copyResult?.copied_template && (
+              <Box sx={{ mt: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1, textAlign: 'left' }}>
+                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                  <strong>Survey Code:</strong> {copyResult.copied_template.survey_code}
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                  <strong>Version:</strong> {copyResult.copied_template.version_name}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Organization:</strong> {copyResult.copied_template.organization_name}
+                </Typography>
+              </Box>
+            )}
           </Box>
         ) : (
           <>
@@ -225,7 +241,7 @@ const CopyTemplateDialog = ({
               size={isMobile ? "small" : "medium"}
               value={newSurveyCode}
               onChange={(e) => setNewSurveyCode(e.target.value)}
-              helperText="Leave empty to auto-generate a unique code"
+              helperText="If this code exists in the target version, it will be updated. Otherwise, a new template will be created."
               sx={{ 
                 '& .MuiOutlinedInput-root': {
                   '&.Mui-focused fieldset': {
@@ -237,6 +253,13 @@ const CopyTemplateDialog = ({
                 }
               }}
             />
+
+            <Alert severity="info" sx={{ mt: 2 }}>
+              <Typography variant="body2">
+                <strong>Smart Copy:</strong> If a template with the same survey code already exists in the target version, 
+                it will be <strong>updated</strong> with the new questions. Otherwise, a <strong>new template</strong> will be created.
+              </Typography>
+            </Alert>
           </>
         )}
       </DialogContent>

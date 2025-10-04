@@ -222,6 +222,41 @@ class SurveyAssignmentService {
             throw error;
         }
     }
+
+    /**
+     * Remove a survey assignment for a specific user
+     * @param {number} userId - ID of the user
+     * @param {number} assignmentId - ID of the assignment to remove
+     * @returns {Promise<Object>} Result of the removal operation
+     */
+    static async removeSurveyAssignment(userId, assignmentId) {
+        try {
+            console.log(`Removing assignment ${assignmentId} for user ${userId}`);
+            
+            const response = await fetch(`${API_BASE_URL}/api/users/${userId}/survey-assignments/${assignmentId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+                console.error('API error response:', errorData);
+                throw new Error(errorData.error || `Failed to remove survey assignment (${response.status})`);
+            }
+
+            const data = await response.json();
+            console.log('Successfully removed assignment:', data);
+            return data;
+        } catch (error) {
+            console.error('Error removing survey assignment:', error);
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                throw new Error('Cannot connect to backend server. Please check if the server is running.');
+            }
+            throw error;
+        }
+    }
 }
 
 export default SurveyAssignmentService;
