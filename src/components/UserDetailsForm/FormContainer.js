@@ -116,10 +116,10 @@ const FormContainer = () => {
     
     // Check all required fields across all pages
     const personalFieldsFilled = ['firstName', 'lastName'].filter(f => data.personal[f]).length;
-    const orgFieldsFilled = ['organization', 'country', 'province', 'city', 'address_line1'].filter(f => data.organizational[f]).length;
+    const orgFieldsFilled = ['organization', 'country', 'city', 'address_line1'].filter(f => data.organizational[f]).length;
     
     // Total required fields and how many are filled
-    const totalRequiredFields = 7; // 2 personal + 5 organizational (organization, country, province, city, address_line1)
+    const totalRequiredFields = 6; // 2 personal + 4 organizational (organization, country, city, address_line1)
     const totalFieldsFilled = personalFieldsFilled + orgFieldsFilled;
     
     // Calculate field-based progress (up to 100%)
@@ -149,7 +149,6 @@ const FormContainer = () => {
     } else if (page === 2) {
       if (!formData.organizational.organization) errors.organization = 'Organization is required';
       if (!formData.organizational.country) errors.country = 'Country is required';
-      if (!formData.organizational.province) errors.province = 'Province is required';
       if (!formData.organizational.city) errors.city = 'City is required';
       if (!formData.organizational.address_line1) errors.address_line1 = 'Address line 1 is required';
       // town, address_line2, and postal_code are optional

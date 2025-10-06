@@ -34,8 +34,10 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CloseIcon from '@mui/icons-material/Close';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import TemplateUtils from './shared/TemplateUtils';
 import InventoryService from '../../../services/Admin/Inventory/InventoryService';
+import EnhancedCopyTemplateDialog from './EnhancedCopyTemplateDialog';
 
 const TemplatesTab = ({ 
   templateVersions: parentTemplateVersions = [], 
@@ -50,6 +52,9 @@ const TemplatesTab = ({
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState({});
   const [surveyProgress, setSurveyProgress] = useState(0);
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [templateToCopy, setTemplateToCopy] = useState(null);
+  const [organizations, setOrganizations] = useState([]);
 
   // Add question types definition that matches backend - commented out as unused
   // const questionTypes = [
@@ -79,6 +84,7 @@ const TemplatesTab = ({
       fetchTemplateVersions();
       fetchTemplates();
     }
+    fetchOrganizations();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [parentTemplateVersions.length, parentTemplates.length]);
 
@@ -118,6 +124,15 @@ const TemplatesTab = ({
       setTemplates(data);
     }
   }, [onRefreshData]);
+
+  const fetchOrganizations = useCallback(async () => {
+    try {
+      const data = await InventoryService.getOrganizations();
+      setOrganizations(data);
+    } catch (error) {
+      console.error('Error fetching organizations:', error);
+    }
+  }, []);
 
   const fetchTemplate = async (id) => {
     const data = await TemplateUtils.fetchTemplate(id);
@@ -163,6 +178,22 @@ const TemplatesTab = ({
     // Save responses to server here
     console.log('Saving responses:', responses);
     // Call API to save responses
+  };
+
+  const handleOpenCopyDialog = (template) => {
+    setTemplateToCopy(template);
+    setCopyDialogOpen(true);
+  };
+
+  const handleCloseCopyDialog = () => {
+    setCopyDialogOpen(false);
+    setTemplateToCopy(null);
+  };
+
+  const handleCopySuccess = (result) => {
+    console.log('Template copied successfully:', result);
+    // Optionally refresh data or show notification
+    fetchTemplates();
   };
 
   const handlePreviousQuestion = () => {
@@ -680,18 +711,36 @@ const TemplatesTab = ({
                 flexDirection: 'column'
               }}>
                 <Box sx={{ mb: 3 }}>
-                  <Typography variant="h6" sx={{ 
-                    color: '#633394', 
-                    fontWeight: 600,
-                    fontSize: '1.125rem',
-                    mb: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1
-                  }}>
-                    <AssignmentIcon sx={{ fontSize: '1.25rem' }} />
-                    {selectedTemplate.survey_code} - Template Preview
-                  </Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                    <Typography variant="h6" sx={{ 
+                      color: '#633394', 
+                      fontWeight: 600,
+                      fontSize: '1.125rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1
+                    }}>
+                      <AssignmentIcon sx={{ fontSize: '1.25rem' }} />
+                      {selectedTemplate.survey_code} - Template Preview
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      startIcon={<ContentCopyIcon />}
+                      onClick={() => handleOpenCopyDialog(selectedTemplate)}
+                      sx={{
+                        color: '#633394',
+                        borderColor: '#633394',
+                        '&:hover': {
+                          backgroundColor: 'rgba(99, 51, 148, 0.08)',
+                          borderColor: '#633394',
+                        },
+                        textTransform: 'none',
+                        fontSize: '0.875rem'
+                      }}
+                    >
+                      Copy Template
+                    </Button>
+                  </Box>
                   
                   <Typography variant="body1" sx={{ mb: 2, color: '#555', lineHeight: 1.6 }}>
                     🔍 <strong>Admin Preview Mode:</strong> This is how your survey template will appear to respondents. 

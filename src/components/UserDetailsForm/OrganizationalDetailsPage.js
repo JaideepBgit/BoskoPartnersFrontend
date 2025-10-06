@@ -370,7 +370,6 @@ const OrganizationalDetailsPage = ({ formData, updateFormData, saveAndContinue, 
             variant="outlined"
             value={formData.organizational.province || ''}
             onChange={handleChange}
-            required
             error={!!formErrors.province}
             helperText={formErrors.province}
             size={isMobile ? "small" : "medium"}

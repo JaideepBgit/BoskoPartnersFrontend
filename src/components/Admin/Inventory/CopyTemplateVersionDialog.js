@@ -16,7 +16,11 @@ import {
   CircularProgress,
   useTheme,
   useMediaQuery,
-  Chip
+  Chip,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  Divider
 } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -40,6 +44,10 @@ const CopyTemplateVersionDialog = ({
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [copyResult, setCopyResult] = useState(null);
+  const [existingVersions, setExistingVersions] = useState([]);
+  const [loadingVersions, setLoadingVersions] = useState(false);
+  const [selectedExistingVersionId, setSelectedExistingVersionId] = useState('');
+  const [useExistingVersion, setUseExistingVersion] = useState(false);
   
   // Reset state when dialog opens
   useEffect(() => {
@@ -61,9 +69,45 @@ const CopyTemplateVersionDialog = ({
   // Get templates for this version
   const versionTemplates = templates.filter(t => t.version_id === templateVersion?.id) || [];
 
+  // Load existing versions when organization is selected
+  useEffect(() => {
+    if (selectedOrganizationId && open) {
+      loadExistingVersions();
+    } else {
+      setExistingVersions([]);
+      setSelectedExistingVersionId('');
+      setUseExistingVersion(false);
+    }
+  }, [selectedOrganizationId, open]);
+
+  const loadExistingVersions = async () => {
+    if (!selectedOrganizationId) return;
+    
+    setLoadingVersions(true);
+    try {
+      const versions = await InventoryService.getTemplateVersions(selectedOrganizationId);
+      setExistingVersions(versions);
+    } catch (err) {
+      console.error('Error loading existing versions:', err);
+      setError('Failed to load existing versions');
+    } finally {
+      setLoadingVersions(false);
+    }
+  };
+
   const handleCopy = async () => {
     if (!selectedOrganizationId) {
       setError('Please select a target organization');
+      return;
+    }
+
+    if (useExistingVersion && !selectedExistingVersionId) {
+      setError('Please select an existing version');
+      return;
+    }
+
+    if (!useExistingVersion && !newVersionName.trim()) {
+      setError('Please enter a new version name');
       return;
     }
 
@@ -71,10 +115,19 @@ const CopyTemplateVersionDialog = ({
     setError('');
     
     try {
+      // Determine the version name to use
+      let versionNameToUse = newVersionName;
+      if (useExistingVersion && selectedExistingVersionId) {
+        const existingVersion = existingVersions.find(v => v.id === parseInt(selectedExistingVersionId));
+        if (existingVersion) {
+          versionNameToUse = existingVersion.name;
+        }
+      }
+
       const result = await InventoryService.copyTemplateVersion(
         templateVersion.id,
         selectedOrganizationId,
-        newVersionName
+        versionNameToUse
       );
       
       setCopyResult(result);
@@ -246,26 +299,138 @@ const CopyTemplateVersionDialog = ({
               )}
             </FormControl>
 
-            <TextField
-              label="New Version Name"
-              fullWidth
-              margin="normal"
-              size={isMobile ? "small" : "medium"}
-              value={newVersionName}
-              onChange={(e) => setNewVersionName(e.target.value)}
-              helperText="Name for the copied template version in the target organization"
-              required
-              sx={{ 
-                '& .MuiOutlinedInput-root': {
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#633394',
-                  },
-                },
-                '& .MuiInputLabel-root.Mui-focused': {
-                  color: '#633394',
-                }
-              }}
-            />
+            {selectedOrganizationId && (
+              <>
+                <Divider sx={{ my: 2 }} />
+                
+                <Typography variant="h6" sx={{ mb: 2, color: '#633394', fontSize: '1rem' }}>
+                  Target Version
+                </Typography>
+                
+                {loadingVersions ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                    <CircularProgress size={24} />
+                  </Box>
+                ) : existingVersions.length > 0 ? (
+                  <>
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      <Typography variant="body2">
+                        Found {existingVersions.length} existing version(s) in this organization. 
+                        Choose to use an existing version or create a new one.
+                      </Typography>
+                    </Alert>
+                    
+                    <FormControl component="fieldset" sx={{ mb: 2, width: '100%' }}>
+                      <RadioGroup
+                        value={useExistingVersion ? 'existing' : 'new'}
+                        onChange={(e) => setUseExistingVersion(e.target.value === 'existing')}
+                      >
+                        <FormControlLabel 
+                          value="new" 
+                          control={<Radio sx={{ color: '#633394', '&.Mui-checked': { color: '#633394' } }} />} 
+                          label="Create New Version" 
+                        />
+                        <FormControlLabel 
+                          value="existing" 
+                          control={<Radio sx={{ color: '#633394', '&.Mui-checked': { color: '#633394' } }} />} 
+                          label="Use Existing Version" 
+                        />
+                      </RadioGroup>
+                    </FormControl>
+
+                    {useExistingVersion ? (
+                      <FormControl 
+                        fullWidth 
+                        margin="normal" 
+                        size={isMobile ? "small" : "medium"}
+                        required
+                      >
+                        <InputLabel id="existing-version-label" sx={{ '&.Mui-focused': { color: '#633394' } }}>
+                          Select Existing Version *
+                        </InputLabel>
+                        <Select
+                          labelId="existing-version-label"
+                          value={selectedExistingVersionId}
+                          label="Select Existing Version *"
+                          onChange={(e) => setSelectedExistingVersionId(e.target.value)}
+                          sx={{ 
+                            '& .MuiOutlinedInput-notchedOutline': {
+                              '&.Mui-focused': {
+                                borderColor: '#633394',
+                              },
+                            },
+                          }}
+                        >
+                          {existingVersions.map(version => (
+                            <MenuItem key={version.id} value={version.id}>
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                  {version.name}
+                                </Typography>
+                                {version.description && (
+                                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                    {version.description}
+                                  </Typography>
+                                )}
+                              </Box>
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    ) : (
+                      <TextField
+                        label="New Version Name"
+                        fullWidth
+                        margin="normal"
+                        size={isMobile ? "small" : "medium"}
+                        value={newVersionName}
+                        onChange={(e) => setNewVersionName(e.target.value)}
+                        helperText="Name for the new template version in the target organization"
+                        required
+                        sx={{ 
+                          '& .MuiOutlinedInput-root': {
+                            '&.Mui-focused fieldset': {
+                              borderColor: '#633394',
+                            },
+                          },
+                          '& .MuiInputLabel-root.Mui-focused': {
+                            color: '#633394',
+                          }
+                        }}
+                      />
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      <Typography variant="body2">
+                        No existing versions found. A new version will be created.
+                      </Typography>
+                    </Alert>
+                    <TextField
+                      label="New Version Name"
+                      fullWidth
+                      margin="normal"
+                      size={isMobile ? "small" : "medium"}
+                      value={newVersionName}
+                      onChange={(e) => setNewVersionName(e.target.value)}
+                      helperText="Name for the new template version in the target organization"
+                      required
+                      sx={{ 
+                        '& .MuiOutlinedInput-root': {
+                          '&.Mui-focused fieldset': {
+                            borderColor: '#633394',
+                          },
+                        },
+                        '& .MuiInputLabel-root.Mui-focused': {
+                          color: '#633394',
+                        }
+                      }}
+                    />
+                  </>
+                )}
+              </>
+            )}
 
             <Alert severity="info" sx={{ mt: 2 }}>
               <Typography variant="body2">
