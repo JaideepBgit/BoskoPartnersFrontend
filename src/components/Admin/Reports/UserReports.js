@@ -21,6 +21,7 @@ import {
 import Navbar from '../../shared/Navbar/Navbar';
 import SampleDataService from '../../../services/Admin/Reports/SampleDataService';
 import BackendDataService from '../../../services/Admin/Reports/BackendDataService';
+import QuestionService from '../../../services/Admin/Reports/QuestionService';
 import SimpleBarChart from './Charts/SimpleBarChart';
 import GeographicChart from './Charts/GeographicChart';
 import ComparisonCard from './Charts/ComparisonCard';
@@ -30,12 +31,13 @@ import ChartEditDialog from './Charts/ChartEditDialog';
 import SurveyMapCard from './Charts/SurveyMapCard';
 import QualitativeAnalysis from './Charts/QualitativeAnalysis';
 import QualitativeComparisonAnalysis from './Charts/QualitativeComparisonAnalysis';
+import TextAnalyticsDisplay from './Charts/TextAnalyticsDisplay';
 
 const UserReports = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [surveyData, setSurveyData] = useState({});
-  const [selectedSurveyType, setSelectedSurveyType] = useState('all');
+  const [selectedSurveyType, setSelectedSurveyType] = useState('institution'); // Default to institution
   const [selectedResponseId, setSelectedResponseId] = useState(null);
   const [comparisonData, setComparisonData] = useState(null);
   const [filters, setFilters] = useState({
@@ -53,6 +55,8 @@ const UserReports = () => {
   const [dataSource, setDataSource] = useState('backend'); // 'sample' or 'backend'
   const [selectedMapSurveys, setSelectedMapSurveys] = useState([]);
   const [selectedMapArea, setSelectedMapArea] = useState([]);
+  const [chartBuilderQuestions, setChartBuilderQuestions] = useState([]);
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
 
   // Helper functions for robust type comparison
   const normType = (t) => (t || '').toString().toLowerCase().replace(/[\s_-]/g, '');
@@ -91,10 +95,69 @@ const UserReports = () => {
     return locationString ? `${displayName} - ${locationString}` : displayName;
   };
 
+  // Load questions for chart builder
+  const loadChartBuilderQuestions = React.useCallback(async () => {
+    try {
+      setLoadingQuestions(true);
+      console.log('📊 UserReports - Loading chart builder questions for survey type:', selectedSurveyType);
+      
+      const templates = await QuestionService.fetchQuestionsWithTypes(selectedSurveyType);
+      console.log('📊 UserReports - Received templates:', templates);
+      
+      if (templates && templates.length > 0) {
+        // Flatten all questions from all templates
+        const allQuestions = templates.flatMap(t => t.questions || []);
+        console.log(`📊 UserReports - Total questions before deduplication: ${allQuestions.length} from ${templates.length} templates`);
+        
+        // Deduplicate questions based on question text and type
+        // This handles cases where the same question appears in multiple templates
+        const uniqueQuestionsMap = new Map();
+        
+        allQuestions.forEach(question => {
+          // Create a unique key based on question text and type
+          const key = `${question.text.trim().toLowerCase()}_${question.question_type_id}`;
+          
+          // Only add if not already present, or if this one has a real ID (not template-based)
+          if (!uniqueQuestionsMap.has(key)) {
+            uniqueQuestionsMap.set(key, question);
+          } else {
+            // If we already have this question, prefer the one with a numeric ID over template-based ID
+            const existing = uniqueQuestionsMap.get(key);
+            const existingIsTemplateId = typeof existing.id === 'string' && existing.id.includes('_q_');
+            const currentIsTemplateId = typeof question.id === 'string' && question.id.includes('_q_');
+            
+            // Prefer real database IDs over template-generated IDs
+            if (existingIsTemplateId && !currentIsTemplateId) {
+              uniqueQuestionsMap.set(key, question);
+            }
+          }
+        });
+        
+        const uniqueQuestions = Array.from(uniqueQuestionsMap.values());
+        console.log(`✅ UserReports - Deduplicated to ${uniqueQuestions.length} unique questions (removed ${allQuestions.length - uniqueQuestions.length} duplicates)`);
+        setChartBuilderQuestions(uniqueQuestions);
+      } else {
+        console.log('⚠️ UserReports - No templates returned or empty templates array');
+        setChartBuilderQuestions([]);
+      }
+    } catch (err) {
+      console.error('❌ UserReports - Error loading chart builder questions:', err);
+      setChartBuilderQuestions([]);
+    } finally {
+      setLoadingQuestions(false);
+    }
+  }, [selectedSurveyType]);
+
   // Load data on component mount and when mode changes
   useEffect(() => {
     loadData();
   }, [dataSource]);
+
+  // Load questions for chart builder when survey type changes
+  useEffect(() => {
+    console.log('📊 UserReports - useEffect triggered for loading questions, selectedSurveyType:', selectedSurveyType);
+    loadChartBuilderQuestions();
+  }, [selectedSurveyType, loadChartBuilderQuestions]);
 
   // Handle mode change
   useEffect(() => {
@@ -230,84 +293,144 @@ const UserReports = () => {
     }
   }, [selectedMapSurveys, surveyData, selectedSurveyType, selectedResponseId]);
 
-  const generateComparisonData = () => {
+  const generateComparisonData = async () => {
     try {
-      // Use selected surveys if available, otherwise use all responses
-      let responses = surveyData[selectedSurveyType];
-      console.log('📊 Starting generateComparisonData');
-      console.log('📊 Original responses count:', responses?.length || 0);
-      console.log('📊 Selected surveys count:', selectedMapSurveys.length);
-      console.log('📊 Current survey type:', selectedSurveyType);
-      
-      // If surveys are selected from the map, use those plus ensure target is included
-      if (selectedMapSurveys.length > 0) {
-        const filteredSelected = selectedMapSurveys.filter(isSameType);
-        console.log('📊 Filtered selected surveys:', filteredSelected.length);
-        console.log('📊 Survey types in selection:', selectedMapSurveys.map(s => s.survey_type || s.surveyType));
-        
-        // Always ensure the target response is included in the comparison set
-        const originalTarget = surveyData[selectedSurveyType]?.find(r => String(r.id) === String(selectedResponseId));
-        if (originalTarget && !filteredSelected.find(r => String(r.id) === String(selectedResponseId))) {
-          console.log('📊 Adding target survey to selected surveys for comparison');
-          responses = [originalTarget, ...filteredSelected];
-        } else {
-          responses = filteredSelected;
-        }
-        console.log('📊 Final response set size:', responses.length);
+      if (!selectedResponseId || !selectedSurveyType) {
+        console.log('📊 Missing selectedResponseId or selectedSurveyType');
+        return;
       }
+
+      console.log('📊 Starting generateComparisonData (template-based)');
+      console.log('📊 Target response ID:', selectedResponseId);
+      console.log('📊 Survey type:', selectedSurveyType);
       
-      const targetResponse = responses.find(r => String(r.id) === String(selectedResponseId));
-      console.log('📊 Target response found:', !!targetResponse);
-      console.log('📊 Looking for response ID:', selectedResponseId);
-      if (responses?.length > 0) {
-        console.log('📊 Available response IDs:', responses.map(r => r.id));
-      }
-      
-      if (targetResponse) {
-        let comparison;
-        
-        if (selectedMapSurveys.length > 0) {
-          // Use only selected surveys for comparison
-          console.log('📊 Using selected surveys for comparison');
-          comparison = SampleDataService.compareWithSimilar(
-            targetResponse, 
-            selectedSurveyType,
-            responses // Pass filtered responses for comparison
-          );
-        } else {
-          // Use all responses as before
-          console.log('📊 Using all responses for comparison');
-          comparison = SampleDataService.compareWithSimilar(
-            targetResponse, 
+      // Use the new template-based comparison from backend
+      if (!isTestMode) {
+        try {
+          const comparisonResult = await BackendDataService.compareByTemplate(
+            selectedResponseId,
             selectedSurveyType
           );
+          
+          console.log('📊 Template comparison result:', comparisonResult);
+          
+          // Check if template is empty
+          if (comparisonResult.error === 'empty_template') {
+            console.warn('📊 Empty template detected:', comparisonResult.message);
+            setComparisonData({
+              ...comparisonResult,
+              isEmpty: true,
+              errorMessage: comparisonResult.message
+            });
+            return;
+          }
+          
+          // Include text_analytics in comparison data
+          const qLabels = comparisonResult.question_labels || {};
+          const qDetails = comparisonResult.question_details || {};
+          const backendMeta = comparisonResult.question_meta || {};
+          const avgKeys = Object.keys(comparisonResult.averages || {});
+          const tgtKeys = Object.keys(comparisonResult.targetScores || {});
+          const allKeys = Array.from(new Set([...avgKeys, ...tgtKeys]));
+          const question_meta = { ...backendMeta };
+          const numeric_keys = [];
+
+          const formatKey = (k) => k.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+          allKeys.forEach((k) => {
+            const label = qLabels[k] || (qDetails[k]?.label) || (qDetails[k]?.full_text) || formatKey(k);
+            const avgVal = (comparisonResult.averages || {})[k];
+            const tgtVal = (comparisonResult.targetScores || {})[k];
+            // Prefer backend numeric flag when present; fallback to value-based inference
+            const backendFlag = backendMeta[k]?.is_numeric;
+            const inferredNumeric = (typeof avgVal === 'number' && !Number.isNaN(avgVal)) || (typeof tgtVal === 'number' && !Number.isNaN(tgtVal));
+            const is_numeric = typeof backendFlag === 'boolean' ? backendFlag : inferredNumeric;
+            question_meta[k] = { ...(question_meta[k] || {}), label, is_numeric };
+            if (is_numeric) numeric_keys.push(k);
+          });
+
+          const newComparisonData = {
+            target: comparisonResult.target,
+            targetScores: comparisonResult.targetScores,
+            averages: comparisonResult.averages,
+            stats: comparisonResult.stats,
+            question_labels: qLabels,
+            question_details: qDetails,
+            question_meta,
+            numeric_keys
+          };
+          
+          // Add text analytics if available
+          if (comparisonResult.text_analytics) {
+            console.log('📊 Text analytics data received:', comparisonResult.text_analytics);
+            newComparisonData.text_analytics = comparisonResult.text_analytics;
+          } else {
+            console.log('📊 No text analytics data in response');
+          }
+          
+          setComparisonData(newComparisonData);
+          console.log('📊 New comparison data:', newComparisonData) ;
+          return;
+        } catch (error) {
+          console.error('📊 Error with template comparison, falling back to old method:', error);
+          // Fall through to old method if template comparison fails
         }
+      }
+      
+      // Fallback to old method for test mode or if template comparison fails
+      let responses = surveyData[selectedSurveyType];
+      console.log('📊 Using fallback comparison method');
+      console.log('📊 Original responses count:', responses?.length || 0);
+      
+      const targetResponse = responses?.find(r => String(r.id) === String(selectedResponseId));
+      
+      if (targetResponse) {
+        const comparison = SampleDataService.compareWithSimilar(
+          targetResponse, 
+          selectedSurveyType,
+          responses
+        );
         
         const stats = SampleDataService.calculateComparisonStats(
           comparison.targetScores,
           comparison.averages
         );
-        
-        console.log('📊 Setting new comparison data');
+        // Build minimal labels/meta for sample path
+        const qLabels = {};
+        const qDetails = {};
+        const avgKeys = Object.keys(comparison.averages || {});
+        const tgtKeys = Object.keys(comparison.targetScores || {});
+        const allKeys = Array.from(new Set([...avgKeys, ...tgtKeys]));
+        const question_meta = {};
+        const numeric_keys = [];
+        const formatKey = (k) => k.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+        allKeys.forEach((k) => {
+          const label = formatKey(k);
+          qLabels[k] = label;
+          qDetails[k] = { label, full_text: label };
+          const avgVal = (comparison.averages || {})[k];
+          const tgtVal = (comparison.targetScores || {})[k];
+          const is_numeric = (typeof avgVal === 'number' && !Number.isNaN(avgVal)) || (typeof tgtVal === 'number' && !Number.isNaN(tgtVal));
+          question_meta[k] = { label, is_numeric };
+          if (is_numeric) numeric_keys.push(k);
+        });
+
+        console.log('📊 Setting comparison data from fallback method');
         setComparisonData({
           ...comparison,
-          stats
+          stats,
+          question_labels: qLabels,
+          question_details: qDetails,
+          question_meta,
+          numeric_keys
         });
+        console.log('📊 New comparison data:', comparisonData);
       } else {
-        console.log('📊 No target response found - trying to auto-select from filtered responses');
-        // If the current selected response is not in the filtered set, try to select the first available one
-        if (responses && responses.length > 0) {
-          const newSelectedResponseId = String(responses[0].id);
-          console.log('📊 Auto-selecting first response:', newSelectedResponseId);
-          setSelectedResponseId(newSelectedResponseId);
-          // The effect will trigger again with the new selectedResponseId
-        } else {
-          console.log('📊 No responses available - clearing comparison data');
-          setComparisonData(null);
-        }
+        console.log('📊 No target response found');
+        setComparisonData(null);
       }
     } catch (err) {
       console.error('Error generating comparison data:', err);
+      setComparisonData(null);
     }
   };
 
@@ -612,8 +735,9 @@ const UserReports = () => {
 
   const filteredResponses = getFilteredResponses();
   const geographicData = getGeographicData();
+  // Fix: Handle 'all' type properly to avoid undefined responses
   const availableResponses = selectedSurveyType === 'all' 
-    ? Object.values(surveyData).flat() 
+    ? Object.values(surveyData).flat().filter(r => r && r.id) 
     : (surveyData[selectedSurveyType] || []);
 
   return (
@@ -736,7 +860,6 @@ const UserReports = () => {
                       }
                     }}
                   >
-                    <MenuItem value="all">All Types</MenuItem>
                     <MenuItem value="church">Church Survey</MenuItem>
                     <MenuItem value="institution">Institution Survey</MenuItem>
                     <MenuItem value="nonFormal">Non-Formal Survey</MenuItem>
@@ -859,11 +982,63 @@ const UserReports = () => {
               surveyType={selectedSurveyType}
               isExpanded={chartBuilderExpanded}
               onToggleExpand={() => setChartBuilderExpanded(!chartBuilderExpanded)}
+              questions={chartBuilderQuestions}
+              loadingQuestions={loadingQuestions}
+              surveyData={surveyData}
               adminColors={adminColors}
               hideTitle={true}
             />
           </Box>
         </Card>
+
+        {/* Info Alert about Template-Based Comparison */}
+        {!isTestMode && comparisonData && (
+          <>
+            {comparisonData.isEmpty ? (
+              <Alert severity="error" sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  <strong>⚠️ Empty Survey Template</strong>
+                </Typography>
+                <Typography variant="body2">
+                  {comparisonData.errorMessage || 'This survey template has no questions defined.'}
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  <strong>Template:</strong> {comparisonData.target?.template_code}
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
+                  Please contact an administrator to fix this template or reassign this survey to a valid template.
+                </Typography>
+              </Alert>
+            ) : comparisonData.stats?.total_comparisons > 0 ? (
+              <Alert severity="info" sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  <strong>Question-Based Comparison</strong>
+                </Typography>
+                <Typography variant="body2">
+                  Comparing this survey with <strong>{comparisonData.stats.total_comparisons}</strong> other surveys that have the same questions within the <strong>{selectedSurveyType}</strong> organization type. 
+                  Surveys from different templates are compared as long as they contain matching questions.
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                  Your template: {comparisonData.target?.template_code} • {comparisonData.stats?.questions_compared || 0} questions compared
+                </Typography>
+              </Alert>
+            ) : (
+              <Alert severity="warning" sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  <strong>No Matching Surveys Found</strong>
+                </Typography>
+                <Typography variant="body2">
+                  This survey uses template <strong>{comparisonData.target?.template_code}</strong> with {comparisonData.target?.template_questions_count || 0} questions. 
+                  No other completed surveys from <strong>{selectedSurveyType}</strong> organizations have matching questions.
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  <strong>Note:</strong> The system compares surveys based on question content, not just template ID. 
+                  Other surveys may use different templates but can still be compared if they have the same questions.
+                </Typography>
+              </Alert>
+            )}
+          </>
+        )}
 
         {/* Analytics Dashboard */}
         {comparisonData && (
@@ -882,7 +1057,10 @@ const UserReports = () => {
             <Grid item xs={12} md={8}>
               <Card sx={{ p: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
                 <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
-                  Training Scores: Individual vs Average
+                  {comparisonData.stats?.section_summary || 'Survey Metrics'}: Individual vs Group Average
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Comparing your responses with {comparisonData.stats?.total_comparisons || 0} similar surveys
                 </Typography>
                 <Box sx={{ mt: 2 }}>
                   <SimpleBarChart
@@ -892,12 +1070,14 @@ const UserReports = () => {
                     showComparison={true}
                     maxValue={5}
                     adminColors={adminColors}
+                    questionLabels={comparisonData.question_labels}
+                    questionDetails={comparisonData.question_details}
                   />
                 </Box>
               </Card>
             </Grid>
 
-            {/* Geographic Distribution */}
+            {/* //Geographic Distribution  - Bar graph
             <Grid item xs={12} md={6}>
               <Card sx={{ p: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
                 <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
@@ -911,7 +1091,7 @@ const UserReports = () => {
                   />
                 </Box>
               </Card>
-            </Grid>
+            </Grid>*/}
 
             {/* Group Averages */}
             <Grid item xs={12} md={6}>
@@ -930,54 +1110,67 @@ const UserReports = () => {
               </Card>
             </Grid>
 
-            {/* Qualitative Insights */}
-            <Grid item xs={12}>
-              <Card sx={{ p: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
-                <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
-                  Qualitative Insights
-                </Typography>
-                <Box sx={{ mt: 2 }}>
-                  <QualitativeAnalysis
-                    surveyType={selectedSurveyType}
-                    selectedResponseId={selectedResponseId}
-                    selectedResponseLabel={availableResponses.find(r => String(r.id) === String(selectedResponseId)) 
-                      ? getEnhancedResponseDisplayName(availableResponses.find(r => String(r.id) === String(selectedResponseId)))
-                      : 'Selected Response'}
-                    selectedMapSurveys={selectedMapSurveys}
-                    userColors={adminColors}
-                    apiUrl={process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}
-                    isTestMode={isTestMode}
-                    hideTitle={true}
-                  />
-                </Box>
-              </Card>
-            </Grid>
+            {/* Text Analytics from text_analytics.py */}
+            {comparisonData?.text_analytics && (
+              <Grid item xs={12}>
+                <TextAnalyticsDisplay
+                  textAnalytics={comparisonData.text_analytics}
+                  adminColors={adminColors}
+                />
+              </Grid>
+            )}
 
-            {/* Qualitative Insights Comparison */}
-            <Grid item xs={12}>
-              <Card sx={{ p: 3, backgroundColor: adminColors.headerBg }}>
-                <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
-                  Qualitative Insights Comparison
-                </Typography>
-                <Typography variant="body2" color="text.secondary" paragraph>
-                  Compare the selected response against all other responses in the dataset
-                </Typography>
-                
-                <Box sx={{ mt: 2 }}>
-                  <QualitativeComparisonAnalysis
-                    surveyType={selectedSurveyType}
-                    selectedResponseId={selectedResponseId}
-                    selectedResponseLabel={availableResponses.find(r => String(r.id) === String(selectedResponseId)) 
-                      ? getEnhancedResponseDisplayName(availableResponses.find(r => String(r.id) === String(selectedResponseId)))
-                      : 'Selected Response'}
-                    surveyData={surveyData}
-                    adminColors={adminColors}
-                    apiUrl={process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}
-                    isTestMode={isTestMode}
-                  />
-                </Box>
-              </Card>
-            </Grid>
+            {/* Fallback: Old Qualitative Analysis (for test mode or if text analytics not available) */}
+            {(!comparisonData?.text_analytics || isTestMode) && (
+              <>
+                <Grid item xs={12}>
+                  <Card sx={{ p: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
+                    <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
+                      Qualitative Insights
+                    </Typography>
+                    <Box sx={{ mt: 2 }}>
+                      <QualitativeAnalysis
+                        surveyType={selectedSurveyType}
+                        selectedResponseId={selectedResponseId}
+                        selectedResponseLabel={availableResponses.find(r => String(r.id) === String(selectedResponseId)) 
+                          ? getEnhancedResponseDisplayName(availableResponses.find(r => String(r.id) === String(selectedResponseId)))
+                          : 'Selected Response'}
+                        selectedMapSurveys={selectedMapSurveys}
+                        userColors={adminColors}
+                        apiUrl={process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}
+                        isTestMode={isTestMode}
+                        hideTitle={true}
+                      />
+                    </Box>
+                  </Card>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Card sx={{ p: 3, backgroundColor: adminColors.headerBg }}>
+                    <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
+                      Qualitative Insights Comparison
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      Compare the selected response against all other responses in the dataset
+                    </Typography>
+                    
+                    <Box sx={{ mt: 2 }}>
+                      <QualitativeComparisonAnalysis
+                        surveyType={selectedSurveyType}
+                        selectedResponseId={selectedResponseId}
+                        selectedResponseLabel={availableResponses.find(r => String(r.id) === String(selectedResponseId)) 
+                          ? getEnhancedResponseDisplayName(availableResponses.find(r => String(r.id) === String(selectedResponseId)))
+                          : 'Selected Response'}
+                        surveyData={surveyData}
+                        adminColors={adminColors}
+                        apiUrl={process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}
+                        isTestMode={isTestMode}
+                      />
+                    </Box>
+                  </Card>
+                </Grid>
+              </>
+            )}
           </Grid>
         )}
 

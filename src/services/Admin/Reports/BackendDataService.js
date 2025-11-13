@@ -447,6 +447,40 @@ class BackendDataService {
       { value: 'nonFormal', label: 'Non-Formal Survey' }
     ];
   }
+
+  /**
+   * Compare surveys based on matching template questions
+   * Only compares surveys with the same template (same questions)
+   */
+  async compareByTemplate(targetResponseId, organizationType) {
+    try {
+      console.log('🔄 Comparing surveys by template:', { targetResponseId, organizationType });
+      
+      const response = await fetch(`${this.baseURL}/survey-responses/compare-by-template`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          target_response_id: targetResponseId,
+          organization_type: organizationType
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to compare surveys');
+      }
+
+      const data = await response.json();
+      console.log('🔄 Template comparison result:', data);
+      
+      return data;
+    } catch (error) {
+      console.error('Error comparing surveys by template:', error);
+      throw error;
+    }
+  }
 }
 
 export default new BackendDataService();

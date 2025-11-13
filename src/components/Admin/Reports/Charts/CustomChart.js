@@ -58,8 +58,97 @@ const CustomChart = ({
     );
   }
 
+  // Extract answer for a specific question from a response
+  const extractAnswerFromResponse = (response, question) => {
+    if (!response.answers) return null;
+
+    let answersObj = response.answers;
+    if (typeof answersObj === 'string') {
+      try {
+        answersObj = JSON.parse(answersObj);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    let answerValue = null;
+
+    // Matching priority (same as ChartSelectorCard):
+    // 1. By question text (exact match)
+    if (answersObj[question.text]) {
+      answerValue = answersObj[question.text];
+    }
+    // 2. By question text (case-insensitive)
+    else {
+      const questionTextLower = question.text.toLowerCase();
+      for (const key in answersObj) {
+        if (key.toLowerCase() === questionTextLower) {
+          answerValue = answersObj[key];
+          break;
+        }
+      }
+      
+      // 3. Try by question ID (as number)
+      if (!answerValue && answersObj[question.id]) {
+        answerValue = answersObj[question.id];
+      }
+      // 4. Try by question ID (as string)
+      else if (!answerValue && answersObj[String(question.id)]) {
+        answerValue = answersObj[String(question.id)];
+      }
+      // 5. Try by order + 1 (for template-generated IDs or fallback)
+      else if (!answerValue && question.order !== undefined && question.order !== null) {
+        const orderKey = String(question.order + 1);
+        if (answersObj[orderKey]) {
+          answerValue = answersObj[orderKey];
+        }
+      }
+    }
+
+    // Handle complex answer values (objects)
+    if (answerValue && typeof answerValue === 'object') {
+      if (answerValue['YES/NO']) {
+        answerValue = answerValue['YES/NO'];
+      } else if (Object.keys(answerValue).length > 0) {
+        answerValue = JSON.stringify(answerValue);
+      }
+    }
+
+    return answerValue;
+  };
+
   const processDataForChart = () => {
-    // Process data based on chart configuration
+    console.log('📊 CustomChart - Processing data for chart:', chartConfig);
+    console.log('📊 CustomChart - Data length:', data?.length);
+    console.log('📊 CustomChart - Question:', chartConfig.question);
+
+    // NEW: Handle question-based charts
+    if (chartConfig.question) {
+      const question = chartConfig.question;
+      const responses = [];
+
+      // Extract answers from all survey responses
+      data.forEach((response) => {
+        const answer = extractAnswerFromResponse(response, question);
+        if (answer !== null && answer !== undefined && answer !== 'No answer') {
+          responses.push(answer);
+        }
+      });
+
+      console.log('📊 CustomChart - Extracted responses:', responses);
+
+      // Count occurrences of each answer (for categorical data)
+      const answerCounts = {};
+      responses.forEach(answer => {
+        const answerStr = String(answer);
+        answerCounts[answerStr] = (answerCounts[answerStr] || 0) + 1;
+      });
+
+      console.log('📊 CustomChart - Answer counts:', answerCounts);
+      return answerCounts;
+    }
+
+    // OLD: Handle column-based charts (backward compatibility)
     const { selectedColumns, groupBy, aggregationType } = chartConfig;
     
     if (!selectedColumns || selectedColumns.length === 0) {
@@ -71,7 +160,6 @@ const CustomChart = ({
       const result = {};
       selectedColumns.forEach(columnId => {
         const values = data.map(item => {
-          // Handle nested properties (like ministry_training_scores.preaching)
           const column = chartConfig.columns.find(col => col.id === columnId);
           if (column && column.parent) {
             return item[column.parent] ? item[column.parent][columnId] : null;

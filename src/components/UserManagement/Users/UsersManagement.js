@@ -117,6 +117,13 @@ function UsersManagement() {
     
     // Google Places state
     const [addressSearch, setAddressSearch] = useState('');
+    
+    // Search, Filter, and Sort states
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterOrganization, setFilterOrganization] = useState('');
+    const [filterRole, setFilterRole] = useState('');
+    const [sortBy, setSortBy] = useState('username');
+    const [sortOrder, setSortOrder] = useState('asc');
 
     // Generate email preview content using backend EmailService
     const generateWelcomeEmailPreview = async () => {
@@ -819,6 +826,14 @@ function UsersManagement() {
             const organizationalRoles = userData.roles || [];
             delete userData.roles;
             
+            // Debug logging
+            console.log('=== UPDATE USER DEBUG ===');
+            console.log('Selected User ID:', selectedUser.id);
+            console.log('Form Data template_id:', formData.template_id);
+            console.log('User Data being sent:', userData);
+            console.log('Template ID in userData:', userData.template_id);
+            console.log('========================');
+            
             // First, update the user
             await updateUser(selectedUser.id, userData);
             
@@ -883,6 +898,74 @@ function UsersManagement() {
         return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
     };
 
+    // Filter and sort users
+    const getFilteredAndSortedUsers = () => {
+        let filtered = [...users];
+        
+        // Apply search filter
+        if (searchTerm) {
+            const search = searchTerm.toLowerCase();
+            filtered = filtered.filter(user => 
+                user.username?.toLowerCase().includes(search) ||
+                user.email?.toLowerCase().includes(search) ||
+                user.firstname?.toLowerCase().includes(search) ||
+                user.lastname?.toLowerCase().includes(search) ||
+                user.phone?.toLowerCase().includes(search) ||
+                user.organization?.name?.toLowerCase().includes(search)
+            );
+        }
+        
+        // Apply organization filter
+        if (filterOrganization) {
+            filtered = filtered.filter(user => user.organization_id === parseInt(filterOrganization));
+        }
+        
+        // Apply role filter
+        if (filterRole) {
+            filtered = filtered.filter(user => user.ui_role === filterRole);
+        }
+        
+        // Apply sorting
+        filtered.sort((a, b) => {
+            let aValue = a[sortBy];
+            let bValue = b[sortBy];
+            
+            // Handle organization name sorting
+            if (sortBy === 'organization') {
+                aValue = a.organization?.name || '';
+                bValue = b.organization?.name || '';
+            }
+            
+            // Handle null/undefined values
+            if (!aValue) aValue = '';
+            if (!bValue) bValue = '';
+            
+            // Convert to lowercase for string comparison
+            if (typeof aValue === 'string') aValue = aValue.toLowerCase();
+            if (typeof bValue === 'string') bValue = bValue.toLowerCase();
+            
+            if (sortOrder === 'asc') {
+                return aValue > bValue ? 1 : -1;
+            } else {
+                return aValue < bValue ? 1 : -1;
+            }
+        });
+        
+        return filtered;
+    };
+
+    const filteredUsers = getFilteredAndSortedUsers();
+
+    // Handle sort
+    const handleSort = (column) => {
+        if (sortBy === column) {
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortBy(column);
+            setSortOrder('asc');
+        }
+    };
+
     // Render the users table
     const renderUsersTable = () => {
         return (
@@ -890,18 +973,44 @@ function UsersManagement() {
                 <Table>
                     <TableHead sx={{ backgroundColor: '#633394' }}>
                         <TableRow>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Username</TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Email</TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>First Name</TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Last Name</TableCell>
+                            <TableCell 
+                                sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+                                onClick={() => handleSort('username')}
+                            >
+                                Username {sortBy === 'username' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </TableCell>
+                            <TableCell 
+                                sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+                                onClick={() => handleSort('email')}
+                            >
+                                Email {sortBy === 'email' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </TableCell>
+                            <TableCell 
+                                sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+                                onClick={() => handleSort('firstname')}
+                            >
+                                First Name {sortBy === 'firstname' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </TableCell>
+                            <TableCell 
+                                sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+                                onClick={() => handleSort('lastname')}
+                            >
+                                Last Name {sortBy === 'lastname' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </TableCell>
+                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Title</TableCell>
                             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Phone</TableCell>
                             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>User Address</TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Organization</TableCell>
+                            <TableCell 
+                                sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+                                onClick={() => handleSort('organization')}
+                            >
+                                Organization {sortBy === 'organization' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </TableCell>
                             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Actions</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {users
+                        {filteredUsers
                             .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                             .map((user) => (
                                 <TableRow key={user.id}>
@@ -909,6 +1018,7 @@ function UsersManagement() {
                                     <TableCell>{user.email}</TableCell>
                                     <TableCell>{user.firstname}</TableCell>
                                     <TableCell>{user.lastname}</TableCell>
+                                    <TableCell>{user.title || 'N/A'}</TableCell>
                                     <TableCell>{user.phone || 'N/A'}</TableCell>
                                     <TableCell>
                                         {user.geo_location ? (
@@ -974,9 +1084,9 @@ function UsersManagement() {
                     </TableBody>
                 </Table>
                 <TablePagination
-                    rowsPerPageOptions={[5, 10, 25]}
+                    rowsPerPageOptions={[5, 10, 25, 50]}
                     component="div"
-                    count={totalUsers}
+                    count={filteredUsers.length}
                     rowsPerPage={rowsPerPage}
                     page={page}
                     onPageChange={handleChangePage}
@@ -1542,13 +1652,13 @@ function UsersManagement() {
                         User Statistics
                     </Typography>
                     <Grid container spacing={2}>
-                        <Grid item xs={12} sm={4}>
+                        <Grid item xs={12} sm={3}>
                             <Paper sx={{ p: 2, textAlign: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
                                 <Typography variant="h4" sx={{ color: '#633394' }}>{users.length}</Typography>
                                 <Typography variant="body2" sx={{ color: '#633394' }}>Total Users</Typography>
                             </Paper>
                         </Grid>
-                        <Grid item xs={12} sm={4}>
+                        <Grid item xs={12} sm={3}>
                             <Paper sx={{ p: 2, textAlign: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
                                 <Typography variant="h4" sx={{ color: '#633394' }}>
                                     {users.filter(user => user.ui_role === 'admin').length}
@@ -1556,13 +1666,90 @@ function UsersManagement() {
                                 <Typography variant="body2" sx={{ color: '#633394' }}>Administrators</Typography>
                             </Paper>
                         </Grid>
-                        <Grid item xs={12} sm={4}>
+                        <Grid item xs={12} sm={3}>
                             <Paper sx={{ p: 2, textAlign: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
                                 <Typography variant="h4" sx={{ color: '#633394' }}>
                                     {users.filter(user => user.ui_role === 'user').length}
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: '#633394' }}>Regular Users</Typography>
                             </Paper>
+                        </Grid>
+                        <Grid item xs={12} sm={3}>
+                            <Paper sx={{ p: 2, textAlign: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
+                                <Typography variant="h4" sx={{ color: '#633394' }}>
+                                    {filteredUsers.length}
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: '#633394' }}>Filtered Results</Typography>
+                            </Paper>
+                        </Grid>
+                    </Grid>
+                </CardContent>
+            </Card>
+
+            {/* Search and Filter Controls */}
+            <Card sx={{ mb: 3, boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
+                <CardContent>
+                    <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold', mb: 2 }}>
+                        Search & Filter
+                    </Typography>
+                    <Grid container spacing={2}>
+                        <Grid item xs={12} md={4}>
+                            <TextField
+                                fullWidth
+                                label="Search Users"
+                                placeholder="Search by name, email, phone..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                size="small"
+                            />
+                        </Grid>
+                        <Grid item xs={12} md={3}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel>Filter by Organization</InputLabel>
+                                <Select
+                                    value={filterOrganization}
+                                    onChange={(e) => setFilterOrganization(e.target.value)}
+                                    label="Filter by Organization"
+                                >
+                                    <MenuItem value="">All Organizations</MenuItem>
+                                    {organizations.map(org => (
+                                        <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12} md={3}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel>Filter by Role</InputLabel>
+                                <Select
+                                    value={filterRole}
+                                    onChange={(e) => setFilterRole(e.target.value)}
+                                    label="Filter by Role"
+                                >
+                                    <MenuItem value="">All Roles</MenuItem>
+                                    <MenuItem value="admin">Administrator</MenuItem>
+                                    <MenuItem value="user">Regular User</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12} md={2}>
+                            <Button
+                                fullWidth
+                                variant="outlined"
+                                onClick={() => {
+                                    setSearchTerm('');
+                                    setFilterOrganization('');
+                                    setFilterRole('');
+                                }}
+                                sx={{ 
+                                    height: '40px',
+                                    color: '#633394', 
+                                    borderColor: '#633394',
+                                    '&:hover': { borderColor: '#7c52a5', backgroundColor: 'rgba(99, 51, 148, 0.04)' }
+                                }}
+                            >
+                                Clear Filters
+                            </Button>
                         </Grid>
                     </Grid>
                 </CardContent>

@@ -201,7 +201,7 @@ export const fetchUmbrellaAssociations = async () => {
 export const fetchOrganizationTypes = async () => {
     try {
         const response = await axios.get(`${BASE_URL}/organization-types`);
-        return response.data;
+        return response.data.organization_types || [];
     } catch (error) {
         console.error('Failed to fetch organization types:', error);
         throw error;

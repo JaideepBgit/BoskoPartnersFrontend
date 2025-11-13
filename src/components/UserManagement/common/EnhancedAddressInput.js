@@ -72,7 +72,7 @@ const EnhancedAddressInput = ({
         }
 
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'AIzaSyAA5PZQdpcY4NXonqUny2sGZzMLbFKE0Iw'}&libraries=places,geometry`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'AIzaSyAA5PZQdpcY4NXonqUny2sGZzMLbFKE0Iw'}&libraries=places,geometry,marker`;
         script.async = true;
         script.defer = true;
         
@@ -117,7 +117,7 @@ const EnhancedAddressInput = ({
         }
 
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'AIzaSyAA5PZQdpcY4NXonqUny2sGZzMLbFKE0Iw'}&libraries=places,geometry`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'AIzaSyAA5PZQdpcY4NXonqUny2sGZzMLbFKE0Iw'}&libraries=places,geometry,marker`;
         script.async = true;
         script.defer = true;
         
@@ -139,17 +139,31 @@ const EnhancedAddressInput = ({
             markerRef.current.setMap(null);
         }
 
-        const marker = new window.google.maps.Marker({
+        // Create marker content for AdvancedMarkerElement
+        const markerContent = document.createElement('div');
+        markerContent.style.cssText = `
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #633394;
+            border: 2px solid #ffffff;
+            cursor: grab;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+        `;
+        
+        const marker = new window.google.maps.marker.AdvancedMarkerElement({
             position: location,
             map: map,
-            draggable: true,
-            title: 'Selected Location'
+            title: 'Selected Location',
+            content: markerContent,
+            gmpDraggable: true
         });
 
         markerRef.current = marker;
         setSelectedLocation(location);
 
-        marker.addListener('dragend', (event) => {
+        marker.addEventListener('gmp-dragend', (event) => {
             const newLocation = {
                 lat: event.latLng.lat(),
                 lng: event.latLng.lng()
@@ -175,6 +189,7 @@ const EnhancedAddressInput = ({
                 const map = new window.google.maps.Map(mapRef.current, {
                     zoom: formData.latitude ? 15 : 4,
                     center: center,
+                    mapId: 'ADDRESS_INPUT_MAP_ID', // Required for AdvancedMarkerElement
                     mapTypeControl: true,
                     streetViewControl: true,
                     fullscreenControl: true,

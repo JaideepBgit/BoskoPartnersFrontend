@@ -37,6 +37,13 @@ function OrganizationsManagement() {
     const [orgTypeFilter, setOrgTypeFilter] = useState('all');
     const [activeTab, setActiveTab] = useState(0);
     
+    // Search, Filter, and Sort states
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterType, setFilterType] = useState('');
+    const [filterLocation, setFilterLocation] = useState('');
+    const [sortBy, setSortBy] = useState('name');
+    const [sortOrder, setSortOrder] = useState('asc');
+    
     // Dialog states
     const [openAddDialog, setOpenAddDialog] = useState(false);
     const [openEditDialog, setOpenEditDialog] = useState(false);
@@ -1113,55 +1120,118 @@ function OrganizationsManagement() {
         return association ? association.name : 'N/A';
     };
 
-    // Filter organizations based on type
-    const filteredOrganizations = orgTypeFilter === 'all'
-        ? organizations
-        : organizations.filter(org => org.organization_type?.type === orgTypeFilter);
+    // Filter and sort organizations
+    const getFilteredAndSortedOrganizations = () => {
+        let filtered = [...organizations];
+        
+        // Apply search filter
+        if (searchTerm) {
+            const search = searchTerm.toLowerCase();
+            filtered = filtered.filter(org => 
+                org.name?.toLowerCase().includes(search) ||
+                org.organization_type?.type?.toLowerCase().includes(search) ||
+                org.geo_location?.city?.toLowerCase().includes(search) ||
+                org.geo_location?.province?.toLowerCase().includes(search) ||
+                org.geo_location?.country?.toLowerCase().includes(search) ||
+                org.website?.toLowerCase().includes(search)
+            );
+        }
+        
+        // Apply type filter (existing orgTypeFilter)
+        if (orgTypeFilter && orgTypeFilter !== 'all') {
+            filtered = filtered.filter(org => org.organization_type?.type === orgTypeFilter);
+        }
+        
+        // Apply new type filter
+        if (filterType) {
+            filtered = filtered.filter(org => org.organization_type?.type === filterType);
+        }
+        
+        // Apply location filter
+        if (filterLocation) {
+            const location = filterLocation.toLowerCase();
+            filtered = filtered.filter(org => 
+                org.geo_location?.city?.toLowerCase().includes(location) ||
+                org.geo_location?.province?.toLowerCase().includes(location) ||
+                org.geo_location?.country?.toLowerCase().includes(location) ||
+                org.geo_location?.region?.toLowerCase().includes(location)
+            );
+        }
+        
+        // Apply sorting
+        filtered.sort((a, b) => {
+            let aValue = '';
+            let bValue = '';
+            
+            if (sortBy === 'name') {
+                aValue = a.name || '';
+                bValue = b.name || '';
+            } else if (sortBy === 'type') {
+                aValue = a.organization_type?.type || '';
+                bValue = b.organization_type?.type || '';
+            } else if (sortBy === 'location') {
+                aValue = [a.geo_location?.city, a.geo_location?.province, a.geo_location?.country].filter(Boolean).join(', ');
+                bValue = [b.geo_location?.city, b.geo_location?.province, b.geo_location?.country].filter(Boolean).join(', ');
+            }
+            
+            // Convert to lowercase for string comparison
+            if (typeof aValue === 'string') aValue = aValue.toLowerCase();
+            if (typeof bValue === 'string') bValue = bValue.toLowerCase();
+            
+            if (sortOrder === 'asc') {
+                return aValue > bValue ? 1 : -1;
+            } else {
+                return aValue < bValue ? 1 : -1;
+            }
+        });
+        
+        return filtered;
+    };
 
-    // Paginate organizations
-    const paginatedOrganizations = filteredOrganizations.slice(
-        page * rowsPerPage,
-        page * rowsPerPage + rowsPerPage
-    );
+    const filteredOrganizations = getFilteredAndSortedOrganizations();
 
-    // Render the organizations table
+    // Handle sort
+    const handleSort = (column) => {
+        if (sortBy === column) {
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortBy(column);
+            setSortOrder('asc');
+        }
+    };
+
     const renderOrganizationsTable = () => {
         return (
             <TableContainer component={Paper} sx={{ boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
-                <Box sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="subtitle1" sx={{ mr: 2, fontWeight: 'bold', color: '#633394' }}>
-                        Filter by Type:
-                    </Typography>
-                    <FormControl variant="outlined" size="small" sx={{ minWidth: 150 }}>
-                        <Select
-                            value={orgTypeFilter}
-                            onChange={handleOrgTypeFilterChange}
-                            displayEmpty
-                        >
-                            <MenuItem value="all">All Types</MenuItem>
-                            {organizationTypes.map((orgType) => (
-                                <MenuItem key={orgType.id} value={orgType.type}>
-                                    {orgType.type === 'Churches' ? 'Churches' :
-                                     orgType.type === 'Institutions' ? 'Institutions' :
-                                     orgType.type === 'Non_formal_organizations' ? 'Non-formal Organizations' :
-                                     orgType.type.charAt(0).toUpperCase() + orgType.type.slice(1)}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                </Box>
                 <Table>
                     <TableHead sx={{ backgroundColor: '#633394' }}>
                         <TableRow>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Name</TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Type</TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Location</TableCell>
+                            <TableCell 
+                                sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+                                onClick={() => handleSort('name')}
+                            >
+                                Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </TableCell>
+                            <TableCell 
+                                sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+                                onClick={() => handleSort('type')}
+                            >
+                                Type {sortBy === 'type' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </TableCell>
+                            <TableCell 
+                                sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+                                onClick={() => handleSort('location')}
+                            >
+                                Location {sortBy === 'location' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </TableCell>
                             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Affiliations</TableCell>
                             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Actions</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {paginatedOrganizations.map((org) => (
+                        {filteredOrganizations
+                            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                            .map((org) => (
                             <TableRow key={org.id} sx={{ '&:nth-of-type(odd)': { backgroundColor: theme.palette.action.hover } }}>
                                 <TableCell>{org.name}</TableCell>
                                 <TableCell>
@@ -1913,13 +1983,13 @@ function OrganizationsManagement() {
                         Organization Statistics
                     </Typography>
                     <Grid container spacing={2}>
-                        <Grid item xs={12} sm={3}>
+                        <Grid item xs={12} sm={2.4}>
                             <Paper sx={{ p: 2, textAlign: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
                                 <Typography variant="h4" sx={{ color: '#633394' }}>{organizations.length}</Typography>
                                 <Typography variant="body2" sx={{ color: '#633394' }}>Total Organizations</Typography>
                             </Paper>
                         </Grid>
-                        <Grid item xs={12} sm={3}>
+                        <Grid item xs={12} sm={2.4}>
                             <Paper sx={{ p: 2, textAlign: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
                                 <Typography variant="h4" sx={{ color: '#633394' }}>
                                     {organizations.filter(org => org.organization_type?.type === 'Churches').length}
@@ -1927,7 +1997,7 @@ function OrganizationsManagement() {
                                 <Typography variant="body2" sx={{ color: '#633394' }}>Churches</Typography>
                             </Paper>
                         </Grid>
-                        <Grid item xs={12} sm={3}>
+                        <Grid item xs={12} sm={2.4}>
                             <Paper sx={{ p: 2, textAlign: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
                                 <Typography variant="h4" sx={{ color: '#633394' }}>
                                     {organizations.filter(org => org.organization_type?.type === 'Institutions').length}
@@ -1935,13 +2005,87 @@ function OrganizationsManagement() {
                                 <Typography variant="body2" sx={{ color: '#633394' }}>Institutions</Typography>
                             </Paper>
                         </Grid>
-                        <Grid item xs={12} sm={3}>
+                        <Grid item xs={12} sm={2.4}>
                             <Paper sx={{ p: 2, textAlign: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
                                 <Typography variant="h4" sx={{ color: '#633394' }}>
                                     {organizations.filter(org => org.organization_type?.type === 'Non_formal_organizations').length}
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: '#633394' }}>Non-formal Orgs</Typography>
                             </Paper>
+                        </Grid>
+                        <Grid item xs={12} sm={2.4}>
+                            <Paper sx={{ p: 2, textAlign: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
+                                <Typography variant="h4" sx={{ color: '#633394' }}>
+                                    {filteredOrganizations.length}
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: '#633394' }}>Filtered Results</Typography>
+                            </Paper>
+                        </Grid>
+                    </Grid>
+                </CardContent>
+            </Card>
+
+            {/* Search and Filter Controls */}
+            <Card sx={{ mb: 3, boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
+                <CardContent>
+                    <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold', mb: 2 }}>
+                        Search & Filter
+                    </Typography>
+                    <Grid container spacing={2}>
+                        <Grid item xs={12} md={4}>
+                            <TextField
+                                fullWidth
+                                label="Search Organizations"
+                                placeholder="Search by name, type, location..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                size="small"
+                            />
+                        </Grid>
+                        <Grid item xs={12} md={3}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel>Filter by Type</InputLabel>
+                                <Select
+                                    value={filterType}
+                                    onChange={(e) => setFilterType(e.target.value)}
+                                    label="Filter by Type"
+                                >
+                                    <MenuItem value="">All Types</MenuItem>
+                                    <MenuItem value="Churches">Churches</MenuItem>
+                                    <MenuItem value="Institutions">Institutions</MenuItem>
+                                    <MenuItem value="Non_formal_organizations">Non-formal Organizations</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12} md={3}>
+                            <TextField
+                                fullWidth
+                                label="Filter by Location"
+                                placeholder="City, Province, Country..."
+                                value={filterLocation}
+                                onChange={(e) => setFilterLocation(e.target.value)}
+                                size="small"
+                            />
+                        </Grid>
+                        <Grid item xs={12} md={2}>
+                            <Button
+                                fullWidth
+                                variant="outlined"
+                                onClick={() => {
+                                    setSearchTerm('');
+                                    setFilterType('');
+                                    setFilterLocation('');
+                                    setOrgTypeFilter('all');
+                                }}
+                                sx={{ 
+                                    height: '40px',
+                                    color: '#633394', 
+                                    borderColor: '#633394',
+                                    '&:hover': { borderColor: '#7c52a5', backgroundColor: 'rgba(99, 51, 148, 0.04)' }
+                                }}
+                            >
+                                Clear Filters
+                            </Button>
                         </Grid>
                     </Grid>
                 </CardContent>

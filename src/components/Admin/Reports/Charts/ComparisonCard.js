@@ -27,14 +27,13 @@ const ComparisonCard = ({
     );
   }
 
-  const { 
-    betterThanAverage, 
-    worseThanAverage, 
-    equalToAverage, 
-    totalCategories,
-    strengthAreas,
-    improvementAreas 
-  } = comparisonStats;
+  // Handle both old and new stats format
+  const betterThanAverage = comparisonStats.betterThanAverage || comparisonStats.higher_than_average || 0;
+  const worseThanAverage = comparisonStats.worseThanAverage || comparisonStats.lower_than_average || 0;
+  const equalToAverage = comparisonStats.equalToAverage || 0;
+  const totalCategories = comparisonStats.totalCategories || comparisonStats.questions_compared || 0;
+  const strengthAreas = comparisonStats.strengthAreas || [];
+  const improvementAreas = comparisonStats.improvementAreas || [];
 
   const strengthPercentage = totalCategories > 0 ? (betterThanAverage / totalCategories) * 100 : 0;
   const improvementPercentage = totalCategories > 0 ? (worseThanAverage / totalCategories) * 100 : 0;

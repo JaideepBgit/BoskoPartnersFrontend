@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Typography, Box, Tabs, Tab, Paper, Button } from '@mui/material';
 import UsersManagement from './Users/UsersManagement';
 import OrganizationsManagement from './Organizations/OrganizationsManagement';
+import ContactReferrals from './Users/ContactReferrals';
 import Navbar from '../shared/Navbar/Navbar';
 
 function UserManagementMain() {
@@ -48,11 +49,13 @@ function UserManagementMain() {
                         >
                             <Tab label="Users" />
                             <Tab label="Organizations" />
+                            <Tab label="Contact Referrals" />
                         </Tabs>
                         
                         <Box sx={{ p: 3 }}>
                             {activeTab === 0 && <UsersManagement />}
                             {activeTab === 1 && <OrganizationsManagement />}
+                            {activeTab === 2 && <ContactReferrals />}
                         </Box>
                     </Paper>
                 </Box>

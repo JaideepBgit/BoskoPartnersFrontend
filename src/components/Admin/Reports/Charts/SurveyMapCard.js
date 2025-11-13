@@ -274,7 +274,7 @@ const SurveyMapCard = ({
             // Load without callback to avoid timing issues
             const script = document.createElement('script');
             script.setAttribute('data-google-maps-loader', 'true');
-            script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'AIzaSyAA5PZQdpcY4NXonqUny2sGZzMLbFKE0Iw'}&v=quarterly&libraries=drawing,geometry&loading=async`;
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'AIzaSyAA5PZQdpcY4NXonqUny2sGZzMLbFKE0Iw'}&v=quarterly&libraries=drawing,geometry,marker&loading=async`;
             script.async = true;
             script.defer = true;
 
@@ -318,6 +318,8 @@ const SurveyMapCard = ({
                     window.google.maps.drawing && 
                     window.google.maps.drawing.DrawingManager &&
                     window.google.maps.geometry &&
+                    window.google.maps.marker &&
+                    window.google.maps.marker.AdvancedMarkerElement &&
                     window.google.maps.LatLngBounds &&
                     window.google.maps.SymbolPath &&
                     window.google.maps.event) {
@@ -396,6 +398,7 @@ const SurveyMapCard = ({
             const map = new window.google.maps.Map(mapDiv, {
                 center: { lat: 0, lng: 0 }, // Default center
                 zoom: 2,
+                mapId: 'SURVEY_MAP_ID', // Required for AdvancedMarkerElement
                 mapTypeId: window.google.maps.MapTypeId.ROADMAP,
                 gestureHandling: 'cooperative',
                 styles: [
@@ -536,18 +539,34 @@ const SurveyMapCard = ({
                 markerIcon = null; // Use default marker
             }
 
-            const marker = new window.google.maps.Marker({
+            // Create marker content for AdvancedMarkerElement
+            const markerContent = document.createElement('div');
+            markerContent.style.cssText = `
+                width: ${isTargetSurvey ? '24px' : '16px'};
+                height: ${isTargetSurvey ? '24px' : '16px'};
+                border-radius: 50%;
+                background-color: ${isTargetSurvey ? '#1A237E' : config.color};
+                border: ${isTargetSurvey ? '3px solid #FFD700' : '2px solid #ffffff'};
+                cursor: pointer;
+                transition: all 0.2s ease;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            `;
+            
+            const marker = new window.google.maps.marker.AdvancedMarkerElement({
                 position,
                 map: mapInstanceRef.current,
                 title: getMarkerTitle(response),
-                icon: markerIcon,
-                surveyData: response,
-                surveyType: surveyType,
-                isTargetSurvey: isTargetSurvey
+                content: markerContent,
+                gmpDraggable: false
             });
+            
+            // Store additional data as properties on the marker
+            marker.surveyData = response;
+            marker.surveyType = surveyType;
+            marker.isTargetSurvey = isTargetSurvey;
 
             // Add click listener for marker selection
-            marker.addListener('click', () => {
+            marker.addEventListener('gmp-click', () => {
                 handleMarkerClick(marker);
             });
 
@@ -556,11 +575,15 @@ const SurveyMapCard = ({
                 content: createInfoWindowContent(response, config, isTargetSurvey)
             });
 
-            marker.addListener('mouseover', () => {
-                infoWindow.open(mapInstanceRef.current, marker);
+            // Create hover effect using AdvancedMarkerElement
+            marker.addEventListener('gmp-mouseenter', () => {
+                infoWindow.open({
+                    anchor: marker,
+                    map: mapInstanceRef.current
+                });
             });
 
-            marker.addListener('mouseout', () => {
+            marker.addEventListener('gmp-mouseleave', () => {
                 infoWindow.close();
             });
 
@@ -667,31 +690,20 @@ const SurveyMapCard = ({
         const config = surveyTypeConfig[surveyType] || surveyTypeConfig.church;
         const isTargetSurvey = marker.isTargetSurvey;
         
-        let markerIcon;
-        
-        if (isTargetSurvey) {
-            // Target survey: keep dark blue but add selection indicator
-            markerIcon = {
-                path: window.google.maps.SymbolPath.CIRCLE,
-                fillColor: '#1A237E', // Keep dark blue for target
-                fillOpacity: 1.0,
-                scale: selected ? 15 : 12, // Slightly bigger when selected
-                strokeColor: selected ? '#FF4081' : '#FFD700', // Pink border when selected, gold otherwise
-                strokeWeight: selected ? 4 : 3
-            };
-        } else {
-            // Regular survey selection styling
-            markerIcon = {
-                path: window.google.maps.SymbolPath.CIRCLE,
-                fillColor: selected ? '#FFD700' : config.color,
-                fillOpacity: selected ? 1 : 0.8,
-                scale: selected ? 12 : 8,
-                strokeColor: selected ? adminColors.primary : '#ffffff',
-                strokeWeight: selected ? 3 : 2
-            };
+        // Update marker content for AdvancedMarkerElement
+        const markerContent = marker.content;
+        if (markerContent) {
+            markerContent.style.cssText = `
+                width: ${isTargetSurvey ? (selected ? '30px' : '24px') : (selected ? '20px' : '16px')};
+                height: ${isTargetSurvey ? (selected ? '30px' : '24px') : (selected ? '20px' : '16px')};
+                border-radius: 50%;
+                background-color: ${isTargetSurvey ? '#1A237E' : (selected ? '#FFD700' : config.color)};
+                border: ${isTargetSurvey ? (selected ? '4px solid #FF4081' : '3px solid #FFD700') : (selected ? '3px solid ${adminColors.primary}' : '2px solid #ffffff')};
+                cursor: pointer;
+                transition: all 0.2s ease;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            `;
         }
-        
-        marker.setIcon(markerIcon);
     };
 
     const findMarkersInCircle = (circle) => {

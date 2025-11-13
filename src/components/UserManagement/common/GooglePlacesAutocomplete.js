@@ -60,7 +60,7 @@ const GooglePlacesAutocomplete = ({
                 resolve();
             };
 
-            script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&libraries=places&callback=${callbackName}`;
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&libraries=places,marker&callback=${callbackName}`;
             script.async = true;
             script.onerror = () => {
                 setError('Failed to load Google Maps');
@@ -324,6 +324,7 @@ const GooglePlacesAutocomplete = ({
         const map = new window.google.maps.Map(mapRef.current, {
             center: { lat: 40.7128, lng: -74.0060 }, // Default to NYC
             zoom: 13,
+            mapId: 'PLACES_AUTOCOMPLETE_MAP_ID', // Required for AdvancedMarkerElement
             mapTypeControl: true,
             streetViewControl: true,
             fullscreenControl: true
@@ -341,11 +342,23 @@ const GooglePlacesAutocomplete = ({
                 markerRef.current.setMap(null);
             }
 
-            // Add new marker
-            markerRef.current = new window.google.maps.Marker({
+            // Create marker content for AdvancedMarkerElement
+            const markerContent = document.createElement('div');
+            markerContent.style.cssText = `
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                background-color: #633394;
+                border: 2px solid #ffffff;
+                cursor: grab;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            `;
+            
+            markerRef.current = new window.google.maps.marker.AdvancedMarkerElement({
                 position: { lat, lng },
                 map: map,
-                draggable: true
+                content: markerContent,
+                gmpDraggable: true
             });
 
             // Reverse geocode to get address
@@ -357,7 +370,7 @@ const GooglePlacesAutocomplete = ({
             });
 
             // Update marker position on drag
-            markerRef.current.addListener('dragend', (dragEvent) => {
+            markerRef.current.addEventListener('gmp-dragend', (dragEvent) => {
                 const newLat = dragEvent.latLng.lat();
                 const newLng = dragEvent.latLng.lng();
                 

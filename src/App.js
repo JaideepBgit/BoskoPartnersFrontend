@@ -16,6 +16,7 @@ import ReportsPage from './components/Admin/Reports/ReportsPage';
 import VisualReportBuilder from './components/Admin/Reports/VisualReportBuilder';
 import AdminUserReports from './components/Admin/Reports/UserReports';
 import RoleBasedReports from './components/Reports/RoleBasedReports';
+import ContactReferralPage from './components/LandingPages/ContactReferralPage';
 
 import './App.css';
 import './styles/form.css';
@@ -83,14 +84,24 @@ function App() {
 }
 
 function Main({ isAuthenticated, userRole, login, logout }) {
-  // const location = useLocation();
-  // const isLoginPage = location.pathname === '/' || location.pathname === '/login';
+  const location = useLocation();
+  
+  // Debug logging
+  console.log('📍 Current path:', location.pathname);
+  console.log('🔐 Is authenticated:', isAuthenticated);
   
   return (
     <div>
       <Routes>
         <Route path="/" element={<LoginPage onLogin={login} />} />
         <Route path="/login" element={<LoginPage onLogin={login} />} />
+        
+        {/* Public Contact Referral Page - No authentication required */}
+        <Route path="/contact-referral" element={
+          <div style={{ padding: '20px' }}>
+            <ContactReferralPage />
+          </div>
+        } />
         <Route path="/form" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <FormContainer onLogout={logout} />
