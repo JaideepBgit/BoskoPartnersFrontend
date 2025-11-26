@@ -1,5 +1,3 @@
-// src/pages/Login/LoginPage.js
-
 import React, { useState } from 'react';
 import {
   Container,
@@ -8,17 +6,18 @@ import {
   Typography,
   Box,
   Link,
-  Alert
+  Alert,
+  CircularProgress
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import UserService from '../../services/Login/UserService';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
-const LoginPage = ({ onLogin }) => {
-  const [email, setEmail]       = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError]       = useState('');
-  const [success, setSuccess]   = useState('');
-  const navigate                = useNavigate();
+const ForgotPassword = () => {
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const logoImage = process.env.PUBLIC_URL + '/assets/saurara-high-resolution-logo-transparent.png';
 
@@ -27,62 +26,35 @@ const LoginPage = ({ onLogin }) => {
     setError('');
     setSuccess('');
 
-    if (!email || !password) {
-      setError('Please enter both email and password');
+    if (!email) {
+      setError('Please enter your email address');
       return;
     }
 
+    setLoading(true);
+
     try {
-      const response = await UserService.loginUser(email, password);
-      // The backend returns { message, data } where data contains the user information
-      const userData = response.data || response;
+      const response = await fetch('http://localhost:5000/api/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
 
-      console.log('Login Successful - userData:', userData);
-      console.log('User role:', userData.role);
-      console.log('User survey_code:', userData.survey_code);
-      setSuccess('Login Successful');
+      const data = await response.json();
 
-      // 1️⃣ mark as authenticated
-      localStorage.setItem('isAuthenticated', 'true');
-
-      // 2️⃣ store entire user object
-      localStorage.setItem('user', JSON.stringify(userData));
-
-      // 3️⃣ store user ID and role separately for easy access
-      if (userData.id) {
-        localStorage.setItem('userId', userData.id);
+      if (response.ok) {
+        setSuccess('If an account exists with that email, a password reset link has been sent. Please check your inbox.');
+        setEmail('');
+      } else {
+        setError(data.error || 'An error occurred. Please try again.');
       }
-      if (userData.role) {
-        localStorage.setItem('userRole', userData.role);
-      }
-      if (userData.organization_id) {
-        localStorage.setItem('organizationId', userData.organization_id);
-      }
-      if (userData.survey_code) {
-        localStorage.setItem('surveyCode', userData.survey_code);
-      }
-
-      // notify parent (so Navbar can re-check user)
-      if (onLogin) onLogin();
-
-      // 4️⃣ navigate based on role
-      switch (userData.role) {
-        case 'admin':
-          navigate('/admin');
-          break;
-        case 'user':
-          // Always redirect users to survey code validation page
-          // They need to validate their survey code before accessing the system
-          navigate('/user');
-          break;
-        default:
-          console.warn('Unknown role, defaulting to /');
-          navigate('/');
-      }
-
     } catch (err) {
-      console.error('Login error:', err);
-      setError('Invalid email or password');
+      console.error('Forgot password error:', err);
+      setError('Unable to connect to the server. Please try again later.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -128,7 +100,11 @@ const LoginPage = ({ onLogin }) => {
           </Box>
 
           <Typography variant="h5" align="center" gutterBottom>
-            Login
+            Forgot Password
+          </Typography>
+
+          <Typography variant="body2" align="center" color="text.secondary" sx={{ mb: 3 }}>
+            Enter your email address and we'll send you a link to reset your password.
           </Typography>
 
           {error && (
@@ -144,30 +120,22 @@ const LoginPage = ({ onLogin }) => {
           )}
 
           <TextField
-            label="Username or Email"
+            label="Email Address"
             variant="outlined"
             fullWidth
             margin="normal"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-          />
-
-          <TextField
-            label="Password"
-            type="password"
-            variant="outlined"
-            fullWidth
-            margin="normal"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
+            type="email"
+            disabled={loading}
           />
 
           <Button
             type="submit"
             variant="contained"
             fullWidth
+            disabled={loading}
             sx={{
               mt: 2,
               backgroundColor: '#633394',
@@ -176,19 +144,25 @@ const LoginPage = ({ onLogin }) => {
               fontSize: '1rem',
             }}
           >
-            Log In
+            {loading ? <CircularProgress size={24} color="inherit" /> : 'Send Reset Link'}
           </Button>
 
-          <Typography variant="body2" align="center" sx={{ mt: 2 }}>
-            Forgot your password?{' '}
-            <Link href="/forgot-password" underline="hover">
-              Click here
-            </Link>
-          </Typography>
+          <Button
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate('/login')}
+            fullWidth
+            sx={{
+              mt: 2,
+              color: '#633394',
+              '&:hover': { backgroundColor: 'rgba(99, 51, 148, 0.1)' },
+            }}
+          >
+            Back to Login
+          </Button>
         </Box>
       </Container>
     </Box>
   );
 };
 
-export default LoginPage;
+export default ForgotPassword;

@@ -17,6 +17,9 @@ import VisualReportBuilder from './components/Admin/Reports/VisualReportBuilder'
 import AdminUserReports from './components/Admin/Reports/UserReports';
 import RoleBasedReports from './components/Reports/RoleBasedReports';
 import ContactReferralPage from './components/LandingPages/ContactReferralPage';
+import ForgotPassword from './components/Login/ForgotPassword';
+import ResetPassword from './components/Login/ResetPassword';
+import SettingsPage from './components/Settings/SettingsPage';
 
 import './App.css';
 import './styles/form.css';
@@ -95,6 +98,8 @@ function Main({ isAuthenticated, userRole, login, logout }) {
       <Routes>
         <Route path="/" element={<LoginPage onLogin={login} />} />
         <Route path="/login" element={<LoginPage onLogin={login} />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         
         {/* Public Contact Referral Page - No authentication required */}
         <Route path="/contact-referral" element={
@@ -188,6 +193,13 @@ function Main({ isAuthenticated, userRole, login, logout }) {
         <Route path="/user-reports" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <AdminUserReports onLogout={logout} />
+          </ProtectedRoute>
+        } />
+        
+        {/* Settings Route */}
+        <Route path="/settings" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <SettingsPage onLogout={logout} />
           </ProtectedRoute>
         } />
         

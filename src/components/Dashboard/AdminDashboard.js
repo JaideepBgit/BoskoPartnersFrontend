@@ -140,7 +140,33 @@ function AdminDashboard({ onLogout }) {
         }
     }, [showEmailPreview, selectedRecipient, openReminderDialog, loadEmailPreview]);
 
-
+    // Load bulk email preview when bulk reminder dialog is opened
+    useEffect(() => {
+        const loadBulkEmailPreview = async () => {
+            if (showEmailPreview && bulkReminderDialog && selectedUsers.length > 0) {
+                setLoadingEmailPreview(true);
+                try {
+                    const sampleUser = data.users.find(u => u.id === selectedUsers[0]);
+                    const samplePendingUser = pendingUsers.find(p => p.id === selectedUsers[0]);
+                    if (sampleUser) {
+                        const preview = await generateEmailPreview(sampleUser, samplePendingUser);
+                        setEmailPreviewContent(preview);
+                    }
+                } catch (error) {
+                    console.error('Error loading bulk email preview:', error);
+                    setEmailPreviewContent({
+                        text: 'Error loading preview',
+                        html: 'Error loading preview',
+                        subject: 'Error'
+                    });
+                } finally {
+                    setLoadingEmailPreview(false);
+                }
+            }
+        };
+        
+        loadBulkEmailPreview();
+    }, [showEmailPreview, bulkReminderDialog, selectedUsers, data.users, pendingUsers]);
 
     useEffect(() => {
         const loadData = async () => {
@@ -799,6 +825,7 @@ function AdminDashboard({ onLogout }) {
                     survey_code: surveyCode,
                     firstname: user?.name?.split(' ')[0],
                     organization_name: user?.company_name,
+                    organization_id: user?.organization_id,
                     days_remaining: pendingUser?.days_since_creation ? Math.max(30 - pendingUser.days_since_creation, 0) : null
                 };
             }).filter(user => user.to_email); // Filter out invalid users
@@ -1951,59 +1978,61 @@ function AdminDashboard({ onLogout }) {
                                 </Box>
 
                                 <Box sx={{ p: 2 }}>
-                                    {(() => {
-                                        // Use the first selected user as sample
-                                        const sampleUser = data.users.find(u => u.id === selectedUsers[0]);
-                                        const samplePendingUser = pendingUsers.find(p => p.id === selectedUsers[0]);
-                                        const emailContent = generateEmailPreview(sampleUser, samplePendingUser);
-                                        
-                                        return (
-                                            <Box>
-                                                <Box sx={{ mb: 2, p: 1, bgcolor: '#f5f5f5', borderRadius: 1 }}>
-                                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                                        Subject: {emailContent.subject}
-                                                    </Typography>
-                                                    <Typography variant="body2" color="text.secondary">
-                                                        Sample for: {sampleUser?.name} ({sampleUser?.email})
-                                                    </Typography>
-                                                </Box>
-
-                                                {emailPreviewType === 'text' ? (
-                                                    <Box sx={{ 
-                                                        bgcolor: '#fafafa', 
-                                                        p: 2, 
-                                                        borderRadius: 1, 
-                                                        maxHeight: 300, 
-                                                        overflow: 'auto',
-                                                        fontFamily: 'monospace',
-                                                        fontSize: '0.75rem',
-                                                        whiteSpace: 'pre-wrap'
-                                                    }}>
-                                                        {emailContent.text}
-                                                    </Box>
-                                                ) : (
-                                                    <Box sx={{ 
-                                                        border: 1, 
-                                                        borderColor: 'divider', 
-                                                        borderRadius: 1, 
-                                                        maxHeight: 300, 
-                                                        overflow: 'auto'
-                                                    }}>
-                                                        <iframe
-                                                            srcDoc={emailContent.html}
-                                                            style={{
-                                                                width: '100%',
-                                                                height: '300px',
-                                                                border: 'none',
-                                                                borderRadius: '4px'
-                                                            }}
-                                                            title="Bulk Email HTML Preview"
-                                                        />
-                                                    </Box>
-                                                )}
+                                    {loadingEmailPreview ? (
+                                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 4 }}>
+                                            <CircularProgress size={24} />
+                                            <Typography sx={{ ml: 2 }}>Loading preview...</Typography>
+                                        </Box>
+                                    ) : emailPreviewContent ? (
+                                        <Box>
+                                            <Box sx={{ mb: 2, p: 1, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+                                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                                    Subject: {emailPreviewContent.subject}
+                                                </Typography>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Sample for: {data.users.find(u => u.id === selectedUsers[0])?.name} ({data.users.find(u => u.id === selectedUsers[0])?.email})
+                                                </Typography>
                                             </Box>
-                                        );
-                                    })()}
+
+                                            {emailPreviewType === 'text' ? (
+                                                <Box sx={{ 
+                                                    bgcolor: '#fafafa', 
+                                                    p: 2, 
+                                                    borderRadius: 1, 
+                                                    maxHeight: 300, 
+                                                    overflow: 'auto',
+                                                    fontFamily: 'monospace',
+                                                    fontSize: '0.75rem',
+                                                    whiteSpace: 'pre-wrap'
+                                                }}>
+                                                    {emailPreviewContent.text}
+                                                </Box>
+                                            ) : (
+                                                <Box sx={{ 
+                                                    border: 1, 
+                                                    borderColor: 'divider', 
+                                                    borderRadius: 1, 
+                                                    maxHeight: 300, 
+                                                    overflow: 'auto'
+                                                }}>
+                                                    <iframe
+                                                        srcDoc={emailPreviewContent.html}
+                                                        style={{
+                                                            width: '100%',
+                                                            height: '300px',
+                                                            border: 'none',
+                                                            borderRadius: '4px'
+                                                        }}
+                                                        title="Bulk Email HTML Preview"
+                                                    />
+                                                </Box>
+                                            )}
+                                        </Box>
+                                    ) : (
+                                        <Box sx={{ p: 2, textAlign: 'center', color: 'text.secondary' }}>
+                                            <Typography>No preview available</Typography>
+                                        </Box>
+                                    )}
                                 </Box>
                             </Box>
                         )}
