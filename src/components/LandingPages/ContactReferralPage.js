@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Container, 
-  Paper, 
-  TextField, 
-  Button, 
-  Typography, 
-  Grid, 
-  MenuItem, 
+import {
+  Box,
+  Container,
+  Paper,
+  TextField,
+  Button,
+  Typography,
+  Grid,
+  MenuItem,
   Divider,
   IconButton,
   Alert,
@@ -48,7 +48,7 @@ const ContactReferralPage = () => {
   const [institutionTypes, setInstitutionTypes] = useState([]);
   const [emailCheckDialog, setEmailCheckDialog] = useState({ open: false, data: null, isReferral: false, referralId: null });
   const [countryCode, setCountryCode] = useState('+254'); // Default to Kenya
-  
+
   // Track if data is from existing record
   const [existingRecordId, setExistingRecordId] = useState(null);
   const [originalPrimaryContact, setOriginalPrimaryContact] = useState(null);
@@ -62,7 +62,7 @@ const ContactReferralPage = () => {
     const fetchOrganizationTypes = async () => {
       try {
         const response = await axios.get(`${API_BASE_URL}/organization-types`);
-        
+
         // Filter to only show churches, institution, and non_formal_organizations
         const allowedTypes = ['church', 'institution', 'non_formal_organizations'];
         const filteredTypes = response.data.organization_types
@@ -71,11 +71,11 @@ const ContactReferralPage = () => {
             id: orgType.id,
             type: orgType.type,
             // Custom display names: "Organization" for non_formal_organizations
-            displayName: orgType.type.toLowerCase() === 'non_formal_organizations' 
+            displayName: orgType.type.toLowerCase() === 'non_formal_organizations'
               ? 'Organization'
               : orgType.type.charAt(0).toUpperCase() + orgType.type.slice(1)
           }));
-        
+
         setInstitutionTypes(filteredTypes);
       } catch (error) {
         console.error('Error fetching organization types:', error);
@@ -96,23 +96,23 @@ const ContactReferralPage = () => {
   const handlePrimaryContactChange = async (field, value) => {
     setPrimaryContact(prev => {
       const updated = { ...prev, [field]: value };
-      
+
       // Check if there are changes from original
       if (originalPrimaryContact && existingRecordId) {
-        const changed = Object.keys(updated).some(key => 
+        const changed = Object.keys(updated).some(key =>
           updated[key] !== originalPrimaryContact[key]
         );
         setHasChanges(changed);
       }
-      
+
       return updated;
     });
-    
+
     // Check email when it's changed and valid
     if (field === 'email' && value && value.includes('@')) {
       await checkEmail(value, false, null);
     }
-    
+
     // Format phone number when it changes
     if (field === 'fullPhone' && value) {
       const formatted = formatPhoneNumber(value, countryCode);
@@ -124,18 +124,18 @@ const ContactReferralPage = () => {
 
   const handleUpdatePrimaryContact = async () => {
     if (!existingRecordId) return;
-    
+
     setLoading(true);
     try {
       const response = await updateContactReferral(existingRecordId, primaryContact);
-      
+
       if (response.success) {
         setSnackbar({
           open: true,
           message: 'Contact information updated successfully!',
           severity: 'success'
         });
-        
+
         // Update the original data to reflect the new state
         setOriginalPrimaryContact({ ...primaryContact });
         setHasChanges(false);
@@ -155,28 +155,28 @@ const ContactReferralPage = () => {
   const handleUpdateReferral = async (tempId) => {
     const actualId = existingSubReferralIds.get(tempId);
     if (!actualId) return;
-    
+
     const referral = referrals.find(r => r.id === tempId);
     if (!referral) return;
-    
+
     setLoading(true);
     try {
       const response = await updateContactReferral(actualId, referral);
-      
+
       if (response.success) {
         setSnackbar({
           open: true,
           message: 'Referral updated successfully!',
           severity: 'success'
         });
-        
+
         // Update the original data to reflect the new state
         setOriginalReferrals(prev => {
           const newMap = new Map(prev);
           newMap.set(tempId, { ...referral });
           return newMap;
         });
-        
+
         // Clear the change flag
         setReferralChanges(prev => {
           const newMap = new Map(prev);
@@ -261,19 +261,22 @@ const ContactReferralPage = () => {
   };
 
   const handleReferralChange = async (id, field, value) => {
-    setReferrals(referrals.map(ref => 
+    // Build the updated referral first
+    const updatedReferrals = referrals.map(ref =>
       ref.id === id ? { ...ref, [field]: value } : ref
-    ));
-    
+    );
+    setReferrals(updatedReferrals);
+
     // Check if this is an existing referral and track changes
     if (existingSubReferralIds.has(id)) {
       const original = originalReferrals.get(id);
-      const updated = referrals.find(r => r.id === id);
+      const updated = updatedReferrals.find(r => r.id === id);
       if (original && updated) {
-        const changed = Object.keys(updated).some(key => 
-          updated[key] !== original[key] && key !== field // Exclude current field as it's being updated
-        ) || value !== original[field];
-        
+        // Compare all fields to detect any changes
+        const changed = Object.keys(original).some(key =>
+          key !== 'id' && updated[key] !== original[key]
+        );
+
         setReferralChanges(prev => {
           const newMap = new Map(prev);
           newMap.set(id, changed);
@@ -281,17 +284,17 @@ const ContactReferralPage = () => {
         });
       }
     }
-    
+
     // Check email when it's changed and valid
     if (field === 'email' && value && value.includes('@')) {
       await checkEmail(value, true, id);
     }
-    
+
     // Format phone number when it changes
     if (field === 'fullPhone' && value) {
       const formatted = formatPhoneNumber(value, countryCode);
       if (formatted !== value) {
-        setReferrals(referrals.map(ref => 
+        setReferrals(prev => prev.map(ref =>
           ref.id === id ? { ...ref, fullPhone: formatted } : ref
         ));
       }
@@ -308,6 +311,7 @@ const ContactReferralPage = () => {
           source: result.source,
           referrer: result.referrer,
           subReferrals: result.subReferrals || [],
+          original_contact_id: result.original_contact_id,
           isReferral,
           referralId
         });
@@ -319,9 +323,9 @@ const ContactReferralPage = () => {
 
   const handleUseExistingData = () => {
     const { data, subReferrals, isReferral, referralId, original_contact_id } = emailCheckDialog;
-    
+
     if (isReferral && referralId) {
-      setReferrals(referrals.map(ref => 
+      setReferrals(referrals.map(ref =>
         ref.id === referralId ? { ...ref, ...data } : ref
       ));
     } else {
@@ -329,10 +333,10 @@ const ContactReferralPage = () => {
       setExistingRecordId(original_contact_id);
       setOriginalPrimaryContact({ ...data });
       setHasChanges(false);
-      
+
       // Populate primary contact
       setPrimaryContact(prev => ({ ...prev, ...data }));
-      
+
       // Populate sub-referrals if they exist
       if (subReferrals && subReferrals.length > 0) {
         const subRefIdMap = new Map();
@@ -344,8 +348,8 @@ const ContactReferralPage = () => {
             originalRefMap.set(tempId, { ...subRef });
           }
           return {
-            id: tempId,
-            ...subRef
+            ...subRef,
+            id: tempId  // Override the database id with tempId so our Map lookups work
           };
         });
         setReferrals(newReferrals);
@@ -354,13 +358,13 @@ const ContactReferralPage = () => {
         setShowReferralForm(true);
       }
     }
-    
+
     setEmailCheckDialog({ open: false, data: null, isReferral: false, referralId: null });
-    
-    const message = subReferrals && subReferrals.length > 0 
+
+    const message = subReferrals && subReferrals.length > 0
       ? `Existing data populated successfully with ${subReferrals.length} sub-referral(s)`
       : 'Existing data populated successfully';
-    
+
     setSnackbar({
       open: true,
       message,
@@ -423,6 +427,17 @@ const ContactReferralPage = () => {
         <Grid item xs={12} sm={6} md={2}>
           <TextField
             fullWidth
+            label="Email ID"
+            type="email"
+            value={contact.email}
+            onChange={(e) => onChange(isReferral ? referralId : 'email', isReferral ? 'email' : e.target.value, isReferral ? e.target.value : null)}
+            required
+            size="small"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={2}>
+          <TextField
+            fullWidth
             label="First Name"
             value={contact.firstName}
             onChange={(e) => onChange(isReferral ? referralId : 'firstName', isReferral ? 'firstName' : e.target.value, isReferral ? e.target.value : null)}
@@ -443,12 +458,11 @@ const ContactReferralPage = () => {
         <Grid item xs={12} sm={6} md={2}>
           <TextField
             fullWidth
-            label="Email ID"
-            type="email"
-            value={contact.email}
-            onChange={(e) => onChange(isReferral ? referralId : 'email', isReferral ? 'email' : e.target.value, isReferral ? e.target.value : null)}
-            required
+            label="Country Code"
+            value={countryCode}
+            onChange={(e) => setCountryCode(e.target.value)}
             size="small"
+            placeholder="+254"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={2}>
@@ -537,8 +551,8 @@ const ContactReferralPage = () => {
         </Grid>
         {isReferral && (
           <Grid item xs={12} sm={6} md={1} sx={{ display: 'flex', alignItems: 'center' }}>
-            <IconButton 
-              color="error" 
+            <IconButton
+              color="error"
               onClick={() => removeReferral(referralId)}
               size="small"
             >
@@ -551,8 +565,8 @@ const ContactReferralPage = () => {
   );
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh', 
+    <Box sx={{
+      minHeight: '100vh',
       backgroundColor: '#f5f5f5',
       py: 4
     }}>
@@ -561,9 +575,9 @@ const ContactReferralPage = () => {
         <Paper elevation={3} sx={{ p: 3, mb: 3, backgroundColor: 'white' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <img 
-                src="/assets/actea-logo.png" 
-                alt="ACTEA Logo" 
+              <img
+                src="/assets/actea-logo.png"
+                alt="ACTEA Logo"
                 style={{ height: '80px' }}
                 onError={(e) => {
                   e.target.style.display = 'none';
@@ -579,9 +593,9 @@ const ContactReferralPage = () => {
                 </Typography>
               </Box>
             </Box>
-            <img 
-              src="/assets/saurara-high-resolution-logo-transparent.png" 
-              alt="Saurara Logo" 
+            <img
+              src="/assets/saurara-high-resolution-logo-transparent.png"
+              alt="Saurara Logo"
               style={{ height: '60px' }}
               onError={(e) => {
                 e.target.style.display = 'none';
@@ -595,22 +609,9 @@ const ContactReferralPage = () => {
           <Typography variant="h6" sx={{ mb: 2, color: '#633394', fontWeight: 'bold' }}>
             Your Contact Information
           </Typography>
-          
-          {/* Country Code Input */}
-          <Box sx={{ mb: 2 }}>
-            <TextField
-              label="Country Code (for phone numbers)"
-              value={countryCode}
-              onChange={(e) => setCountryCode(e.target.value)}
-              size="small"
-              placeholder="+254"
-              helperText="Enter your country code (e.g., +1, +254, +256). This will be added to all phone numbers."
-              sx={{ width: 250 }}
-            />
-          </Box>
-          
+
           {renderContactForm(primaryContact, handlePrimaryContactChange)}
-          
+
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
             {existingRecordId ? (
               // Show UPDATE button after save or when editing existing record
@@ -669,7 +670,7 @@ const ContactReferralPage = () => {
             {referrals.map((referral, index) => {
               const isExisting = existingSubReferralIds.has(referral.id);
               const hasReferralChanges = referralChanges.get(referral.id) || false;
-              
+
               return (
                 <Box key={referral.id} sx={{ mb: 3 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -694,7 +695,7 @@ const ContactReferralPage = () => {
                     )}
                   </Box>
                   {renderContactForm(
-                    referral, 
+                    referral,
                     (id, field, value) => handleReferralChange(id, field, value),
                     true,
                     referral.id
@@ -703,7 +704,7 @@ const ContactReferralPage = () => {
                 </Box>
               );
             })}
-            
+
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3, alignItems: 'center' }}>
               <Button
                 variant="outlined"
@@ -712,7 +713,7 @@ const ContactReferralPage = () => {
                 sx={{
                   borderColor: '#633394',
                   color: '#633394',
-                  '&:hover': { 
+                  '&:hover': {
                     borderColor: '#4a2570',
                     backgroundColor: 'rgba(99, 51, 148, 0.04)'
                   }
@@ -720,7 +721,7 @@ const ContactReferralPage = () => {
               >
                 Add Another
               </Button>
-              
+
               {existingRecordId ? (
                 <Alert severity="info" sx={{ flex: 1, mx: 2 }}>
                   Viewing existing records. Modify fields and click UPDATE to save changes. You can add new sub-referrals using "Add Another".
@@ -746,19 +747,19 @@ const ContactReferralPage = () => {
         {/* Information Box */}
         <Paper elevation={3} sx={{ p: 3, backgroundColor: '#f9f9f9' }}>
           <Typography variant="body1" sx={{ color: '#333', lineHeight: 1.8 }}>
-            <strong>Note:</strong> Once a person shares their contact information and saves it, 
-            the button to <strong>Refer a Contact</strong> will appear. Then a new blank record 
-            will appear below to add the same information they entered about themselves for the 
-            contact they are (recommending/referring). The form will capture date, time and device 
-            level information from the user including their location and country. Each new referred 
-            contact will be added to the database and include the (lead source or person who made 
+            <strong>Note:</strong> Once a person shares their contact information and saves it,
+            the button to <strong>Refer a Contact</strong> will appear. Then a new blank record
+            will appear below to add the same information they entered about themselves for the
+            contact they are (recommending/referring). The form will capture date, time and device
+            level information from the user including their location and country. Each new referred
+            contact will be added to the database and include the (lead source or person who made
             the referral).
           </Typography>
         </Paper>
 
         {/* Email Duplicate Check Dialog */}
-        <Dialog 
-          open={emailCheckDialog.open} 
+        <Dialog
+          open={emailCheckDialog.open}
           onClose={handleContinueWithNew}
           maxWidth="sm"
           fullWidth
@@ -776,7 +777,7 @@ const ContactReferralPage = () => {
                 </Box>
               )}
             </Alert>
-            
+
             {emailCheckDialog.data && (
               <Box>
                 <Typography variant="body1" sx={{ mb: 2 }}>
@@ -795,7 +796,7 @@ const ContactReferralPage = () => {
                     <Typography variant="body2"><strong>Country:</strong> {emailCheckDialog.data.country}</Typography>
                   )}
                 </Box>
-                
+
                 {emailCheckDialog.referrer && (
                   <Box sx={{ mt: 2, p: 2, bgcolor: '#e3f2fd', borderRadius: 1, border: '1px solid #2196f3' }}>
                     <Typography variant="body2" sx={{ color: '#1976d2', fontWeight: 'bold' }}>
@@ -806,7 +807,7 @@ const ContactReferralPage = () => {
                     </Typography>
                   </Box>
                 )}
-                
+
                 {emailCheckDialog.subReferrals && emailCheckDialog.subReferrals.length > 0 && (
                   <Box sx={{ mt: 2, p: 2, bgcolor: '#fff3e0', borderRadius: 1, border: '1px solid #ff9800' }}>
                     <Typography variant="body2" sx={{ color: '#e65100', fontWeight: 'bold' }}>
@@ -817,7 +818,7 @@ const ContactReferralPage = () => {
                     </Typography>
                   </Box>
                 )}
-                
+
                 <Typography variant="body1" sx={{ mt: 2 }}>
                   Would you like to use the existing data{emailCheckDialog.subReferrals && emailCheckDialog.subReferrals.length > 0 ? ' (including sub-referrals)' : ''} or continue with new information?
                 </Typography>
@@ -828,8 +829,8 @@ const ContactReferralPage = () => {
             <Button onClick={handleContinueWithNew} color="primary">
               Continue with New
             </Button>
-            <Button 
-              onClick={handleUseExistingData} 
+            <Button
+              onClick={handleUseExistingData}
               variant="contained"
               sx={{
                 backgroundColor: '#633394',
@@ -848,8 +849,8 @@ const ContactReferralPage = () => {
           onClose={() => setSnackbar({ ...snackbar, open: false })}
           anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
         >
-          <Alert 
-            onClose={() => setSnackbar({ ...snackbar, open: false })} 
+          <Alert
+            onClose={() => setSnackbar({ ...snackbar, open: false })}
             severity={snackbar.severity}
             sx={{ width: '100%' }}
           >
