@@ -5,7 +5,8 @@ import {
     DialogContent, DialogTitle, TextField, Select, MenuItem, FormControl,
     InputLabel, Card, CardContent, Grid, Chip, Alert, CircularProgress,
     Radio, RadioGroup, FormControlLabel, FormLabel, Divider, Stack,
-    Accordion, AccordionSummary, AccordionDetails, Tooltip, Checkbox
+    Accordion, AccordionSummary, AccordionDetails, Tooltip, Checkbox,
+    Autocomplete, LinearProgress
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -20,7 +21,8 @@ import {
     fetchContactReferrals,
     approveContactReferral,
     rejectContactReferral,
-    checkOrganizationExists
+    checkOrganizationExists,
+    searchOrganizations
 } from '../../../services/UserManagement/ContactReferralService';
 import { fetchOrganizations, fetchTemplatesByOrganization } from '../../../services/UserManagement/UserManagementService';
 
@@ -31,12 +33,12 @@ function ContactReferrals() {
     const [organizations, setOrganizations] = useState([]);
     const [templates, setTemplates] = useState([]);
     const [organizationTypes, setOrganizationTypes] = useState([]);
-    
+
     // Table selection state
     const [selectedReferral, setSelectedReferral] = useState(null);
     const [selectedRowId, setSelectedRowId] = useState(null);
     const [selectedReferralIds, setSelectedReferralIds] = useState([]);
-    
+
     // Approval dialog state
     const [openApprovalDialog, setOpenApprovalDialog] = useState(false);
     const [isBulkOperation, setIsBulkOperation] = useState(false);
@@ -58,6 +60,13 @@ function ContactReferrals() {
     // Rejection dialog state
     const [openRejectDialog, setOpenRejectDialog] = useState(false);
     const [rejectLoading, setRejectLoading] = useState(false);
+
+    // Organization search state
+    const [orgSearchInput, setOrgSearchInput] = useState('');
+    const [orgSearchResults, setOrgSearchResults] = useState([]);
+    const [orgSearchLoading, setOrgSearchLoading] = useState(false);
+    const [selectedOrg, setSelectedOrg] = useState(null);
+    const [searchDebounceTimer, setSearchDebounceTimer] = useState(null);
 
     useEffect(() => {
         loadReferrals();
@@ -99,10 +108,87 @@ function ContactReferrals() {
         }
     };
 
+    // Handle organization search with debounce
+    const handleOrganizationSearch = async (searchValue) => {
+        setOrgSearchInput(searchValue);
+
+        // Clear existing timer
+        if (searchDebounceTimer) {
+            clearTimeout(searchDebounceTimer);
+        }
+
+        // If search is empty, show all organizations
+        if (!searchValue || searchValue.trim() === '') {
+            setOrgSearchResults(organizations.map(org => ({
+                id: org.id,
+                name: org.name,
+                type_id: org.type,
+                match_score: 0,
+                match_type: 'none'
+            })));
+            return;
+        }
+
+        // Debounce the search
+        const timer = setTimeout(async () => {
+            setOrgSearchLoading(true);
+            try {
+                const result = await searchOrganizations(searchValue, 15);
+                if (result.success) {
+                    setOrgSearchResults(result.organizations || []);
+
+                    // If there's an exact match, auto-select it
+                    if (result.exact_match) {
+                        setSelectedOrg(result.exact_match);
+                        setApprovalData(prev => ({
+                            ...prev,
+                            organization_id: result.exact_match.id
+                        }));
+                    }
+                }
+            } catch (err) {
+                console.error('Error searching organizations:', err);
+                // Fall back to filtered local list
+                const filtered = organizations.filter(org =>
+                    org.name.toLowerCase().includes(searchValue.toLowerCase())
+                ).map(org => ({
+                    id: org.id,
+                    name: org.name,
+                    type_id: org.type,
+                    match_score: 50,
+                    match_type: 'local_filter'
+                }));
+                setOrgSearchResults(filtered);
+            } finally {
+                setOrgSearchLoading(false);
+            }
+        }, 300);
+
+        setSearchDebounceTimer(timer);
+    };
+
+    // Get match type label and color
+    const getMatchBadge = (matchType, matchScore) => {
+        switch (matchType) {
+            case 'exact':
+                return { label: 'Exact Match', color: 'success' };
+            case 'contains':
+                return { label: `${matchScore}% Match`, color: matchScore > 80 ? 'success' : 'warning' };
+            case 'starts_with':
+                return { label: `${matchScore}% Match`, color: 'success' };
+            case 'token_match':
+                return { label: `${matchScore}% Similar`, color: 'warning' };
+            case 'fuzzy':
+                return { label: `${matchScore}% Similar`, color: matchScore > 50 ? 'warning' : 'default' };
+            default:
+                return null;
+        }
+    };
+
     const handleRowSelect = async (referral) => {
         setSelectedReferral(referral);
         setSelectedRowId(referral.id);
-        
+
         // Pre-check organization when row is selected
         if (referral.institution_name) {
             try {
@@ -139,7 +225,7 @@ function ContactReferrals() {
 
     const handleOpenApprovalDialog = async () => {
         if (!selectedReferral && selectedReferralIds.length === 0) return;
-        
+
         // Check if bulk operation
         if (selectedReferralIds.length > 0) {
             setIsBulkOperation(true);
@@ -147,7 +233,12 @@ function ContactReferrals() {
         } else {
             setIsBulkOperation(false);
         }
-        
+
+        // Reset organization search state
+        setOrgSearchInput('');
+        setOrgSearchResults([]);
+        setSelectedOrg(null);
+
         setApprovalData({
             create_organization: false,
             organization_id: '',
@@ -159,7 +250,7 @@ function ContactReferrals() {
         });
         setSuccessMessage('');
         setGeneratedPassword('');
-        
+
         // Check if organization exists (only for single selection)
         if (selectedReferral?.institution_name && orgCheckResult?.exists) {
             setApprovalData(prev => ({
@@ -167,10 +258,22 @@ function ContactReferrals() {
                 organization_id: orgCheckResult.organization.id,
                 create_organization: false
             }));
+            setSelectedOrg({
+                id: orgCheckResult.organization.id,
+                name: orgCheckResult.organization.name,
+                match_type: 'exact',
+                match_score: 100
+            });
             // Load templates for this organization
             loadTemplatesForOrganization(orgCheckResult.organization.id);
         }
-        
+
+        // Trigger initial search with institution name to find similar organizations
+        if (selectedReferral?.institution_name && !isBulkOperation) {
+            setOrgSearchInput(selectedReferral.institution_name);
+            handleOrganizationSearch(selectedReferral.institution_name);
+        }
+
         setOpenApprovalDialog(true);
     };
 
@@ -178,19 +281,19 @@ function ContactReferrals() {
         try {
             setApprovalLoading(true);
             setError(null);
-            
+
             const results = [];
             const selectedReferralsData = referrals.filter(r => selectedReferralIds.includes(r.id));
-            
+
             for (let i = 0; i < selectedReferralsData.length; i++) {
                 const referral = selectedReferralsData[i];
                 setBulkProgress(prev => ({ ...prev, current: i + 1 }));
-                
+
                 try {
                     // Check if organization exists for this referral
                     let orgId = approvalData.organization_id;
                     let shouldCreateOrg = approvalData.create_organization;
-                    
+
                     if (referral.institution_name && !approvalData.organization_id) {
                         const orgCheck = await checkOrganizationExists(referral.institution_name);
                         if (orgCheck.exists) {
@@ -200,14 +303,14 @@ function ContactReferrals() {
                             shouldCreateOrg = true;
                         }
                     }
-                    
+
                     const response = await approveContactReferral(referral.id, {
                         ...approvalData,
                         organization_id: orgId,
                         create_organization: shouldCreateOrg,
                         organization_name: referral.institution_name || approvalData.organization_name
                     });
-                    
+
                     results.push({
                         referral: `${referral.first_name} ${referral.last_name}`,
                         success: true,
@@ -222,19 +325,19 @@ function ContactReferrals() {
                     });
                 }
             }
-            
+
             setBulkProgress(prev => ({ ...prev, results }));
-            
+
             // Reload referrals
             await loadReferrals();
-            
+
             // Clear selections
             setTimeout(() => {
                 setSelectedReferralIds([]);
                 setSelectedReferral(null);
                 setSelectedRowId(null);
             }, 5000);
-            
+
         } catch (err) {
             setError(err.message || 'Failed to process bulk approval');
         } finally {
@@ -246,11 +349,11 @@ function ContactReferrals() {
         try {
             setRejectLoading(true);
             setError(null);
-            
+
             const selectedReferralsData = referrals.filter(r => selectedReferralIds.includes(r.id));
             let successCount = 0;
             let failCount = 0;
-            
+
             for (const referral of selectedReferralsData) {
                 try {
                     await rejectContactReferral(referral.id);
@@ -260,17 +363,17 @@ function ContactReferrals() {
                     console.error(`Failed to reject ${referral.first_name} ${referral.last_name}:`, err);
                 }
             }
-            
+
             setOpenRejectDialog(false);
             setSelectedReferralIds([]);
             setSelectedReferral(null);
             setSelectedRowId(null);
             await loadReferrals();
-            
+
             if (failCount > 0) {
                 setError(`Rejected ${successCount} referral(s). ${failCount} failed.`);
             }
-            
+
         } catch (err) {
             setError(err.message || 'Failed to process bulk rejection');
         } finally {
@@ -304,9 +407,9 @@ function ContactReferrals() {
         try {
             setApprovalLoading(true);
             setError(null);
-            
+
             const response = await approveContactReferral(selectedReferral.id, approvalData);
-            
+
             if (response.success) {
                 setSuccessMessage(response.message);
                 setGeneratedPassword(response.password);
@@ -334,9 +437,9 @@ function ContactReferrals() {
         try {
             setRejectLoading(true);
             setError(null);
-            
+
             const response = await rejectContactReferral(selectedReferral.id);
-            
+
             if (response.success) {
                 setOpenRejectDialog(false);
                 setSelectedReferral(null);
@@ -401,8 +504,8 @@ function ContactReferrals() {
                             onClick={handleOpenApprovalDialog}
                             size="large"
                         >
-                            {selectedReferralIds.length > 0 
-                                ? `Approve (${selectedReferralIds.length})` 
+                            {selectedReferralIds.length > 0
+                                ? `Approve (${selectedReferralIds.length})`
                                 : 'Approve'}
                         </Button>
                         <Button
@@ -412,8 +515,8 @@ function ContactReferrals() {
                             onClick={handleOpenRejectDialog}
                             size="large"
                         >
-                            {selectedReferralIds.length > 0 
-                                ? `Reject (${selectedReferralIds.length})` 
+                            {selectedReferralIds.length > 0
+                                ? `Reject (${selectedReferralIds.length})`
                                 : 'Reject'}
                         </Button>
                     </Box>
@@ -529,9 +632,9 @@ function ContactReferrals() {
                                     </TableCell>
                                     <TableCell>
                                         <Typography variant="body2">
-                                            {referral.type_of_institution 
-                                                ? (referral.type_of_institution.toLowerCase() === 'non_formal_organizations' 
-                                                    ? 'Organization' 
+                                            {referral.type_of_institution
+                                                ? (referral.type_of_institution.toLowerCase() === 'non_formal_organizations'
+                                                    ? 'Organization'
                                                     : referral.type_of_institution.charAt(0).toUpperCase() + referral.type_of_institution.slice(1))
                                                 : 'N/A'}
                                         </Typography>
@@ -608,9 +711,9 @@ function ContactReferrals() {
                                 <Box sx={{ mb: 2 }}>
                                     <Typography variant="subtitle2" color="text.secondary">Institution Type</Typography>
                                     <Typography variant="body1">
-                                        {selectedReferral.type_of_institution 
-                                            ? (selectedReferral.type_of_institution.toLowerCase() === 'non_formal_organizations' 
-                                                ? 'Organization' 
+                                        {selectedReferral.type_of_institution
+                                            ? (selectedReferral.type_of_institution.toLowerCase() === 'non_formal_organizations'
+                                                ? 'Organization'
                                                 : selectedReferral.type_of_institution.charAt(0).toUpperCase() + selectedReferral.type_of_institution.slice(1))
                                             : 'N/A'}
                                     </Typography>
@@ -640,11 +743,11 @@ function ContactReferrals() {
                                     </Box>
                                 </Grid>
                             )}
-                            
+
                             {/* Organization Check Result */}
                             {orgCheckResult && (
                                 <Grid item xs={12}>
-                                    <Alert 
+                                    <Alert
                                         severity={orgCheckResult.exists ? "info" : "warning"}
                                         icon={<InfoIcon />}
                                     >
@@ -671,7 +774,7 @@ function ContactReferrals() {
                                     <Stack spacing={2}>
                                         {selectedReferral.referrals.map((ref, idx) => (
                                             <Accordion key={idx} defaultExpanded={idx === 0}>
-                                                <AccordionSummary 
+                                                <AccordionSummary
                                                     expandIcon={<ExpandMoreIcon />}
                                                     sx={{ bgcolor: '#f5f5f5' }}
                                                 >
@@ -686,9 +789,9 @@ function ContactReferrals() {
                                                             </Typography>
                                                         </Box>
                                                         {ref.institution_name && (
-                                                            <Chip 
-                                                                label={ref.institution_name} 
-                                                                size="small" 
+                                                            <Chip
+                                                                label={ref.institution_name}
+                                                                size="small"
                                                                 sx={{ bgcolor: '#e3f2fd' }}
                                                             />
                                                         )}
@@ -734,9 +837,9 @@ function ContactReferrals() {
                                                             <Box sx={{ mb: 2 }}>
                                                                 <Typography variant="subtitle2" color="text.secondary">Institution Type</Typography>
                                                                 <Typography variant="body1">
-                                                                    {ref.type_of_institution 
-                                                                        ? (ref.type_of_institution.toLowerCase() === 'non_formal_organizations' 
-                                                                            ? 'Organization' 
+                                                                    {ref.type_of_institution
+                                                                        ? (ref.type_of_institution.toLowerCase() === 'non_formal_organizations'
+                                                                            ? 'Organization'
                                                                             : ref.type_of_institution.charAt(0).toUpperCase() + ref.type_of_institution.slice(1))
                                                                         : 'N/A'}
                                                                 </Typography>
@@ -781,15 +884,15 @@ function ContactReferrals() {
             )}
 
             {/* Approval Dialog */}
-            <Dialog 
-                open={openApprovalDialog} 
+            <Dialog
+                open={openApprovalDialog}
                 onClose={handleCloseApprovalDialog}
                 maxWidth="md"
                 fullWidth
             >
                 <DialogTitle sx={{ bgcolor: '#633394', color: 'white' }}>
-                    {isBulkOperation 
-                        ? `Approve ${selectedReferralIds.length} Contact Referral(s)` 
+                    {isBulkOperation
+                        ? `Approve ${selectedReferralIds.length} Contact Referral(s)`
                         : 'Approve Contact Referral'}
                 </DialogTitle>
                 <DialogContent sx={{ mt: 2 }}>
@@ -800,8 +903,8 @@ function ContactReferrals() {
                             </Alert>
                             <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
                                 {bulkProgress.results.map((result, idx) => (
-                                    <Alert 
-                                        key={idx} 
+                                    <Alert
+                                        key={idx}
                                         severity={result.success ? "success" : "error"}
                                         sx={{ mb: 1 }}
                                     >
@@ -839,7 +942,7 @@ function ContactReferrals() {
                     ) : isBulkOperation ? (
                         <Box>
                             <Alert severity="info" sx={{ mb: 2 }}>
-                                You are about to approve {selectedReferralIds.length} referral(s). 
+                                You are about to approve {selectedReferralIds.length} referral(s).
                                 Configure the settings below that will apply to all selected referrals.
                             </Alert>
                             {approvalLoading && (
@@ -851,7 +954,7 @@ function ContactReferrals() {
                                 </Box>
                             )}
                             <Divider sx={{ my: 2 }} />
-                            
+
                             {/* Bulk approval settings */}
                             <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                                 Bulk Approval Settings
@@ -876,7 +979,7 @@ function ContactReferrals() {
                                         </Select>
                                     </FormControl>
                                 </Grid>
-                                
+
                                 <Grid item xs={12}>
                                     <FormControlLabel
                                         control={
@@ -907,20 +1010,30 @@ function ContactReferrals() {
                                 </Box>
                             )}
 
-                            {/* Organization Check Result */}
-                            {orgCheckResult && (
-                                <Alert 
-                                    severity={orgCheckResult.exists ? "info" : "warning"} 
-                                    sx={{ mb: 2 }}
+                            {/* Show the entered institution name from referral */}
+                            {selectedReferral?.institution_name && (
+                                <Alert
+                                    severity="info"
+                                    icon={<BusinessIcon />}
+                                    sx={{
+                                        mb: 2,
+                                        background: 'linear-gradient(135deg, #e8f4fd 0%, #f3e5f5 100%)',
+                                        border: '1px solid #90caf9'
+                                    }}
                                 >
-                                    {orgCheckResult.exists ? (
-                                        <>
-                                            Organization <strong>{orgCheckResult.organization.name}</strong> already exists in the system.
-                                        </>
-                                    ) : (
-                                        <>
-                                            Organization <strong>{selectedReferral?.institution_name}</strong> does not exist. You can create it below.
-                                        </>
+                                    <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
+                                        Entered Organization Name:
+                                    </Typography>
+                                    <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1565c0' }}>
+                                        "{selectedReferral.institution_name}"
+                                    </Typography>
+                                    {orgCheckResult?.exists && (
+                                        <Chip
+                                            label="✓ Exact Match Found"
+                                            color="success"
+                                            size="small"
+                                            sx={{ mt: 1 }}
+                                        />
                                     )}
                                 </Alert>
                             )}
@@ -934,15 +1047,15 @@ function ContactReferrals() {
                                     value={approvalData.create_organization ? 'create' : 'existing'}
                                     onChange={(e) => handleApprovalDataChange('create_organization', e.target.value === 'create')}
                                 >
-                                    <FormControlLabel 
-                                        value="existing" 
-                                        control={<Radio />} 
-                                        label="Use Existing Organization" 
+                                    <FormControlLabel
+                                        value="existing"
+                                        control={<Radio />}
+                                        label="Use Existing Organization"
                                     />
-                                    <FormControlLabel 
-                                        value="create" 
-                                        control={<Radio />} 
-                                        label="Create New Organization" 
+                                    <FormControlLabel
+                                        value="create"
+                                        control={<Radio />}
+                                        label="Create New Organization"
                                     />
                                 </RadioGroup>
                             </FormControl>
@@ -976,20 +1089,150 @@ function ContactReferrals() {
                                     </Grid>
                                 </Grid>
                             ) : (
-                                <FormControl fullWidth required sx={{ mb: 2 }}>
-                                    <InputLabel>Select Organization</InputLabel>
-                                    <Select
-                                        value={approvalData.organization_id}
-                                        onChange={(e) => handleApprovalDataChange('organization_id', e.target.value)}
-                                        label="Select Organization"
-                                    >
-                                        {organizations.map((org) => (
-                                            <MenuItem key={org.id} value={org.id}>
-                                                {org.name}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
+                                <Box sx={{ mb: 2 }}>
+                                    {/* Smart Organization Search */}
+                                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                                        Search and select an existing organization:
+                                    </Typography>
+
+                                    <Autocomplete
+                                        fullWidth
+                                        options={orgSearchResults.length > 0 ? orgSearchResults : organizations.map(org => ({
+                                            id: org.id,
+                                            name: org.name,
+                                            type_id: org.type,
+                                            match_score: 0,
+                                            match_type: 'none'
+                                        }))}
+                                        getOptionLabel={(option) => option.name || ''}
+                                        value={selectedOrg}
+                                        loading={orgSearchLoading}
+                                        inputValue={orgSearchInput}
+                                        onInputChange={(event, newInputValue) => {
+                                            handleOrganizationSearch(newInputValue);
+                                        }}
+                                        onChange={(event, newValue) => {
+                                            setSelectedOrg(newValue);
+                                            if (newValue) {
+                                                handleApprovalDataChange('organization_id', newValue.id);
+                                                loadTemplatesForOrganization(newValue.id);
+                                            } else {
+                                                handleApprovalDataChange('organization_id', '');
+                                            }
+                                        }}
+                                        isOptionEqualToValue={(option, value) => option.id === value?.id}
+                                        filterOptions={(x) => x} // Disable client-side filtering since server does it
+                                        renderOption={(props, option) => {
+                                            const badge = getMatchBadge(option.match_type, option.match_score);
+                                            return (
+                                                <Box
+                                                    component="li"
+                                                    {...props}
+                                                    sx={{
+                                                        display: 'flex !important',
+                                                        justifyContent: 'space-between !important',
+                                                        alignItems: 'center !important',
+                                                        borderLeft: option.match_type === 'exact'
+                                                            ? '4px solid #4caf50'
+                                                            : option.match_score > 70
+                                                                ? '4px solid #ff9800'
+                                                                : '4px solid transparent',
+                                                        '&:hover': {
+                                                            backgroundColor: option.match_type === 'exact'
+                                                                ? '#e8f5e9 !important'
+                                                                : undefined
+                                                        }
+                                                    }}
+                                                >
+                                                    <Box sx={{ flex: 1 }}>
+                                                        <Typography
+                                                            variant="body1"
+                                                            sx={{
+                                                                fontWeight: option.match_type === 'exact' ? 'bold' : 'normal'
+                                                            }}
+                                                        >
+                                                            {option.name}
+                                                        </Typography>
+                                                        {option.type_name && (
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                {option.type_name}
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
+                                                    {badge && (
+                                                        <Chip
+                                                            label={badge.label}
+                                                            color={badge.color}
+                                                            size="small"
+                                                            sx={{ ml: 1, minWidth: 90 }}
+                                                        />
+                                                    )}
+                                                    {option.match_score > 0 && (
+                                                        <Box sx={{ width: 50, ml: 1 }}>
+                                                            <LinearProgress
+                                                                variant="determinate"
+                                                                value={option.match_score}
+                                                                color={
+                                                                    option.match_score >= 80 ? 'success' :
+                                                                        option.match_score >= 50 ? 'warning' : 'inherit'
+                                                                }
+                                                                sx={{ height: 6, borderRadius: 3 }}
+                                                            />
+                                                        </Box>
+                                                    )}
+                                                </Box>
+                                            );
+                                        }}
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                label="Search Organizations"
+                                                placeholder="Type to search..."
+                                                required
+                                                InputProps={{
+                                                    ...params.InputProps,
+                                                    endAdornment: (
+                                                        <>
+                                                            {orgSearchLoading ? (
+                                                                <CircularProgress color="inherit" size={20} />
+                                                            ) : null}
+                                                            {params.InputProps.endAdornment}
+                                                        </>
+                                                    ),
+                                                }}
+                                                helperText={
+                                                    orgSearchResults.length > 0 && orgSearchInput
+                                                        ? `Found ${orgSearchResults.length} matching organization(s)`
+                                                        : "Start typing to find similar organizations"
+                                                }
+                                            />
+                                        )}
+                                        noOptionsText={
+                                            orgSearchLoading
+                                                ? "Searching..."
+                                                : orgSearchInput
+                                                    ? "No matching organizations found. Consider creating a new one."
+                                                    : "Type to search organizations"
+                                        }
+                                    />
+
+                                    {/* Show selected organization details */}
+                                    {selectedOrg && (
+                                        <Alert severity="success" sx={{ mt: 2 }}>
+                                            <Typography variant="body2">
+                                                <strong>Selected Organization:</strong> {selectedOrg.name}
+                                                {selectedOrg.match_score > 0 && (
+                                                    <Chip
+                                                        label={`${selectedOrg.match_score}% Match`}
+                                                        color={selectedOrg.match_score >= 80 ? 'success' : 'warning'}
+                                                        size="small"
+                                                        sx={{ ml: 1 }}
+                                                    />
+                                                )}
+                                            </Typography>
+                                        </Alert>
+                                    )}
+                                </Box>
                             )}
 
                             <Divider sx={{ my: 2 }} />
@@ -1044,20 +1287,20 @@ function ContactReferrals() {
                 </DialogContent>
                 <DialogActions>
                     {!successMessage && bulkProgress.results.length === 0 && (
-                        <Button 
-                            onClick={isBulkOperation ? handleBulkApprove : handleApprove} 
-                            variant="contained" 
+                        <Button
+                            onClick={isBulkOperation ? handleBulkApprove : handleApprove}
+                            variant="contained"
                             color="success"
                             disabled={
-                                approvalLoading || 
+                                approvalLoading ||
                                 (!isBulkOperation && !approvalData.create_organization && !approvalData.organization_id)
                             }
                             startIcon={approvalLoading ? <CircularProgress size={20} /> : <CheckCircleIcon />}
                         >
-                            {approvalLoading 
-                                ? 'Processing...' 
-                                : isBulkOperation 
-                                    ? `Approve ${selectedReferralIds.length} Referral(s)` 
+                            {approvalLoading
+                                ? 'Processing...'
+                                : isBulkOperation
+                                    ? `Approve ${selectedReferralIds.length} Referral(s)`
                                     : 'Approve & Create User'}
                         </Button>
                     )}
@@ -1070,13 +1313,13 @@ function ContactReferrals() {
             {/* Rejection Dialog */}
             <Dialog open={openRejectDialog} onClose={handleCloseRejectDialog}>
                 <DialogTitle sx={{ bgcolor: '#d32f2f', color: 'white' }}>
-                    {selectedReferralIds.length > 0 
-                        ? `Reject ${selectedReferralIds.length} Contact Referral(s)` 
+                    {selectedReferralIds.length > 0
+                        ? `Reject ${selectedReferralIds.length} Contact Referral(s)`
                         : 'Reject Contact Referral'}
                 </DialogTitle>
                 <DialogContent sx={{ mt: 2 }}>
                     <Typography>
-                        {selectedReferralIds.length > 0 
+                        {selectedReferralIds.length > 0
                             ? `Are you sure you want to reject and delete ${selectedReferralIds.length} contact referral(s)?`
                             : 'Are you sure you want to reject and delete this contact referral?'}
                     </Typography>
@@ -1108,17 +1351,17 @@ function ContactReferrals() {
                     <Button onClick={handleCloseRejectDialog} disabled={rejectLoading}>
                         Cancel
                     </Button>
-                    <Button 
-                        onClick={selectedReferralIds.length > 0 ? handleBulkReject : handleReject} 
-                        variant="contained" 
+                    <Button
+                        onClick={selectedReferralIds.length > 0 ? handleBulkReject : handleReject}
+                        variant="contained"
                         color="error"
                         disabled={rejectLoading}
                         startIcon={rejectLoading ? <CircularProgress size={20} /> : <CancelIcon />}
                     >
-                        {rejectLoading 
-                            ? 'Deleting...' 
-                            : selectedReferralIds.length > 0 
-                                ? `Reject ${selectedReferralIds.length} Referral(s)` 
+                        {rejectLoading
+                            ? 'Deleting...'
+                            : selectedReferralIds.length > 0
+                                ? `Reject ${selectedReferralIds.length} Referral(s)`
                                 : 'Reject & Delete'}
                     </Button>
                 </DialogActions>

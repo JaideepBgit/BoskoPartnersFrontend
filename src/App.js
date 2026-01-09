@@ -14,6 +14,7 @@ import SurveyTaking from './components/Survey/SurveyTaking';
 import ReportBuilder from './components/Admin/Reports/ReportBuilder';
 import ReportsPage from './components/Admin/Reports/ReportsPage';
 import VisualReportBuilder from './components/Admin/Reports/VisualReportBuilder';
+import ReportDocumentEditor from './components/Admin/Reports/ReportDocumentEditor';
 import AdminUserReports from './components/Admin/Reports/UserReports';
 import RoleBasedReports from './components/Reports/RoleBasedReports';
 import ContactReferralPage from './components/LandingPages/ContactReferralPage';
@@ -28,7 +29,7 @@ import './styles/form.css';
 function RoleBasedDashboard() {
   const userRole = localStorage.getItem('userRole');
   const location = useLocation();
-  
+
   if (userRole === 'admin') {
     // If admin is on /home route, show AdminLandingPage
     if (location.pathname === '/home') {
@@ -39,12 +40,12 @@ function RoleBasedDashboard() {
       return <AdminDashboard />;
     }
   }
-  
+
   // For regular users on /dashboard, redirect to their profile
   if (userRole === 'user' && location.pathname === '/dashboard') {
     return <Navigate to="/profile" replace />;
   }
-  
+
   // For regular users, show UserDashboard only on /home or /profile
   return <UserDashboard />;
 }
@@ -53,19 +54,19 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem('isAuthenticated') === 'true';
   });
-  
+
   // Get user role from localStorage
   const userRole = localStorage.getItem('userRole');
-  
+
   // Debug information
   console.log('App.js - Authentication status:', isAuthenticated);
   console.log('App.js - User role:', userRole);
-  
+
   const login = () => {
     setIsAuthenticated(true);
     localStorage.setItem('isAuthenticated', 'true');
   };
-  
+
   const logout = () => {
     console.log("Logging out from the website");
     setIsAuthenticated(false);
@@ -73,13 +74,13 @@ function App() {
     localStorage.removeItem('userRole');
     localStorage.removeItem('user');
   };
-  
+
   return (
     <Router>
-      <Main 
-        isAuthenticated={isAuthenticated} 
-        userRole={userRole} 
-        login={login} 
+      <Main
+        isAuthenticated={isAuthenticated}
+        userRole={userRole}
+        login={login}
         logout={logout}
       />
     </Router>
@@ -88,11 +89,11 @@ function App() {
 
 function Main({ isAuthenticated, userRole, login, logout }) {
   const location = useLocation();
-  
+
   // Debug logging
   console.log('📍 Current path:', location.pathname);
   console.log('🔐 Is authenticated:', isAuthenticated);
-  
+
   return (
     <div>
       <Routes>
@@ -100,7 +101,7 @@ function Main({ isAuthenticated, userRole, login, logout }) {
         <Route path="/login" element={<LoginPage onLogin={login} />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        
+
         {/* Public Contact Referral Page - No authentication required */}
         <Route path="/contact-referral" element={
           <div style={{ padding: '20px' }}>
@@ -122,7 +123,7 @@ function Main({ isAuthenticated, userRole, login, logout }) {
             <RoleBasedDashboard />
           </ProtectedRoute>
         } />
-        
+
         {/* Protect the landing pages */}
         <Route path="/user" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
@@ -134,7 +135,7 @@ function Main({ isAuthenticated, userRole, login, logout }) {
             <AdminLandingPage onLogout={logout} />
           </ProtectedRoute>
         } />
-        
+
         {/* User Profile Route - for user details management */}
         <Route path="/profile" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
@@ -146,63 +147,70 @@ function Main({ isAuthenticated, userRole, login, logout }) {
             <InventoryPage />
           </ProtectedRoute>
         } />
-        
+
         {/* User Management Route */}
         <Route path="/users" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <UserManagementMain onLogout={logout} />
           </ProtectedRoute>
         } />
-        
+
         {/* Surveys Route */}
         <Route path="/surveys" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <SurveysPage onLogout={logout} />
           </ProtectedRoute>
         } />
-        
+
         {/* Survey Taking Route */}
         <Route path="/survey" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <SurveyTaking onLogout={logout} />
           </ProtectedRoute>
         } />
-        
+
         {/* Reports Route - Role-based */}
         <Route path="/reports" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <RoleBasedReports onLogout={logout} />
           </ProtectedRoute>
         } />
-        
+
         {/* Report Builder Route */}
         <Route path="/reportbuilder" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <ReportBuilder onLogout={logout} />
           </ProtectedRoute>
         } />
-        
+
         {/* Visual Report Builder Route */}
         <Route path="/visual-builder" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <VisualReportBuilder onLogout={logout} />
           </ProtectedRoute>
         } />
-        
+
+        {/* Document Editor Route */}
+        <Route path="/document-editor" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <ReportDocumentEditor onClose={() => window.history.back()} />
+          </ProtectedRoute>
+        } />
+
         {/* Admin User Reports Route */}
         <Route path="/user-reports" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <AdminUserReports onLogout={logout} />
           </ProtectedRoute>
         } />
-        
+
         {/* Settings Route */}
         <Route path="/settings" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <SettingsPage onLogout={logout} />
           </ProtectedRoute>
         } />
-        
+
         {/* Redirect root to login */}
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>

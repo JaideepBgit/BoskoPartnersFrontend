@@ -27,7 +27,8 @@ import {
     Build as BuildIcon,
     SavedSearch as SavedSearchIcon,
     GetApp as GetAppIcon,
-    Schedule as ScheduleIcon
+    Schedule as ScheduleIcon,
+    Article as ArticleIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../shared/Navbar/Navbar';
@@ -50,7 +51,7 @@ function ReportsPage({ onLogout }) {
     const [templates, setTemplates] = useState([]);
 
     const tabs = [
-        { label: 'Home', path: '/home'},
+        { label: 'Home', path: '/home' },
         { label: 'Dashboard', path: '/dashboard' },
         { label: 'Assessment Overview', path: '/root-dashboard' },
         { label: '360 Degree Assessment', path: '/edit-assessments' },
@@ -59,6 +60,7 @@ function ReportsPage({ onLogout }) {
         { label: 'Reports', path: '/reports' },
         { label: 'Report Builder', path: '/reportbuilder' },
         { label: 'Visual Builder', path: '/visual-builder' },
+        { label: 'Document Editor', path: '/document-editor' },
     ];
 
     useEffect(() => {
@@ -124,6 +126,12 @@ function ReportsPage({ onLogout }) {
             description: 'Drag-and-drop interface for creating custom visualizations',
             icon: <BuildIcon />,
             action: () => navigate('/visual-builder')
+        },
+        {
+            title: 'Document Editor',
+            description: 'Create rich documents with embedded charts, text, and export to PDF',
+            icon: <ArticleIcon />,
+            action: () => navigate('/document-editor')
         }
     ];
 
@@ -168,14 +176,14 @@ function ReportsPage({ onLogout }) {
     return (
         <Box sx={{ minHeight: '100vh', backgroundColor: adminColors.background }}>
             <Navbar tabs={tabs} onLogout={onLogout} />
-            
+
             <Container maxWidth="xl" sx={{ mt: 4, pb: 4 }}>
                 <Typography variant="h4" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
                     Reports & Analytics
                 </Typography>
-                
+
                 <Typography variant="body1" paragraph sx={{ color: adminColors.text, mb: 4 }}>
-                    Generate comprehensive reports from survey data with interactive visualizations, 
+                    Generate comprehensive reports from survey data with interactive visualizations,
                     export capabilities, and template management.
                 </Typography>
 
@@ -233,18 +241,18 @@ function ReportsPage({ onLogout }) {
                     {/* Quick Reports */}
                     <Grid item xs={12} md={6}>
                         <Card>
-                            <CardHeader 
-                                title="Quick Reports" 
+                            <CardHeader
+                                title="Quick Reports"
                                 titleTypographyProps={{ color: adminColors.primary, fontWeight: 'bold' }}
                             />
                             <CardContent>
                                 <List>
                                     {quickReports.map((report, index) => (
                                         <React.Fragment key={index}>
-                                            <ListItem 
-                                                button 
+                                            <ListItem
+                                                button
                                                 onClick={report.action}
-                                                sx={{ 
+                                                sx={{
                                                     '&:hover': { backgroundColor: adminColors.highlightBg },
                                                     borderRadius: 1,
                                                     mb: 1
@@ -263,13 +271,13 @@ function ReportsPage({ onLogout }) {
                                         </React.Fragment>
                                     ))}
                                 </List>
-                                
+
                                 <Box sx={{ mt: 3, textAlign: 'center' }}>
                                     <Button
                                         variant="contained"
                                         startIcon={<BuildIcon />}
                                         onClick={() => navigate('/reportbuilder')}
-                                        sx={{ 
+                                        sx={{
                                             backgroundColor: adminColors.primary,
                                             '&:hover': { backgroundColor: adminColors.secondary }
                                         }}
@@ -284,8 +292,8 @@ function ReportsPage({ onLogout }) {
                     {/* Recent Templates */}
                     <Grid item xs={12} md={6}>
                         <Card>
-                            <CardHeader 
-                                title="Recent Templates" 
+                            <CardHeader
+                                title="Recent Templates"
                                 titleTypographyProps={{ color: adminColors.primary, fontWeight: 'bold' }}
                             />
                             <CardContent>
@@ -293,10 +301,10 @@ function ReportsPage({ onLogout }) {
                                     <List>
                                         {templates.map((template, index) => (
                                             <React.Fragment key={template.id}>
-                                                <ListItem 
+                                                <ListItem
                                                     button
                                                     onClick={() => navigate('/reportbuilder', { state: { loadTemplate: template } })}
-                                                    sx={{ 
+                                                    sx={{
                                                         '&:hover': { backgroundColor: adminColors.highlightBg },
                                                         borderRadius: 1,
                                                         mb: 1
@@ -320,16 +328,16 @@ function ReportsPage({ onLogout }) {
                                         No saved templates yet. Create your first template in the Report Builder.
                                     </Alert>
                                 )}
-                                
+
                                 <Box sx={{ mt: 2, textAlign: 'center' }}>
                                     <Button
                                         variant="outlined"
                                         size="small"
                                         onClick={() => navigate('/reportbuilder')}
-                                        sx={{ 
+                                        sx={{
                                             borderColor: adminColors.primary,
                                             color: adminColors.primary,
-                                            '&:hover': { 
+                                            '&:hover': {
                                                 borderColor: adminColors.secondary,
                                                 backgroundColor: adminColors.highlightBg
                                             }
@@ -345,8 +353,8 @@ function ReportsPage({ onLogout }) {
                     {/* Reporting Features */}
                     <Grid item xs={12}>
                         <Card>
-                            <CardHeader 
-                                title="Reporting Features" 
+                            <CardHeader
+                                title="Reporting Features"
                                 titleTypographyProps={{ color: adminColors.primary, fontWeight: 'bold' }}
                             />
                             <CardContent>
@@ -376,8 +384,8 @@ function ReportsPage({ onLogout }) {
                     {/* Getting Started */}
                     <Grid item xs={12}>
                         <Card>
-                            <CardHeader 
-                                title="Getting Started" 
+                            <CardHeader
+                                title="Getting Started"
                                 titleTypographyProps={{ color: adminColors.primary, fontWeight: 'bold' }}
                             />
                             <CardContent>
@@ -396,14 +404,14 @@ function ReportsPage({ onLogout }) {
                                 <Typography variant="body2" paragraph>
                                     <strong>5. Generate & Export:</strong> Create your report and export in multiple formats.
                                 </Typography>
-                                
+
                                 <Box sx={{ mt: 3 }}>
                                     <Button
                                         variant="contained"
                                         size="large"
                                         startIcon={<BuildIcon />}
                                         onClick={() => navigate('/reportbuilder')}
-                                        sx={{ 
+                                        sx={{
                                             backgroundColor: adminColors.primary,
                                             '&:hover': { backgroundColor: adminColors.secondary },
                                             mr: 2
@@ -415,10 +423,10 @@ function ReportsPage({ onLogout }) {
                                         variant="outlined"
                                         size="large"
                                         startIcon={<ScheduleIcon />}
-                                        sx={{ 
+                                        sx={{
                                             borderColor: adminColors.primary,
                                             color: adminColors.primary,
-                                            '&:hover': { 
+                                            '&:hover': {
                                                 borderColor: adminColors.secondary,
                                                 backgroundColor: adminColors.highlightBg
                                             }

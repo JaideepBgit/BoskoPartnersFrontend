@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box, 
-  Typography, 
-  Container, 
-  Grid, 
-  Card, 
+  Box,
+  Typography,
+  Container,
+  Grid,
+  Card,
   CardContent,
   FormControl,
   InputLabel,
@@ -16,14 +16,30 @@ import {
   Chip,
   Switch,
   FormControlLabel,
-  Divider
+  Divider,
+  Tabs,
+  Tab,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  IconButton
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import DescriptionIcon from '@mui/icons-material/Description';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import Navbar from '../../shared/Navbar/Navbar';
 import SampleDataService from '../../../services/Admin/Reports/SampleDataService';
 import BackendDataService from '../../../services/Admin/Reports/BackendDataService';
 import QuestionService from '../../../services/Admin/Reports/QuestionService';
 import SimpleBarChart from './Charts/SimpleBarChart';
+import InteractiveBarChart from './Charts/InteractiveBarChart';
+import InteractivePieChart from './Charts/InteractivePieChart';
+import InteractiveRadarChart from './Charts/InteractiveRadarChart';
 import GeographicChart from './Charts/GeographicChart';
+
 import ComparisonCard from './Charts/ComparisonCard';
 import ChartSelectorCard from './Charts/ChartSelectorCard';
 import CustomChart from './Charts/CustomChart';
@@ -32,6 +48,9 @@ import SurveyMapCard from './Charts/SurveyMapCard';
 import QualitativeAnalysis from './Charts/QualitativeAnalysis';
 import QualitativeComparisonAnalysis from './Charts/QualitativeComparisonAnalysis';
 import TextAnalyticsDisplay from './Charts/TextAnalyticsDisplay';
+import AIChatInterface from './AIChatInterface';
+import ReportDocumentEditor from './ReportDocumentEditor';
+import ReportLibrary from './ReportLibrary';
 
 const UserReports = () => {
   const [loading, setLoading] = useState(true);
@@ -58,6 +77,12 @@ const UserReports = () => {
   const [chartBuilderQuestions, setChartBuilderQuestions] = useState([]);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
 
+  // New state for tabs and dialogs
+  const [activeMainTab, setActiveMainTab] = useState(0); // 0: Analytics, 1: AI Assistant, 2: Report Creator, 3: Report Library
+  const [reportCreatorOpen, setReportCreatorOpen] = useState(false);
+  const [templates, setTemplates] = useState([]);
+  const [selectedReportDocument, setSelectedReportDocument] = useState(null); // For loading saved reports
+
   // Helper functions for robust type comparison
   const normType = (t) => (t || '').toString().toLowerCase().replace(/[\s_-]/g, '');
   const isSameType = (s) => {
@@ -68,7 +93,7 @@ const UserReports = () => {
   // Helper function to get enhanced response display name with geographic info
   const getEnhancedResponseDisplayName = (response) => {
     let displayName = '';
-    
+
     // Get the primary name based on survey type
     if (dataSource === 'sample' && SampleDataService.getResponseDisplayName) {
       displayName = SampleDataService.getResponseDisplayName(response);
@@ -84,13 +109,13 @@ const UserReports = () => {
         displayName = response.user_name || `Response ${response.id}`;
       }
     }
-    
+
     // Add enhanced geographic information from geo-enabled API
     const locationParts = [];
     if (response.city) locationParts.push(response.city);
     if (response.state && response.state !== response.city) locationParts.push(response.state);
     if (response.country) locationParts.push(response.country);
-    
+
     const locationString = locationParts.join(', ');
     return locationString ? `${displayName} - ${locationString}` : displayName;
   };
@@ -100,23 +125,23 @@ const UserReports = () => {
     try {
       setLoadingQuestions(true);
       console.log('📊 UserReports - Loading chart builder questions for survey type:', selectedSurveyType);
-      
+
       const templates = await QuestionService.fetchQuestionsWithTypes(selectedSurveyType);
       console.log('📊 UserReports - Received templates:', templates);
-      
+
       if (templates && templates.length > 0) {
         // Flatten all questions from all templates
         const allQuestions = templates.flatMap(t => t.questions || []);
         console.log(`📊 UserReports - Total questions before deduplication: ${allQuestions.length} from ${templates.length} templates`);
-        
+
         // Deduplicate questions based on question text and type
         // This handles cases where the same question appears in multiple templates
         const uniqueQuestionsMap = new Map();
-        
+
         allQuestions.forEach(question => {
           // Create a unique key based on question text and type
           const key = `${question.text.trim().toLowerCase()}_${question.question_type_id}`;
-          
+
           // Only add if not already present, or if this one has a real ID (not template-based)
           if (!uniqueQuestionsMap.has(key)) {
             uniqueQuestionsMap.set(key, question);
@@ -125,14 +150,14 @@ const UserReports = () => {
             const existing = uniqueQuestionsMap.get(key);
             const existingIsTemplateId = typeof existing.id === 'string' && existing.id.includes('_q_');
             const currentIsTemplateId = typeof question.id === 'string' && question.id.includes('_q_');
-            
+
             // Prefer real database IDs over template-generated IDs
             if (existingIsTemplateId && !currentIsTemplateId) {
               uniqueQuestionsMap.set(key, question);
             }
           }
         });
-        
+
         const uniqueQuestions = Array.from(uniqueQuestionsMap.values());
         console.log(`✅ UserReports - Deduplicated to ${uniqueQuestions.length} unique questions (removed ${allQuestions.length - uniqueQuestions.length} duplicates)`);
         setChartBuilderQuestions(uniqueQuestions);
@@ -159,6 +184,23 @@ const UserReports = () => {
     loadChartBuilderQuestions();
   }, [selectedSurveyType, loadChartBuilderQuestions]);
 
+  // Load templates for report creator
+  useEffect(() => {
+    const loadTemplates = async () => {
+      try {
+        const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+        const response = await fetch(`${baseURL}/survey-templates/available`);
+        if (response.ok) {
+          const data = await response.json();
+          setTemplates(data);
+        }
+      } catch (err) {
+        console.warn('Failed to load templates:', err);
+      }
+    };
+    loadTemplates();
+  }, []);
+
   // Handle mode change
   useEffect(() => {
     const newDataSource = isTestMode ? 'sample' : 'backend';
@@ -181,18 +223,18 @@ const UserReports = () => {
       console.log('🔄 UserReports.loadData called');
       console.log('🔄 Data source:', dataSource);
       console.log('🔄 Current filters:', filters);
-      
+
       setLoading(true);
       setError(null); // Clear previous errors
       let data;
-      
+
       if (dataSource === 'sample') {
         console.log('🔄 Loading sample data...');
         data = await SampleDataService.loadSampleData();
         console.log('🔄 Sample data loaded:', data);
       } else {
         console.log('🔄 Loading backend data...');
-        
+
         // Load survey types first if using backend data
         if (surveyTypes.length === 0) {
           try {
@@ -204,21 +246,21 @@ const UserReports = () => {
             console.warn('Failed to load survey types:', typeError);
           }
         }
-        
+
         // Load survey responses with optional survey type filter
         const surveyTypeFilter = filters.survey_type || null;
         console.log('🔄 Loading survey responses with filter:', surveyTypeFilter);
         data = await BackendDataService.loadSurveyResponses(surveyTypeFilter);
         console.log('🔄 Backend data loaded:', data);
       }
-      
+
       console.log('🔄 Setting survey data:', {
         church: data.church?.length || 0,
         institution: data.institution?.length || 0,
         nonFormal: data.nonFormal?.length || 0
       });
       setSurveyData(data);
-      
+
       // Set default selected response
       if (selectedSurveyType === 'all') {
         // For "all" types, find the first available response from any survey type
@@ -239,15 +281,15 @@ const UserReports = () => {
         console.log('🔄 No responses found for survey type:', selectedSurveyType);
         setSelectedResponseId(null);
       }
-      
+
     } catch (err) {
-      const errorMessage = dataSource === 'sample' 
+      const errorMessage = dataSource === 'sample'
         ? 'Failed to load sample data. Please check the console for details.'
         : 'Failed to load data from backend. Please check your connection and try again.';
       console.error('❌ Error in loadData:', err);
       console.error('❌ Error message:', errorMessage);
       setError(errorMessage);
-      
+
       // Keep existing data if switching modes fails
       // This prevents complete data loss on mode switch errors
     } finally {
@@ -262,14 +304,14 @@ const UserReports = () => {
     console.log('🔄 Previous test mode:', isTestMode);
     console.log('🔄 New test mode:', newTestMode);
     console.log('🔄 New data source will be:', newTestMode ? 'sample' : 'backend');
-    
+
     setIsTestMode(newTestMode);
     // Clear any existing data and reset selections
     setSurveyData({});
     setSelectedResponseId(null);
     setComparisonData(null);
     setCustomCharts([]);
-    
+
     console.log('🔄 Data cleared, mode toggle complete');
   };
 
@@ -303,7 +345,7 @@ const UserReports = () => {
       console.log('📊 Starting generateComparisonData (template-based)');
       console.log('📊 Target response ID:', selectedResponseId);
       console.log('📊 Survey type:', selectedSurveyType);
-      
+
       // Use the new template-based comparison from backend
       if (!isTestMode) {
         try {
@@ -311,9 +353,9 @@ const UserReports = () => {
             selectedResponseId,
             selectedSurveyType
           );
-          
+
           console.log('📊 Template comparison result:', comparisonResult);
-          
+
           // Check if template is empty
           if (comparisonResult.error === 'empty_template') {
             console.warn('📊 Empty template detected:', comparisonResult.message);
@@ -324,7 +366,7 @@ const UserReports = () => {
             });
             return;
           }
-          
+
           // Include text_analytics in comparison data
           const qLabels = comparisonResult.question_labels || {};
           const qDetails = comparisonResult.question_details || {};
@@ -358,7 +400,7 @@ const UserReports = () => {
             question_meta,
             numeric_keys
           };
-          
+
           // Add text analytics if available
           if (comparisonResult.text_analytics) {
             console.log('📊 Text analytics data received:', comparisonResult.text_analytics);
@@ -366,30 +408,30 @@ const UserReports = () => {
           } else {
             console.log('📊 No text analytics data in response');
           }
-          
+
           setComparisonData(newComparisonData);
-          console.log('📊 New comparison data:', newComparisonData) ;
+          console.log('📊 New comparison data:', newComparisonData);
           return;
         } catch (error) {
           console.error('📊 Error with template comparison, falling back to old method:', error);
           // Fall through to old method if template comparison fails
         }
       }
-      
+
       // Fallback to old method for test mode or if template comparison fails
       let responses = surveyData[selectedSurveyType];
       console.log('📊 Using fallback comparison method');
       console.log('📊 Original responses count:', responses?.length || 0);
-      
+
       const targetResponse = responses?.find(r => String(r.id) === String(selectedResponseId));
-      
+
       if (targetResponse) {
         const comparison = SampleDataService.compareWithSimilar(
-          targetResponse, 
+          targetResponse,
           selectedSurveyType,
           responses
         );
-        
+
         const stats = SampleDataService.calculateComparisonStats(
           comparison.targetScores,
           comparison.averages
@@ -437,7 +479,7 @@ const UserReports = () => {
   const handleSurveyTypeChange = (event) => {
     const newType = event.target.value;
     setSelectedSurveyType(newType);
-    
+
     // Reset selected response for new survey type
     if (newType === 'all') {
       // For "all" types, find the first available response from any survey type
@@ -454,29 +496,29 @@ const UserReports = () => {
     // Handle "all" survey types
     if (selectedSurveyType === 'all') {
       const allResponses = Object.values(surveyData).flat();
-      
+
       // If surveys are selected from the map, use only those
       if (selectedMapSurveys.length > 0) {
         return selectedMapSurveys;
       }
-      
+
       if (dataSource === 'sample') {
         return SampleDataService.filterResponsesWithBase(allResponses, filters);
       } else {
         return BackendDataService.filterResponses(allResponses, filters);
       }
     }
-    
+
     if (!surveyData[selectedSurveyType]) return [];
-    
+
     // Start with all responses or selected surveys
     let baseResponses = surveyData[selectedSurveyType];
-    
+
     // If surveys are selected from the map, use only those
     if (selectedMapSurveys.length > 0) {
       baseResponses = selectedMapSurveys.filter(isSameType);
     }
-    
+
     if (dataSource === 'sample') {
       // Apply filters to the base responses
       return SampleDataService.filterResponsesWithBase(baseResponses, filters);
@@ -489,7 +531,7 @@ const UserReports = () => {
     // Handle "all" survey types
     if (selectedSurveyType === 'all') {
       const allResponses = Object.values(surveyData).flat();
-      
+
       // If surveys are selected from the map, use only those
       if (selectedMapSurveys.length > 0) {
         if (dataSource === 'sample') {
@@ -498,24 +540,24 @@ const UserReports = () => {
           return BackendDataService.getGeographicDistribution(selectedMapSurveys);
         }
       }
-      
+
       if (dataSource === 'sample') {
         return SampleDataService.getGeographicDistributionWithBase(allResponses);
       } else {
         return BackendDataService.getGeographicDistribution(allResponses);
       }
     }
-    
+
     if (!surveyData[selectedSurveyType]) return {};
-    
+
     // Use selected surveys if available, otherwise use all responses
     let responses = surveyData[selectedSurveyType];
-    
+
     // If surveys are selected from the map, use only those
     if (selectedMapSurveys.length > 0) {
       responses = selectedMapSurveys.filter(isSameType);
     }
-    
+
     if (dataSource === 'sample') {
       return SampleDataService.getGeographicDistributionWithBase(responses);
     } else {
@@ -527,7 +569,7 @@ const UserReports = () => {
     // Handle "all" survey types
     if (selectedSurveyType === 'all') {
       const allResponses = Object.values(surveyData).flat();
-      
+
       // If surveys are selected from the map, use only those
       if (selectedMapSurveys.length > 0) {
         if (dataSource === 'sample') {
@@ -536,29 +578,109 @@ const UserReports = () => {
           return BackendDataService.getUniqueValues(selectedMapSurveys, fieldName);
         }
       }
-      
+
       if (dataSource === 'sample') {
         return SampleDataService.getUniqueValuesWithBase(allResponses, fieldName);
       } else {
         return BackendDataService.getUniqueValues(allResponses, fieldName);
       }
     }
-    
+
     if (!surveyData[selectedSurveyType]) return [];
-    
+
     // Use selected surveys if available, otherwise use all responses
     let responses = surveyData[selectedSurveyType];
-    
+
     // If surveys are selected from the map, use only those
     if (selectedMapSurveys.length > 0) {
       responses = selectedMapSurveys.filter(isSameType);
     }
-    
+
     if (dataSource === 'sample') {
       return SampleDataService.getUniqueValuesWithBase(responses, fieldName);
     } else {
       return BackendDataService.getUniqueValues(responses, fieldName);
     }
+  };
+
+  const handleExportData = () => {
+    const dataToExport = getFilteredResponses();
+    if (!dataToExport || dataToExport.length === 0) {
+      alert("No data to export");
+      return;
+    }
+
+    // Flatten data for CSV
+    const flattenedData = dataToExport.map(response => {
+      const flat = {
+        id: response.id,
+        survey_type: response.survey_type,
+        date: response.response_date,
+        user: response.user_name || 'N/A',
+        organization: response.organization_name || 'N/A',
+        country: response.country || '',
+        city: response.city || '',
+        education: response.education_level || '',
+        age_group: response.age_group || '',
+        // Add other metadata fields as needed
+      };
+
+      // Add answers
+      if (response.answers && typeof response.answers === 'object') {
+        Object.entries(response.answers).forEach(([key, value]) => {
+          // Stata/NVivo friendly keys: alphanumeric + underscore
+          // Remove q_ prefix if it exists to avoid double prefixing, then add it back consistently
+          // Or just sanitize the key. 
+          const cleanKey = 'q_' + key.replace(/[^a-zA-Z0-9_]/g, '_');
+
+          let cleanValue = value;
+          // Handle object values (e.g. multiple choice or complex objects)
+          if (typeof value === 'object' && value !== null) {
+            cleanValue = JSON.stringify(value);
+          }
+          // Note: strict string escaping happens during row generation
+          flat[cleanKey] = cleanValue;
+        });
+      }
+      return flat;
+    });
+
+    // Get all unique keys
+    const allKeys = new Set();
+    flattenedData.forEach(obj => Object.keys(obj).forEach(k => allKeys.add(k)));
+    const columns = Array.from(allKeys).sort();
+
+    // Create CSV content
+    // Header
+    const header = columns.join(',');
+
+    // Rows
+    const rows = flattenedData.map(obj => {
+      return columns.map(col => {
+        let val = obj[col];
+        if (val === undefined || val === null) return '';
+
+        // Convert to string and escape quotes
+        let strVal = String(val);
+        if (strVal.includes('"') || strVal.includes(',') || strVal.includes('\n')) {
+          strVal = `"${strVal.replace(/"/g, '""')}"`;
+        }
+        return strVal;
+      }).join(',');
+    });
+
+    const csvContent = [header, ...rows].join('\n');
+
+    // Trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `survey_export_${selectedSurveyType}_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleCreateCustomChart = (chartConfig) => {
@@ -581,8 +703,8 @@ const UserReports = () => {
   };
 
   const handleUpdateChart = (updatedChart) => {
-    setCustomCharts(prev => 
-      prev.map(chart => 
+    setCustomCharts(prev =>
+      prev.map(chart =>
         chart.id === updatedChart.id ? updatedChart : chart
       )
     );
@@ -613,7 +735,7 @@ const UserReports = () => {
     setSelectedMapArea(markersInArea);
     const surveysInArea = markersInArea.map(marker => marker.surveyData);
     console.log('🌍 Area selection - surveys in area:', surveysInArea.length);
-    
+
     // Treat area selection the same as survey selection for graph regeneration
     setSelectedMapSurveys(surveysInArea);
     console.log('🌍 Updated selectedMapSurveys from area selection');
@@ -663,7 +785,7 @@ const UserReports = () => {
                 Compare individual survey responses with group averages and analyze trends.
               </Typography>
             </Box>
-            
+
             {/* Data Mode Toggle - Always Visible */}
             <Card sx={{ p: 2, minWidth: 200, backgroundColor: adminColors.cardBg, border: `1px solid ${adminColors.borderColor}` }}>
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -710,19 +832,19 @@ const UserReports = () => {
               {error}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {isTestMode 
+              {isTestMode
                 ? "Try switching to Normal Mode or check if sample data files are available."
                 : "Try switching to Test Mode to use sample data, or check your backend connection."
               }
             </Typography>
           </Alert>
-          
+
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Button variant="contained" onClick={loadData}>
               Retry Loading Data
             </Button>
-            <Button 
-              variant="outlined" 
+            <Button
+              variant="outlined"
               onClick={() => setIsTestMode(!isTestMode)}
             >
               Switch to {isTestMode ? 'Normal' : 'Test'} Mode
@@ -736,8 +858,8 @@ const UserReports = () => {
   const filteredResponses = getFilteredResponses();
   const geographicData = getGeographicData();
   // Fix: Handle 'all' type properly to avoid undefined responses
-  const availableResponses = selectedSurveyType === 'all' 
-    ? Object.values(surveyData).flat().filter(r => r && r.id) 
+  const availableResponses = selectedSurveyType === 'all'
+    ? Object.values(surveyData).flat().filter(r => r && r.id)
     : (surveyData[selectedSurveyType] || []);
 
   return (
@@ -753,9 +875,9 @@ const UserReports = () => {
               Compare individual survey responses with group averages and analyze trends.
             </Typography>
           </Box>
-          
-            {/* Data Mode Toggle */}
-            <Card sx={{ p: 2, minWidth: 200, backgroundColor: adminColors.cardBg, border: `1px solid ${adminColors.borderColor}` }}>
+
+          {/* Data Mode Toggle */}
+          <Card sx={{ p: 2, minWidth: 200, backgroundColor: adminColors.cardBg, border: `1px solid ${adminColors.borderColor}` }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <Typography variant="subtitle2" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
                 Data Source
@@ -805,9 +927,9 @@ const UserReports = () => {
               <Button size="small" variant="outlined" onClick={loadData}>
                 Retry
               </Button>
-              <Button 
-                size="small" 
-                variant="text" 
+              <Button
+                size="small"
+                variant="text"
                 onClick={() => setIsTestMode(!isTestMode)}
               >
                 Switch to {isTestMode ? 'Normal' : 'Test'} Mode
@@ -816,439 +938,583 @@ const UserReports = () => {
           </Alert>
         )}
 
-        {/* Control Panel */}
-        <Card sx={{ mb: 3, backgroundColor: adminColors.cardBg, border: `1px solid ${adminColors.borderColor}` }}>
-          <CardContent>
-            {/* Data Source Status */}
-            <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Chip 
-                label={`Data Source: ${isTestMode ? 'Sample Data' : 'Backend API'}`}
-                color={isTestMode ? 'warning' : 'success'}
-                variant="outlined"
-                size="small"
-              />
-              <Chip 
-                label={`${availableResponses.length} ${selectedSurveyType === 'all' ? 'total' : selectedSurveyType} responses`}
-                sx={{ backgroundColor: adminColors.secondary, color: 'white' }}
-                size="small"
-              />
-              {selectedMapSurveys.length > 0 && (
-                <Chip 
-                  label={`Using ${selectedMapSurveys.filter(isSameType).length} of ${selectedMapSurveys.length} selected surveys`}
-                  sx={{ backgroundColor: adminColors.highlightBg, color: adminColors.primary, border: `1px solid ${adminColors.primary}` }}
-                  size="small"
-                  variant="outlined"
-                  onDelete={() => setSelectedMapSurveys([])}
+        {/* Main Tab Navigation */}
+        <Card sx={{ mb: 3, border: `1px solid ${adminColors.borderColor}` }}>
+          <Tabs
+            value={activeMainTab}
+            onChange={(e, newVal) => setActiveMainTab(newVal)}
+            variant="fullWidth"
+            sx={{
+              borderBottom: `1px solid ${adminColors.borderColor}`,
+              '& .MuiTab-root': {
+                textTransform: 'none',
+                fontWeight: 600,
+                fontSize: '0.95rem',
+                minHeight: 64,
+              },
+              '& .Mui-selected': { color: adminColors.primary },
+              '& .MuiTabs-indicator': { backgroundColor: adminColors.primary, height: 3 }
+            }}
+          >
+            <Tab
+              icon={<BarChartIcon />}
+              iconPosition="start"
+              label="Survey Analytics"
+            />
+            <Tab
+              icon={<AutoAwesomeIcon />}
+              iconPosition="start"
+              label="AI Assistant"
+            />
+            <Tab
+              icon={<AssessmentIcon />}
+              iconPosition="start"
+              label="Report Creator"
+            />
+            <Tab
+              icon={<DescriptionIcon />}
+              iconPosition="start"
+              label="Report Library"
+            />
+          </Tabs>
+        </Card>
+
+        {/* Tab Content: AI Assistant */}
+        {activeMainTab === 1 && (
+          <Grid container spacing={3} sx={{ mb: 3 }}>
+            <Grid item xs={12}>
+              <Box sx={{ height: 600 }}>
+                <AIChatInterface
+                  surveyData={surveyData}
+                  comparisonData={comparisonData}
+                  selectedSurveyType={selectedSurveyType}
+                  onGenerateReport={(action) => {
+                    if (action === 'openReportCreator') {
+                      setActiveMainTab(2);
+                    }
+                  }}
                 />
-              )}
-            </Box>
-            <Divider sx={{ mb: 2, borderColor: adminColors.borderColor }} />
-            
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={3}>
-                <FormControl fullWidth>
-                  <InputLabel sx={{ color: adminColors.text }}>Survey Type</InputLabel>
-                  <Select
-                    value={selectedSurveyType}
-                    label="Survey Type"
-                    onChange={handleSurveyTypeChange}
-                    sx={{ 
-                      '& .MuiOutlinedInput-root': {
-                        '& fieldset': { borderColor: adminColors.borderColor },
-                        '&:hover fieldset': { borderColor: adminColors.primary },
-                        '&.Mui-focused fieldset': { borderColor: adminColors.primary }
-                      }
-                    }}
-                  >
-                    <MenuItem value="church">Church Survey</MenuItem>
-                    <MenuItem value="institution">Institution Survey</MenuItem>
-                    <MenuItem value="nonFormal">Non-Formal Survey</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              
-              <Grid item xs={12} md={3}>
-                <FormControl fullWidth>
-                  <InputLabel sx={{ color: adminColors.text }}>Select Response to Analyze</InputLabel>
-                  <Select
-                    value={selectedResponseId || ''}
-                    label="Select Response to Analyze"
-                    onChange={(e) => setSelectedResponseId(String(e.target.value))}
-                    sx={{ 
-                      '& .MuiOutlinedInput-root': {
-                        '& fieldset': { borderColor: adminColors.borderColor },
-                        '&:hover fieldset': { borderColor: adminColors.primary },
-                        '&.Mui-focused fieldset': { borderColor: adminColors.primary }
-                      }
-                    }}
-                  >
-                    {availableResponses.map((response) => (
-                      <MenuItem key={response.id} value={String(response.id)}>
-                        {getEnhancedResponseDisplayName(response)}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-
-
-              <Grid item xs={12} md={3}>
-                <FormControl fullWidth>
-                  <InputLabel sx={{ color: adminColors.text }}>Country</InputLabel>
-                  <Select
-                    value={filters.country}
-                    label="Country"
-                    onChange={(e) => setFilters({...filters, country: e.target.value})}
-                    sx={{ 
-                      '& .MuiOutlinedInput-root': {
-                        '& fieldset': { borderColor: adminColors.borderColor },
-                        '&:hover fieldset': { borderColor: adminColors.primary },
-                        '&.Mui-focused fieldset': { borderColor: adminColors.primary }
-                      }
-                    }}
-                  >
-                    <MenuItem value="">All Countries</MenuItem>
-                    {getUniqueValues('country').map((country) => (
-                      <MenuItem key={country} value={country}>{country}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              <Grid item xs={12} md={3}>
-                <Box display="flex" gap={1} flexWrap="wrap" alignItems="center" pt={1}>
-                  <Chip 
-                    label={`${filteredResponses.length} Filtered Results`} 
-                    sx={{ backgroundColor: adminColors.primary, color: 'white' }}
-                    size="small" 
-                  />
-                  {filters.survey_type && (
-                    <Chip 
-                      label={`Survey Type: ${surveyTypes.find(t => t.value === filters.survey_type)?.label || filters.survey_type}`} 
-                      sx={{ backgroundColor: adminColors.lightPurple, color: adminColors.primary, border: `1px solid ${adminColors.primary}` }}
-                      size="small" 
-                      variant="outlined"
-                      onDelete={() => setFilters({...filters, survey_type: ''})}
-                    />
-                  )}
-                  {filters.country && (
-                    <Chip 
-                      label={`Country: ${filters.country}`} 
-                      sx={{ backgroundColor: adminColors.lightPurple, color: adminColors.primary, border: `1px solid ${adminColors.primary}` }}
-                      size="small" 
-                      variant="outlined"
-                      onDelete={() => setFilters({...filters, country: ''})}
-                    />
-                  )}
-                </Box>
-              </Grid>
+              </Box>
             </Grid>
-          </CardContent>
-        </Card>
-
-        {/* Survey Map Card */}
-        <Card sx={{ mb: 3, p: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
-          <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
-            Survey Response Map
-          </Typography>
-          <Typography variant="body2" color="text.secondary" paragraph>
-            Interactive map showing survey response locations. Click markers to select specific surveys for comparison.
-          </Typography>
-          <Box sx={{ mt: 2 }}>
-            <SurveyMapCard
-              surveyData={surveyData}
-              targetSurveyId={selectedResponseId}
-              selectedSurveyType={selectedSurveyType}
-              onSurveySelection={handleMapSurveySelection}
-              onAreaSelection={handleMapAreaSelection}
-              onSurveyTypeChange={setSelectedSurveyType}
-              adminColors={adminColors}
-              hideTitle={true}
-            />
-          </Box>
-        </Card>
-
-        {/* Chart Builder Card */}
-        <Card sx={{ mb: 3, p: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
-          <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
-            Custom Chart Builder
-          </Typography>
-          <Typography variant="body2" color="text.secondary" paragraph>
-            Create custom visualizations from your survey data. Choose chart types, data fields, and filters.
-          </Typography>
-          <Box sx={{ mt: 2 }}>
-            <ChartSelectorCard
-              onCreateChart={handleCreateCustomChart}
-              surveyType={selectedSurveyType}
-              isExpanded={chartBuilderExpanded}
-              onToggleExpand={() => setChartBuilderExpanded(!chartBuilderExpanded)}
-              questions={chartBuilderQuestions}
-              loadingQuestions={loadingQuestions}
-              surveyData={surveyData}
-              adminColors={adminColors}
-              hideTitle={true}
-            />
-          </Box>
-        </Card>
-
-        {/* Info Alert about Template-Based Comparison */}
-        {!isTestMode && comparisonData && (
-          <>
-            {comparisonData.isEmpty ? (
-              <Alert severity="error" sx={{ mb: 3 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  <strong>⚠️ Empty Survey Template</strong>
-                </Typography>
-                <Typography variant="body2">
-                  {comparisonData.errorMessage || 'This survey template has no questions defined.'}
-                </Typography>
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                  <strong>Template:</strong> {comparisonData.target?.template_code}
-                </Typography>
-                <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
-                  Please contact an administrator to fix this template or reassign this survey to a valid template.
-                </Typography>
-              </Alert>
-            ) : comparisonData.stats?.total_comparisons > 0 ? (
-              <Alert severity="info" sx={{ mb: 3 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  <strong>Question-Based Comparison</strong>
-                </Typography>
-                <Typography variant="body2">
-                  Comparing this survey with <strong>{comparisonData.stats.total_comparisons}</strong> other surveys that have the same questions within the <strong>{selectedSurveyType}</strong> organization type. 
-                  Surveys from different templates are compared as long as they contain matching questions.
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                  Your template: {comparisonData.target?.template_code} • {comparisonData.stats?.questions_compared || 0} questions compared
-                </Typography>
-              </Alert>
-            ) : (
-              <Alert severity="warning" sx={{ mb: 3 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  <strong>No Matching Surveys Found</strong>
-                </Typography>
-                <Typography variant="body2">
-                  This survey uses template <strong>{comparisonData.target?.template_code}</strong> with {comparisonData.target?.template_questions_count || 0} questions. 
-                  No other completed surveys from <strong>{selectedSurveyType}</strong> organizations have matching questions.
-                </Typography>
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                  <strong>Note:</strong> The system compares surveys based on question content, not just template ID. 
-                  Other surveys may use different templates but can still be compared if they have the same questions.
-                </Typography>
-              </Alert>
-            )}
-          </>
+          </Grid>
         )}
 
-        {/* Analytics Dashboard */}
-        {comparisonData && (
-          <Grid container spacing={3}>
-            {/* Comparison Overview */}
-            <Grid item xs={12} md={4}>
-              <ComparisonCard
-                title="Individual vs Group Comparison"
-                targetResponse={comparisonData.target}
-                comparisonStats={comparisonData.stats}
-                adminColors={adminColors}
-              />
-            </Grid>
+        {/* Tab Content: Report Creator - Now uses Document Editor */}
+        {activeMainTab === 2 && (
+          <Box sx={{ height: 'calc(100vh - 220px)', minHeight: 600 }}>
+            <ReportDocumentEditor
+              initialDocument={selectedReportDocument}
+              availableCharts={customCharts.map(chart => ({
+                id: chart.id,
+                title: chart.title || chart.name || 'Custom Chart',
+                chartType: chart.chartType || 'bar',
+                data: chart.data || [],
+                description: 'Custom chart from Chart Builder',
+              }))}
+              surveyData={surveyData}
+              comparisonData={comparisonData}
+              chartBuilderQuestions={chartBuilderQuestions}
+              selectedSurveyType={selectedSurveyType}
+              onSave={(document) => {
+                console.log('Document saved:', document);
+                setSelectedReportDocument(null); // Clear after save
+              }}
+              onClose={() => {
+                setSelectedReportDocument(null);
+                setActiveMainTab(0);
+              }}
+            />
+          </Box>
+        )}
 
-            {/* Score Comparison Chart */}
-            <Grid item xs={12} md={8}>
-              <Card sx={{ p: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
-                <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
-                  {comparisonData.stats?.section_summary || 'Survey Metrics'}: Individual vs Group Average
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Comparing your responses with {comparisonData.stats?.total_comparisons || 0} similar surveys
-                </Typography>
-                <Box sx={{ mt: 2 }}>
-                  <SimpleBarChart
-                    title=""
+        {/* Tab Content: Report Library */}
+        {activeMainTab === 3 && (
+          <Grid container spacing={3} sx={{ mb: 3 }}>
+            <Grid item xs={12}>
+              <Box sx={{ minHeight: 600 }}>
+                <ReportLibrary
+                  onOpenReport={async (report) => {
+                    console.log('Opening report:', report);
+                    try {
+                      // If content is missing (list view optimization), fetch full details
+                      let content = report.content;
+                      if (!content) {
+                        const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+                        const res = await fetch(`${baseURL}/reports/${report.id}`);
+                        if (res.ok) {
+                          const detailedReport = await res.json();
+                          content = detailedReport.content;
+                        }
+                      }
+
+                      if (content) {
+                        // Important: Inject the database ID into the document structure
+                        // so the editor knows it's an existing report (not a new one)
+                        const documentWithId = {
+                          ...content,
+                          id: report.id // Use the real database ID
+                        };
+                        setSelectedReportDocument(documentWithId);
+                        setActiveMainTab(2); // Switch to Report Creator tab
+                      } else {
+                        console.warn('Report has no content to display');
+                        alert('This report has no content to display');
+                      }
+                    } catch (e) {
+                      console.error('Error opening report:', e);
+                      alert('Failed to open report');
+                    }
+                  }}
+                  onCreateNew={() => {
+                    setSelectedReportDocument(null); // Start fresh
+                    setActiveMainTab(2);
+                  }}
+                />
+              </Box>
+            </Grid>
+          </Grid>
+        )}
+
+        {/* Tab Content: Survey Analytics (original content) - Only show when tab 0 is selected */}
+        {activeMainTab === 0 && (
+          <>
+            {/* Control Panel */}
+            <Card sx={{ mb: 3, backgroundColor: adminColors.cardBg, border: `1px solid ${adminColors.borderColor}` }}>
+              <CardContent>
+                {/* Data Source Status */}
+                <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Chip
+                    label={`Data Source: ${isTestMode ? 'Sample Data' : 'Backend API'}`}
+                    color={isTestMode ? 'warning' : 'success'}
+                    variant="outlined"
+                    size="small"
+                  />
+                  <Chip
+                    label={`${availableResponses.length} ${selectedSurveyType === 'all' ? 'total' : selectedSurveyType} responses`}
+                    sx={{ backgroundColor: adminColors.secondary, color: 'white' }}
+                    size="small"
+                  />
+                  {selectedMapSurveys.length > 0 && (
+                    <Chip
+                      label={`Using ${selectedMapSurveys.filter(isSameType).length} of ${selectedMapSurveys.length} selected surveys`}
+                      sx={{ backgroundColor: adminColors.highlightBg, color: adminColors.primary, border: `1px solid ${adminColors.primary}` }}
+                      size="small"
+                      variant="outlined"
+                      onDelete={() => setSelectedMapSurveys([])}
+                    />
+                  )}
+                  <Box sx={{ flexGrow: 1 }} />
+                  <Button
+                    variant="outlined"
+                    startIcon={<FileDownloadIcon />}
+                    onClick={handleExportData}
+                    size="small"
+                    sx={{ borderColor: adminColors.primary, color: adminColors.primary }}
+                  >
+                    Export for Stata/NVivo
+                  </Button>
+                </Box>
+                <Divider sx={{ mb: 2, borderColor: adminColors.borderColor }} />
+
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={3}>
+                    <FormControl fullWidth>
+                      <InputLabel sx={{ color: adminColors.text }}>Survey Type</InputLabel>
+                      <Select
+                        value={selectedSurveyType}
+                        label="Survey Type"
+                        onChange={handleSurveyTypeChange}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            '& fieldset': { borderColor: adminColors.borderColor },
+                            '&:hover fieldset': { borderColor: adminColors.primary },
+                            '&.Mui-focused fieldset': { borderColor: adminColors.primary }
+                          }
+                        }}
+                      >
+                        <MenuItem value="church">Church Survey</MenuItem>
+                        <MenuItem value="institution">Institution Survey</MenuItem>
+                        <MenuItem value="nonFormal">Non-Formal Survey</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+
+                  <Grid item xs={12} md={3}>
+                    <FormControl fullWidth>
+                      <InputLabel sx={{ color: adminColors.text }}>Select Response to Analyze</InputLabel>
+                      <Select
+                        value={selectedResponseId || ''}
+                        label="Select Response to Analyze"
+                        onChange={(e) => setSelectedResponseId(String(e.target.value))}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            '& fieldset': { borderColor: adminColors.borderColor },
+                            '&:hover fieldset': { borderColor: adminColors.primary },
+                            '&.Mui-focused fieldset': { borderColor: adminColors.primary }
+                          }
+                        }}
+                      >
+                        {availableResponses.map((response) => (
+                          <MenuItem key={response.id} value={String(response.id)}>
+                            {getEnhancedResponseDisplayName(response)}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+
+
+                  <Grid item xs={12} md={3}>
+                    <FormControl fullWidth>
+                      <InputLabel sx={{ color: adminColors.text }}>Country</InputLabel>
+                      <Select
+                        value={filters.country}
+                        label="Country"
+                        onChange={(e) => setFilters({ ...filters, country: e.target.value })}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            '& fieldset': { borderColor: adminColors.borderColor },
+                            '&:hover fieldset': { borderColor: adminColors.primary },
+                            '&.Mui-focused fieldset': { borderColor: adminColors.primary }
+                          }
+                        }}
+                      >
+                        <MenuItem value="">All Countries</MenuItem>
+                        {getUniqueValues('country').map((country) => (
+                          <MenuItem key={country} value={country}>{country}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+
+                  <Grid item xs={12} md={3}>
+                    <Box display="flex" gap={1} flexWrap="wrap" alignItems="center" pt={1}>
+                      <Chip
+                        label={`${filteredResponses.length} Filtered Results`}
+                        sx={{ backgroundColor: adminColors.primary, color: 'white' }}
+                        size="small"
+                      />
+                      {filters.survey_type && (
+                        <Chip
+                          label={`Survey Type: ${surveyTypes.find(t => t.value === filters.survey_type)?.label || filters.survey_type}`}
+                          sx={{ backgroundColor: adminColors.lightPurple, color: adminColors.primary, border: `1px solid ${adminColors.primary}` }}
+                          size="small"
+                          variant="outlined"
+                          onDelete={() => setFilters({ ...filters, survey_type: '' })}
+                        />
+                      )}
+                      {filters.country && (
+                        <Chip
+                          label={`Country: ${filters.country}`}
+                          sx={{ backgroundColor: adminColors.lightPurple, color: adminColors.primary, border: `1px solid ${adminColors.primary}` }}
+                          size="small"
+                          variant="outlined"
+                          onDelete={() => setFilters({ ...filters, country: '' })}
+                        />
+                      )}
+                    </Box>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+
+            {/* Survey Map Card */}
+            <Card sx={{ mb: 3, p: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
+              <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
+                Survey Response Map
+              </Typography>
+              <Typography variant="body2" color="text.secondary" paragraph>
+                Interactive map showing survey response locations. Click markers to select specific surveys for comparison.
+              </Typography>
+              <Box sx={{ mt: 2 }}>
+                <SurveyMapCard
+                  surveyData={surveyData}
+                  targetSurveyId={selectedResponseId}
+                  selectedSurveyType={selectedSurveyType}
+                  onSurveySelection={handleMapSurveySelection}
+                  onAreaSelection={handleMapAreaSelection}
+                  onSurveyTypeChange={setSelectedSurveyType}
+                  adminColors={adminColors}
+                  hideTitle={true}
+                />
+              </Box>
+            </Card>
+
+            {/* Chart Builder Card */}
+            <Card sx={{ mb: 3, p: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
+              <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
+                Custom Chart Builder
+              </Typography>
+              <Typography variant="body2" color="text.secondary" paragraph>
+                Create custom visualizations from your survey data. Choose chart types, data fields, and filters.
+              </Typography>
+              <Box sx={{ mt: 2 }}>
+                <ChartSelectorCard
+                  onCreateChart={handleCreateCustomChart}
+                  surveyType={selectedSurveyType}
+                  isExpanded={chartBuilderExpanded}
+                  onToggleExpand={() => setChartBuilderExpanded(!chartBuilderExpanded)}
+                  questions={chartBuilderQuestions}
+                  loadingQuestions={loadingQuestions}
+                  surveyData={surveyData}
+                  adminColors={adminColors}
+                  hideTitle={true}
+                />
+              </Box>
+            </Card>
+
+            {/* Info Alert about Template-Based Comparison */}
+            {!isTestMode && comparisonData && (
+              <>
+                {comparisonData.isEmpty ? (
+                  <Alert severity="error" sx={{ mb: 3 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      <strong>⚠️ Empty Survey Template</strong>
+                    </Typography>
+                    <Typography variant="body2">
+                      {comparisonData.errorMessage || 'This survey template has no questions defined.'}
+                    </Typography>
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      <strong>Template:</strong> {comparisonData.target?.template_code}
+                    </Typography>
+                    <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
+                      Please contact an administrator to fix this template or reassign this survey to a valid template.
+                    </Typography>
+                  </Alert>
+                ) : comparisonData.stats?.total_comparisons > 0 ? (
+                  <Alert severity="info" sx={{ mb: 3 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      <strong>Question-Based Comparison</strong>
+                    </Typography>
+                    <Typography variant="body2">
+                      Comparing this survey with <strong>{comparisonData.stats.total_comparisons}</strong> other surveys that have the same questions within the <strong>{selectedSurveyType}</strong> organization type.
+                      Surveys from different templates are compared as long as they contain matching questions.
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                      Your template: {comparisonData.target?.template_code} • {comparisonData.stats?.questions_compared || 0} questions compared
+                    </Typography>
+                  </Alert>
+                ) : (
+                  <Alert severity="warning" sx={{ mb: 3 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      <strong>No Matching Surveys Found</strong>
+                    </Typography>
+                    <Typography variant="body2">
+                      This survey uses template <strong>{comparisonData.target?.template_code}</strong> with {comparisonData.target?.template_questions_count || 0} questions.
+                      No other completed surveys from <strong>{selectedSurveyType}</strong> organizations have matching questions.
+                    </Typography>
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      <strong>Note:</strong> The system compares surveys based on question content, not just template ID.
+                      Other surveys may use different templates but can still be compared if they have the same questions.
+                    </Typography>
+                  </Alert>
+                )}
+              </>
+            )}
+
+            {/* Analytics Dashboard */}
+            {comparisonData && (
+              <Grid container spacing={3}>
+                {/* Comparison Overview */}
+                <Grid item xs={12} md={4}>
+                  <ComparisonCard
+                    title="Individual vs Group Comparison"
+                    targetResponse={comparisonData.target}
+                    comparisonStats={comparisonData.stats}
+                    adminColors={adminColors}
+                  />
+                </Grid>
+
+                {/* Score Comparison Charts - Bar and Radar side-by-side */}
+                <Grid item xs={12} lg={8}>
+                  <Card sx={{ p: 0, backgroundColor: 'transparent', border: 'none', boxShadow: 'none' }}>
+                    <InteractiveBarChart
+                      title={`${comparisonData.stats?.section_summary || 'Survey Metrics'}: Individual vs Group Average`}
+                      data={comparisonData.averages}
+                      targetData={comparisonData.targetScores}
+                      showComparison={true}
+                      maxValue={5}
+                      adminColors={adminColors}
+                      questionLabels={comparisonData.question_labels}
+                      height={500}
+                    />
+                  </Card>
+                </Grid>
+
+                <Grid item xs={12} lg={4}>
+                  <InteractiveRadarChart
+                    title="Performance Profile"
                     data={comparisonData.averages}
                     targetData={comparisonData.targetScores}
                     showComparison={true}
                     maxValue={5}
                     adminColors={adminColors}
                     questionLabels={comparisonData.question_labels}
-                    questionDetails={comparisonData.question_details}
+                    height={500}
                   />
-                </Box>
-              </Card>
-            </Grid>
+                </Grid>
 
-            {/* //Geographic Distribution  - Bar graph
-            <Grid item xs={12} md={6}>
-              <Card sx={{ p: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
-                <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
-                  Geographic Distribution of Responses
-                </Typography>
-                <Box sx={{ mt: 2 }}>
-                  <GeographicChart
-                    title=""
-                    data={geographicData}
+                {/* Geographic Distribution and Group Averages */}
+                <Grid item xs={12} md={6}>
+                  <InteractiveBarChart
+                    title="Geographic Response Distrubution"
+                    data={Object.fromEntries(Object.entries(geographicData).map(([k, v]) => [k, v.count]))}
+                    maxValue={Math.max(...Object.values(geographicData).map(v => v.count), 1)}
                     adminColors={adminColors}
+                    height={400}
                   />
-                </Box>
-              </Card>
-            </Grid>*/}
+                </Grid>
 
-            {/* Group Averages */}
-            <Grid item xs={12} md={6}>
-              <Card sx={{ p: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
-                <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
-                  Overall Group Averages
-                </Typography>
-                <Box sx={{ mt: 2 }}>
-                  <SimpleBarChart
-                    title=""
+                <Grid item xs={12} md={6}>
+                  <InteractivePieChart
+                    title="Overall Group Distribution"
                     data={comparisonData.averages}
-                    maxValue={5}
                     adminColors={adminColors}
+                    height={400}
                   />
-                </Box>
-              </Card>
-            </Grid>
-
-            {/* Text Analytics from text_analytics.py */}
-            {comparisonData?.text_analytics && (
-              <Grid item xs={12}>
-                <TextAnalyticsDisplay
-                  textAnalytics={comparisonData.text_analytics}
-                  adminColors={adminColors}
-                />
-              </Grid>
-            )}
-
-            {/* Fallback: Old Qualitative Analysis (for test mode or if text analytics not available) */}
-            {(!comparisonData?.text_analytics || isTestMode) && (
-              <>
-                <Grid item xs={12}>
-                  <Card sx={{ p: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
-                    <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
-                      Qualitative Insights
-                    </Typography>
-                    <Box sx={{ mt: 2 }}>
-                      <QualitativeAnalysis
-                        surveyType={selectedSurveyType}
-                        selectedResponseId={selectedResponseId}
-                        selectedResponseLabel={availableResponses.find(r => String(r.id) === String(selectedResponseId)) 
-                          ? getEnhancedResponseDisplayName(availableResponses.find(r => String(r.id) === String(selectedResponseId)))
-                          : 'Selected Response'}
-                        selectedMapSurveys={selectedMapSurveys}
-                        userColors={adminColors}
-                        apiUrl={process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}
-                        isTestMode={isTestMode}
-                        hideTitle={true}
-                      />
-                    </Box>
-                  </Card>
                 </Grid>
 
-                <Grid item xs={12}>
-                  <Card sx={{ p: 3, backgroundColor: adminColors.headerBg }}>
-                    <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
-                      Qualitative Insights Comparison
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" paragraph>
-                      Compare the selected response against all other responses in the dataset
-                    </Typography>
-                    
-                    <Box sx={{ mt: 2 }}>
-                      <QualitativeComparisonAnalysis
-                        surveyType={selectedSurveyType}
-                        selectedResponseId={selectedResponseId}
-                        selectedResponseLabel={availableResponses.find(r => String(r.id) === String(selectedResponseId)) 
-                          ? getEnhancedResponseDisplayName(availableResponses.find(r => String(r.id) === String(selectedResponseId)))
-                          : 'Selected Response'}
-                        surveyData={surveyData}
-                        adminColors={adminColors}
-                        apiUrl={process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}
-                        isTestMode={isTestMode}
-                      />
-                    </Box>
-                  </Card>
-                </Grid>
-              </>
-            )}
-          </Grid>
-        )}
-
-        {/* Custom Charts Section */}
-        {customCharts.length > 0 && (
-          <Card sx={{ mt: 4, p: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
-            <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
-              Custom Charts
-            </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph>
-              Your custom visualizations created from survey data.
-            </Typography>
-            <Box sx={{ mt: 2 }}>
-              <Grid container spacing={3}>
-                {customCharts.map((chart) => (
-                  <Grid item xs={12} md={6} lg={4} key={chart.id}>
-                    <CustomChart
-                      chartConfig={chart}
-                      data={surveyData[chart.surveyType] || []}
-                      onRemove={() => handleRemoveCustomChart(chart.id)}
-                      onEdit={handleEditChart}
-                      onDuplicate={handleDuplicateChart}
-                      height={350}
+                {/* Text Analytics from text_analytics.py */}
+                {comparisonData?.text_analytics && (
+                  <Grid item xs={12}>
+                    <TextAnalyticsDisplay
+                      textAnalytics={comparisonData.text_analytics}
                       adminColors={adminColors}
                     />
                   </Grid>
-                ))}
+                )}
+
+                {/* Fallback: Old Qualitative Analysis (for test mode or if text analytics not available) */}
+                {(!comparisonData?.text_analytics || isTestMode) && (
+                  <>
+                    <Grid item xs={12}>
+                      <Card sx={{ p: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
+                        <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
+                          Qualitative Insights
+                        </Typography>
+                        <Box sx={{ mt: 2 }}>
+                          <QualitativeAnalysis
+                            surveyType={selectedSurveyType}
+                            selectedResponseId={selectedResponseId}
+                            selectedResponseLabel={availableResponses.find(r => String(r.id) === String(selectedResponseId))
+                              ? getEnhancedResponseDisplayName(availableResponses.find(r => String(r.id) === String(selectedResponseId)))
+                              : 'Selected Response'}
+                            selectedMapSurveys={selectedMapSurveys}
+                            userColors={adminColors}
+                            apiUrl={process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}
+                            isTestMode={isTestMode}
+                            hideTitle={true}
+                          />
+                        </Box>
+                      </Card>
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <Card sx={{ p: 3, backgroundColor: adminColors.headerBg }}>
+                        <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
+                          Qualitative Insights Comparison
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" paragraph>
+                          Compare the selected response against all other responses in the dataset
+                        </Typography>
+
+                        <Box sx={{ mt: 2 }}>
+                          <QualitativeComparisonAnalysis
+                            surveyType={selectedSurveyType}
+                            selectedResponseId={selectedResponseId}
+                            selectedResponseLabel={availableResponses.find(r => String(r.id) === String(selectedResponseId))
+                              ? getEnhancedResponseDisplayName(availableResponses.find(r => String(r.id) === String(selectedResponseId)))
+                              : 'Selected Response'}
+                            surveyData={surveyData}
+                            adminColors={adminColors}
+                            apiUrl={process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}
+                            isTestMode={isTestMode}
+                          />
+                        </Box>
+                      </Card>
+                    </Grid>
+                  </>
+                )}
               </Grid>
-            </Box>
-          </Card>
+            )}
+
+            {/* Custom Charts Section */}
+            {customCharts.length > 0 && (
+              <Card sx={{ mt: 4, p: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
+                <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
+                  Custom Charts
+                </Typography>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  Your custom visualizations created from survey data.
+                </Typography>
+                <Box sx={{ mt: 2 }}>
+                  <Grid container spacing={3}>
+                    {customCharts.map((chart) => (
+                      <Grid item xs={12} md={6} lg={4} key={chart.id}>
+                        <CustomChart
+                          chartConfig={chart}
+                          data={surveyData[chart.surveyType] || []}
+                          onRemove={() => handleRemoveCustomChart(chart.id)}
+                          onEdit={handleEditChart}
+                          onDuplicate={handleDuplicateChart}
+                          height={350}
+                          adminColors={adminColors}
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Box>
+              </Card>
+            )}
+
+            {/* Instructions */}
+            <Card sx={{ mt: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
+                  How to Use This Analytics Dashboard
+                </Typography>
+                <Typography variant="body2" paragraph>
+                  1. <strong>Choose Data Mode:</strong> Toggle between Test Mode (sample data) and Normal Mode (backend data)
+                </Typography>
+                <Typography variant="body2" paragraph>
+                  2. <strong>Select Survey Type:</strong> Choose between Church, Institution, or Non-Formal surveys
+                </Typography>
+                <Typography variant="body2" paragraph>
+                  3. <strong>Select Individual Response:</strong> Pick a specific response to analyze and compare
+                </Typography>
+                <Typography variant="body2" paragraph>
+                  4. <strong>Apply Filters:</strong> Filter the comparison group by country, education level, or other criteria
+                </Typography>
+                <Typography variant="body2" paragraph>
+                  5. <strong>Analyze Results:</strong> View how the individual performs compared to the group average across different training areas
+                </Typography>
+                <Typography variant="body2" paragraph>
+                  6. <strong>Select Surveys on Map:</strong> Click on map markers to select specific surveys. When surveys are selected, all graphs will be recomputed using only the selected data
+                </Typography>
+                <Typography variant="body2" paragraph>
+                  7. <strong>Qualitative Insights:</strong> View AI-powered analysis of open-ended responses including sentiment analysis, topic modeling, and response clustering
+                </Typography>
+                <Typography variant="body2" paragraph>
+                  8. <strong>Create Custom Charts:</strong> Use the Chart Builder to create custom visualizations
+                </Typography>
+                <Typography variant="body2">
+                  9. <strong>Edit Charts:</strong> Click the menu (⋮) on any chart to edit, duplicate, or delete it
+                </Typography>
+              </CardContent>
+            </Card>
+
+            {/* Chart Edit Dialog */}
+            <ChartEditDialog
+              open={editDialogOpen}
+              onClose={handleCloseEditDialog}
+              chartConfig={editingChart}
+              onSave={handleUpdateChart}
+              surveyType={selectedSurveyType}
+            />
+          </>
         )}
-
-        {/* Instructions */}
-        <Card sx={{ mt: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
-              How to Use This Analytics Dashboard
-            </Typography>
-            <Typography variant="body2" paragraph>
-              1. <strong>Choose Data Mode:</strong> Toggle between Test Mode (sample data) and Normal Mode (backend data)
-            </Typography>
-            <Typography variant="body2" paragraph>
-              2. <strong>Select Survey Type:</strong> Choose between Church, Institution, or Non-Formal surveys
-            </Typography>
-            <Typography variant="body2" paragraph>
-              3. <strong>Select Individual Response:</strong> Pick a specific response to analyze and compare
-            </Typography>
-            <Typography variant="body2" paragraph>
-              4. <strong>Apply Filters:</strong> Filter the comparison group by country, education level, or other criteria
-            </Typography>
-            <Typography variant="body2" paragraph>
-              5. <strong>Analyze Results:</strong> View how the individual performs compared to the group average across different training areas
-            </Typography>
-            <Typography variant="body2" paragraph>
-              6. <strong>Select Surveys on Map:</strong> Click on map markers to select specific surveys. When surveys are selected, all graphs will be recomputed using only the selected data
-            </Typography>
-            <Typography variant="body2" paragraph>
-              7. <strong>Qualitative Insights:</strong> View AI-powered analysis of open-ended responses including sentiment analysis, topic modeling, and response clustering
-            </Typography>
-            <Typography variant="body2" paragraph>
-              8. <strong>Create Custom Charts:</strong> Use the Chart Builder to create custom visualizations
-            </Typography>
-            <Typography variant="body2">
-              9. <strong>Edit Charts:</strong> Click the menu (⋮) on any chart to edit, duplicate, or delete it
-            </Typography>
-          </CardContent>
-        </Card>
-
-        {/* Chart Edit Dialog */}
-        <ChartEditDialog
-          open={editDialogOpen}
-          onClose={handleCloseEditDialog}
-          chartConfig={editingChart}
-          onSave={handleUpdateChart}
-          surveyType={selectedSurveyType}
-        />
       </Container>
-    </Box>
+    </Box >
   );
 };
 

@@ -54,9 +54,14 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import QuestionService from '../../../../services/Admin/Reports/QuestionService';
 import ChartTypeRecommender from '../../../../services/Admin/Reports/ChartTypeRecommender';
+import InteractiveBarChart from './InteractiveBarChart';
+import InteractivePieChart from './InteractivePieChart';
+import InteractiveLineChart from './InteractiveLineChart';
+import InteractiveRadarChart from './InteractiveRadarChart';
 
-const ChartSelectorCard = ({ 
-  onCreateChart, 
+
+const ChartSelectorCard = ({
+  onCreateChart,
   availableColumns = {},
   surveyType = 'church',
   isExpanded = false,
@@ -71,7 +76,7 @@ const ChartSelectorCard = ({
   console.log('🎨 ChartSelectorCard - onCreateChart type:', typeof onCreateChart);
   console.log('🎨 ChartSelectorCard - onToggleExpand type:', typeof onToggleExpand);
   console.log('🎨 ChartSelectorCard - Other props received:', Object.keys(otherProps));
-  
+
   // React Hooks must be called at the top level - no conditional calls
   const [chartConfig, setChartConfig] = useState({
     type: 'bar',
@@ -82,7 +87,7 @@ const ChartSelectorCard = ({
     aggregationType: 'average',
     showComparison: false
   });
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterByType, setFilterByType] = useState('all');
   const [showRecommendations, setShowRecommendations] = useState(true);
@@ -99,7 +104,7 @@ const ChartSelectorCard = ({
       console.log('❌ ChartSelectorCard - Component UNMOUNTED');
     };
   }, [questions.length]);
-  
+
   const chartTypes = ChartTypeRecommender.getAllChartTypes(true); // Get only implemented charts
 
   const aggregationTypes = [
@@ -111,26 +116,26 @@ const ChartSelectorCard = ({
     { value: 'median', label: 'Median' },
     { value: 'mode', label: 'Mode' }
   ];
-  
+
   // Get filtered questions based on search and type filter
   const getFilteredQuestions = () => {
     let filtered = questions;
-    
+
     // Apply search filter
     if (searchTerm) {
       filtered = QuestionService.searchQuestions(filtered, searchTerm);
     }
-    
+
     // Apply type filter
     if (filterByType === 'numeric') {
       filtered = QuestionService.getNumericQuestions(filtered);
     } else if (filterByType === 'non-numeric') {
       filtered = QuestionService.getNonNumericQuestions(filtered);
     }
-    
+
     return filtered;
   };
-  
+
   const filteredQuestions = getFilteredQuestions();
   const questionStats = QuestionService.getQuestionStatistics(questions);
   const sections = QuestionService.getUniqueSections(questions);
@@ -187,10 +192,10 @@ const ChartSelectorCard = ({
       selectedQuestion: questionId
     }));
   };
-  
+
   const handleQuestionSelect = (question) => {
     setSelectedQuestion(question);
-    
+
     // Auto-select recommended chart type if showing recommendations
     if (showRecommendations && question) {
       const recommendation = ChartTypeRecommender.getRecommendation(question);
@@ -220,7 +225,7 @@ const ChartSelectorCard = ({
     surveyResponses.forEach((response, index) => {
       // Try to find the answer for this question in the response
       let answerValue = null;
-      
+
       console.log(`\n📋 Processing response ${index + 1}:`, {
         responseId: response.id,
         userId: response.user_id,
@@ -229,10 +234,10 @@ const ChartSelectorCard = ({
         answersIsArray: Array.isArray(response.answers),
         answersKeys: response.answers ? Object.keys(response.answers) : 'null'
       });
-      
+
       // Match responses from ALL surveys (target + comparison surveys)
       // No template filtering - we want to see all responses that have this question
-      
+
       // The answers field is a JSON object where keys are numeric question IDs
       if (response.answers) {
         // Parse answers if it's a string
@@ -244,19 +249,19 @@ const ChartSelectorCard = ({
             console.error('Failed to parse answers JSON:', e);
           }
         }
-        
+
         console.log('📝 Parsed answers object keys:', Object.keys(answersObj || {}));
         console.log('📝 Looking for question:', {
           id: question.id,
           text: question.text,
           order: question.order
         });
-        
+
         // Matching priority:
         // 1. By question text (most reliable for cross-template matching)
         // 2. By question ID (for questions from Questions table)
         // 3. By order + 1 (fallback for template-generated IDs)
-        
+
         // 1. Try by question text (exact match)
         if (answersObj[question.text]) {
           answerValue = answersObj[question.text];
@@ -274,7 +279,7 @@ const ChartSelectorCard = ({
               break;
             }
           }
-          
+
           // 3. Try by question ID (as number)
           if (!foundByText && answersObj[question.id]) {
             answerValue = answersObj[question.id];
@@ -294,11 +299,11 @@ const ChartSelectorCard = ({
             }
           }
         }
-        
+
         // 6. If answers is an array of objects with question_id
         if (!answerValue && Array.isArray(answersObj)) {
-          const answer = answersObj.find(a => 
-            a.question_id === question.id || 
+          const answer = answersObj.find(a =>
+            a.question_id === question.id ||
             a.question_text === question.text ||
             (a.question && a.question.toLowerCase() === question.text.toLowerCase())
           );
@@ -307,7 +312,7 @@ const ChartSelectorCard = ({
             console.log('✅ Found in array format:', answerValue);
           }
         }
-        
+
         // Handle complex answer values (objects)
         if (answerValue && typeof answerValue === 'object') {
           // If it's an object, try to extract meaningful value
@@ -358,7 +363,7 @@ const ChartSelectorCard = ({
 
   const handleViewResponses = () => {
     if (!selectedQuestion) return;
-    
+
     const responses = extractQuestionResponses(selectedQuestion);
     setDebugResponses(responses);
     setDebugDialogOpen(true);
@@ -378,16 +383,62 @@ const ChartSelectorCard = ({
     setDebugPage(0);
   };
 
+  const getPreviewData = () => {
+    if (!selectedQuestion) return {};
+
+    const responses = extractQuestionResponses(selectedQuestion);
+    const validResponses = responses.filter(r => r.answer !== 'No answer');
+
+    if (selectedQuestion.is_numeric) {
+      // For numeric questions, we can show average or individual values
+      const sum = validResponses.reduce((acc, r) => acc + Number(r.answer), 0);
+      const avg = validResponses.length > 0 ? sum / validResponses.length : 0;
+      return { [selectedQuestion.text]: avg };
+    } else {
+      // For categorical questions, show distribution
+      const counts = {};
+      validResponses.forEach(r => {
+        counts[r.answer] = (counts[r.answer] || 0) + 1;
+      });
+      return counts;
+    }
+  };
+
+  const renderChartPreview = () => {
+    if (!selectedQuestion) return null;
+
+    const previewData = getPreviewData();
+    const commonProps = {
+      title: chartConfig.title || 'Live Preview',
+      data: previewData,
+      height: 300,
+      maxValue: selectedQuestion.is_numeric ? 5 : Math.max(...Object.values(previewData), 5)
+    };
+
+    return (
+      <Box sx={{ mt: 2, mb: 2, border: '1px dashed #ccc', borderRadius: 2, p: 1 }}>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, textAlign: 'center', fontWeight: 'bold' }}>
+          LIVE PREVIEW
+        </Typography>
+        {chartConfig.type === 'bar' && <InteractiveBarChart {...commonProps} />}
+        {chartConfig.type === 'pie' && <InteractivePieChart {...commonProps} />}
+        {chartConfig.type === 'line' && <InteractiveLineChart {...commonProps} />}
+        {chartConfig.type === 'radar' && <InteractiveRadarChart {...commonProps} />}
+      </Box>
+    );
+  };
+
   const handleCreateChart = () => {
+
     if (!chartConfig.selectedQuestion) {
       alert('Please select a question to visualize');
       return;
     }
 
-    const selectedQuestionObject = questions.find(q => 
+    const selectedQuestionObject = questions.find(q =>
       q.id === chartConfig.selectedQuestion
     );
-    
+
     const chartData = {
       ...chartConfig,
       id: Date.now() + Math.random(),
@@ -399,7 +450,7 @@ const ChartSelectorCard = ({
 
     console.log('📊 Creating chart:', chartData);
     onCreateChart(chartData);
-    
+
     // Reset form
     setChartConfig({
       type: 'bar',
@@ -417,7 +468,7 @@ const ChartSelectorCard = ({
   if (!isExpanded) {
     console.log('🎨 ChartSelectorCard - Rendering COLLAPSED state');
     return (
-      <Card sx={{ 
+      <Card sx={{
         width: '100%',
         boxShadow: 2
       }}>
@@ -444,7 +495,7 @@ const ChartSelectorCard = ({
 
   console.log('🎨 ChartSelectorCard - Rendering EXPANDED state');
   return (
-    <Card sx={{ 
+    <Card sx={{
       width: '100%',
       maxHeight: '80vh',
       overflowY: 'auto',
@@ -512,7 +563,7 @@ const ChartSelectorCard = ({
                 <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
                   <SearchIcon /> Select a Question to Visualize
                 </Typography>
-                
+
                 {/* Search and Filter */}
                 <Box sx={{ mb: 2 }}>
                   <TextField
@@ -527,19 +578,19 @@ const ChartSelectorCard = ({
                     sx={{ mb: 1 }}
                   />
                   <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    <Chip 
-                      label="All" 
+                    <Chip
+                      label="All"
                       onClick={() => setFilterByType('all')}
                       color={filterByType === 'all' ? 'primary' : 'default'}
                       size="small"
                     />
-                    <Chip 
+                    <Chip
                       label={`Numeric (${questionStats.numeric})`}
                       onClick={() => setFilterByType('numeric')}
                       color={filterByType === 'numeric' ? 'primary' : 'default'}
                       size="small"
                     />
-                    <Chip 
+                    <Chip
                       label={`Non-Numeric (${questionStats.nonNumeric})`}
                       onClick={() => setFilterByType('non-numeric')}
                       color={filterByType === 'non-numeric' ? 'primary' : 'default'}
@@ -558,13 +609,13 @@ const ChartSelectorCard = ({
                     filteredQuestions.map((question) => {
                       const recommendation = ChartTypeRecommender.getRecommendation(question);
                       const isSelected = chartConfig.selectedQuestion === question.id;
-                      
+
                       return (
-                        <Paper 
+                        <Paper
                           key={question.id}
-                          sx={{ 
-                            p: 1.5, 
-                            mb: 1, 
+                          sx={{
+                            p: 1.5,
+                            mb: 1,
                             cursor: 'pointer',
                             border: isSelected ? '2px solid #633394' : '1px solid #e0e0e0',
                             backgroundColor: isSelected ? '#f3e5f5' : 'white',
@@ -586,32 +637,32 @@ const ChartSelectorCard = ({
                                 {question.text.length > 100 ? question.text.substring(0, 100) + '...' : question.text}
                               </Typography>
                               <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5, flexWrap: 'wrap' }}>
-                                <Chip 
-                                  label={question.question_type_display} 
-                                  size="small" 
+                                <Chip
+                                  label={question.question_type_display}
+                                  size="small"
                                   sx={{ fontSize: '0.7rem', height: 20 }}
                                 />
                                 {question.is_numeric && (
-                                  <Chip 
-                                    label="Numeric" 
-                                    size="small" 
+                                  <Chip
+                                    label="Numeric"
+                                    size="small"
                                     color="primary"
                                     sx={{ fontSize: '0.7rem', height: 20 }}
                                   />
                                 )}
                                 {showRecommendations && (
-                                  <Chip 
+                                  <Chip
                                     icon={<AutoAwesomeIcon sx={{ fontSize: '0.8rem' }} />}
                                     label={ChartTypeRecommender.getChartTypeInfo(recommendation.primary)?.name || recommendation.primary}
-                                    size="small" 
+                                    size="small"
                                     color="secondary"
                                     sx={{ fontSize: '0.7rem', height: 20 }}
                                   />
                                 )}
                                 {question.section && (
-                                  <Chip 
-                                    label={question.section} 
-                                    size="small" 
+                                  <Chip
+                                    label={question.section}
+                                    size="small"
                                     variant="outlined"
                                     sx={{ fontSize: '0.7rem', height: 20 }}
                                   />
@@ -631,7 +682,7 @@ const ChartSelectorCard = ({
                 <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
                   Chart Configuration
                 </Typography>
-                
+
                 {/* Chart Title */}
                 <TextField
                   fullWidth
@@ -716,11 +767,11 @@ const ChartSelectorCard = ({
                     onClick={handleViewResponses}
                     startIcon={<BugReportIcon />}
                     size="small"
-                    sx={{ 
+                    sx={{
                       mb: 2,
                       borderColor: '#ff9800',
                       color: '#ff9800',
-                      '&:hover': { 
+                      '&:hover': {
                         borderColor: '#f57c00',
                         backgroundColor: '#fff3e0'
                       }
@@ -730,15 +781,19 @@ const ChartSelectorCard = ({
                   </Button>
                 )}
 
+                {/* Live Preview */}
+                {renderChartPreview()}
+
                 {/* Create Button */}
                 <Button
                   variant="contained"
+
                   fullWidth
                   onClick={handleCreateChart}
                   disabled={!chartConfig.selectedQuestion}
                   startIcon={<AddIcon />}
                   size="large"
-                  sx={{ 
+                  sx={{
                     backgroundColor: '#633394',
                     '&:hover': { backgroundColor: '#4a148c' }
                   }}
@@ -840,7 +895,7 @@ const ChartSelectorCard = ({
                   debugResponses
                     .slice(debugPage * debugRowsPerPage, debugPage * debugRowsPerPage + debugRowsPerPage)
                     .map((response, index) => (
-                      <TableRow 
+                      <TableRow
                         key={response.responseId || index}
                         sx={{ '&:hover': { backgroundColor: '#f5f5f5' } }}
                       >
@@ -848,17 +903,17 @@ const ChartSelectorCard = ({
                         <TableCell>{response.userId}</TableCell>
                         <TableCell>{response.userName}</TableCell>
                         <TableCell>
-                          <Chip 
-                            label={response.templateId || 'N/A'} 
-                            size="small" 
+                          <Chip
+                            label={response.templateId || 'N/A'}
+                            size="small"
                             color="primary"
                             variant="outlined"
                           />
                         </TableCell>
                         <TableCell>
-                          <Typography 
-                            variant="body2" 
-                            sx={{ 
+                          <Typography
+                            variant="body2"
+                            sx={{
                               fontWeight: response.answer === 'No answer' ? 'normal' : 'bold',
                               color: response.answer === 'No answer' ? 'text.secondary' : 'text.primary'
                             }}
@@ -869,7 +924,7 @@ const ChartSelectorCard = ({
                         <TableCell>
                           <Box sx={{ maxWidth: 300, overflow: 'auto' }}>
                             <Typography variant="caption" sx={{ fontFamily: 'monospace', fontSize: '0.7rem' }}>
-                              {response.answersKeys && response.answersKeys.length > 0 
+                              {response.answersKeys && response.answersKeys.length > 0
                                 ? response.answersKeys.slice(0, 5).join(', ') + (response.answersKeys.length > 5 ? '...' : '')
                                 : 'No keys'}
                             </Typography>

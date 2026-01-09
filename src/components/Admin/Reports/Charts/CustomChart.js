@@ -5,18 +5,17 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import SimpleBarChart from './SimpleBarChart';
-import SimplePieChart from './SimplePieChart';
-import SimpleLineChart from './SimpleLineChart';
-import SimpleRadarChart from './SimpleRadarChart';
-
-const CustomChart = ({ 
-  chartConfig, 
-  data, 
+import InteractiveBarChart from './InteractiveBarChart';
+import InteractivePieChart from './InteractivePieChart';
+import InteractiveLineChart from './InteractiveLineChart';
+import InteractiveRadarChart from './InteractiveRadarChart';
+const CustomChart = ({
+  chartConfig,
+  data,
   onRemove,
   onEdit,
   onDuplicate,
-  height = 350 
+  height = 350
 }) => {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
@@ -87,7 +86,7 @@ const CustomChart = ({
           break;
         }
       }
-      
+
       // 3. Try by question ID (as number)
       if (!answerValue && answersObj[question.id]) {
         answerValue = answersObj[question.id];
@@ -150,7 +149,7 @@ const CustomChart = ({
 
     // OLD: Handle column-based charts (backward compatibility)
     const { selectedColumns, groupBy, aggregationType } = chartConfig;
-    
+
     if (!selectedColumns || selectedColumns.length === 0) {
       return {};
     }
@@ -207,7 +206,7 @@ const CustomChart = ({
     Object.keys(grouped).forEach(groupValue => {
       const groupData = grouped[groupValue];
       result[groupValue] = {};
-      
+
       selectedColumns.forEach(columnId => {
         const values = groupData.map(item => {
           const column = chartConfig.columns.find(col => col.id === columnId);
@@ -256,15 +255,15 @@ const CustomChart = ({
 
     switch (chartConfig.type) {
       case 'bar':
-        return <SimpleBarChart {...commonProps} />;
+        return <InteractiveBarChart {...commonProps} />;
       case 'pie':
-        return <SimplePieChart {...commonProps} />;
+        return <InteractivePieChart {...commonProps} />;
       case 'line':
-        return <SimpleLineChart {...commonProps} />;
+        return <InteractiveLineChart {...commonProps} />;
       case 'radar':
-        return <SimpleRadarChart {...commonProps} />;
+        return <InteractiveRadarChart {...commonProps} />;
       default:
-        return <SimpleBarChart {...commonProps} />;
+        return <InteractiveBarChart {...commonProps} />;
     }
   };
 

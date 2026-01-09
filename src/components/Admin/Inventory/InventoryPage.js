@@ -32,18 +32,21 @@ import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ClearIcon from '@mui/icons-material/Clear';
+import NoteAddIcon from '@mui/icons-material/NoteAdd';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 import Navbar from '../../shared/Navbar/Navbar';
 import QuestionsTab from './QuestionsTab';
 import TemplatesTab from './TemplatesTab';
 import CopyTemplateVersionDialog from './CopyTemplateVersionDialog';
 import EmailTemplatesTab from './EmailTemplatesTab';
+import CreateQuestionnaireWizard from './CreateQuestionnaireWizard';
 
 const InventoryPage = () => {
   const { templateId } = useParams();
   const [activeTab, setActiveTab] = useState(0);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  
+
   // Template versions
   const [templateVersions, setTemplateVersions] = useState([]);
   const [selectedVersion, setSelectedVersion] = useState(null);
@@ -53,14 +56,14 @@ const InventoryPage = () => {
   // Removed global organization filter
   const [editingVersion, setEditingVersion] = useState(null);
   const [openVersionDialog, setOpenVersionDialog] = useState(false);
-  
+
   // Organizations
   const [organizations, setOrganizations] = useState([]);
-  
+
   // Copy template version state
   const [copyVersionDialogOpen, setCopyVersionDialogOpen] = useState(false);
   const [versionToCopy, setVersionToCopy] = useState(null);
-  
+
   // Templates
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -69,7 +72,7 @@ const InventoryPage = () => {
   //   version_id: '',
   //   questions: []
   // });
-  
+
   // Questions
   const [openQDialog, setOpenQDialog] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
@@ -80,43 +83,47 @@ const InventoryPage = () => {
     is_required: false,
     config: null
   });
-  
+
   // Responses
-    const [responses, setResponses] = useState([]);
+  const [responses, setResponses] = useState([]);
 
-    // Email Templates
-    const [emailTemplates, setEmailTemplates] = useState([]);
+  // Email Templates
+  const [emailTemplates, setEmailTemplates] = useState([]);
 
-    const fetchEmailTemplates = async (filterOrgId = null) => {
-      try {
-        console.log('[InventoryPage] Fetching email templates from email_templates table...');
-        
-        let data;
-        if (filterOrgId) {
-          // Use filtered endpoint when organization filter is applied
-          console.log(`[InventoryPage] Using filtered endpoint for organization: ${filterOrgId}`);
-          data = await InventoryService.getEmailTemplates(null, filterOrgId);
-        } else {
-          // Use dedicated endpoint for all templates
-          console.log('[InventoryPage] Using dedicated /all endpoint for all templates');
-          data = await InventoryService.getAllEmailTemplates();
-        }
-        
-        console.log('[InventoryPage] Fetched email templates:', data);
-        console.log(`[InventoryPage] Template count: ${Array.isArray(data) ? data.length : 'Not an array'}`);
-        
-        setEmailTemplates(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error('[InventoryPage] Error fetching email templates:', err.response || err);
-        console.error('[InventoryPage] Error message:', err.message);
-        setEmailTemplates([]);
-        
-        // Show user-friendly error message
-        if (err.message && err.message.includes('Failed to fetch')) {
-          console.warn('[InventoryPage] Email templates fetch failed - this might be a server connectivity issue');
-        }
+  // Questionnaire Wizard
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState(null);
+
+  const fetchEmailTemplates = async (filterOrgId = null) => {
+    try {
+      console.log('[InventoryPage] Fetching email templates from email_templates table...');
+
+      let data;
+      if (filterOrgId) {
+        // Use filtered endpoint when organization filter is applied
+        console.log(`[InventoryPage] Using filtered endpoint for organization: ${filterOrgId}`);
+        data = await InventoryService.getEmailTemplates(null, filterOrgId);
+      } else {
+        // Use dedicated endpoint for all templates
+        console.log('[InventoryPage] Using dedicated /all endpoint for all templates');
+        data = await InventoryService.getAllEmailTemplates();
       }
-    };
+
+      console.log('[InventoryPage] Fetched email templates:', data);
+      console.log(`[InventoryPage] Template count: ${Array.isArray(data) ? data.length : 'Not an array'}`);
+
+      setEmailTemplates(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('[InventoryPage] Error fetching email templates:', err.response || err);
+      console.error('[InventoryPage] Error message:', err.message);
+      setEmailTemplates([]);
+
+      // Show user-friendly error message
+      if (err.message && err.message.includes('Failed to fetch')) {
+        console.warn('[InventoryPage] Email templates fetch failed - this might be a server connectivity issue');
+      }
+    }
+  };
 
   // Fetch organizations
   const fetchOrganizations = async () => {
@@ -240,13 +247,13 @@ const InventoryPage = () => {
       await InventoryService.deleteTemplateVersion(versionId);
       setSelectedVersion(null);
       setSelectedTemplate(null);
-      
+
       // Refresh all data to ensure consistency across tabs
       await Promise.all([
         fetchTemplateVersions(),
         fetchTemplates()
       ]);
-      
+
       console.log('Template version deleted and all data refreshed');
     } catch (err) {
       console.error('Error deleting template version:', err.response || err);
@@ -279,7 +286,7 @@ const InventoryPage = () => {
     fetchTemplateVersions();
     fetchTemplates();
   };
-  
+
   // Template handlers - commented out unused functions
   // const handleAddTemplate = async () => {
   //   if (!newTemplateData.survey_code || !newTemplateData.version_id) return;
@@ -300,7 +307,7 @@ const InventoryPage = () => {
   //     console.error('Error adding template:', err.response || err);
   //   }
   // };
-  
+
   // const handleDeleteTemplate = async (templateId) => {
   //   try {
   //     await InventoryService.deleteTemplate(templateId);
@@ -310,7 +317,7 @@ const InventoryPage = () => {
   //     console.error('Error deleting template:', err.response || err);
   //   }
   // };
-  
+
   // const handleSelectTemplate = (templateId) => {
   //   fetchTemplate(templateId);
   // };
@@ -327,7 +334,7 @@ const InventoryPage = () => {
   //   });
   //   setOpenQDialog(true);
   // };
-  
+
   // const handleOpenEdit = (q) => {
   //   setEditingQuestion(q);
   //   setQuestionData({
@@ -339,14 +346,14 @@ const InventoryPage = () => {
   //   });
   //   setOpenQDialog(true);
   // };
-  
+
   const handleCloseDialog = () => {
     setOpenQDialog(false);
   };
 
   const handleSaveQuestion = async () => {
     if (!selectedTemplate) return;
-    
+
     const payload = {
       question_text: questionData.question_text,
       question_type_id: questionData.question_type_id,
@@ -354,10 +361,10 @@ const InventoryPage = () => {
       is_required: questionData.is_required,
       config: questionData.config
     };
-    
+
     // Update the questions array in the template
     let updatedQuestions = [...(selectedTemplate.questions || [])];
-    
+
     if (editingQuestion) {
       // Edit existing question
       const index = updatedQuestions.findIndex(q => q.id === editingQuestion.id);
@@ -369,10 +376,10 @@ const InventoryPage = () => {
       const newId = Math.max(0, ...updatedQuestions.map(q => q.id || 0)) + 1;
       updatedQuestions.push({ id: newId, ...payload });
     }
-    
+
     // Sort by order
     updatedQuestions.sort((a, b) => a.order - b.order);
-    
+
     // Update the template
     try {
       await InventoryService.updateTemplate(selectedTemplate.id, { questions: updatedQuestions });
@@ -397,7 +404,7 @@ const InventoryPage = () => {
   //     console.error('Error deleting question:', err.response || err);
   //   }
   // };
-  
+
   // Tab handling
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
@@ -407,28 +414,64 @@ const InventoryPage = () => {
     <>
       <Navbar />
       <Box p={isMobile ? 2 : 3}>
-        <Typography 
-          variant={isMobile ? "h5" : "h4"} 
-          gutterBottom 
-          sx={{ 
-            color: '#633394', 
+        <Typography
+          variant={isMobile ? "h5" : "h4"}
+          gutterBottom
+          sx={{
+            color: '#633394',
             fontWeight: 'bold',
             fontSize: isMobile ? '1.5rem' : '2.125rem'
           }}
         >
           Survey Management
         </Typography>
-        
+
         {/* Global Organization Filter removed */}
-        
+
+        <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          <Button
+            variant="contained"
+            startIcon={<NoteAddIcon />}
+            onClick={() => setWizardOpen(true)}
+            sx={{
+              bgcolor: '#633394',
+              '&:hover': { bgcolor: '#7c52a5' },
+              textTransform: 'none',
+              fontWeight: 'bold'
+            }}
+          >
+            Create Questionnaire
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<UploadFileIcon />}
+            component="label"
+            sx={{
+              color: '#633394',
+              borderColor: '#633394',
+              '&:hover': { borderColor: '#7c52a5', bgcolor: 'rgba(99, 51, 148, 0.04)' },
+              textTransform: 'none',
+              fontWeight: 'bold'
+            }}
+          >
+            Upload Document
+            <input type="file" hidden onChange={(e) => {
+              if (e.target.files[0]) {
+                setUploadedFile(e.target.files[0]);
+                setWizardOpen(true);
+              }
+            }} accept=".doc,.docx,.txt,.pdf" />
+          </Button>
+        </Box>
+
         <Paper sx={{ mb: 3 }}>
-          <Tabs 
-            value={activeTab} 
+          <Tabs
+            value={activeTab}
             onChange={handleTabChange}
             variant={isMobile ? "scrollable" : "standard"}
             scrollButtons={isMobile ? "auto" : false}
             allowScrollButtonsMobile={isMobile}
-            sx={{ 
+            sx={{
               mb: 3,
               '& .MuiTab-root': {
                 color: '#633394',
@@ -452,22 +495,22 @@ const InventoryPage = () => {
             <Tab label={isMobile ? "Emails" : "Email Templates"} />
           </Tabs>
         </Paper>
-      
+
         {/* Template Versions Tab */}
         {activeTab === 0 && (
           <Box>
-            <Typography 
-              variant={isMobile ? "subtitle1" : "h6"} 
-              gutterBottom 
-              sx={{ 
-                color: '#633394', 
+            <Typography
+              variant={isMobile ? "subtitle1" : "h6"}
+              gutterBottom
+              sx={{
+                color: '#633394',
                 fontWeight: 'bold',
                 fontSize: isMobile ? '1.1rem' : '1.25rem'
               }}
             >
               Organization Templates
             </Typography>
-            
+
             <Paper sx={{ p: isMobile ? 1.5 : 2, mb: 3, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
               <Button
                 variant="contained"
@@ -480,11 +523,11 @@ const InventoryPage = () => {
                   setOpenVersionDialog(true);
                 }}
                 size={isMobile ? "small" : "medium"}
-                sx={{ 
-                  backgroundColor: '#633394', 
+                sx={{
+                  backgroundColor: '#633394',
                   transition: 'all 0.2s ease-in-out',
                   fontSize: isMobile ? '0.75rem' : '0.875rem',
-                  '&:hover': { 
+                  '&:hover': {
                     backgroundColor: '#7c52a5',
                     transform: 'translateY(-1px)',
                     boxShadow: '0 4px 8px rgba(99, 51, 148, 0.3)',
@@ -498,10 +541,10 @@ const InventoryPage = () => {
                 Add New Template
               </Button>
             </Paper>
-            
+
             <Paper sx={{ p: isMobile ? 1.5 : 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
-              <Box 
-                sx={{ 
+              <Box
+                sx={{
                   bgcolor: 'white',
                   borderRadius: 1,
                   p: isMobile ? 0.5 : 1,
@@ -511,119 +554,119 @@ const InventoryPage = () => {
                 <List dense={isMobile}>
                   {templateVersions
                     .map(v => (
-                    <ListItem 
-                      key={v.id} 
-                      button 
-                      selected={selectedVersion?.id === v.id}
-                      onClick={() => setSelectedVersion(v)}
-                      sx={{ 
-                        borderRadius: 1,
-                        mb: 0.5,
-                        py: isMobile ? 1 : 1.5,
-                        transition: 'all 0.2s ease-in-out',
-                        '&.Mui-selected': { 
-                          backgroundColor: 'rgba(99, 51, 148, 0.15)',
-                          borderColor: '#633394',
+                      <ListItem
+                        key={v.id}
+                        button
+                        selected={selectedVersion?.id === v.id}
+                        onClick={() => setSelectedVersion(v)}
+                        sx={{
+                          borderRadius: 1,
+                          mb: 0.5,
+                          py: isMobile ? 1 : 1.5,
+                          transition: 'all 0.2s ease-in-out',
+                          '&.Mui-selected': {
+                            backgroundColor: 'rgba(99, 51, 148, 0.15)',
+                            borderColor: '#633394',
+                            '&:hover': {
+                              backgroundColor: 'rgba(99, 51, 148, 0.2)',
+                            }
+                          },
                           '&:hover': {
-                            backgroundColor: 'rgba(99, 51, 148, 0.2)',
+                            backgroundColor: selectedVersion?.id === v.id ? 'rgba(99, 51, 148, 0.2)' : 'rgba(99, 51, 148, 0.05)',
+                            boxShadow: '0 2px 8px rgba(99, 51, 148, 0.15)',
+                            transform: 'translateX(2px)',
                           }
-                        },
-                        '&:hover': {
-                          backgroundColor: selectedVersion?.id === v.id ? 'rgba(99, 51, 148, 0.2)' : 'rgba(99, 51, 148, 0.05)',
-                          boxShadow: '0 2px 8px rgba(99, 51, 148, 0.15)',
-                          transform: 'translateX(2px)',
-                        }
-                      }}
-                    >
-                      <ListItemText
-                        primary={v.name}
-                        secondary={
-                          <Box>
-                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}>
-                              {v.description || 'No description'}
-                            </Typography>
-                            <Typography variant="caption" color="primary" sx={{ fontWeight: 500, fontSize: isMobile ? '0.7rem' : '0.75rem' }}>
-                              Organization: {v.organization_name || 'N/A'}
-                            </Typography>
-                          </Box>
-                        }
-                        primaryTypographyProps={{
-                          fontWeight: selectedVersion?.id === v.id ? 600 : 400,
-                          color: selectedVersion?.id === v.id ? '#633394' : '#333',
-                          transition: 'color 0.2s ease-in-out',
-                          fontSize: isMobile ? '0.9rem' : '1rem',
                         }}
-                      />
-                      <ListItemSecondaryAction>
-                        <IconButton 
-                          edge="end" 
-                          color="primary"
-                          size={isMobile ? "small" : "medium"}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCopyTemplateVersion(v);
+                      >
+                        <ListItemText
+                          primary={v.name}
+                          secondary={
+                            <Box>
+                              <Typography variant="body2" color="text.secondary" sx={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}>
+                                {v.description || 'No description'}
+                              </Typography>
+                              <Typography variant="caption" color="primary" sx={{ fontWeight: 500, fontSize: isMobile ? '0.7rem' : '0.75rem' }}>
+                                Organization: {v.organization_name || 'N/A'}
+                              </Typography>
+                            </Box>
+                          }
+                          primaryTypographyProps={{
+                            fontWeight: selectedVersion?.id === v.id ? 600 : 400,
+                            color: selectedVersion?.id === v.id ? '#633394' : '#333',
+                            transition: 'color 0.2s ease-in-out',
+                            fontSize: isMobile ? '0.9rem' : '1rem',
                           }}
-                          sx={{
-                            mr: 1,
-                            transition: 'all 0.2s ease-in-out',
-                            color: '#633394',
-                            '&:hover': {
-                              backgroundColor: 'rgba(99, 51, 148, 0.08)',
-                              transform: 'scale(1.1)',
-                            }
-                          }}
-                          title="Copy to another organization"
-                        >
-                          <ContentCopyIcon fontSize={isMobile ? "small" : "medium"} />
-                        </IconButton>
-                        <IconButton 
-                          edge="end" 
-                          color="primary"
-                          size={isMobile ? "small" : "medium"}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditTemplateVersion(v);
-                          }}
-                          sx={{
-                            mr: 1,
-                            transition: 'all 0.2s ease-in-out',
-                            color: '#633394',
-                            '&:hover': {
-                              backgroundColor: 'rgba(99, 51, 148, 0.08)',
-                              transform: 'scale(1.1)',
-                            }
-                          }}
-                        >
-                          <EditIcon fontSize={isMobile ? "small" : "medium"} />
-                        </IconButton>
-                        <IconButton 
-                          edge="end" 
-                          color="error"
-                          size={isMobile ? "small" : "medium"}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (window.confirm(`Delete version "${v.name}"?`)) {
-                              handleDeleteTemplateVersion(v.id);
-                            }
-                          }}
-                          sx={{
-                            transition: 'all 0.2s ease-in-out',
-                            '&:hover': {
-                              backgroundColor: 'rgba(211, 47, 47, 0.08)',
-                              transform: 'scale(1.1)',
-                            }
-                          }}
-                        >
-                          <DeleteIcon fontSize={isMobile ? "small" : "medium"} />
-                        </IconButton>
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                  ))}
+                        />
+                        <ListItemSecondaryAction>
+                          <IconButton
+                            edge="end"
+                            color="primary"
+                            size={isMobile ? "small" : "medium"}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCopyTemplateVersion(v);
+                            }}
+                            sx={{
+                              mr: 1,
+                              transition: 'all 0.2s ease-in-out',
+                              color: '#633394',
+                              '&:hover': {
+                                backgroundColor: 'rgba(99, 51, 148, 0.08)',
+                                transform: 'scale(1.1)',
+                              }
+                            }}
+                            title="Copy to another organization"
+                          >
+                            <ContentCopyIcon fontSize={isMobile ? "small" : "medium"} />
+                          </IconButton>
+                          <IconButton
+                            edge="end"
+                            color="primary"
+                            size={isMobile ? "small" : "medium"}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditTemplateVersion(v);
+                            }}
+                            sx={{
+                              mr: 1,
+                              transition: 'all 0.2s ease-in-out',
+                              color: '#633394',
+                              '&:hover': {
+                                backgroundColor: 'rgba(99, 51, 148, 0.08)',
+                                transform: 'scale(1.1)',
+                              }
+                            }}
+                          >
+                            <EditIcon fontSize={isMobile ? "small" : "medium"} />
+                          </IconButton>
+                          <IconButton
+                            edge="end"
+                            color="error"
+                            size={isMobile ? "small" : "medium"}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (window.confirm(`Delete version "${v.name}"?`)) {
+                                handleDeleteTemplateVersion(v.id);
+                              }
+                            }}
+                            sx={{
+                              transition: 'all 0.2s ease-in-out',
+                              '&:hover': {
+                                backgroundColor: 'rgba(211, 47, 47, 0.08)',
+                                transform: 'scale(1.1)',
+                              }
+                            }}
+                          >
+                            <DeleteIcon fontSize={isMobile ? "small" : "medium"} />
+                          </IconButton>
+                        </ListItemSecondaryAction>
+                      </ListItem>
+                    ))}
                   {templateVersions.length === 0 && (
                     <Box sx={{ p: 2, textAlign: 'center' }}>
-                      <Typography 
-                        color="text.secondary" 
-                        sx={{ 
+                      <Typography
+                        color="text.secondary"
+                        sx={{
                           py: 2,
                           fontSize: isMobile ? '0.875rem' : '1rem'
                         }}
@@ -637,10 +680,10 @@ const InventoryPage = () => {
             </Paper>
           </Box>
         )}
-      
+
         {/* Questions Tab */}
         {activeTab === 1 && (
-          <QuestionsTab 
+          <QuestionsTab
             templateVersions={templateVersions}
             templates={templates}
             onRefreshData={() => {
@@ -650,10 +693,10 @@ const InventoryPage = () => {
             organizationFilter={''}
           />
         )}
-      
+
         {/* Templates Tab */}
         {activeTab === 2 && (
-          <TemplatesTab 
+          <TemplatesTab
             templateVersions={templateVersions}
             templates={templates}
             onRefreshData={() => {
@@ -663,10 +706,10 @@ const InventoryPage = () => {
             organizationFilter={''}
           />
         )}
-      
+
         {/* Email Templates Tab */}
         {activeTab === 3 && (
-          <EmailTemplatesTab 
+          <EmailTemplatesTab
             emailTemplates={emailTemplates}
             onRefreshData={(filterOrgId = null) => {
               fetchEmailTemplates(filterOrgId);
@@ -678,13 +721,13 @@ const InventoryPage = () => {
             organizations={organizations}
           />
         )}
-        
+
         {/* Legacy Question Dialog - This should be removed and replaced with QuestionDialog component */}
 
         {/* Template Version Edit Dialog */}
-        <Dialog 
-          open={openVersionDialog} 
-          onClose={handleCloseVersionDialog} 
+        <Dialog
+          open={openVersionDialog}
+          onClose={handleCloseVersionDialog}
           fullWidth
           fullScreen={isMobile}
           maxWidth={isMobile ? false : "sm"}
@@ -700,7 +743,7 @@ const InventoryPage = () => {
               size={isMobile ? "small" : "medium"}
               value={newVersionName}
               onChange={e => setNewVersionName(e.target.value)}
-              sx={{ 
+              sx={{
                 '& .MuiOutlinedInput-root': {
                   '&.Mui-focused fieldset': {
                     borderColor: '#633394',
@@ -720,7 +763,7 @@ const InventoryPage = () => {
                 value={selectedOrganizationId}
                 label="Organization *"
                 onChange={e => setSelectedOrganizationId(e.target.value)}
-                sx={{ 
+                sx={{
                   '& .MuiOutlinedInput-notchedOutline': {
                     '&.Mui-focused': {
                       borderColor: '#633394',
@@ -744,7 +787,7 @@ const InventoryPage = () => {
               size={isMobile ? "small" : "medium"}
               value={newVersionDesc}
               onChange={e => setNewVersionDesc(e.target.value)}
-              sx={{ 
+              sx={{
                 '& .MuiOutlinedInput-root': {
                   '&.Mui-focused fieldset': {
                     borderColor: '#633394',
@@ -757,23 +800,23 @@ const InventoryPage = () => {
             />
           </DialogContent>
           <DialogActions sx={{ p: isMobile ? 2 : 1 }}>
-            <Button 
-              onClick={handleCloseVersionDialog} 
+            <Button
+              onClick={handleCloseVersionDialog}
               size={isMobile ? "small" : "medium"}
-              sx={{ 
+              sx={{
                 color: '#633394',
                 fontSize: isMobile ? '0.75rem' : '0.875rem'
               }}
             >
               Cancel
             </Button>
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               onClick={editingVersion ? handleUpdateTemplateVersion : handleAddTemplateVersion}
               disabled={!newVersionName || !selectedOrganizationId}
               size={isMobile ? "small" : "medium"}
-              sx={{ 
-                backgroundColor: '#633394', 
+              sx={{
+                backgroundColor: '#633394',
                 '&:hover': { backgroundColor: '#7c52a5' },
                 fontSize: isMobile ? '0.75rem' : '0.875rem'
               }}
@@ -792,8 +835,22 @@ const InventoryPage = () => {
           templates={templates}
           onCopySuccess={handleCopyVersionSuccess}
         />
+
+        <CreateQuestionnaireWizard
+          open={wizardOpen}
+          onClose={() => {
+            setWizardOpen(false);
+            setUploadedFile(null);
+          }}
+          initialFile={uploadedFile}
+          onComplete={() => {
+            fetchTemplateVersions();
+            fetchTemplates();
+            setUploadedFile(null);
+          }}
+        />
       </Box>
-      </>
+    </>
   );
 };
 

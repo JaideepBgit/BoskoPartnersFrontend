@@ -112,6 +112,38 @@ export const updateContactReferral = async (referralId, updateData) => {
 };
 
 /**
+ * Search organizations with fuzzy matching
+ * @param {string} query - The search query
+ * @param {number} limit - Maximum number of results (default 10)
+ * @returns {object} Object containing matched organizations with scores
+ */
+export const searchOrganizations = async (query, limit = 10) => {
+    try {
+        const params = new URLSearchParams({
+            q: query || '',
+            limit: limit.toString()
+        });
+
+        const response = await fetch(`${API_BASE_URL}/organizations/search?${params}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error searching organizations:', error);
+        throw error;
+    }
+};
+
+/**
  * Check if an organization exists by name
  * @param {string} organizationName - The name of the organization to check
  */
@@ -171,21 +203,21 @@ export const checkEmailExists = async (email) => {
  */
 export const formatPhoneNumber = (phone, countryCode = '') => {
     if (!phone) return '';
-    
+
     // Remove all non-digit characters except +
     let cleaned = phone.replace(/[^\d+]/g, '');
-    
+
     // If phone already starts with +, return as is
     if (cleaned.startsWith('+')) {
         return cleaned;
     }
-    
+
     // If country code provided and phone doesn't have it, add it
     if (countryCode && !cleaned.startsWith(countryCode.replace('+', ''))) {
         // Remove leading zeros from phone number
         cleaned = cleaned.replace(/^0+/, '');
         return `${countryCode}${cleaned}`;
     }
-    
+
     return cleaned;
 };
