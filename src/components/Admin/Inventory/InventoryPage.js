@@ -7,6 +7,7 @@ import {
   TextField,
   Select,
   MenuItem,
+  Menu,
   Typography,
   IconButton,
   List,
@@ -20,12 +21,11 @@ import {
   FormControl,
   InputLabel,
   Checkbox,
-  FormControlLabel,
-  Tabs,
-  Tab,
   Paper,
   useMediaQuery,
-  useTheme
+  useTheme,
+  ListItemIcon,
+  Slide
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -34,16 +34,17 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ClearIcon from '@mui/icons-material/Clear';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import Navbar from '../../shared/Navbar/Navbar';
 import QuestionsTab from './QuestionsTab';
 import TemplatesTab from './TemplatesTab';
 import CopyTemplateVersionDialog from './CopyTemplateVersionDialog';
-import EmailTemplatesTab from './EmailTemplatesTab';
 import CreateQuestionnaireWizard from './CreateQuestionnaireWizard';
 
 const InventoryPage = () => {
   const { templateId } = useParams();
-  const [activeTab, setActiveTab] = useState(0);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -57,16 +58,81 @@ const InventoryPage = () => {
   const [editingVersion, setEditingVersion] = useState(null);
   const [openVersionDialog, setOpenVersionDialog] = useState(false);
 
+  // Add Survey Menu State
+  const [addSurveyAnchorEl, setAddSurveyAnchorEl] = useState(null);
+  const openAddSurveyMenu = Boolean(addSurveyAnchorEl);
+
+  const handleAddSurveyClick = (event) => {
+    setAddSurveyAnchorEl(event.currentTarget);
+  };
+
+  const handleAddSurveyClose = () => {
+    setAddSurveyAnchorEl(null);
+  };
+
+  // Actions Menu State
+  const [actionMenuAnchorEl, setActionMenuAnchorEl] = useState(null);
+  const [actionMenuVersion, setActionMenuVersion] = useState(null);
+
+  const handleOpenActionMenu = (event, version) => {
+    event.stopPropagation();
+    setActionMenuAnchorEl(event.currentTarget);
+    setActionMenuVersion(version);
+  };
+
+  const handleCloseActionMenu = () => {
+    setActionMenuAnchorEl(null);
+    setActionMenuVersion(null);
+  };
+
+  const handleMenuCopy = () => {
+    if (actionMenuVersion) {
+      handleCopyTemplateVersion(actionMenuVersion);
+    }
+    handleCloseActionMenu();
+  };
+
+  const handleMenuPreview = () => {
+    if (actionMenuVersion) {
+      handlePreviewVersion(actionMenuVersion);
+    }
+    handleCloseActionMenu();
+  };
+
+  const handleMenuEdit = () => {
+    if (actionMenuVersion) {
+      handleEditTemplateVersion(actionMenuVersion);
+    }
+    handleCloseActionMenu();
+  };
+
+  const handleMenuDelete = () => {
+    if (actionMenuVersion) {
+      if (window.confirm(`Delete version "${actionMenuVersion.name}"?`)) {
+        handleDeleteTemplateVersion(actionMenuVersion.id);
+      }
+    }
+    handleCloseActionMenu();
+  };
+
   // Organizations
   const [organizations, setOrganizations] = useState([]);
 
   // Copy template version state
   const [copyVersionDialogOpen, setCopyVersionDialogOpen] = useState(false);
   const [versionToCopy, setVersionToCopy] = useState(null);
+  const [previewInfo, setPreviewInfo] = useState(null); // { type: 'version' | 'template', data: any }
 
   // Templates
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+
+  const handlePreviewVersion = (version) => {
+    setPreviewInfo({ type: 'version', data: version });
+  };
+
+  // Update handleAddSurveyClose and other handlers if they reset previewTemplate
+
   // const [newTemplateData, setNewTemplateData] = useState({
   //   survey_code: '',
   //   version_id: '',
@@ -87,43 +153,10 @@ const InventoryPage = () => {
   // Responses
   const [responses, setResponses] = useState([]);
 
-  // Email Templates
-  const [emailTemplates, setEmailTemplates] = useState([]);
-
-  // Questionnaire Wizard
   const [wizardOpen, setWizardOpen] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
 
-  const fetchEmailTemplates = async (filterOrgId = null) => {
-    try {
-      console.log('[InventoryPage] Fetching email templates from email_templates table...');
-
-      let data;
-      if (filterOrgId) {
-        // Use filtered endpoint when organization filter is applied
-        console.log(`[InventoryPage] Using filtered endpoint for organization: ${filterOrgId}`);
-        data = await InventoryService.getEmailTemplates(null, filterOrgId);
-      } else {
-        // Use dedicated endpoint for all templates
-        console.log('[InventoryPage] Using dedicated /all endpoint for all templates');
-        data = await InventoryService.getAllEmailTemplates();
-      }
-
-      console.log('[InventoryPage] Fetched email templates:', data);
-      console.log(`[InventoryPage] Template count: ${Array.isArray(data) ? data.length : 'Not an array'}`);
-
-      setEmailTemplates(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('[InventoryPage] Error fetching email templates:', err.response || err);
-      console.error('[InventoryPage] Error message:', err.message);
-      setEmailTemplates([]);
-
-      // Show user-friendly error message
-      if (err.message && err.message.includes('Failed to fetch')) {
-        console.warn('[InventoryPage] Email templates fetch failed - this might be a server connectivity issue');
-      }
-    }
-  };
+  const [previewTemplate, setPreviewTemplate] = useState(null);
 
   // Fetch organizations
   const fetchOrganizations = async () => {
@@ -151,7 +184,7 @@ const InventoryPage = () => {
       const data = await InventoryService.getTemplates();
       setTemplates(data);
     } catch (err) {
-      console.error('Error fetching templates:', err.response || err);
+      console.error('Error fetching templates:', err);
     }
   };
 
@@ -181,7 +214,6 @@ const InventoryPage = () => {
     fetchTemplateVersions();
     fetchTemplates();
     fetchResponses();
-    fetchEmailTemplates();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load specific template if ID is provided
@@ -190,11 +222,6 @@ const InventoryPage = () => {
       fetchTemplate(templateId);
     }
   }, [templateId]);
-
-  // Refresh email templates periodically or on demand (filter removed)
-  useEffect(() => {
-    fetchEmailTemplates();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Template version handlers
   const handleAddTemplateVersion = async () => {
@@ -405,142 +432,143 @@ const InventoryPage = () => {
   //   }
   // };
 
-  // Tab handling
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-  };
+
+
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Filter template versions based on search term
+  const filteredVersions = templateVersions.filter(v =>
+    v.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (v.description && v.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (v.organization_name && v.organization_name.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   return (
     <>
       <Navbar />
       <Box p={isMobile ? 2 : 3}>
-        <Typography
-          variant={isMobile ? "h5" : "h4"}
-          gutterBottom
-          sx={{
-            color: '#633394',
-            fontWeight: 'bold',
-            fontSize: isMobile ? '1.5rem' : '2.125rem'
-          }}
-        >
-          Survey Management
-        </Typography>
-
-        {/* Global Organization Filter removed */}
-
-        <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-          <Button
-            variant="contained"
-            startIcon={<NoteAddIcon />}
-            onClick={() => setWizardOpen(true)}
-            sx={{
-              bgcolor: '#633394',
-              '&:hover': { bgcolor: '#7c52a5' },
-              textTransform: 'none',
-              fontWeight: 'bold'
-            }}
-          >
-            Create Questionnaire
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<UploadFileIcon />}
-            component="label"
+        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+          <Typography
+            variant={isMobile ? "h5" : "h4"}
             sx={{
               color: '#633394',
-              borderColor: '#633394',
-              '&:hover': { borderColor: '#7c52a5', bgcolor: 'rgba(99, 51, 148, 0.04)' },
-              textTransform: 'none',
-              fontWeight: 'bold'
+              fontWeight: 'bold',
+              fontSize: isMobile ? '1.5rem' : '2.125rem'
             }}
           >
-            Upload Document
-            <input type="file" hidden onChange={(e) => {
-              if (e.target.files[0]) {
-                setUploadedFile(e.target.files[0]);
+            Survey Manager
+          </Typography>
+
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <TextField
+              size="small"
+              placeholder="Search Survey Name"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              sx={{
+                width: 250,
+                backgroundColor: 'white',
+                borderRadius: 1,
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': { borderColor: '#e0e0e0' },
+                  '&:hover fieldset': { borderColor: '#633394' },
+                  '&.Mui-focused fieldset': { borderColor: '#633394' },
+                }
+              }}
+            />
+            <Button
+              variant="contained"
+              onClick={handleAddSurveyClick}
+              endIcon={<KeyboardArrowDownIcon />}
+              sx={{
+                bgcolor: '#633394',
+                '&:hover': { bgcolor: '#7c52a5' },
+                textTransform: 'none',
+                fontWeight: 'bold',
+                minWidth: 150
+              }}
+            >
+              + Add Survey
+            </Button>
+            <Menu
+              anchorEl={addSurveyAnchorEl}
+              open={openAddSurveyMenu}
+              onClose={handleAddSurveyClose}
+              MenuListProps={{
+                'aria-labelledby': 'basic-button',
+              }}
+              PaperProps={{
+                elevation: 3,
+                sx: {
+                  mt: 1,
+                  minWidth: 200,
+                  borderRadius: 2
+                }
+              }}
+            >
+              <MenuItem onClick={() => {
+                handleAddSurveyClose();
+                setEditingVersion(null);
+                setNewVersionName('');
+                setNewVersionDesc('');
+                setSelectedOrganizationId('');
+                setOpenVersionDialog(true);
+              }} sx={{ py: 1.5 }}>
+                <ListItemIcon>
+                  <AddIcon fontSize="small" sx={{ color: '#633394' }} />
+                </ListItemIcon>
+                <ListItemText>+ Add New Survey Group</ListItemText>
+              </MenuItem>
+
+              <MenuItem onClick={() => {
+                handleAddSurveyClose();
                 setWizardOpen(true);
-              }
-            }} accept=".doc,.docx,.txt,.pdf" />
-          </Button>
+              }} sx={{ py: 1.5 }}>
+                <ListItemIcon>
+                  <NoteAddIcon fontSize="small" sx={{ color: '#633394' }} />
+                </ListItemIcon>
+                <ListItemText>+ Create Surveys</ListItemText>
+              </MenuItem>
+
+              <MenuItem component="label" sx={{ py: 1.5 }}>
+                <ListItemIcon>
+                  <UploadFileIcon fontSize="small" sx={{ color: '#633394' }} />
+                </ListItemIcon>
+                <ListItemText>+ Upload Document</ListItemText>
+                <input type="file" hidden onChange={(e) => {
+                  handleAddSurveyClose();
+                  if (e.target.files[0]) {
+                    setUploadedFile(e.target.files[0]);
+                    setWizardOpen(true);
+                  }
+                }} accept=".doc,.docx,.txt,.pdf" />
+              </MenuItem>
+            </Menu>
+          </Box>
         </Box>
 
-        <Paper sx={{ mb: 3 }}>
-          <Tabs
-            value={activeTab}
-            onChange={handleTabChange}
-            variant={isMobile ? "scrollable" : "standard"}
-            scrollButtons={isMobile ? "auto" : false}
-            allowScrollButtonsMobile={isMobile}
+        {/* Organization Survey Groups (Master-Detail View) */}
+        <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 2 }}>
+          {/* Left Panel: Version List */}
+          <Box
             sx={{
-              mb: 3,
-              '& .MuiTab-root': {
-                color: '#633394',
-                fontWeight: 500,
-                fontSize: isMobile ? '0.75rem' : '0.875rem',
-                minWidth: isMobile ? 'auto' : '160px',
-                padding: isMobile ? '6px 8px' : '12px 16px',
-                '&.Mui-selected': { fontWeight: 700 },
-              },
-              '& .MuiTabs-indicator': {
-                backgroundColor: '#633394',
-              },
-              '& .MuiTabs-scrollButtons': {
-                color: '#633394',
-              }
+              width: (selectedVersion || previewInfo) && !isMobile ? '300px' : '100%',
+              transition: 'width 0.3s ease-in-out',
+              flexShrink: 0
             }}
           >
-            <Tab label={isMobile ? "Versions" : "Organization Templates"} />
-            <Tab label={isMobile ? "Questions" : "Template Questions"} />
-            <Tab label={isMobile ? "Preview" : "Preview Templates"} />
-            <Tab label={isMobile ? "Emails" : "Email Templates"} />
-          </Tabs>
-        </Paper>
-
-        {/* Template Versions Tab */}
-        {activeTab === 0 && (
-          <Box>
             <Typography
               variant={isMobile ? "subtitle1" : "h6"}
               gutterBottom
               sx={{
                 color: '#633394',
                 fontWeight: 'bold',
-                fontSize: isMobile ? '1.1rem' : '1.25rem'
+                fontSize: isMobile ? '1.1rem' : '1.25rem',
+                display: (selectedVersion || previewInfo) && !isMobile ? 'none' : 'block'
               }}
             >
-              Organization Templates
+              Organization Survey Groups
             </Typography>
-
-            <Paper sx={{ p: isMobile ? 1.5 : 2, mb: 3, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => {
-                  setEditingVersion(null);
-                  setNewVersionName('');
-                  setNewVersionDesc('');
-                  setSelectedOrganizationId('');
-                  setOpenVersionDialog(true);
-                }}
-                size={isMobile ? "small" : "medium"}
-                sx={{
-                  backgroundColor: '#633394',
-                  transition: 'all 0.2s ease-in-out',
-                  fontSize: isMobile ? '0.75rem' : '0.875rem',
-                  '&:hover': {
-                    backgroundColor: '#7c52a5',
-                    transform: 'translateY(-1px)',
-                    boxShadow: '0 4px 8px rgba(99, 51, 148, 0.3)',
-                  },
-                  '&:active': {
-                    transform: 'translateY(0)',
-                    boxShadow: '0 2px 4px rgba(99, 51, 148, 0.3)',
-                  }
-                }}
-              >
-                Add New Template
-              </Button>
-            </Paper>
 
             <Paper sx={{ p: isMobile ? 1.5 : 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
               <Box
@@ -548,25 +576,32 @@ const InventoryPage = () => {
                   bgcolor: 'white',
                   borderRadius: 1,
                   p: isMobile ? 0.5 : 1,
-                  boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.1)'
+                  boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.1)',
+                  maxHeight: 'calc(100vh - 300px)',
+                  overflowY: 'auto'
                 }}
               >
-                <List dense={isMobile}>
-                  {templateVersions
+                <List dense={isMobile || !!selectedVersion || !!previewInfo}>
+                  {filteredVersions
                     .map(v => (
                       <ListItem
                         key={v.id}
                         button
-                        selected={selectedVersion?.id === v.id}
-                        onClick={() => setSelectedVersion(v)}
+                        selected={selectedVersion?.id === v.id || previewInfo?.data?.id === v.id || previewInfo?.data?.version_id === v.id}
+                        onClick={() => {
+                          // If in preview mode, maybe update preview? Or just switch to edit mode?
+                          // For now, switch to edit mode for the selected version
+                          setPreviewInfo(null);
+                          setSelectedVersion(v);
+                        }}
                         sx={{
                           borderRadius: 1,
                           mb: 0.5,
-                          py: isMobile ? 1 : 1.5,
+                          py: isMobile || selectedVersion || previewInfo ? 1 : 1.5,
                           transition: 'all 0.2s ease-in-out',
+                          borderLeft: selectedVersion?.id === v.id ? '4px solid #633394' : '4px solid transparent',
                           '&.Mui-selected': {
                             backgroundColor: 'rgba(99, 51, 148, 0.15)',
-                            borderColor: '#633394',
                             '&:hover': {
                               backgroundColor: 'rgba(99, 51, 148, 0.2)',
                             }
@@ -582,12 +617,21 @@ const InventoryPage = () => {
                           primary={v.name}
                           secondary={
                             <Box>
-                              <Typography variant="body2" color="text.secondary" sx={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                noWrap={!!selectedVersion || !!previewInfo}
+                                sx={{
+                                  fontSize: isMobile ? '0.75rem' : '0.875rem'
+                                }}
+                              >
                                 {v.description || 'No description'}
                               </Typography>
-                              <Typography variant="caption" color="primary" sx={{ fontWeight: 500, fontSize: isMobile ? '0.7rem' : '0.75rem' }}>
-                                Organization: {v.organization_name || 'N/A'}
-                              </Typography>
+                              {!selectedVersion && !previewInfo && (
+                                <Typography variant="caption" color="primary" sx={{ fontWeight: 500, fontSize: isMobile ? '0.7rem' : '0.75rem' }}>
+                                  Organization: {v.organization_name || 'N/A'}
+                                </Typography>
+                              )}
                             </Box>
                           }
                           primaryTypographyProps={{
@@ -595,74 +639,88 @@ const InventoryPage = () => {
                             color: selectedVersion?.id === v.id ? '#633394' : '#333',
                             transition: 'color 0.2s ease-in-out',
                             fontSize: isMobile ? '0.9rem' : '1rem',
+                            wordBreak: 'break-word',
+                            whiteSpace: 'normal'
                           }}
                         />
                         <ListItemSecondaryAction>
-                          <IconButton
-                            edge="end"
-                            color="primary"
-                            size={isMobile ? "small" : "medium"}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCopyTemplateVersion(v);
-                            }}
-                            sx={{
-                              mr: 1,
-                              transition: 'all 0.2s ease-in-out',
-                              color: '#633394',
-                              '&:hover': {
-                                backgroundColor: 'rgba(99, 51, 148, 0.08)',
-                                transform: 'scale(1.1)',
-                              }
-                            }}
-                            title="Copy to another organization"
-                          >
-                            <ContentCopyIcon fontSize={isMobile ? "small" : "medium"} />
-                          </IconButton>
-                          <IconButton
-                            edge="end"
-                            color="primary"
-                            size={isMobile ? "small" : "medium"}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditTemplateVersion(v);
-                            }}
-                            sx={{
-                              mr: 1,
-                              transition: 'all 0.2s ease-in-out',
-                              color: '#633394',
-                              '&:hover': {
-                                backgroundColor: 'rgba(99, 51, 148, 0.08)',
-                                transform: 'scale(1.1)',
-                              }
-                            }}
-                          >
-                            <EditIcon fontSize={isMobile ? "small" : "medium"} />
-                          </IconButton>
-                          <IconButton
-                            edge="end"
-                            color="error"
-                            size={isMobile ? "small" : "medium"}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (window.confirm(`Delete version "${v.name}"?`)) {
-                                handleDeleteTemplateVersion(v.id);
-                              }
-                            }}
-                            sx={{
-                              transition: 'all 0.2s ease-in-out',
-                              '&:hover': {
-                                backgroundColor: 'rgba(211, 47, 47, 0.08)',
-                                transform: 'scale(1.1)',
-                              }
-                            }}
-                          >
-                            <DeleteIcon fontSize={isMobile ? "small" : "medium"} />
-                          </IconButton>
+                          {(selectedVersion || previewInfo) ? (
+                            <IconButton
+                              edge="end"
+                              size="small"
+                              onClick={(e) => handleOpenActionMenu(e, v)}
+                              sx={{ color: '#633394' }}
+                            >
+                              <MoreVertIcon fontSize="small" />
+                            </IconButton>
+                          ) : (
+                            <Box sx={{ display: 'flex' }}>
+                              <IconButton
+                                edge="end"
+                                color="primary"
+                                size={isMobile || selectedVersion ? "small" : "medium"}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handlePreviewVersion(v);
+                                }}
+                                sx={{
+                                  mr: 0.5,
+                                  color: '#633394',
+                                }}
+                                title="Preview"
+                              >
+                                <VisibilityIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton
+                                edge="end"
+                                color="primary"
+                                size={isMobile || selectedVersion ? "small" : "medium"}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCopyTemplateVersion(v);
+                                }}
+                                sx={{
+                                  mr: 0.5,
+                                  color: '#633394',
+                                }}
+                                title="Copy"
+                              >
+                                <ContentCopyIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton
+                                edge="end"
+                                color="primary"
+                                size={isMobile || selectedVersion ? "small" : "medium"}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditTemplateVersion(v);
+                                }}
+                                sx={{
+                                  mr: 0.5,
+                                  color: '#633394',
+                                }}
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton
+                                edge="end"
+                                color="error"
+                                size={isMobile || selectedVersion ? "small" : "medium"}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (window.confirm(`Delete version "${v.name}"?`)) {
+                                    handleDeleteTemplateVersion(v.id);
+                                  }
+                                }}
+                              >
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </Box>
+                          )}
                         </ListItemSecondaryAction>
                       </ListItem>
                     ))}
-                  {templateVersions.length === 0 && (
+                  {filteredVersions.length === 0 && (
                     <Box sx={{ p: 2, textAlign: 'center' }}>
                       <Typography
                         color="text.secondary"
@@ -679,48 +737,79 @@ const InventoryPage = () => {
               </Box>
             </Paper>
           </Box>
-        )}
 
-        {/* Questions Tab */}
-        {activeTab === 1 && (
-          <QuestionsTab
-            templateVersions={templateVersions}
-            templates={templates}
-            onRefreshData={() => {
-              fetchTemplateVersions();
-              fetchTemplates();
-            }}
-            organizationFilter={''}
-          />
-        )}
+          {/* Actions Menu */}
+          <Menu
+            anchorEl={actionMenuAnchorEl}
+            open={Boolean(actionMenuAnchorEl)}
+            onClose={handleCloseActionMenu}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MenuItem onClick={handleMenuPreview}>
+              <ListItemIcon>
+                <VisibilityIcon fontSize="small" sx={{ color: '#633394' }} />
+              </ListItemIcon>
+              <ListItemText>Preview</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={handleMenuCopy}>
+              <ListItemIcon>
+                <ContentCopyIcon fontSize="small" sx={{ color: '#633394' }} />
+              </ListItemIcon>
+              <ListItemText>Copy</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={handleMenuEdit}>
+              <ListItemIcon>
+                <EditIcon fontSize="small" sx={{ color: '#633394' }} />
+              </ListItemIcon>
+              <ListItemText>Edit</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={handleMenuDelete}>
+              <ListItemIcon>
+                <DeleteIcon fontSize="small" color="error" />
+              </ListItemIcon>
+              <ListItemText sx={{ color: 'error.main' }}>Delete</ListItemText>
+            </MenuItem>
+          </Menu>
 
-        {/* Templates Tab */}
-        {activeTab === 2 && (
-          <TemplatesTab
-            templateVersions={templateVersions}
-            templates={templates}
-            onRefreshData={() => {
-              fetchTemplateVersions();
-              fetchTemplates();
-            }}
-            organizationFilter={''}
-          />
-        )}
+          {/* Right Panel: Detail View (QuestionsTab Content or Preview) */}
+          {(selectedVersion || previewInfo) && (
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              {previewInfo ? (
+                <TemplatesTab
+                  templateVersions={templateVersions}
+                  templates={templates}
+                  onRefreshData={() => {
+                    fetchTemplateVersions();
+                    fetchTemplates();
+                  }}
+                  previewMode={true}
+                  initialVersion={previewInfo.type === 'version' ? previewInfo.data : null}
+                  initialTemplate={previewInfo.type === 'template' ? previewInfo.data : null}
+                  onClose={() => setPreviewInfo(null)}
+                  hideSidebar={true}
+                />
+              ) : (
+                <QuestionsTab
+                  templateVersions={templateVersions}
+                  templates={templates}
+                  onRefreshData={() => {
+                    fetchTemplateVersions();
+                    fetchTemplates();
+                  }}
+                  currentVersion={selectedVersion}
+                  hideSidebar={true}
+                  onClose={() => setSelectedVersion(null)}
+                  onPreview={(template) => setPreviewInfo({ type: 'template', data: template })}
+                />
+              )}
+            </Box>
+          )}
+        </Box>
 
-        {/* Email Templates Tab */}
-        {activeTab === 3 && (
-          <EmailTemplatesTab
-            emailTemplates={emailTemplates}
-            onRefreshData={(filterOrgId = null) => {
-              fetchEmailTemplates(filterOrgId);
-              // Also refresh template data for consistency
-              fetchTemplateVersions();
-              fetchTemplates();
-            }}
-            organizationId={null}
-            organizations={organizations}
-          />
-        )}
+        {/* Templates Tab (Removed) */}
+
+        {/* Email Templates Tab (Shifted Index) */}
+
 
         {/* Legacy Question Dialog - This should be removed and replaced with QuestionDialog component */}
 

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { 
-    Box, Typography, Button, Table, TableBody, TableCell, TableContainer, 
-    TableHead, TableRow, Paper, IconButton, Dialog, DialogActions, 
-    DialogContent, DialogTitle, TextField, Select, MenuItem, FormControl, 
+import {
+    Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
+    TableHead, TableRow, Paper, IconButton, Dialog, DialogActions,
+    DialogContent, DialogTitle, TextField, Select, MenuItem, FormControl,
     InputLabel, TablePagination, Card, CardContent, Grid, Chip, Tabs, Tab, useTheme,
     Autocomplete, Tooltip, CircularProgress, Stack
 } from '@mui/material';
@@ -10,8 +10,8 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
-import { 
-    fetchOrganizations, addOrganization, updateOrganization, deleteOrganization, 
+import {
+    fetchOrganizations, addOrganization, updateOrganization, deleteOrganization,
     fetchDenominations, fetchAccreditationBodies, fetchUmbrellaAssociations,
     uploadOrganizationFile, fetchOrganizationTypes, initializeOrganizationTypes,
     fetchUsers, addUser, fetchRoles, addRole, addUserOrganizationalRole,
@@ -20,9 +20,9 @@ import {
 import MapAddressSelector from '../common/MapAddressSelector';
 import EnhancedAddressInput from '../common/EnhancedAddressInput';
 
-function OrganizationsManagement() {
+function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, onOrganizationAdded = null }) {
     const theme = useTheme();
-    
+
     // State variables
     const [organizations, setOrganizations] = useState([]);
     const [organizationTypes, setOrganizationTypes] = useState([]);
@@ -33,17 +33,22 @@ function OrganizationsManagement() {
     const [roles, setRoles] = useState([]);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [otherPage, setOtherPage] = useState(0);
+    const [otherRowsPerPage, setOtherRowsPerPage] = useState(10);
     const [totalOrganizations, setTotalOrganizations] = useState(0);
     const [orgTypeFilter, setOrgTypeFilter] = useState('all');
     const [activeTab, setActiveTab] = useState(0);
-    
+
+    // Define main organization types (shown in first table)
+    const mainOrganizationTypes = ['church', 'Institution', 'Non_formal_organizations'];
+
     // Search, Filter, and Sort states
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState('');
     const [filterLocation, setFilterLocation] = useState('');
     const [sortBy, setSortBy] = useState('name');
     const [sortOrder, setSortOrder] = useState('asc');
-    
+
     // Dialog states
     const [openAddDialog, setOpenAddDialog] = useState(false);
     const [openEditDialog, setOpenEditDialog] = useState(false);
@@ -51,7 +56,7 @@ function OrganizationsManagement() {
     const [openUploadDialog, setOpenUploadDialog] = useState(false);
     const [openAddUserDialog, setOpenAddUserDialog] = useState(false);
     const [openAddRelatedOrgDialog, setOpenAddRelatedOrgDialog] = useState(false);
-    
+
     // Form states
     const [formData, setFormData] = useState({
         // Basic Information & Address
@@ -86,11 +91,11 @@ function OrganizationsManagement() {
         affiliation_validation: '',
         details: {}
     });
-    
+
     const [selectedOrganization, setSelectedOrganization] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [uploadStatus, setUploadStatus] = useState('');
-    
+
     // Enhanced User Form States (matching UserManagement component)
     const [newUserData, setNewUserData] = useState({
         username: '',
@@ -116,7 +121,7 @@ function OrganizationsManagement() {
             longitude: ''
         }
     });
-    
+
     const [contactType, setContactType] = useState(''); // 'primary', 'secondary', or 'head'
     const [newRoleName, setNewRoleName] = useState('');
     const [roleSearchText, setRoleSearchText] = useState('');
@@ -126,7 +131,7 @@ function OrganizationsManagement() {
     const [selectedOrganizationIdForRole, setSelectedOrganizationIdForRole] = useState('');
     const [selectedRoleType, setSelectedRoleType] = useState('');
     const [organizationalRoleToAdd, setOrganizationalRoleToAdd] = useState('');
-    
+
     // Related organization states
     const [relationshipType, setRelationshipType] = useState(''); // 'denomination', 'accreditation', 'affiliation', 'umbrella'
     const [newRelatedOrgData, setNewRelatedOrgData] = useState({
@@ -155,6 +160,13 @@ function OrganizationsManagement() {
         loadUsers();
         loadRoles();
     }, []);
+
+    // Auto-open Add dialog when in showAddDialogOnly mode
+    useEffect(() => {
+        if (showAddDialogOnly) {
+            setOpenAddDialog(true);
+        }
+    }, [showAddDialogOnly]);
 
     // Load organizations from API
     const loadOrganizations = async () => {
@@ -243,7 +255,7 @@ function OrganizationsManagement() {
     // Handle form input changes
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        
+
         // Handle nested geo_location fields
         if (name.startsWith('geo_location.')) {
             const geoField = name.split('.')[1];
@@ -259,8 +271,8 @@ function OrganizationsManagement() {
                 ...prevData,
                 [name]: value,
                 // Also update geo_location if it's an address field
-                ...(name === 'continent' || name === 'region' || name === 'country' || 
-                    name === 'province' || name === 'city' || name === 'town' || 
+                ...(name === 'continent' || name === 'region' || name === 'country' ||
+                    name === 'province' || name === 'city' || name === 'town' ||
                     name === 'address_line1' || name === 'address_line2' || name === 'postal_code' ? {
                     geo_location: {
                         ...prevData.geo_location,
@@ -286,7 +298,7 @@ function OrganizationsManagement() {
     // Handle Google Places selection for organization address
     const handlePlaceSelect = (placeData) => {
         const { geoLocationData, formattedAddress } = placeData;
-        
+
         setFormData(prevData => ({
             ...prevData,
             geo_location: {
@@ -294,7 +306,7 @@ function OrganizationsManagement() {
                 ...geoLocationData
             }
         }));
-        
+
         // Show a brief success message
         console.log('Organization address auto-filled:', formattedAddress);
     };
@@ -314,13 +326,13 @@ function OrganizationsManagement() {
         try {
             const formData = new FormData();
             formData.append('file', selectedFile);
-            
+
             const response = await uploadOrganizationFile(formData);
             setUploadStatus(`File uploaded successfully: ${response.filename}`);
-            
+
             // Reload organizations after successful upload
             loadOrganizations();
-            
+
             // Close the dialog after a delay
             setTimeout(() => {
                 setOpenUploadDialog(false);
@@ -335,7 +347,7 @@ function OrganizationsManagement() {
     // Handle new user input changes (enhanced version)
     const handleNewUserInputChange = (e) => {
         const { name, value } = e.target;
-        
+
         // Handle nested geo_location fields
         if (name.startsWith('geo_location.')) {
             const geoField = name.split('.')[1];
@@ -357,21 +369,21 @@ function OrganizationsManagement() {
     // Handle adding a new role for user
     const handleAddNewRoleForUser = async () => {
         if (!newRoleName.trim()) return;
-        
+
         setRoleLoading(true);
         try {
             const roleData = {
                 name: newRoleName.trim(),
                 description: `Created for user with ${newUserData.ui_role} role`
             };
-            
+
             const newRole = await addRole(roleData);
             setNewRoleName('');
             setIsAddingNewRole(false);
-            
+
             // Reload roles
             await loadRoles();
-            
+
         } catch (error) {
             console.error('Failed to add new role:', error);
             alert(`Failed to add new role: ${error.message}`);
@@ -437,10 +449,10 @@ function OrganizationsManagement() {
     // Handle opening add related organization dialog
     const handleOpenAddRelatedOrgDialog = (type) => {
         setRelationshipType(type);
-        
+
         // Set default organization type based on available types
         const defaultType = organizationTypes.length > 0 ? organizationTypes[0].type : '';
-        
+
         setNewRelatedOrgData({
             name: '',
             type: defaultType,
@@ -462,7 +474,7 @@ function OrganizationsManagement() {
     // Handle closing add related organization dialog
     const handleCloseAddRelatedOrgDialog = () => {
         handleCloseSubDialogs();
-        
+
         // Reset related org data
         const defaultType = organizationTypes.length > 0 ? organizationTypes[0].type : '';
         setNewRelatedOrgData({
@@ -502,7 +514,7 @@ function OrganizationsManagement() {
 
             // Find the organization type ID
             const orgType = organizationTypes.find(ot => ot.type === newRelatedOrgData.type);
-            
+
             // Prepare organization data for API
             const orgData = {
                 name: newRelatedOrgData.name,
@@ -523,10 +535,10 @@ function OrganizationsManagement() {
             };
 
             const response = await addOrganization(orgData);
-            
+
             // Reload organizations to get the new organization
             await loadOrganizations();
-            
+
             // Set the new organization name in the appropriate field based on relationship type
             if (relationshipType === 'denomination') {
                 setFormData(prev => ({ ...prev, denomination_affiliation: newRelatedOrgData.name }));
@@ -537,10 +549,10 @@ function OrganizationsManagement() {
             } else if (relationshipType === 'umbrella') {
                 setFormData(prev => ({ ...prev, umbrella_association_membership: newRelatedOrgData.name }));
             }
-            
+
             // Close the dialog
             handleCloseAddRelatedOrgDialog();
-            
+
         } catch (error) {
             console.error('Failed to add new related organization:', error);
             alert(`Failed to add new organization: ${error.message}`);
@@ -634,23 +646,23 @@ function OrganizationsManagement() {
 
             const response = await addUser(userData);
             console.log('User created with response:', response);
-            
+
             // Reload users to get the new user
             const updatedUsers = await fetchUsers();
             setUsers(updatedUsers || []);
-            
+
             // Find the newly created user, prioritizing response data
-            const newUser = updatedUsers.find(user => user.email === newUserData.email) || 
-                           { 
-                               id: response.id, 
-                               username: response.username || newUserData.username,
-                               email: response.email || newUserData.email,
-                               firstname: response.firstname || newUserData.firstname,
-                               lastname: response.lastname || newUserData.lastname,
-                               password: response.password || newUserData.password || 'defaultpass123',
-                               ...newUserData
-                           };
-            
+            const newUser = updatedUsers.find(user => user.email === newUserData.email) ||
+            {
+                id: response.id,
+                username: response.username || newUserData.username,
+                email: response.email || newUserData.email,
+                firstname: response.firstname || newUserData.firstname,
+                lastname: response.lastname || newUserData.lastname,
+                password: response.password || newUserData.password || 'defaultpass123',
+                ...newUserData
+            };
+
             // Set the new user as the selected contact based on type
             if (contactType === 'primary') {
                 setFormData(prev => ({ ...prev, primary_contact_id: newUser.id }));
@@ -659,11 +671,11 @@ function OrganizationsManagement() {
             } else if (contactType === 'head') {
                 setFormData(prev => ({ ...prev, head_id: newUser.id }));
             }
-            
+
             // Close the dialog
             setOpenAddUserDialog(false);
             setContactType('');
-            
+
         } catch (error) {
             console.error('Failed to add new user:', error);
             alert(`Failed to add new user: ${error.message}`);
@@ -733,10 +745,10 @@ function OrganizationsManagement() {
     // Open edit organization dialog
     const handleOpenEditDialog = (organization) => {
         setSelectedOrganization(organization);
-        
+
         // Prepare form data based on organization type
         const details = {};
-        
+
         setFormData({
             name: organization.name,
             type: organization.organization_type?.type || 'Churches',
@@ -780,7 +792,7 @@ function OrganizationsManagement() {
                 longitude: ''
             }
         });
-        
+
         setOpenEditDialog(true);
     };
 
@@ -804,7 +816,7 @@ function OrganizationsManagement() {
         setOpenAddRelatedOrgDialog(false);
         setContactType('');
         setRelationshipType('');
-        
+
         // Reset only sub-dialog related data
         setNewUserData({
             username: '',
@@ -830,7 +842,7 @@ function OrganizationsManagement() {
                 longitude: ''
             }
         });
-        
+
         // Reset additional user form states
         setNewRoleName('');
         setRoleSearchText('');
@@ -857,7 +869,12 @@ function OrganizationsManagement() {
         setOpenUploadDialog(false);
         setSelectedOrganization(null);
         setActiveTab(0); // Reset to first tab
-        
+
+        // Call onClose callback when in embedded mode
+        if (showAddDialogOnly && onClose) {
+            onClose();
+        }
+
         // Reset main form data only when explicitly closing dialogs
         setFormData({
             name: '',
@@ -902,7 +919,7 @@ function OrganizationsManagement() {
                 longitude: ''
             }
         });
-        
+
         // Also close sub-dialogs and reset their data
         handleCloseSubDialogs();
     };
@@ -918,19 +935,19 @@ function OrganizationsManagement() {
     const transformFormDataToApiFormat = (formData) => {
         // Find the organization type ID
         const orgType = organizationTypes.find(ot => ot.type === formData.type);
-        
+
         // Helper function to check if geo_location has any meaningful data
         const hasValidGeoData = (geoData) => {
             return geoData && Object.values(geoData).some(value => value && value.trim() !== '');
         };
-        
+
         // Helper function to ensure numeric values for coordinates
         const getNumericCoordinate = (value) => {
             if (!value || value.trim() === '') return 0;
             const num = parseFloat(value);
             return isNaN(num) ? 0 : num;
         };
-        
+
         const apiData = {
             name: formData.name,
             type_id: orgType?.id || null,
@@ -1005,15 +1022,21 @@ function OrganizationsManagement() {
         try {
             const apiData = transformFormDataToApiFormat(formData);
             const result = await addOrganization(apiData);
-            
+
             // Show success message with template version information
             if (result.default_template_version_id) {
                 alert(`Organization added successfully! A default survey template version has been created and is available in the Inventory page.`);
             } else {
                 alert('Organization added successfully!');
             }
-            
+
             loadOrganizations();
+
+            // Call onOrganizationAdded callback if provided (for embedded mode)
+            if (onOrganizationAdded) {
+                onOrganizationAdded(result);
+            }
+
             handleCloseDialogs();
         } catch (error) {
             console.error('Failed to add organization:', error);
@@ -1024,7 +1047,7 @@ function OrganizationsManagement() {
     // Update an existing organization
     const handleUpdateOrganization = async () => {
         if (!selectedOrganization) return;
-        
+
         try {
             const apiData = transformFormDataToApiFormat(formData);
             await updateOrganization(selectedOrganization.id, apiData);
@@ -1039,10 +1062,10 @@ function OrganizationsManagement() {
     // Delete an organization
     const handleDeleteOrganization = async () => {
         if (!selectedOrganization) return;
-        
+
         try {
             const response = await deleteOrganization(selectedOrganization.id);
-            
+
             // Show detailed success message with what was deleted
             if (response.deleted_counts) {
                 const counts = response.deleted_counts;
@@ -1054,21 +1077,21 @@ function OrganizationsManagement() {
                 message += `• ${counts.user_details} User Details Records\n`;
                 message += `• ${counts.user_organization_roles} User Role Assignments\n`;
                 message += `• ${counts.geo_locations} Geographic Locations\n`;
-                
+
                 if (counts.geo_location_references_cleared > 0) {
                     message += `• Cleared ${counts.geo_location_references_cleared} geographic location references\n`;
                 }
-                
+
                 if (counts.organization_references > 0) {
                     message += `• Updated ${counts.organization_references} child organization references\n`;
                 }
-                
+
                 message += `\n⚠️ This action cannot be undone.`;
                 alert(message);
             } else {
                 alert(`Organization "${selectedOrganization.name}" deleted successfully!`);
             }
-            
+
             loadOrganizations();
             handleCloseDialogs();
         } catch (error) {
@@ -1123,11 +1146,11 @@ function OrganizationsManagement() {
     // Filter and sort organizations
     const getFilteredAndSortedOrganizations = () => {
         let filtered = [...organizations];
-        
+
         // Apply search filter
         if (searchTerm) {
             const search = searchTerm.toLowerCase();
-            filtered = filtered.filter(org => 
+            filtered = filtered.filter(org =>
                 org.name?.toLowerCase().includes(search) ||
                 org.organization_type?.type?.toLowerCase().includes(search) ||
                 org.geo_location?.city?.toLowerCase().includes(search) ||
@@ -1136,33 +1159,33 @@ function OrganizationsManagement() {
                 org.website?.toLowerCase().includes(search)
             );
         }
-        
+
         // Apply type filter (existing orgTypeFilter)
         if (orgTypeFilter && orgTypeFilter !== 'all') {
             filtered = filtered.filter(org => org.organization_type?.type === orgTypeFilter);
         }
-        
+
         // Apply new type filter
         if (filterType) {
             filtered = filtered.filter(org => org.organization_type?.type === filterType);
         }
-        
+
         // Apply location filter
         if (filterLocation) {
             const location = filterLocation.toLowerCase();
-            filtered = filtered.filter(org => 
+            filtered = filtered.filter(org =>
                 org.geo_location?.city?.toLowerCase().includes(location) ||
                 org.geo_location?.province?.toLowerCase().includes(location) ||
                 org.geo_location?.country?.toLowerCase().includes(location) ||
                 org.geo_location?.region?.toLowerCase().includes(location)
             );
         }
-        
+
         // Apply sorting
         filtered.sort((a, b) => {
             let aValue = '';
             let bValue = '';
-            
+
             if (sortBy === 'name') {
                 aValue = a.name || '';
                 bValue = b.name || '';
@@ -1173,22 +1196,30 @@ function OrganizationsManagement() {
                 aValue = [a.geo_location?.city, a.geo_location?.province, a.geo_location?.country].filter(Boolean).join(', ');
                 bValue = [b.geo_location?.city, b.geo_location?.province, b.geo_location?.country].filter(Boolean).join(', ');
             }
-            
+
             // Convert to lowercase for string comparison
             if (typeof aValue === 'string') aValue = aValue.toLowerCase();
             if (typeof bValue === 'string') bValue = bValue.toLowerCase();
-            
+
             if (sortOrder === 'asc') {
                 return aValue > bValue ? 1 : -1;
             } else {
                 return aValue < bValue ? 1 : -1;
             }
         });
-        
+
         return filtered;
     };
 
     const filteredOrganizations = getFilteredAndSortedOrganizations();
+
+    // Split organizations into main types and other types
+    const mainOrganizations = filteredOrganizations.filter(org =>
+        mainOrganizationTypes.includes(org.organization_type?.type)
+    );
+    const otherOrganizations = filteredOrganizations.filter(org =>
+        !mainOrganizationTypes.includes(org.organization_type?.type)
+    );
 
     // Handle sort
     const handleSort = (column) => {
@@ -1200,127 +1231,213 @@ function OrganizationsManagement() {
         }
     };
 
-    const renderOrganizationsTable = () => {
-        return (
-            <TableContainer component={Paper} sx={{ boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
-                <Table>
-                    <TableHead sx={{ backgroundColor: '#633394' }}>
-                        <TableRow>
-                            <TableCell 
-                                sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
-                                onClick={() => handleSort('name')}
-                            >
-                                Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
-                            </TableCell>
-                            <TableCell 
-                                sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
-                                onClick={() => handleSort('type')}
-                            >
-                                Type {sortBy === 'type' && (sortOrder === 'asc' ? '↑' : '↓')}
-                            </TableCell>
-                            <TableCell 
-                                sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
-                                onClick={() => handleSort('location')}
-                            >
-                                Location {sortBy === 'location' && (sortOrder === 'asc' ? '↑' : '↓')}
-                            </TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Affiliations</TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Actions</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {filteredOrganizations
-                            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                            .map((org) => (
-                            <TableRow key={org.id} sx={{ '&:nth-of-type(odd)': { backgroundColor: theme.palette.action.hover } }}>
-                                <TableCell>{org.name}</TableCell>
-                                <TableCell>
-                                    <Chip 
-                                        label={org.organization_type?.type === 'Churches' ? 'Church' :
-                                               org.organization_type?.type === 'Institutions' ? 'Institution' :
-                                               org.organization_type?.type === 'Non_formal_organizations' ? 'Non-formal Org' :
-                                               org.organization_type?.type || 'N/A'} 
-                                        color={
-                                            org.organization_type?.type === 'Churches' ? 'primary' : 
-                                            org.organization_type?.type === 'Institutions' ? 'secondary' : 
-                                            org.organization_type?.type === 'Non_formal_organizations' ? 'success' : 'default'
-                                        }
-                                        size="small"
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    {[
-                                        org.geo_location?.city, 
-                                        org.geo_location?.province, 
-                                        org.geo_location?.region, 
-                                        org.geo_location?.continent
-                                    ]
-                                        .filter(Boolean)
-                                        .join(', ')}
-                                </TableCell>
-                                <TableCell>
-                                    <Box>
-                                        {org.denomination_affiliation && (
-                                            <Typography variant="body2">
-                                                <strong>Denomination:</strong> {org.denomination_affiliation}
-                                            </Typography>
-                                        )}
-                                        {org.affiliation_validation && (
-                                            <Typography variant="body2">
-                                                <strong>Affiliation:</strong> {org.affiliation_validation}
-                                            </Typography>
-                                        )}
-                                        {org.accreditation_status_or_body && (
-                                            <Typography variant="body2">
-                                                <strong>Accreditation:</strong> {org.accreditation_status_or_body}
-                                            </Typography>
-                                        )}
-                                        {org.umbrella_association_membership && (
-                                            <Typography variant="body2">
-                                                <strong>Umbrella Assoc.:</strong> {org.umbrella_association_membership}
-                                            </Typography>
-                                        )}
-                                        {!org.denomination_affiliation && !org.affiliation_validation && 
-                                         !org.accreditation_status_or_body && !org.umbrella_association_membership && 'N/A'}
-                                    </Box>
-                                </TableCell>
-                                <TableCell>
-                                    <IconButton onClick={() => handleOpenEditDialog(org)} color="primary">
-                                        <EditIcon />
-                                    </IconButton>
-                                    <IconButton onClick={() => handleOpenDeleteDialog(org)} color="error">
-                                        <DeleteIcon />
-                                    </IconButton>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-                <TablePagination
-                    rowsPerPageOptions={[5, 10, 25]}
-                    component="div"
-                    count={filteredOrganizations.length}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
-                    onPageChange={handleChangePage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                    sx={{ 
-                        '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
-                            margin: 0
-                        }
-                    }}
+    // Handle pagination for other organizations table
+    const handleChangeOtherPage = (event, newPage) => {
+        setOtherPage(newPage);
+    };
+
+    const handleChangeOtherRowsPerPage = (event) => {
+        setOtherRowsPerPage(parseInt(event.target.value, 10));
+        setOtherPage(0);
+    };
+
+    // Reusable table row component
+    const renderOrganizationRow = (org) => (
+        <TableRow key={org.id} sx={{ '&:nth-of-type(odd)': { backgroundColor: theme.palette.action.hover } }}>
+            <TableCell>{org.name}</TableCell>
+            <TableCell>
+                <Chip
+                    label={org.organization_type?.type === 'church' ? 'Church' :
+                        org.organization_type?.type === 'Institution' ? 'Institution' :
+                            org.organization_type?.type === 'Non_formal_organizations' ? 'Non-formal Org' :
+                                org.organization_type?.type === 'other' ? 'Other' :
+                                    org.organization_type?.type || 'N/A'}
+                    color={
+                        org.organization_type?.type === 'church' ? 'primary' :
+                            org.organization_type?.type === 'Institution' ? 'secondary' :
+                                org.organization_type?.type === 'Non_formal_organizations' ? 'success' : 'default'
+                    }
+                    size="small"
                 />
-            </TableContainer>
+            </TableCell>
+            <TableCell>
+                {[
+                    org.geo_location?.city,
+                    org.geo_location?.province,
+                    org.geo_location?.region,
+                    org.geo_location?.continent
+                ]
+                    .filter(Boolean)
+                    .join(', ')}
+            </TableCell>
+            <TableCell>
+                <Box>
+                    {org.denomination_affiliation && (
+                        <Typography variant="body2">
+                            <strong>Denomination:</strong> {org.denomination_affiliation}
+                        </Typography>
+                    )}
+                    {org.affiliation_validation && (
+                        <Typography variant="body2">
+                            <strong>Affiliation:</strong> {org.affiliation_validation}
+                        </Typography>
+                    )}
+                    {org.accreditation_status_or_body && (
+                        <Typography variant="body2">
+                            <strong>Accreditation:</strong> {org.accreditation_status_or_body}
+                        </Typography>
+                    )}
+                    {org.umbrella_association_membership && (
+                        <Typography variant="body2">
+                            <strong>Umbrella Assoc.:</strong> {org.umbrella_association_membership}
+                        </Typography>
+                    )}
+                    {!org.denomination_affiliation && !org.affiliation_validation &&
+                        !org.accreditation_status_or_body && !org.umbrella_association_membership && 'N/A'}
+                </Box>
+            </TableCell>
+            <TableCell>
+                <IconButton onClick={() => handleOpenEditDialog(org)} color="primary">
+                    <EditIcon />
+                </IconButton>
+                <IconButton onClick={() => handleOpenDeleteDialog(org)} color="error">
+                    <DeleteIcon />
+                </IconButton>
+            </TableCell>
+        </TableRow>
+    );
+
+    // Render main organizations table (Churches, Institutions, Non-formal Orgs)
+    const renderMainOrganizationsTable = () => {
+        return (
+            <Box sx={{ mb: 4 }}>
+                <Typography variant="h6" sx={{ mb: 2, color: '#633394', fontWeight: 'bold' }}>
+                    Main Organizations ({mainOrganizations.length})
+                </Typography>
+                <TableContainer component={Paper} sx={{ boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
+                    <Table>
+                        <TableHead sx={{ backgroundColor: '#633394' }}>
+                            <TableRow>
+                                <TableCell
+                                    sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+                                    onClick={() => handleSort('name')}
+                                >
+                                    Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                </TableCell>
+                                <TableCell
+                                    sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+                                    onClick={() => handleSort('type')}
+                                >
+                                    Type {sortBy === 'type' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                </TableCell>
+                                <TableCell
+                                    sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+                                    onClick={() => handleSort('location')}
+                                >
+                                    Location {sortBy === 'location' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                </TableCell>
+                                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Affiliations</TableCell>
+                                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Actions</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {mainOrganizations
+                                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                                .map(renderOrganizationRow)}
+                        </TableBody>
+                    </Table>
+                    <TablePagination
+                        rowsPerPageOptions={[5, 10, 25]}
+                        component="div"
+                        count={mainOrganizations.length}
+                        rowsPerPage={rowsPerPage}
+                        page={page}
+                        onPageChange={handleChangePage}
+                        onRowsPerPageChange={handleChangeRowsPerPage}
+                        sx={{
+                            '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                                margin: 0
+                            }
+                        }}
+                    />
+                </TableContainer>
+            </Box>
         );
     };
+
+    // Render other organizations table (Denominations, Accrediting Bodies, etc.)
+    const renderOtherOrganizationsTable = () => {
+        if (otherOrganizations.length === 0) {
+            return null;
+        }
+
+        return (
+            <Box sx={{ mb: 4 }}>
+                <Typography variant="h6" sx={{ mb: 2, color: '#967CB2', fontWeight: 'bold' }}>
+                    Related Organizations ({otherOrganizations.length})
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+                    Denominations, Accrediting Bodies, Affiliations, Umbrella Associations, and other organization types
+                </Typography>
+                <TableContainer component={Paper} sx={{ boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#fafafa' }}>
+                    <Table>
+                        <TableHead sx={{ backgroundColor: '#967CB2' }}>
+                            <TableRow>
+                                <TableCell
+                                    sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+                                    onClick={() => handleSort('name')}
+                                >
+                                    Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                </TableCell>
+                                <TableCell
+                                    sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+                                    onClick={() => handleSort('type')}
+                                >
+                                    Type {sortBy === 'type' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                </TableCell>
+                                <TableCell
+                                    sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+                                    onClick={() => handleSort('location')}
+                                >
+                                    Location {sortBy === 'location' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                </TableCell>
+                                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Affiliations</TableCell>
+                                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Actions</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {otherOrganizations
+                                .slice(otherPage * otherRowsPerPage, otherPage * otherRowsPerPage + otherRowsPerPage)
+                                .map(renderOrganizationRow)}
+                        </TableBody>
+                    </Table>
+                    <TablePagination
+                        rowsPerPageOptions={[5, 10, 25]}
+                        component="div"
+                        count={otherOrganizations.length}
+                        rowsPerPage={otherRowsPerPage}
+                        page={otherPage}
+                        onPageChange={handleChangeOtherPage}
+                        onRowsPerPageChange={handleChangeOtherRowsPerPage}
+                        sx={{
+                            '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                                margin: 0
+                            }
+                        }}
+                    />
+                </TableContainer>
+            </Box>
+        );
+    };
+
 
     // Render organization form
     const renderOrganizationForm = () => {
         return (
             <Box>
-                <Tabs 
-                    value={activeTab} 
-                    onChange={handleTabChange} 
+                <Tabs
+                    value={activeTab}
+                    onChange={handleTabChange}
                     sx={{ mb: 2 }}
                     textColor="primary"
                     indicatorColor="primary"
@@ -1337,22 +1454,22 @@ function OrganizationsManagement() {
                             <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold', mb: 2, textAlign: 'center' }}>
                                 Basic Information
                             </Typography>
-                            
+
                             <Box sx={{ display: 'flex', gap: 2 }}>
                                 {/* Column 1 */}
                                 <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
                                     <TextField
                                         required
                                         fullWidth
-                                        label={formData.type === 'Churches' ? 'Name of Church' : 
-                                               formData.type === 'Institutions' ? 'Name of Institution' : 
-                                               'Name of Organization'}
+                                        label={formData.type === 'Churches' ? 'Name of Church' :
+                                            formData.type === 'Institutions' ? 'Name of Institution' :
+                                                'Name of Organization'}
                                         name="name"
                                         value={formData.name}
                                         onChange={handleInputChange}
                                         variant="outlined"
                                     />
-                                    
+
                                     <TextField
                                         fullWidth
                                         label="Website"
@@ -1376,8 +1493,8 @@ function OrganizationsManagement() {
                                             {organizationTypes.map((orgType) => {
                                                 const isMainType = ['church', 'non_formal_organizations', 'institution'].includes(orgType.type.toLowerCase());
                                                 return (
-                                                    <MenuItem 
-                                                        key={orgType.id} 
+                                                    <MenuItem
+                                                        key={orgType.id}
                                                         value={orgType.type}
                                                         sx={{
                                                             backgroundColor: isMainType ? '#f0e6ff' : 'inherit',
@@ -1386,15 +1503,15 @@ function OrganizationsManagement() {
                                                         }}
                                                     >
                                                         {orgType.type === 'church' ? 'Church' :
-                                                         orgType.type === 'non_formal_organizations' ? 'Non-formal Organization' :
-                                                         orgType.type === 'institution' ? 'Institution' :
-                                                         orgType.type.charAt(0).toUpperCase() + orgType.type.slice(1)}
+                                                            orgType.type === 'non_formal_organizations' ? 'Non-formal Organization' :
+                                                                orgType.type === 'institution' ? 'Institution' :
+                                                                    orgType.type.charAt(0).toUpperCase() + orgType.type.slice(1)}
                                                     </MenuItem>
                                                 );
                                             })}
                                         </Select>
                                     </FormControl>
-                                    
+
                                     {formData.type === 'Institutions' && (
                                         <TextField
                                             fullWidth
@@ -1414,7 +1531,7 @@ function OrganizationsManagement() {
                             <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold', mb: 2, textAlign: 'center' }}>
                                 Address Information
                             </Typography>
-                            
+
                             <Box sx={{ maxWidth: '900px', mx: 'auto' }}>
                                 {/* Enhanced Address Input */}
                                 <EnhancedAddressInput
@@ -1435,7 +1552,7 @@ function OrganizationsManagement() {
                             <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold', mb: 3, textAlign: 'center' }}>
                                 Contact Information
                             </Typography>
-                            
+
                             <Grid container spacing={3}>
                                 <Grid item xs={12} md={6}>
                                     <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
@@ -1471,8 +1588,8 @@ function OrganizationsManagement() {
                                             isOptionEqualToValue={(option, value) => option.id === value.id}
                                         />
                                         <Tooltip title="Add New User">
-                                            <IconButton 
-                                                color="primary" 
+                                            <IconButton
+                                                color="primary"
                                                 onClick={() => handleOpenAddUserDialog('primary')}
                                                 sx={{ mb: 2.5 }}
                                             >
@@ -1481,7 +1598,7 @@ function OrganizationsManagement() {
                                         </Tooltip>
                                     </Box>
                                 </Grid>
-                                
+
                                 <Grid item xs={12} md={6}>
                                     <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
                                         <Autocomplete
@@ -1516,8 +1633,8 @@ function OrganizationsManagement() {
                                             isOptionEqualToValue={(option, value) => option.id === value.id}
                                         />
                                         <Tooltip title="Add New User">
-                                            <IconButton 
-                                                color="primary" 
+                                            <IconButton
+                                                color="primary"
                                                 onClick={() => handleOpenAddUserDialog('secondary')}
                                                 sx={{ mb: 2.5 }}
                                             >
@@ -1532,11 +1649,11 @@ function OrganizationsManagement() {
                         {/* Leadership Section */}
                         <Paper sx={{ p: 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0,0,0,0.1)', mb: 3 }}>
                             <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold', mb: 3, textAlign: 'center' }}>
-                                {formData.type === 'Churches' ? 'Senior/Lead Pastor Information' : 
-                                 formData.type === 'Institutions' ? 'School President Information' : 
-                                 'Organization Leadership Information'}
+                                {formData.type === 'Churches' ? 'Senior/Lead Pastor Information' :
+                                    formData.type === 'Institutions' ? 'School President Information' :
+                                        'Organization Leadership Information'}
                             </Typography>
-                            
+
                             <Grid container spacing={3}>
                                 {/* Head/Lead User Selection */}
                                 <Grid item xs={12}>
@@ -1550,9 +1667,9 @@ function OrganizationsManagement() {
                                             renderInput={(params) => (
                                                 <TextField
                                                     {...params}
-                                                    label={formData.type === 'Churches' ? 'Senior/Lead Pastor' : 
-                                                           formData.type === 'Institutions' ? 'School President' : 
-                                                           'Organization Head/Lead'}
+                                                    label={formData.type === 'Churches' ? 'Senior/Lead Pastor' :
+                                                        formData.type === 'Institutions' ? 'School President' :
+                                                            'Organization Head/Lead'}
                                                     variant="outlined"
                                                     helperText="Search and select existing user or add new"
                                                 />
@@ -1575,8 +1692,8 @@ function OrganizationsManagement() {
                                             isOptionEqualToValue={(option, value) => option.id === value.id}
                                         />
                                         <Tooltip title="Add New User">
-                                            <IconButton 
-                                                color="primary" 
+                                            <IconButton
+                                                color="primary"
                                                 onClick={() => handleOpenAddUserDialog('head')}
                                                 sx={{ mb: 2.5 }}
                                             >
@@ -1590,9 +1707,9 @@ function OrganizationsManagement() {
                                 <Grid item xs={12} md={6}>
                                     <TextField
                                         fullWidth
-                                        label={formData.type === 'Churches' ? 'Senior/Lead Pastor Name (Manual)' : 
-                                               formData.type === 'Institutions' ? 'School President Name (Manual)' : 
-                                               'Organization Lead Name (Manual)'}
+                                        label={formData.type === 'Churches' ? 'Senior/Lead Pastor Name (Manual)' :
+                                            formData.type === 'Institutions' ? 'School President Name (Manual)' :
+                                                'Organization Lead Name (Manual)'}
                                         name="head_name"
                                         value={formData.head_name}
                                         onChange={handleInputChange}
@@ -1600,13 +1717,13 @@ function OrganizationsManagement() {
                                         helperText="Use this only if not selecting from user list above"
                                     />
                                 </Grid>
-                                
+
                                 <Grid item xs={12} md={6}>
                                     <TextField
                                         fullWidth
-                                        label={formData.type === 'Churches' ? "Pastor's Email Address (Manual)" : 
-                                               formData.type === 'Institutions' ? "President's Email Address (Manual)" : 
-                                               'Leadership Email Address (Manual)'}
+                                        label={formData.type === 'Churches' ? "Pastor's Email Address (Manual)" :
+                                            formData.type === 'Institutions' ? "President's Email Address (Manual)" :
+                                                'Leadership Email Address (Manual)'}
                                         name="head_email"
                                         type="email"
                                         value={formData.head_email}
@@ -1615,7 +1732,7 @@ function OrganizationsManagement() {
                                         helperText="Use this only if not selecting from user list above"
                                     />
                                 </Grid>
-                                
+
                                 <Grid item xs={12} md={6}>
                                     <TextField
                                         fullWidth
@@ -1627,7 +1744,7 @@ function OrganizationsManagement() {
                                         helperText="Use this only if not selecting from user list above"
                                     />
                                 </Grid>
-                                
+
                                 <Grid item xs={12} md={6}>
                                     <TextField
                                         fullWidth
@@ -1661,7 +1778,7 @@ function OrganizationsManagement() {
                             <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold', mb: 3, textAlign: 'center' }}>
                                 Organizational Relationships & Affiliations
                             </Typography>
-                            
+
                             <Grid container spacing={3}>
                                 {/* Denomination/Affiliation */}
                                 <Grid item xs={12} md={6}>
@@ -1702,8 +1819,8 @@ function OrganizationsManagement() {
                                             freeSolo
                                         />
                                         <Tooltip title="Add New Organization">
-                                            <IconButton 
-                                                color="primary" 
+                                            <IconButton
+                                                color="primary"
                                                 onClick={() => handleOpenAddRelatedOrgDialog('denomination')}
                                                 sx={{ mb: 2.5 }}
                                             >
@@ -1712,7 +1829,7 @@ function OrganizationsManagement() {
                                         </Tooltip>
                                     </Box>
                                 </Grid>
-                                
+
                                 {/* Accreditation Status/Body for Institutions */}
                                 {formData.type === 'Institutions' && (
                                     <Grid item xs={12} md={6}>
@@ -1753,8 +1870,8 @@ function OrganizationsManagement() {
                                                 freeSolo
                                             />
                                             <Tooltip title="Add New Organization">
-                                                <IconButton 
-                                                    color="primary" 
+                                                <IconButton
+                                                    color="primary"
                                                     onClick={() => handleOpenAddRelatedOrgDialog('accreditation')}
                                                     sx={{ mb: 2.5 }}
                                                 >
@@ -1764,7 +1881,7 @@ function OrganizationsManagement() {
                                         </Box>
                                     </Grid>
                                 )}
-                                
+
                                 {/* Affiliation/Validation for Non-formal Organizations */}
                                 {formData.type === 'Non_formal_organizations' && (
                                     <Grid item xs={12} md={6}>
@@ -1805,8 +1922,8 @@ function OrganizationsManagement() {
                                                 freeSolo
                                             />
                                             <Tooltip title="Add New Organization">
-                                                <IconButton 
-                                                    color="primary" 
+                                                <IconButton
+                                                    color="primary"
                                                     onClick={() => handleOpenAddRelatedOrgDialog('affiliation')}
                                                     sx={{ mb: 2.5 }}
                                                 >
@@ -1816,7 +1933,7 @@ function OrganizationsManagement() {
                                         </Box>
                                     </Grid>
                                 )}
-                                
+
                                 {/* Umbrella Association for Churches */}
                                 {formData.type === 'Churches' && (
                                     <Grid item xs={12} md={6}>
@@ -1857,8 +1974,8 @@ function OrganizationsManagement() {
                                                 freeSolo
                                             />
                                             <Tooltip title="Add New Organization">
-                                                <IconButton 
-                                                    color="primary" 
+                                                <IconButton
+                                                    color="primary"
                                                     onClick={() => handleOpenAddRelatedOrgDialog('umbrella')}
                                                     sx={{ mb: 2.5 }}
                                                 >
@@ -1880,7 +1997,7 @@ function OrganizationsManagement() {
                             <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold', mb: 2, textAlign: 'center' }}>
                                 Additional Details
                             </Typography>
-                            
+
                             <Box sx={{ maxWidth: '900px', mx: 'auto' }}>
                                 {/* Key-Value Pairs */}
                                 {Object.entries(formData.details).map(([key, value], index) => (
@@ -1909,7 +2026,7 @@ function OrganizationsManagement() {
                                             }}
                                             variant="outlined"
                                         />
-                                        <IconButton 
+                                        <IconButton
                                             onClick={() => {
                                                 const newDetails = { ...formData.details };
                                                 delete newDetails[key];
@@ -1921,7 +2038,7 @@ function OrganizationsManagement() {
                                         </IconButton>
                                     </Box>
                                 ))}
-                                
+
                                 {/* Add New Key-Value Pair Button */}
                                 <Button
                                     variant="outlined"
@@ -1931,12 +2048,12 @@ function OrganizationsManagement() {
                                         newDetails[`key${Object.keys(newDetails).length + 1}`] = '';
                                         setFormData({ ...formData, details: newDetails });
                                     }}
-                                    sx={{ 
-                                        color: '#633394', 
-                                        borderColor: '#633394', 
-                                        '&:hover': { 
-                                            borderColor: '#7c52a5', 
-                                            color: '#7c52a5' 
+                                    sx={{
+                                        color: '#633394',
+                                        borderColor: '#633394',
+                                        '&:hover': {
+                                            borderColor: '#7c52a5',
+                                            color: '#7c52a5'
                                         },
                                         mt: 2
                                     }}
@@ -1951,79 +2068,137 @@ function OrganizationsManagement() {
         );
     };
 
-    return (
-        <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                <Typography variant="h5" sx={{ color: '#633394', fontWeight: 'bold' }}>
-                    Organizations Management
-                </Typography>
-                <Box>
-                    <Button 
-                        variant="contained" 
-                        startIcon={<AddIcon />} 
-                        onClick={handleOpenAddDialog}
-                        sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' }, mr: 1 }}
+    // If showAddDialogOnly mode, render only the Add Organization Dialog content
+    if (showAddDialogOnly) {
+        return (
+            <Box sx={{ p: 2 }}>
+                {renderOrganizationForm()}
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3, pt: 2, borderTop: '1px solid #e0e0e0' }}>
+                    <Button onClick={handleCloseDialogs} color="secondary" variant="outlined">
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleAddOrganization}
+                        variant="contained"
+                        sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
                     >
                         Add Organization
                     </Button>
-                    <Button 
-                        variant="outlined" 
-                        startIcon={<UploadFileIcon />} 
-                        onClick={handleOpenUploadDialog}
-                        sx={{ color: '#633394', borderColor: '#633394', '&:hover': { borderColor: '#7c52a5', color: '#7c52a5' } }}
-                    >
-                        Upload CSV/XLSX
-                    </Button>
                 </Box>
             </Box>
+        );
+    }
 
-            <Card sx={{ mb: 4, boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
-                <CardContent>
-                    <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold' }}>
-                        Organization Statistics
-                    </Typography>
-                    <Grid container spacing={2}>
-                        <Grid item xs={12} sm={2.4}>
-                            <Paper sx={{ p: 2, textAlign: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
-                                <Typography variant="h4" sx={{ color: '#633394' }}>{organizations.length}</Typography>
-                                <Typography variant="body2" sx={{ color: '#633394' }}>Total Organizations</Typography>
-                            </Paper>
-                        </Grid>
-                        <Grid item xs={12} sm={2.4}>
-                            <Paper sx={{ p: 2, textAlign: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
-                                <Typography variant="h4" sx={{ color: '#633394' }}>
-                                    {organizations.filter(org => org.organization_type?.type === 'Churches').length}
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: '#633394' }}>Churches</Typography>
-                            </Paper>
-                        </Grid>
-                        <Grid item xs={12} sm={2.4}>
-                            <Paper sx={{ p: 2, textAlign: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
-                                <Typography variant="h4" sx={{ color: '#633394' }}>
-                                    {organizations.filter(org => org.organization_type?.type === 'Institutions').length}
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: '#633394' }}>Institutions</Typography>
-                            </Paper>
-                        </Grid>
-                        <Grid item xs={12} sm={2.4}>
-                            <Paper sx={{ p: 2, textAlign: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
-                                <Typography variant="h4" sx={{ color: '#633394' }}>
-                                    {organizations.filter(org => org.organization_type?.type === 'Non_formal_organizations').length}
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: '#633394' }}>Non-formal Orgs</Typography>
-                            </Paper>
-                        </Grid>
-                        <Grid item xs={12} sm={2.4}>
-                            <Paper sx={{ p: 2, textAlign: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
-                                <Typography variant="h4" sx={{ color: '#633394' }}>
-                                    {filteredOrganizations.length}
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: '#633394' }}>Filtered Results</Typography>
-                            </Paper>
-                        </Grid>
-                    </Grid>
-                </CardContent>
-            </Card>
+    return (
+        <Box>
+            {/* Header with Title, Stats, and Action Buttons */}
+            <Box sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mb: 3,
+                flexWrap: 'wrap',
+                gap: 2
+            }}>
+                <Typography variant="h5" sx={{ color: '#633394', fontWeight: 'bold' }}>
+                    Organizations Management
+                </Typography>
+
+                {/* Stats and Buttons Container */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                    {/* Compact Stats Chips */}
+                    <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+                        <Chip
+                            label={`Total: ${organizations.length}`}
+                            sx={{
+                                backgroundColor: '#633394',
+                                color: 'white',
+                                fontWeight: 'bold',
+                                fontSize: '0.85rem',
+                                height: '36px',
+                                '& .MuiChip-label': { px: 2 }
+                            }}
+                        />
+                        <Chip
+                            label={`Churches: ${organizations.filter(org => org.organization_type?.type === 'church').length}`}
+                            variant="outlined"
+                            sx={{
+                                borderColor: '#633394',
+                                color: '#633394',
+                                fontWeight: 'bold',
+                                fontSize: '0.85rem',
+                                height: '36px',
+                                '& .MuiChip-label': { px: 1.5 }
+                            }}
+                        />
+                        <Chip
+                            label={`Institutions: ${organizations.filter(org => org.organization_type?.type === 'Institution').length}`}
+                            variant="outlined"
+                            sx={{
+                                borderColor: '#633394',
+                                color: '#633394',
+                                fontWeight: 'bold',
+                                fontSize: '0.85rem',
+                                height: '36px',
+                                '& .MuiChip-label': { px: 1.5 }
+                            }}
+                        />
+                        <Chip
+                            label={`Non-formal: ${organizations.filter(org => org.organization_type?.type === 'Non_formal_organizations').length}`}
+                            variant="outlined"
+                            sx={{
+                                borderColor: '#633394',
+                                color: '#633394',
+                                fontWeight: 'bold',
+                                fontSize: '0.85rem',
+                                height: '36px',
+                                '& .MuiChip-label': { px: 1.5 }
+                            }}
+                        />
+                        <Chip
+                            label={`Filtered: ${filteredOrganizations.length}`}
+                            variant="outlined"
+                            sx={{
+                                borderColor: '#7c52a5',
+                                color: '#7c52a5',
+                                fontWeight: 'bold',
+                                fontSize: '0.85rem',
+                                height: '36px',
+                                '& .MuiChip-label': { px: 1.5 }
+                            }}
+                        />
+                    </Stack>
+
+                    {/* Action Buttons */}
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                            variant="contained"
+                            startIcon={<AddIcon />}
+                            onClick={handleOpenAddDialog}
+                            sx={{
+                                backgroundColor: '#633394',
+                                '&:hover': { backgroundColor: '#7c52a5' },
+                                height: '36px'
+                            }}
+                        >
+                            Add Organization
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            startIcon={<UploadFileIcon />}
+                            onClick={handleOpenUploadDialog}
+                            sx={{
+                                color: '#633394',
+                                borderColor: '#633394',
+                                '&:hover': { borderColor: '#7c52a5', color: '#7c52a5' },
+                                height: '36px'
+                            }}
+                        >
+                            Upload CSV/XLSX
+                        </Button>
+                    </Box>
+                </Box>
+            </Box>
 
             {/* Search and Filter Controls */}
             <Card sx={{ mb: 3, boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
@@ -2051,9 +2226,10 @@ function OrganizationsManagement() {
                                     label="Filter by Type"
                                 >
                                     <MenuItem value="">All Types</MenuItem>
-                                    <MenuItem value="Churches">Churches</MenuItem>
-                                    <MenuItem value="Institutions">Institutions</MenuItem>
+                                    <MenuItem value="church">Churches</MenuItem>
+                                    <MenuItem value="Institution">Institutions</MenuItem>
                                     <MenuItem value="Non_formal_organizations">Non-formal Organizations</MenuItem>
+                                    <MenuItem value="other">Other</MenuItem>
                                 </Select>
                             </FormControl>
                         </Grid>
@@ -2077,9 +2253,9 @@ function OrganizationsManagement() {
                                     setFilterLocation('');
                                     setOrgTypeFilter('all');
                                 }}
-                                sx={{ 
+                                sx={{
                                     height: '40px',
-                                    color: '#633394', 
+                                    color: '#633394',
                                     borderColor: '#633394',
                                     '&:hover': { borderColor: '#7c52a5', backgroundColor: 'rgba(99, 51, 148, 0.04)' }
                                 }}
@@ -2091,7 +2267,9 @@ function OrganizationsManagement() {
                 </CardContent>
             </Card>
 
-            {renderOrganizationsTable()}
+            {renderMainOrganizationsTable()}
+            {renderOtherOrganizationsTable()}
+
 
             {/* Add Organization Dialog */}
             <Dialog open={openAddDialog} onClose={handleCloseDialogOnly} maxWidth="md" fullWidth>
@@ -2103,9 +2281,9 @@ function OrganizationsManagement() {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseDialogs} color="secondary">Cancel</Button>
-                    <Button 
-                        onClick={handleAddOrganization} 
-                        variant="contained" 
+                    <Button
+                        onClick={handleAddOrganization}
+                        variant="contained"
                         sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
                     >
                         Add Organization
@@ -2123,9 +2301,9 @@ function OrganizationsManagement() {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseDialogs} color="secondary">Cancel</Button>
-                    <Button 
-                        onClick={handleUpdateOrganization} 
-                        variant="contained" 
+                    <Button
+                        onClick={handleUpdateOrganization}
+                        variant="contained"
                         sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
                     >
                         Update Organization
@@ -2142,11 +2320,11 @@ function OrganizationsManagement() {
                     <Typography variant="h6" gutterBottom sx={{ color: '#d32f2f', fontWeight: 'bold' }}>
                         Are you sure you want to delete "{selectedOrganization?.name}"?
                     </Typography>
-                    
+
                     <Typography variant="body1" gutterBottom sx={{ mt: 2 }}>
                         <strong>⚠️ WARNING:</strong> This will permanently delete:
                     </Typography>
-                    
+
                     <Box component="ul" sx={{ mt: 1, mb: 2, pl: 2 }}>
                         <Typography component="li" variant="body2">• <strong>ALL Survey Templates</strong> created for this organization</Typography>
                         <Typography component="li" variant="body2">• <strong>ALL Survey Responses</strong> collected from users</Typography>
@@ -2154,34 +2332,34 @@ function OrganizationsManagement() {
                         <Typography component="li" variant="body2">• <strong>Organization contact information</strong> and location data</Typography>
                         <Typography component="li" variant="body2">• <strong>User role assignments</strong> within this organization</Typography>
                     </Box>
-                    
-                    <Typography variant="body2" sx={{ 
-                        backgroundColor: '#fff3e0', 
-                        padding: 2, 
-                        borderRadius: 1, 
+
+                    <Typography variant="body2" sx={{
+                        backgroundColor: '#fff3e0',
+                        padding: 2,
+                        borderRadius: 1,
                         border: '1px solid #ffb74d',
                         color: '#e65100'
                     }}>
-                        <strong>Note:</strong> Users associated with this organization will NOT be deleted, 
+                        <strong>Note:</strong> Users associated with this organization will NOT be deleted,
                         but their organization association will be removed.
                     </Typography>
-                    
+
                     <Typography variant="body1" sx={{ mt: 2, fontWeight: 'bold', color: '#d32f2f' }}>
                         This action cannot be undone!
                     </Typography>
                 </DialogContent>
                 <DialogActions sx={{ p: 2 }}>
-                    <Button 
-                        onClick={handleCloseDialogs} 
-                        color="primary" 
+                    <Button
+                        onClick={handleCloseDialogs}
+                        color="primary"
                         variant="outlined"
                         sx={{ mr: 1 }}
                     >
                         Cancel
                     </Button>
-                    <Button 
-                        onClick={handleDeleteOrganization} 
-                        variant="contained" 
+                    <Button
+                        onClick={handleDeleteOrganization}
+                        variant="contained"
                         color="error"
                         sx={{ backgroundColor: '#d32f2f', '&:hover': { backgroundColor: '#b71c1c' } }}
                     >
@@ -2197,7 +2375,7 @@ function OrganizationsManagement() {
                 </DialogTitle>
                 <DialogContent dividers>
                     <Typography gutterBottom>
-                        Upload a CSV or XLSX file containing organization data. 
+                        Upload a CSV or XLSX file containing organization data.
                         The file should have columns for name, type, location, etc.
                     </Typography>
                     <Box sx={{ mt: 2 }}>
@@ -2205,7 +2383,7 @@ function OrganizationsManagement() {
                             accept=".csv,.xlsx"
                             type="file"
                             onChange={handleFileChange}
-                            style={{ 
+                            style={{
                                 padding: '10px',
                                 border: `1px solid #633394`,
                                 borderRadius: '4px'
@@ -2220,9 +2398,9 @@ function OrganizationsManagement() {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseUploadDialog} color="secondary">Cancel</Button>
-                    <Button 
-                        onClick={handleFileUpload} 
-                        variant="contained" 
+                    <Button
+                        onClick={handleFileUpload}
+                        variant="contained"
                         sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
                         disabled={!selectedFile}
                     >
@@ -2234,9 +2412,9 @@ function OrganizationsManagement() {
             {/* Add User Dialog - Enhanced Version */}
             <Dialog open={openAddUserDialog} onClose={handleCloseAddUserDialog} maxWidth="md" fullWidth>
                 <DialogTitle sx={{ backgroundColor: '#633394', color: 'white' }}>
-                    Add New User {contactType === 'primary' ? '(Primary Contact)' : 
-                                  contactType === 'secondary' ? '(Secondary Contact)' : 
-                                  contactType === 'head' ? '(Head/Lead)' : ''}
+                    Add New User {contactType === 'primary' ? '(Primary Contact)' :
+                        contactType === 'secondary' ? '(Secondary Contact)' :
+                            contactType === 'head' ? '(Head/Lead)' : ''}
                 </DialogTitle>
                 <DialogContent dividers>
                     <Box component="form" noValidate autoComplete="off">
@@ -2376,18 +2554,18 @@ function OrganizationsManagement() {
                             </Box>
                         </Paper>
 
-                        {/* Organizational Roles Section - Only shown when UI role is 'other' */}
-                        {newUserData.ui_role === 'other' && (
-                            <Paper sx={{ p: 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',mb: 3 }}>
+                        {/* Organizational Roles Section - Hidden when UI role is 'other' */}
+                        {newUserData.ui_role !== 'other' && newUserData.ui_role && (
+                            <Paper sx={{ p: 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', mb: 3 }}>
                                 <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold', mb: 2, textAlign: 'center' }}>
                                     Organizational Roles
                                 </Typography>
                                 <Box sx={{ maxWidth: '900px', mx: 'auto' }}>
-                                    
+
                                     {/* Add New Role Section */}
-                                    <Box sx={{ 
-                                        p: 2, 
-                                        border: '1px solid #e0e0e0', 
+                                    <Box sx={{
+                                        p: 2,
+                                        border: '1px solid #e0e0e0',
                                         borderRadius: 1,
                                         backgroundColor: 'white',
                                         mb: 3
@@ -2397,9 +2575,9 @@ function OrganizationsManagement() {
                                         </Typography>
                                         <Grid container spacing={2} alignItems="end">
                                             <Grid item xs={12} md={4}>
-                                                <FormControl 
+                                                <FormControl
                                                     variant="outlined"
-                                                    sx={{width: 300, minHeight: '56px' }}
+                                                    sx={{ width: 300, minHeight: '56px' }}
                                                 >
                                                     <InputLabel id="select-organization-label">Select Organization</InputLabel>
                                                     <Select
@@ -2407,7 +2585,7 @@ function OrganizationsManagement() {
                                                         value={selectedOrganizationIdForRole}
                                                         onChange={(e) => setSelectedOrganizationIdForRole(e.target.value)}
                                                         label="Select Organization"
-                                                        sx={{ 
+                                                        sx={{
                                                             minHeight: '56px',
                                                             '& .MuiSelect-select': {
                                                                 minHeight: '20px',
@@ -2438,12 +2616,12 @@ function OrganizationsManagement() {
                                                 />
                                             </Grid>
                                             <Grid item xs={12} md={4}>
-                                                <Button 
-                                                    variant="contained" 
+                                                <Button
+                                                    variant="contained"
                                                     fullWidth
                                                     onClick={handleAddOrganizationalRoleToUser}
                                                     disabled={!selectedOrganizationIdForRole || !organizationalRoleToAdd.trim() || addingOrganizationalRole}
-                                                    sx={{ 
+                                                    sx={{
                                                         backgroundColor: '#633394',
                                                         '&:hover': { backgroundColor: '#7c52a5' }
                                                     }}
@@ -2457,9 +2635,9 @@ function OrganizationsManagement() {
 
                                     {/* Display Current Roles */}
                                     {newUserData.roles.length > 0 && (
-                                        <Box sx={{ 
-                                            p: 2, 
-                                            border: '1px solid #e0e0e0', 
+                                        <Box sx={{
+                                            p: 2,
+                                            border: '1px solid #e0e0e0',
                                             borderRadius: 1,
                                             backgroundColor: 'white'
                                         }}>
@@ -2470,12 +2648,12 @@ function OrganizationsManagement() {
                                                 {organizations.map((org) => {
                                                     const orgRoles = getUserOrganizationRoles(org.id);
                                                     if (orgRoles.length === 0) return null;
-                                                    
+
                                                     return (
                                                         <Grid item xs={12} key={org.id}>
-                                                            <Box sx={{ 
-                                                                p: 2, 
-                                                                border: '1px solid #ddd', 
+                                                            <Box sx={{
+                                                                p: 2,
+                                                                border: '1px solid #ddd',
                                                                 borderRadius: 1,
                                                                 backgroundColor: '#f9f9f9'
                                                             }}>
@@ -2510,7 +2688,7 @@ function OrganizationsManagement() {
                             <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold', mb: 3, textAlign: 'center' }}>
                                 Geographic Location (Optional)
                             </Typography>
-                            
+
                             <Box sx={{ maxWidth: '900px', mx: 'auto' }}>
                                 <Grid container spacing={3}>
                                     {/* Left Column */}
@@ -2524,7 +2702,7 @@ function OrganizationsManagement() {
                                                 onChange={handleNewUserInputChange}
                                                 variant="outlined"
                                             />
-                                            
+
                                             <TextField
                                                 fullWidth
                                                 label="Province/State"
@@ -2533,7 +2711,7 @@ function OrganizationsManagement() {
                                                 onChange={handleNewUserInputChange}
                                                 variant="outlined"
                                             />
-                                            
+
                                             <TextField
                                                 fullWidth
                                                 label="City"
@@ -2542,7 +2720,7 @@ function OrganizationsManagement() {
                                                 onChange={handleNewUserInputChange}
                                                 variant="outlined"
                                             />
-                                            
+
                                             <TextField
                                                 fullWidth
                                                 label="Address Line 1"
@@ -2551,7 +2729,7 @@ function OrganizationsManagement() {
                                                 onChange={handleNewUserInputChange}
                                                 variant="outlined"
                                             />
-                                            
+
                                             <TextField
                                                 fullWidth
                                                 label="Postal Code"
@@ -2562,7 +2740,7 @@ function OrganizationsManagement() {
                                             />
                                         </Box>
                                     </Grid>
-                                    
+
                                     {/* Right Column */}
                                     <Grid item xs={12} md={6}>
                                         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 2 }}>
@@ -2574,7 +2752,7 @@ function OrganizationsManagement() {
                                                 onChange={handleNewUserInputChange}
                                                 variant="outlined"
                                             />
-                                            
+
                                             <TextField
                                                 fullWidth
                                                 label="Region"
@@ -2583,7 +2761,7 @@ function OrganizationsManagement() {
                                                 onChange={handleNewUserInputChange}
                                                 variant="outlined"
                                             />
-                                            
+
                                             <TextField
                                                 fullWidth
                                                 label="Town"
@@ -2592,7 +2770,7 @@ function OrganizationsManagement() {
                                                 onChange={handleNewUserInputChange}
                                                 variant="outlined"
                                             />
-                                            
+
                                             <TextField
                                                 fullWidth
                                                 label="Address Line 2"
@@ -2601,7 +2779,7 @@ function OrganizationsManagement() {
                                                 onChange={handleNewUserInputChange}
                                                 variant="outlined"
                                             />
-                                            
+
                                             <Box sx={{ display: 'flex', gap: 1 }}>
                                                 <TextField
                                                     fullWidth
@@ -2633,9 +2811,9 @@ function OrganizationsManagement() {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseAddUserDialog} color="secondary">Cancel</Button>
-                    <Button 
-                        onClick={handleAddNewUser} 
-                        variant="contained" 
+                    <Button
+                        onClick={handleAddNewUser}
+                        variant="contained"
                         sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
                         disabled={!newUserData.firstname || !newUserData.lastname || !newUserData.email || !newUserData.username}
                     >
@@ -2647,10 +2825,10 @@ function OrganizationsManagement() {
             {/* Add Related Organization Dialog */}
             <Dialog open={openAddRelatedOrgDialog} onClose={handleCloseAddRelatedOrgDialog} maxWidth="md" fullWidth>
                 <DialogTitle sx={{ backgroundColor: '#633394', color: 'white' }}>
-                    Add New Organization {relationshipType === 'denomination' ? '(Denomination/Affiliation)' : 
-                                         relationshipType === 'accreditation' ? '(Accreditation Body)' : 
-                                         relationshipType === 'affiliation' ? '(Affiliation/Validation)' : 
-                                         relationshipType === 'umbrella' ? '(Umbrella Association)' : ''}
+                    Add New Organization {relationshipType === 'denomination' ? '(Denomination/Affiliation)' :
+                        relationshipType === 'accreditation' ? '(Accreditation Body)' :
+                            relationshipType === 'affiliation' ? '(Affiliation/Validation)' :
+                                relationshipType === 'umbrella' ? '(Umbrella Association)' : ''}
                 </DialogTitle>
                 <DialogContent dividers>
                     <Box component="form" noValidate autoComplete="off">
@@ -2726,14 +2904,14 @@ function OrganizationsManagement() {
                                                 organizationTypes.map((orgType) => (
                                                     <MenuItem key={orgType.id} value={orgType.type}>
                                                         {orgType.type === 'Churches' ? 'Church' :
-                                                         orgType.type === 'Institutions' ? 'Institution' :
-                                                         orgType.type === 'Non_formal_organizations' ? 'Non-formal Organization' :
-                                                         orgType.type === 'church' ? 'Church' :
-                                                         orgType.type === 'school' ? 'School' :
-                                                         orgType.type === 'institution' ? 'Institution' :
-                                                         orgType.type === 'non-formal organization' ? 'Non-formal Organization' :
-                                                         orgType.type === 'other' ? 'Other' :
-                                                         orgType.type.charAt(0).toUpperCase() + orgType.type.slice(1)}
+                                                            orgType.type === 'Institutions' ? 'Institution' :
+                                                                orgType.type === 'Non_formal_organizations' ? 'Non-formal Organization' :
+                                                                    orgType.type === 'church' ? 'Church' :
+                                                                        orgType.type === 'school' ? 'School' :
+                                                                            orgType.type === 'institution' ? 'Institution' :
+                                                                                orgType.type === 'non-formal organization' ? 'Non-formal Organization' :
+                                                                                    orgType.type === 'other' ? 'Other' :
+                                                                                        orgType.type.charAt(0).toUpperCase() + orgType.type.slice(1)}
                                                     </MenuItem>
                                                 ))
                                             )}
@@ -2790,9 +2968,9 @@ function OrganizationsManagement() {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseAddRelatedOrgDialog} color="secondary">Cancel</Button>
-                    <Button 
-                        onClick={handleAddNewRelatedOrg} 
-                        variant="contained" 
+                    <Button
+                        onClick={handleAddNewRelatedOrg}
+                        variant="contained"
                         sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
                         disabled={!newRelatedOrgData.name}
                     >

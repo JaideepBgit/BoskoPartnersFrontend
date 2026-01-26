@@ -182,16 +182,16 @@ const FieldConfigurationService = {
             // This would typically come from an API endpoint
             // Example: const response = await fetch('/api/admin/reports/field-categories');
             // return response.json();
-            
+
             // For now, return empty object - fields will be loaded from actual data source
             console.log('Loading field categories from API...');
-            
+
             // Simulate API call delay
             await new Promise(resolve => setTimeout(resolve, 500));
-            
+
             // Return empty categories - will be populated by actual data analysis
             return {};
-            
+
         } catch (error) {
             console.error('Error loading field categories:', error);
             return {};
@@ -215,20 +215,20 @@ const FieldConfigurationService = {
             'value', 'amount', 'number', 'quantity', 'level', 'rank',
             'deviation', 'variance', 'correlation', 'difference'
         ];
-        
+
         // Check if field key contains measure keywords
         const keyLower = fieldKey.toLowerCase();
         const isMeasureByKey = measureKeywords.some(keyword => keyLower.includes(keyword));
-        
+
         // Check if value is numeric
-        const isNumeric = typeof value === 'number' || 
-                         (typeof value === 'string' && !isNaN(parseFloat(value)) && isFinite(value));
-        
+        const isNumeric = typeof value === 'number' ||
+            (typeof value === 'string' && !isNaN(parseFloat(value)) && isFinite(value));
+
         // Determine type
         if (isMeasureByKey || (isNumeric && !keyLower.includes('id') && !keyLower.includes('order'))) {
             return 'measure';
         }
-        
+
         return 'dimension';
     },
 
@@ -236,42 +236,42 @@ const FieldConfigurationService = {
     categorizeField: (fieldKey) => {
         const categories = {
             'Question Analysis': [
-                'question', 'survey_section', 'section', 'category', 'type', 'scale', 
+                'question', 'survey_section', 'section', 'category', 'type', 'scale',
                 'required', 'order', 'text'
             ],
             'Response Analysis': [
-                'response', 'answer', 'value', 'status', 'method', 'score', 
+                'response', 'answer', 'value', 'status', 'method', 'score',
                 'percentage', 'weighted', 'normalized'
             ],
             'Survey Structure': [
                 'survey', 'version', 'language', 'total', 'completion', 'length'
             ],
             'Demographics & Users': [
-                'user', 'organization', 'department', 'location', 'country', 
+                'user', 'organization', 'department', 'location', 'country',
                 'region', 'experience', 'education', 'age', 'gender', 'role'
             ],
             'Time & Engagement': [
-                'date', 'time', 'month', 'quarter', 'year', 'day', 'launch', 
+                'date', 'time', 'month', 'quarter', 'year', 'day', 'launch',
                 'close', 'duration', 'session', 'engagement', 'participation'
             ],
             'Statistical Analysis': [
-                'mean', 'median', 'mode', 'deviation', 'variance', 'confidence', 
+                'mean', 'median', 'mode', 'deviation', 'variance', 'confidence',
                 'correlation', 'percentile', 'z_score', 'distribution'
             ],
             'Comparison & Benchmarking': [
-                'comparison', 'benchmark', 'peer', 'industry', 'difference', 
+                'comparison', 'benchmark', 'peer', 'industry', 'difference',
                 'rank', 'position'
             ]
         };
 
         const keyLower = fieldKey.toLowerCase();
-        
+
         for (const [category, keywords] of Object.entries(categories)) {
             if (keywords.some(keyword => keyLower.includes(keyword))) {
                 return category;
             }
         }
-        
+
         return 'Other Fields';
     },
 
@@ -287,7 +287,7 @@ const FieldConfigurationService = {
             'Comparison & Benchmarking': 'CompareArrowsIcon',
             'Other Fields': 'CategoryIcon'
         };
-        
+
         return iconMap[categoryName] || 'CategoryIcon';
     },
 
@@ -339,16 +339,16 @@ const DataService = {
             //     body: JSON.stringify(params)
             // });
             // return response.json();
-            
+
             console.log(`Loading ${dataType} data from API with params:`, params);
-            
+
             // Simulate API call delay
             await new Promise(resolve => setTimeout(resolve, 1000));
-            
+
             // Return empty array - data should come from actual data source
             // In production, this would be populated by your backend API
             return [];
-            
+
         } catch (error) {
             console.error('Error loading sample data:', error);
             return [];
@@ -385,11 +385,11 @@ const DataService = {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(params)
             });
-            
+
             if (!response.ok) {
                 throw new Error(`API call failed: ${response.statusText}`);
             }
-            
+
             return await response.json();
         } catch (error) {
             console.error('Error loading from API:', error);
@@ -403,10 +403,10 @@ const DataService = {
             // This would connect to your database
             // Example: const result = await dbClient.query(query);
             // return result.rows;
-            
+
             console.log('Database query:', query);
             console.log('Connection:', connection);
-            
+
             // Return empty array - implement your database connection
             return [];
         } catch (error) {
@@ -419,7 +419,7 @@ const DataService = {
     loadFromFile: async (file) => {
         try {
             const text = await file.text();
-            
+
             // Determine file type and parse accordingly
             if (file.type === 'application/json') {
                 return JSON.parse(text);
@@ -448,23 +448,23 @@ const DataService = {
     parseCSV: (csvText) => {
         const lines = csvText.split('\n').filter(line => line.trim());
         if (lines.length === 0) return [];
-        
+
         const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
         const data = [];
-        
+
         for (let i = 1; i < lines.length; i++) {
             const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
             const record = {};
-            
+
             headers.forEach((header, index) => {
                 const value = values[index] || '';
                 // Try to parse as number, otherwise keep as string
                 record[header] = isNaN(value) ? value : parseFloat(value);
             });
-            
+
             data.push(record);
         }
-        
+
         return data;
     },
 
@@ -499,21 +499,21 @@ const DataService = {
         if (!Array.isArray(data)) {
             throw new Error('Data must be an array of records');
         }
-        
+
         if (data.length === 0) {
             return { valid: true, message: 'No data to validate' };
         }
-        
+
         const firstRecord = data[0];
         if (typeof firstRecord !== 'object') {
             throw new Error('Each record must be an object');
         }
-        
+
         const fields = Object.keys(firstRecord);
         if (fields.length === 0) {
             throw new Error('Records must have at least one field');
         }
-        
+
         return {
             valid: true,
             recordCount: data.length,
@@ -528,7 +528,7 @@ const DataService = {
         if (!data || data.length === 0) {
             return { recordCount: 0, fields: [] };
         }
-        
+
         const fields = Object.keys(data[0]);
         const summary = {
             recordCount: data.length,
@@ -536,10 +536,10 @@ const DataService = {
                 const values = data.map(record => record[field]).filter(v => v !== null && v !== undefined);
                 const nonNullCount = values.length;
                 const uniqueValues = [...new Set(values)];
-                
+
                 let fieldType = 'text';
                 let stats = {};
-                
+
                 // Determine field type and calculate statistics
                 if (values.every(v => typeof v === 'number' || !isNaN(parseFloat(v)))) {
                     fieldType = 'numeric';
@@ -554,7 +554,7 @@ const DataService = {
                 } else if (values.some(v => /^\d{4}-\d{2}-\d{2}/.test(v))) {
                     fieldType = 'date';
                 }
-                
+
                 return {
                     name: field,
                     type: fieldType,
@@ -565,7 +565,7 @@ const DataService = {
                 };
             })
         };
-        
+
         return summary;
     }
 };
@@ -607,7 +607,7 @@ const TestModeService = {
 
     async getRoleConfiguration() {
         const sampleData = await this.loadSampleData();
-        
+
         const roleConfig = {
             'Pastor': {
                 icon: '⛪',
@@ -658,7 +658,7 @@ const TestModeService = {
 
     async getSampleSurveys() {
         const sampleData = await this.loadSampleData();
-        
+
         const surveys = [
             {
                 id: 'church_survey',
@@ -697,21 +697,21 @@ const TestModeService = {
 
     calculateCompletionRate(responses) {
         if (!responses || responses.length === 0) return 0;
-        
+
         // Count responses that have substantial data (not just partial responses)
         const completedCount = responses.filter(response => {
             // Check if response has scoring data which indicates completion
-            return response.ministry_training_scores || 
-                   response.leadership_assessment || 
-                   response.ministry_preparation_scores;
+            return response.ministry_training_scores ||
+                response.leadership_assessment ||
+                response.ministry_preparation_scores;
         }).length;
-        
+
         return Math.round((completedCount / responses.length) * 100);
     },
 
     getLatestResponseDate(responses) {
         if (!responses || responses.length === 0) return '2024-01-01';
-        
+
         const dates = responses.map(r => new Date(r.response_date));
         const latest = new Date(Math.max(...dates));
         return latest.toISOString().split('T')[0];
@@ -766,7 +766,7 @@ const VisualReportBuilder = ({ onLogout }) => {
     const dragRef = useRef(null);
 
     const tabs = [
-        { label: 'Home', path: '/home'},
+        { label: 'Home', path: '/home' },
         { label: 'Dashboard', path: '/dashboard' },
         { label: 'Assessment Overview', path: '/root-dashboard' },
         { label: '360 Degree Assessment', path: '/edit-assessments' },
@@ -825,15 +825,15 @@ const VisualReportBuilder = ({ onLogout }) => {
     const loadDefaultFields = async () => {
         try {
             setLoading(true);
-            
+
             // First, try to load data from external source
             const sampleData = await DataService.getSampleData('survey');
-            
+
             if (sampleData && sampleData.length > 0) {
                 // Generate fields dynamically from the loaded data
                 const fieldCategories = await FieldConfigurationService.generateFieldsFromData(sampleData);
                 const processedFields = {};
-                
+
                 // Process each category and add icons
                 Object.entries(fieldCategories).forEach(([categoryName, categoryConfig]) => {
                     processedFields[categoryName] = categoryConfig.fields.map(field => ({
@@ -842,10 +842,10 @@ const VisualReportBuilder = ({ onLogout }) => {
                         category: categoryName
                     }));
                 });
-                
+
                 setAvailableFields(processedFields);
                 setChartData(sampleData);
-                
+
                 console.log('Fields generated from data:', processedFields);
                 console.log('Data summary:', DataService.getDataSummary(sampleData));
             } else {
@@ -854,7 +854,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 setChartData([]);
                 console.log('No data available - fields will be empty until data is loaded');
             }
-            
+
         } catch (error) {
             console.error('Error loading fields:', error);
             // Fallback to empty fields
@@ -868,7 +868,7 @@ const VisualReportBuilder = ({ onLogout }) => {
     const generateSampleChartData = () => {
         // Generate comprehensive sample data for survey analysis
         const sampleData = [
-            { 
+            {
                 // Question Analysis
                 question_id: 'Q001',
                 question_text: 'How effective are current teaching methods in your organization?',
@@ -882,7 +882,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 question_completion_rate: 95.7,
                 question_skip_rate: 4.3,
                 average_response_time: 32.5,
-                
+
                 // Response Analysis
                 response_id: 'R001',
                 response_value: '4',
@@ -895,7 +895,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 response_score: 4.2,
                 weighted_score: 4.1,
                 normalized_score: 82,
-                
+
                 // Survey Structure
                 survey_id: 'S001',
                 survey_title: 'Theological Education Assessment',
@@ -910,7 +910,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 completion_rate: 85.1,
                 average_completion_time: 18.5,
                 survey_length: 15,
-                
+
                 // Demographics & Users
                 user_id: 'U001',
                 user_role: 'Pastor',
@@ -927,7 +927,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 user_response_count: 3,
                 user_completion_rate: 100,
                 years_of_experience: 8,
-                
+
                 // Time & Engagement
                 response_date: '2024-01-15',
                 response_month: 'January',
@@ -942,7 +942,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 time_per_question: 44.4,
                 engagement_score: 87,
                 participation_rate: 94.7,
-                
+
                 // Statistical Analysis
                 mean_score: 4.1,
                 median_score: 4,
@@ -954,7 +954,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 percentile_rank: 78,
                 z_score: 0.125,
                 response_distribution: 0.23,
-                
+
                 // Comparison & Benchmarking
                 comparison_group: 'Pastors',
                 benchmark_category: 'East African Churches',
@@ -967,10 +967,10 @@ const VisualReportBuilder = ({ onLogout }) => {
                 percentage_difference: 5.3,
                 rank_position: 12,
                 percentile_score: 82,
-                
+
                 user_type: 'primary'
             },
-            { 
+            {
                 // Question Analysis
                 question_id: 'Q002',
                 question_text: 'How relevant is the curriculum content to current ministry needs?',
@@ -984,7 +984,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 question_completion_rate: 91.5,
                 question_skip_rate: 8.5,
                 average_response_time: 28.7,
-                
+
                 // Response Analysis
                 response_id: 'R002',
                 response_value: '5',
@@ -997,7 +997,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 response_score: 4.8,
                 weighted_score: 4.7,
                 normalized_score: 96,
-                
+
                 // Survey Structure
                 survey_id: 'S001',
                 survey_title: 'Theological Education Assessment',
@@ -1012,7 +1012,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 completion_rate: 85.1,
                 average_completion_time: 18.5,
                 survey_length: 15,
-                
+
                 // Demographics & Users
                 user_id: 'U002',
                 user_role: 'Professor',
@@ -1029,7 +1029,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 user_response_count: 5,
                 user_completion_rate: 100,
                 years_of_experience: 15,
-                
+
                 // Time & Engagement
                 response_date: '2024-01-16',
                 response_month: 'January',
@@ -1044,7 +1044,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 time_per_question: 51.4,
                 engagement_score: 92,
                 participation_rate: 94.7,
-                
+
                 // Statistical Analysis
                 mean_score: 4.7,
                 median_score: 5,
@@ -1056,7 +1056,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 percentile_rank: 92,
                 z_score: 0.5,
                 response_distribution: 0.18,
-                
+
                 // Comparison & Benchmarking
                 comparison_group: 'Professors',
                 benchmark_category: 'East African Seminaries',
@@ -1069,10 +1069,10 @@ const VisualReportBuilder = ({ onLogout }) => {
                 percentage_difference: 9.8,
                 rank_position: 3,
                 percentile_score: 92,
-                
+
                 user_type: 'comparison'
             },
-            { 
+            {
                 // Question Analysis
                 question_id: 'Q003',
                 question_text: 'How adequate are the resources available for pastoral care?',
@@ -1086,7 +1086,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 question_completion_rate: 87.2,
                 question_skip_rate: 12.8,
                 average_response_time: 35.2,
-                
+
                 // Response Analysis
                 response_id: 'R003',
                 response_value: '3',
@@ -1099,7 +1099,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 response_score: 3.2,
                 weighted_score: 3.1,
                 normalized_score: 64,
-                
+
                 // Survey Structure
                 survey_id: 'S001',
                 survey_title: 'Theological Education Assessment',
@@ -1114,7 +1114,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 completion_rate: 85.1,
                 average_completion_time: 18.5,
                 survey_length: 15,
-                
+
                 // Demographics & Users
                 user_id: 'U003',
                 user_role: 'Pastor',
@@ -1131,7 +1131,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 user_response_count: 2,
                 user_completion_rate: 85,
                 years_of_experience: 5,
-                
+
                 // Time & Engagement
                 response_date: '2024-01-17',
                 response_month: 'January',
@@ -1146,7 +1146,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 time_per_question: 35.0,
                 engagement_score: 72,
                 participation_rate: 94.7,
-                
+
                 // Statistical Analysis
                 mean_score: 3.2,
                 median_score: 3,
@@ -1158,7 +1158,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 percentile_rank: 45,
                 z_score: -0.222,
                 response_distribution: 0.28,
-                
+
                 // Comparison & Benchmarking
                 comparison_group: 'Pastors',
                 benchmark_category: 'East African Churches',
@@ -1171,10 +1171,10 @@ const VisualReportBuilder = ({ onLogout }) => {
                 percentage_difference: -15.8,
                 rank_position: 28,
                 percentile_score: 45,
-                
+
                 user_type: 'comparison'
             },
-            { 
+            {
                 // Question Analysis
                 question_id: 'Q004',
                 question_text: 'How accessible are learning resources and materials?',
@@ -1188,7 +1188,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 question_completion_rate: 93.6,
                 question_skip_rate: 6.4,
                 average_response_time: 29.8,
-                
+
                 // Response Analysis
                 response_id: 'R004',
                 response_value: '4',
@@ -1201,7 +1201,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 response_score: 4.0,
                 weighted_score: 3.9,
                 normalized_score: 80,
-                
+
                 // Survey Structure
                 survey_id: 'S001',
                 survey_title: 'Theological Education Assessment',
@@ -1216,7 +1216,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 completion_rate: 85.1,
                 average_completion_time: 18.5,
                 survey_length: 15,
-                
+
                 // Demographics & Users
                 user_id: 'U004',
                 user_role: 'Pastor',
@@ -1233,7 +1233,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 user_response_count: 4,
                 user_completion_rate: 95,
                 years_of_experience: 10,
-                
+
                 // Time & Engagement
                 response_date: '2024-01-18',
                 response_month: 'January',
@@ -1248,7 +1248,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 time_per_question: 48.0,
                 engagement_score: 85,
                 participation_rate: 94.7,
-                
+
                 // Statistical Analysis
                 mean_score: 4.0,
                 median_score: 4,
@@ -1260,7 +1260,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 percentile_rank: 72,
                 z_score: 0.0,
                 response_distribution: 0.25,
-                
+
                 // Comparison & Benchmarking
                 comparison_group: 'Pastors',
                 benchmark_category: 'East African Churches',
@@ -1273,10 +1273,10 @@ const VisualReportBuilder = ({ onLogout }) => {
                 percentage_difference: 0.0,
                 rank_position: 15,
                 percentile_score: 72,
-                
+
                 user_type: 'comparison'
             },
-            { 
+            {
                 // Question Analysis
                 question_id: 'Q005',
                 question_text: 'How effective are professional development opportunities?',
@@ -1290,7 +1290,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 question_completion_rate: 89.4,
                 question_skip_rate: 10.6,
                 average_response_time: 38.1,
-                
+
                 // Response Analysis
                 response_id: 'R005',
                 response_value: '5',
@@ -1303,7 +1303,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 response_score: 4.5,
                 weighted_score: 4.4,
                 normalized_score: 90,
-                
+
                 // Survey Structure
                 survey_id: 'S001',
                 survey_title: 'Theological Education Assessment',
@@ -1318,7 +1318,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 completion_rate: 85.1,
                 average_completion_time: 18.5,
                 survey_length: 15,
-                
+
                 // Demographics & Users
                 user_id: 'U005',
                 user_role: 'Dean',
@@ -1335,7 +1335,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 user_response_count: 6,
                 user_completion_rate: 100,
                 years_of_experience: 20,
-                
+
                 // Time & Engagement
                 response_date: '2024-01-19',
                 response_month: 'January',
@@ -1350,7 +1350,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 time_per_question: 60.8,
                 engagement_score: 96,
                 participation_rate: 94.7,
-                
+
                 // Statistical Analysis
                 mean_score: 4.5,
                 median_score: 5,
@@ -1362,7 +1362,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 percentile_rank: 88,
                 z_score: 0.5,
                 response_distribution: 0.15,
-                
+
                 // Comparison & Benchmarking
                 comparison_group: 'Deans',
                 benchmark_category: 'East African Seminaries',
@@ -1375,11 +1375,11 @@ const VisualReportBuilder = ({ onLogout }) => {
                 percentage_difference: 7.1,
                 rank_position: 5,
                 percentile_score: 88,
-                
+
                 user_type: 'comparison'
             }
         ];
-        
+
         setChartData(sampleData);
     };
 
@@ -1388,7 +1388,7 @@ const VisualReportBuilder = ({ onLogout }) => {
         try {
             const roleConfig = await TestModeService.getRoleConfiguration();
             const users = roleConfig[role]?.users || [];
-            
+
             setTestModeFilters(prev => ({
                 ...prev,
                 selectedRole: role,
@@ -1409,7 +1409,7 @@ const VisualReportBuilder = ({ onLogout }) => {
             // Load surveys available for this user's type
             const userSurveys = await TestModeService.getSampleSurveys();
             const selectedUser = testModeFilters.availableUsers.find(u => u.id === userId);
-            
+
             // Filter surveys based on user type
             const filteredSurveys = userSurveys.filter(survey => {
                 if (selectedUser?.surveyType === 'church') return survey.surveyType === 'church';
@@ -1417,10 +1417,10 @@ const VisualReportBuilder = ({ onLogout }) => {
                 if (selectedUser?.surveyType === 'non_formal') return survey.surveyType === 'non_formal';
                 return true;
             });
-            
+
             // Load user responses from sample data
             const userResponses = await loadUserResponsesFromSampleData(userId);
-            
+
             setTestModeFilters(prev => ({
                 ...prev,
                 selectedUser: userId,
@@ -1430,7 +1430,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 showComparison: false,
                 userResponses: userResponses
             }));
-            
+
             // Update comparison data
             if (userResponses.length > 0) {
                 updateComparisonData(userResponses[0], []);
@@ -1458,13 +1458,13 @@ const VisualReportBuilder = ({ onLogout }) => {
             // Load actual church survey responses for comparison
             const churchResponses = await SampleDataService.loadChurchResponses();
             const currentUserId = testModeFilters.selectedUser;
-            
+
             // Find current user's response
-            const currentUserResponse = churchResponses.responses.find(response => 
-                response.id.toString() === currentUserId || 
+            const currentUserResponse = churchResponses.responses.find(response =>
+                response.id.toString() === currentUserId ||
                 response.pastor_name.toLowerCase().includes(currentUserId.toLowerCase())
             ) || churchResponses.responses[0]; // fallback to first response
-            
+
             // Get 3 other responses for comparison
             const comparisonResponses = churchResponses.responses
                 .filter(response => response.id !== currentUserResponse.id)
@@ -1486,7 +1486,7 @@ const VisualReportBuilder = ({ onLogout }) => {
 
             // Update comparison data with numerical analysis
             updateComparisonData(currentUserResponse, comparisonResponses);
-            
+
         } catch (error) {
             console.error('Error loading comparison users:', error);
         }
@@ -1496,15 +1496,15 @@ const VisualReportBuilder = ({ onLogout }) => {
     const loadUserResponsesFromSampleData = async (userId) => {
         try {
             const churchResponses = await SampleDataService.loadChurchResponses();
-            
+
             // Map user IDs to actual responses (simplified mapping for demo)
             const userResponseMap = {
                 'pastor_john_w': churchResponses.responses[0],
-                'pastor_mary_j': churchResponses.responses[1], 
+                'pastor_mary_j': churchResponses.responses[1],
                 'pastor_david_b': churchResponses.responses[2],
                 'pastor_grace_m': churchResponses.responses[3]
             };
-            
+
             const userResponse = userResponseMap[userId] || churchResponses.responses[0];
             return [userResponse];
         } catch (error) {
@@ -1519,21 +1519,21 @@ const VisualReportBuilder = ({ onLogout }) => {
 
         const ministryScores = selectedUserData.ministry_training_scores || {};
         const comparisonScores = comparisonUsersData.map(user => user.ministry_training_scores || {});
-        
+
         // Calculate average scores for comparison users
         const averageScores = {};
         const scoreDifferences = {};
-        
+
         Object.keys(ministryScores).forEach(skillArea => {
             const selectedUserScore = ministryScores[skillArea];
             const comparisonValues = comparisonScores
                 .map(scores => scores[skillArea])
                 .filter(score => score !== undefined);
-            
-            const averageComparisonScore = comparisonValues.length > 0 
-                ? comparisonValues.reduce((sum, score) => sum + score, 0) / comparisonValues.length 
+
+            const averageComparisonScore = comparisonValues.length > 0
+                ? comparisonValues.reduce((sum, score) => sum + score, 0) / comparisonValues.length
                 : 0;
-                
+
             averageScores[skillArea] = averageComparisonScore;
             scoreDifferences[skillArea] = selectedUserScore - averageComparisonScore;
         });
@@ -1574,7 +1574,7 @@ const VisualReportBuilder = ({ onLogout }) => {
             if (responses.length === 0) return;
 
             const selectedResponse = responses[0];
-            
+
             // Generate specific fields based on the survey data structure
             const ministryFields = Object.keys(selectedResponse.ministry_training_scores || {}).map(skillArea => {
                 const skillName = skillArea.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -1619,7 +1619,7 @@ const VisualReportBuilder = ({ onLogout }) => {
             };
 
             setAvailableFields(updatedFields);
-            
+
         } catch (error) {
             console.error('Error loading survey specific data:', error);
         }
@@ -1631,7 +1631,7 @@ const VisualReportBuilder = ({ onLogout }) => {
             const sampleData = await TestModeService.loadSampleData();
             const selectedUser = testModeFilters.availableUsers.find(u => u.id === testModeFilters.selectedUser);
             const selectedSurvey = testModeFilters.availableSurveys.find(s => s.id === surveyId);
-            
+
             if (!selectedUser || !selectedSurvey) {
                 console.error('Selected user or survey not found');
                 return;
@@ -1684,7 +1684,7 @@ const VisualReportBuilder = ({ onLogout }) => {
             };
 
             const testModeFields = {};
-            
+
             // Process and filter categories for test mode
             Object.entries(fieldCategories).forEach(([categoryName, categoryConfig]) => {
                 testModeFields[categoryName] = categoryConfig.fields.map(field => ({
@@ -1696,10 +1696,10 @@ const VisualReportBuilder = ({ onLogout }) => {
 
             setAvailableFields(testModeFields);
             setChartData(surveyResponses);
-            
+
             console.log('Test mode fields generated from survey data:', testModeFields);
             console.log('Survey responses loaded:', surveyResponses.length);
-            
+
         } catch (error) {
             console.error('Error generating test mode fields:', error);
             setAvailableFields({});
@@ -1716,14 +1716,14 @@ const VisualReportBuilder = ({ onLogout }) => {
         if (canvas.rows.length > 0) {
             const groupField = canvas.rows[0].id;
             const measureField = canvas.columns.find(col => col.type === 'measure');
-            
+
             if (measureField) {
                 const grouped = processedData.reduce((acc, item) => {
                     const key = item[groupField];
                     if (!acc[key]) {
-                        acc[key] = { 
-                            name: key, 
-                            value: 0, 
+                        acc[key] = {
+                            name: key,
+                            value: 0,
                             count: 0,
                             primary: 0,
                             comparison: 0,
@@ -1731,10 +1731,10 @@ const VisualReportBuilder = ({ onLogout }) => {
                             comparisonCount: 0
                         };
                     }
-                    
+
                     acc[key].value += item[measureField.id] || 0;
                     acc[key].count += 1;
-                    
+
                     if (item.user_type === 'primary') {
                         acc[key].primary += item[measureField.id] || 0;
                         acc[key].primaryCount += 1;
@@ -1742,7 +1742,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                         acc[key].comparison += item[measureField.id] || 0;
                         acc[key].comparisonCount += 1;
                     }
-                    
+
                     return acc;
                 }, {});
 
@@ -1751,8 +1751,8 @@ const VisualReportBuilder = ({ onLogout }) => {
                     value: item.count > 0 ? item.value / item.count : 0,
                     primaryAvg: item.primaryCount > 0 ? item.primary / item.primaryCount : 0,
                     comparisonAvg: item.comparisonCount > 0 ? item.comparison / item.comparisonCount : 0,
-                    difference: (item.primaryCount > 0 ? item.primary / item.primaryCount : 0) - 
-                               (item.comparisonCount > 0 ? item.comparison / item.comparisonCount : 0)
+                    difference: (item.primaryCount > 0 ? item.primary / item.primaryCount : 0) -
+                        (item.comparisonCount > 0 ? item.comparison / item.comparisonCount : 0)
                 }));
             }
         } else if (canvas.columns.length > 0) {
@@ -1785,7 +1785,7 @@ const VisualReportBuilder = ({ onLogout }) => {
         if (!draggedItem) return;
 
         const newCanvas = { ...canvas };
-        
+
         // Remove field from other zones if it exists
         newCanvas.columns = newCanvas.columns.filter(item => item.id !== draggedItem.id);
         newCanvas.rows = newCanvas.rows.filter(item => item.id !== draggedItem.id);
@@ -1852,10 +1852,10 @@ const VisualReportBuilder = ({ onLogout }) => {
     const renderChart = () => {
         if (previewData.length === 0) {
             return (
-                <Box sx={{ 
-                    height: 400, 
-                    display: 'flex', 
-                    alignItems: 'center', 
+                <Box sx={{
+                    height: 400,
+                    display: 'flex',
+                    alignItems: 'center',
                     justifyContent: 'center',
                     bgcolor: '#f9f9f9',
                     border: '2px dashed #ccc',
@@ -1878,18 +1878,18 @@ const VisualReportBuilder = ({ onLogout }) => {
                         </Typography>
                         {payload.map((entry, index) => (
                             <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                                <Box 
-                                    sx={{ 
-                                        width: 12, 
-                                        height: 12, 
-                                        bgcolor: entry.color, 
-                                        borderRadius: '2px' 
-                                    }} 
+                                <Box
+                                    sx={{
+                                        width: 12,
+                                        height: 12,
+                                        bgcolor: entry.color,
+                                        borderRadius: '2px'
+                                    }}
                                 />
                                 <Typography variant="body2">
                                     {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}
                                     {entry.dataKey === 'difference' && entry.value !== undefined && (
-                                        <span style={{ 
+                                        <span style={{
                                             color: entry.value > 0 ? '#4caf50' : entry.value < 0 ? '#f44336' : 'inherit',
                                             fontWeight: 600,
                                             marginLeft: '4px'
@@ -1923,8 +1923,8 @@ const VisualReportBuilder = ({ onLogout }) => {
                     <ResponsiveContainer {...chartProps}>
                         <BarChart data={previewData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
                             {canvas.showGrid && <CartesianGrid strokeDasharray="3 3" />}
-                            <XAxis 
-                                dataKey="name" 
+                            <XAxis
+                                dataKey="name"
                                 angle={-45}
                                 textAnchor="end"
                                 height={100}
@@ -1945,14 +1945,14 @@ const VisualReportBuilder = ({ onLogout }) => {
                         </BarChart>
                     </ResponsiveContainer>
                 );
-                
+
             case 'line':
                 return (
                     <ResponsiveContainer {...chartProps}>
                         <LineChart data={previewData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
                             {canvas.showGrid && <CartesianGrid strokeDasharray="3 3" />}
-                            <XAxis 
-                                dataKey="name" 
+                            <XAxis
+                                dataKey="name"
                                 angle={-45}
                                 textAnchor="end"
                                 height={100}
@@ -1969,10 +1969,10 @@ const VisualReportBuilder = ({ onLogout }) => {
                         </LineChart>
                     </ResponsiveContainer>
                 );
-                
+
             case 'pie':
                 // For pie charts in test mode, show score distribution
-                const pieData = testMode && testModeFilters.showComparison 
+                const pieData = testMode && testModeFilters.showComparison
                     ? previewData.slice(0, 8).map((item, index) => ({
                         name: item.name,
                         value: item.selectedUser,
@@ -2003,7 +2003,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                         </PieChart>
                     </ResponsiveContainer>
                 );
-                
+
             case 'table':
                 return (
                     <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
@@ -2024,17 +2024,17 @@ const VisualReportBuilder = ({ onLogout }) => {
                             <tbody>
                                 {previewData.map((row, index) => {
                                     const performance = testMode && testModeFilters.showComparison && row.difference !== undefined
-                                        ? row.difference > 0.5 ? 'Above Average' 
-                                        : row.difference < -0.5 ? 'Below Average' 
-                                        : 'Average'
+                                        ? row.difference > 0.5 ? 'Above Average'
+                                            : row.difference < -0.5 ? 'Below Average'
+                                                : 'Average'
                                         : 'N/A';
-                                    
+
                                     return (
                                         <tr key={index} style={{ backgroundColor: index % 2 === 0 ? '#f9f9f9' : 'white' }}>
                                             <td style={{ padding: '12px', border: '1px solid #ddd', fontWeight: 500 }}>{row.name}</td>
-                                            <td style={{ 
-                                                padding: '12px', 
-                                                border: '1px solid #ddd', 
+                                            <td style={{
+                                                padding: '12px',
+                                                border: '1px solid #ddd',
                                                 textAlign: 'center',
                                                 fontWeight: 600,
                                                 color: adminColors.primary
@@ -2046,23 +2046,23 @@ const VisualReportBuilder = ({ onLogout }) => {
                                                     <td style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'center' }}>
                                                         {row.averageComparison?.toFixed(2) || 'N/A'}
                                                     </td>
-                                                    <td style={{ 
-                                                        padding: '12px', 
-                                                        border: '1px solid #ddd', 
+                                                    <td style={{
+                                                        padding: '12px',
+                                                        border: '1px solid #ddd',
                                                         textAlign: 'center',
                                                         color: row.difference > 0 ? '#4caf50' : row.difference < 0 ? '#f44336' : 'inherit',
                                                         fontWeight: 600
                                                     }}>
-                                                        {row.difference !== undefined ? 
+                                                        {row.difference !== undefined ?
                                                             `${row.difference > 0 ? '+' : ''}${row.difference.toFixed(2)}` : 'N/A'}
                                                     </td>
-                                                    <td style={{ 
-                                                        padding: '12px', 
-                                                        border: '1px solid #ddd', 
+                                                    <td style={{
+                                                        padding: '12px',
+                                                        border: '1px solid #ddd',
                                                         textAlign: 'center',
-                                                        color: performance === 'Above Average' ? '#4caf50' 
-                                                            : performance === 'Below Average' ? '#f44336' 
-                                                            : '#666',
+                                                        color: performance === 'Above Average' ? '#4caf50'
+                                                            : performance === 'Below Average' ? '#f44336'
+                                                                : '#666',
                                                         fontWeight: 500
                                                     }}>
                                                         {performance}
@@ -2085,7 +2085,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                         )}
                     </Box>
                 );
-                
+
             default:
                 return <Typography>Unsupported chart type</Typography>;
         }
@@ -2118,7 +2118,7 @@ const VisualReportBuilder = ({ onLogout }) => {
             onDragEnd={handleDragEnd}
         >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Box sx={{ 
+                <Box sx={{
                     color: field.type === 'measure' ? adminColors.success : adminColors.primary,
                     display: 'flex',
                     alignItems: 'center',
@@ -2132,7 +2132,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                     {field.name}
                 </Typography>
                 {draggable && (
-                    <Box sx={{ 
+                    <Box sx={{
                         display: 'flex',
                         flexDirection: 'column',
                         gap: 0.2,
@@ -2151,22 +2151,22 @@ const VisualReportBuilder = ({ onLogout }) => {
     const DropZone = ({ title, zone, items, icon, allowedTypes = ['dimension', 'measure'] }) => {
         const isValidDrop = isDragging && draggedItem && allowedTypes.includes(draggedItem.type);
         const isInvalidDrop = isDragging && draggedItem && !allowedTypes.includes(draggedItem.type);
-        
+
         return (
             <Paper
                 sx={{
                     p: 2,
                     minHeight: 100,
-                    border: `2px dashed ${isValidDrop 
-                        ? adminColors.primary 
-                        : isInvalidDrop 
-                            ? adminColors.error 
+                    border: `2px dashed ${isValidDrop
+                        ? adminColors.primary
+                        : isInvalidDrop
+                            ? adminColors.error
                             : adminColors.borderColor}`,
                     borderRadius: 2,
-                    bgcolor: isValidDrop 
-                        ? 'rgba(99, 51, 148, 0.08)' 
-                        : isInvalidDrop 
-                            ? 'rgba(244, 67, 54, 0.05)' 
+                    bgcolor: isValidDrop
+                        ? 'rgba(99, 51, 148, 0.08)'
+                        : isInvalidDrop
+                            ? 'rgba(244, 67, 54, 0.05)'
                             : 'white',
                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     position: 'relative',
@@ -2190,7 +2190,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 onDragOver={handleDragOver}
             >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, position: 'relative', zIndex: 1 }}>
-                    <Box sx={{ 
+                    <Box sx={{
                         color: adminColors.primary,
                         p: 0.5,
                         borderRadius: 1,
@@ -2203,11 +2203,11 @@ const VisualReportBuilder = ({ onLogout }) => {
                     <Typography variant="subtitle2" sx={{ color: adminColors.text, fontWeight: 600 }}>
                         {title}
                     </Typography>
-                    <Chip 
-                        label={allowedTypes.join(', ')} 
-                        size="small" 
+                    <Chip
+                        label={allowedTypes.join(', ')}
+                        size="small"
                         variant="outlined"
-                        sx={{ 
+                        sx={{
                             fontSize: '0.65rem',
                             height: 20,
                             borderColor: adminColors.borderColor,
@@ -2215,7 +2215,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                         }}
                     />
                 </Box>
-                
+
                 {items.length === 0 ? (
                     <Box sx={{ textAlign: 'center', py: 2, position: 'relative', zIndex: 1 }}>
                         <Typography variant="body2" color="textSecondary" sx={{ fontStyle: 'italic' }}>
@@ -2236,7 +2236,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                                 onDelete={() => removeFromCanvas(zone, item.id)}
                                 icon={item.icon}
                                 size="small"
-                                sx={{ 
+                                sx={{
                                     bgcolor: item.type === 'measure' ? '#e8f5e8' : '#f3e5f5',
                                     border: `1px solid ${item.type === 'measure' ? adminColors.success : adminColors.primary}`,
                                     '& .MuiChip-icon': {
@@ -2260,7 +2260,7 @@ const VisualReportBuilder = ({ onLogout }) => {
     const TestModeFiltering = () => {
         const [roleConfig, setRoleConfig] = useState({});
         const [loadingRoles, setLoadingRoles] = useState(true);
-        
+
         useEffect(() => {
             const loadRoles = async () => {
                 try {
@@ -2274,10 +2274,10 @@ const VisualReportBuilder = ({ onLogout }) => {
                     setLoadingRoles(false);
                 }
             };
-            
+
             loadRoles();
         }, []);
-        
+
         return (
             <Card sx={{ mb: 2 }}>
                 <CardHeader title="🧪 Test Mode Filtering" />
@@ -2395,13 +2395,13 @@ const VisualReportBuilder = ({ onLogout }) => {
                                                     ))}
                                                 </Box>
                                             </Alert>
-                                            
+
                                             {/* Detailed Comparison Analysis */}
                                             {comparisonData.selectedUserData && (
                                                 <Card sx={{ mb: 2, bgcolor: '#f8f9fa' }}>
-                                                    <CardHeader 
-                                                        title="📊 Numerical Comparison Analysis" 
-                                                        sx={{ 
+                                                    <CardHeader
+                                                        title="📊 Numerical Comparison Analysis"
+                                                        sx={{
                                                             bgcolor: adminColors.highlightBg,
                                                             '& .MuiCardHeader-title': { fontSize: '1rem', fontWeight: 600 }
                                                         }}
@@ -2410,7 +2410,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                                                         <Typography variant="body2" sx={{ mb: 2, fontWeight: 600 }}>
                                                             Selected User: {comparisonData.selectedUserData.pastor_name}
                                                         </Typography>
-                                                        
+
                                                         {/* Top Performance Areas */}
                                                         <Box sx={{ mb: 2 }}>
                                                             <Typography variant="subtitle2" sx={{ mb: 1, color: '#4caf50', fontWeight: 600 }}>
@@ -2434,7 +2434,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                                                                 <Typography variant="caption" color="textSecondary">No areas significantly above average</Typography>
                                                             )}
                                                         </Box>
-                                                        
+
                                                         {/* Areas for Improvement */}
                                                         <Box sx={{ mb: 2 }}>
                                                             <Typography variant="subtitle2" sx={{ mb: 1, color: '#f44336', fontWeight: 600 }}>
@@ -2458,7 +2458,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                                                                 <Typography variant="caption" color="textSecondary">No areas significantly below average</Typography>
                                                             )}
                                                         </Box>
-                                                        
+
                                                         {/* Overall Statistics */}
                                                         <Box sx={{ p: 1, bgcolor: 'white', borderRadius: 1, border: '1px solid #e0e0e0' }}>
                                                             <Typography variant="caption" sx={{ display: 'block', mb: 1, fontWeight: 600 }}>
@@ -2478,9 +2478,9 @@ const VisualReportBuilder = ({ onLogout }) => {
                                                             </Box>
                                                             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                                                 <Typography variant="caption">Overall Difference:</Typography>
-                                                                <Typography 
-                                                                    variant="caption" 
-                                                                    sx={{ 
+                                                                <Typography
+                                                                    variant="caption"
+                                                                    sx={{
                                                                         fontWeight: 600,
                                                                         color: (Object.values(comparisonData.scoreDifferences).reduce((sum, diff) => sum + diff, 0) / Object.values(comparisonData.scoreDifferences).length) > 0 ? '#4caf50' : '#f44336'
                                                                     }}
@@ -2490,9 +2490,9 @@ const VisualReportBuilder = ({ onLogout }) => {
                                                                 </Typography>
                                                             </Box>
                                                         </Box>
-                                                        
+
                                                         <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block', fontStyle: 'italic' }}>
-                                                            💡 Drag "Ministry Training Scores" fields to the chart area to visualize these comparisons
+                                                            Drag "Ministry Training Scores" fields to the chart area to visualize these comparisons
                                                         </Typography>
                                                     </CardContent>
                                                 </Card>
@@ -2573,7 +2573,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 // Generate fields from the data
                 const fieldCategories = await FieldConfigurationService.generateFieldsFromData(data);
                 const processedFields = {};
-                
+
                 Object.entries(fieldCategories).forEach(([categoryName, categoryConfig]) => {
                     processedFields[categoryName] = categoryConfig.fields.map(field => ({
                         ...field,
@@ -2581,7 +2581,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                         category: categoryName
                     }));
                 });
-                
+
                 setAvailableFields(processedFields);
                 setChartData(data);
 
@@ -2699,7 +2699,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                             Sample CSV Format:
                         </Typography>
                         <Typography variant="caption" component="pre" sx={{ fontSize: '0.7rem' }}>
-{`user_id,user_role,organization,survey_title,question_text,response_value,score
+                            {`user_id,user_role,organization,survey_title,question_text,response_value,score
 1,Pastor,St. Mary's Church,Ministry Survey,How effective are teaching methods?,4,85
 2,Professor,Bible College,Education Survey,Rate curriculum relevance,5,92
 3,Pastor,Grace Church,Ministry Survey,How effective are teaching methods?,3,72`}
@@ -2713,7 +2713,7 @@ const VisualReportBuilder = ({ onLogout }) => {
     return (
         <Box sx={{ minHeight: '100vh', backgroundColor: adminColors.background }}>
             <Navbar tabs={tabs} onLogout={onLogout} />
-            
+
             <Container maxWidth="xl" sx={{ mt: 4, pb: 4 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                     <Box>
@@ -2765,7 +2765,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                 {testMode && (
                     <Alert severity="info" sx={{ mb: 2 }}>
                         <Typography variant="body2">
-                            <strong>🧪 Test Mode Active:</strong> The "Test Mode Filtering" panel should now be visible in the left sidebar. 
+                            <strong>🧪 Test Mode Active:</strong> The "Test Mode Filtering" panel should now be visible in the left sidebar.
                             Select a role, user, and survey to test role-based comparisons with sample data.
                         </Typography>
                     </Alert>
@@ -2775,12 +2775,12 @@ const VisualReportBuilder = ({ onLogout }) => {
                     {/* Left Panel - Test Mode Filtering + Fields */}
                     <Grid item xs={12} md={3}>
                         <Card sx={{ height: 'calc(100vh - 200px)', overflow: 'auto' }}>
-                            <CardHeader 
-                                title="Data Configuration" 
-                                sx={{ 
+                            <CardHeader
+                                title="Data Configuration"
+                                sx={{
                                     bgcolor: adminColors.headerBg,
-                                    '& .MuiCardHeader-title': { 
-                                        fontSize: '1.1rem', 
+                                    '& .MuiCardHeader-title': {
+                                        fontSize: '1.1rem',
                                         fontWeight: 600,
                                         color: adminColors.primary
                                     }
@@ -2788,9 +2788,9 @@ const VisualReportBuilder = ({ onLogout }) => {
                             />
                             <CardContent sx={{ p: 2 }}>
                                 <DataSourceConfiguration />
-                                
+
                                 {testMode && <TestModeFiltering />}
-                                
+
                                 {/* Dynamic Fields */}
                                 {loading ? (
                                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
@@ -2803,10 +2803,10 @@ const VisualReportBuilder = ({ onLogout }) => {
                                         </Typography>
                                         {Object.entries(availableFields).map(([category, fields]) => (
                                             <Box key={category} sx={{ mb: 3 }}>
-                                                <Typography 
-                                                    variant="subtitle2" 
-                                                    sx={{ 
-                                                        mb: 1, 
+                                                <Typography
+                                                    variant="subtitle2"
+                                                    sx={{
+                                                        mb: 1,
                                                         color: adminColors.secondary,
                                                         fontWeight: 600,
                                                         textTransform: 'uppercase',
@@ -2835,15 +2835,15 @@ const VisualReportBuilder = ({ onLogout }) => {
                     {/* Center Panel - Canvas */}
                     <Grid item xs={12} md={6}>
                         <Card sx={{ height: 'calc(100vh - 200px)' }}>
-                            <CardHeader 
+                            <CardHeader
                                 title={
                                     <TextField
                                         value={canvas.title}
                                         onChange={(e) => setCanvas(prev => ({ ...prev, title: e.target.value }))}
                                         variant="standard"
-                                        sx={{ 
-                                            '& .MuiInput-root': { 
-                                                fontSize: '1.1rem', 
+                                        sx={{
+                                            '& .MuiInput-root': {
+                                                fontSize: '1.1rem',
                                                 fontWeight: 600,
                                                 color: adminColors.primary
                                             }
@@ -2854,7 +2854,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                                     <Box sx={{ display: 'flex', gap: 1 }}>
                                         <FormControlLabel
                                             control={
-                                                <Switch 
+                                                <Switch
                                                     size="small"
                                                     checked={canvas.showGrid}
                                                     onChange={(e) => setCanvas(prev => ({ ...prev, showGrid: e.target.checked }))}
@@ -2865,7 +2865,7 @@ const VisualReportBuilder = ({ onLogout }) => {
                                         />
                                         <FormControlLabel
                                             control={
-                                                <Switch 
+                                                <Switch
                                                     size="small"
                                                     checked={canvas.showLegend}
                                                     onChange={(e) => setCanvas(prev => ({ ...prev, showLegend: e.target.checked }))}
@@ -2877,41 +2877,41 @@ const VisualReportBuilder = ({ onLogout }) => {
                                 }
                                 sx={{ bgcolor: adminColors.headerBg, pb: 1 }}
                             />
-                            
+
                             <CardContent sx={{ p: 2, height: 'calc(100% - 80px)', overflow: 'auto' }}>
                                 {/* Drop Zones */}
                                 <Grid container spacing={2} sx={{ mb: 2 }}>
                                     <Grid item xs={6}>
-                                        <DropZone 
-                                            title="Measures" 
-                                            zone="columns" 
+                                        <DropZone
+                                            title="Measures"
+                                            zone="columns"
                                             items={canvas.columns}
                                             icon={<NumbersIcon />}
                                             allowedTypes={['measure']}
                                         />
                                     </Grid>
                                     <Grid item xs={6}>
-                                        <DropZone 
-                                            title="Dimensions" 
-                                            zone="rows" 
+                                        <DropZone
+                                            title="Dimensions"
+                                            zone="rows"
                                             items={canvas.rows}
                                             icon={<CategoryIcon />}
                                             allowedTypes={['dimension']}
                                         />
                                     </Grid>
                                     <Grid item xs={6}>
-                                        <DropZone 
-                                            title="Filters" 
-                                            zone="filters" 
+                                        <DropZone
+                                            title="Filters"
+                                            zone="filters"
                                             items={canvas.filters}
                                             icon={<FilterIcon />}
                                             allowedTypes={['dimension', 'measure']}
                                         />
                                     </Grid>
                                     <Grid item xs={6}>
-                                        <DropZone 
-                                            title="Colors" 
-                                            zone="colors" 
+                                        <DropZone
+                                            title="Colors"
+                                            zone="colors"
                                             items={canvas.colors}
                                             icon={<ColorIcon />}
                                             allowedTypes={['dimension']}
@@ -2933,12 +2933,12 @@ const VisualReportBuilder = ({ onLogout }) => {
                     {/* Right Panel - Chart Configuration */}
                     <Grid item xs={12} md={3}>
                         <Card sx={{ height: 'calc(100vh - 200px)', overflow: 'auto' }}>
-                            <CardHeader 
-                                title="Chart Settings" 
-                                sx={{ 
+                            <CardHeader
+                                title="Chart Settings"
+                                sx={{
                                     bgcolor: adminColors.headerBg,
-                                    '& .MuiCardHeader-title': { 
-                                        fontSize: '1.1rem', 
+                                    '& .MuiCardHeader-title': {
+                                        fontSize: '1.1rem',
                                         fontWeight: 600,
                                         color: adminColors.primary
                                     }
@@ -2957,8 +2957,8 @@ const VisualReportBuilder = ({ onLogout }) => {
                                                     p: 1,
                                                     textAlign: 'center',
                                                     cursor: 'pointer',
-                                                    border: canvas.chartType === type.id ? 
-                                                        `2px solid ${adminColors.primary}` : 
+                                                    border: canvas.chartType === type.id ?
+                                                        `2px solid ${adminColors.primary}` :
                                                         `1px solid ${adminColors.borderColor}`,
                                                     bgcolor: canvas.chartType === type.id ? adminColors.highlightBg : 'white',
                                                     transition: 'all 0.2s',
@@ -3071,12 +3071,12 @@ const VisualReportBuilder = ({ onLogout }) => {
                                         size="small"
                                         variant="outlined"
                                         startIcon={<ClearIcon />}
-                                        onClick={() => setCanvas(prev => ({ 
-                                            ...prev, 
-                                            columns: [], 
-                                            rows: [], 
-                                            filters: [], 
-                                            colors: [] 
+                                        onClick={() => setCanvas(prev => ({
+                                            ...prev,
+                                            columns: [],
+                                            rows: [],
+                                            filters: [],
+                                            colors: []
                                         }))}
                                         sx={{ borderColor: adminColors.secondary, color: adminColors.secondary }}
                                     >
@@ -3115,8 +3115,8 @@ const VisualReportBuilder = ({ onLogout }) => {
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={() => setSaveDialogOpen(false)}>Cancel</Button>
-                        <Button 
-                            variant="contained" 
+                        <Button
+                            variant="contained"
                             sx={{ bgcolor: adminColors.primary }}
                             disabled={!reportName.trim()}
                         >

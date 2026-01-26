@@ -31,6 +31,7 @@ const steps = ['Organization & Version', 'Template Details', 'Add Questions'];
 const CreateQuestionnaireWizard = ({ open, onClose, onComplete, initialFile }) => {
     const [activeStep, setActiveStep] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [loadingMessage, setLoadingMessage] = useState('');
     const [error, setError] = useState(null);
 
     // Data States
@@ -71,6 +72,7 @@ const CreateQuestionnaireWizard = ({ open, onClose, onComplete, initialFile }) =
 
     const processUploadedFile = async (file) => {
         setLoading(true);
+        setLoadingMessage('Analyzing document and generating survey questions...');
         try {
             // Suggest version name from filename
             const name = file.name.split('.')[0];
@@ -117,6 +119,7 @@ const CreateQuestionnaireWizard = ({ open, onClose, onComplete, initialFile }) =
             setError("Failed to process document: " + err.message);
         } finally {
             setLoading(false);
+            setLoadingMessage('');
         }
     };
 
@@ -159,6 +162,7 @@ const CreateQuestionnaireWizard = ({ open, onClose, onComplete, initialFile }) =
         setCreatedTemplateId(null);
         setQuestions([]);
         setError(null);
+        setLoadingMessage('');
         setCurrentQuestion({
             text: '',
             type: 'short_text',
@@ -174,6 +178,7 @@ const CreateQuestionnaireWizard = ({ open, onClose, onComplete, initialFile }) =
 
         try {
             if (activeStep === 0) {
+                setLoadingMessage('Creating template version...');
                 // Create Template Version
                 if (!organizationId || !versionName) {
                     setError('Please fill in all required fields.');
@@ -200,6 +205,7 @@ const CreateQuestionnaireWizard = ({ open, onClose, onComplete, initialFile }) =
                 }
                 setActiveStep(1);
             } else if (activeStep === 1) {
+                setLoadingMessage('Initializing template...');
                 // Create Template
                 if (!surveyCode) {
                     setError('Please enter a Survey Code/Name.');
@@ -229,12 +235,14 @@ const CreateQuestionnaireWizard = ({ open, onClose, onComplete, initialFile }) =
             setError('An error occurred. Please try again. ' + (err.response?.data?.error || err.message));
         } finally {
             setLoading(false);
+            setLoadingMessage('');
         }
     };
 
     const handleBulkAddQuestions = async () => {
         if (pendingQuestions.length === 0) return;
         setLoading(true);
+        setLoadingMessage('Saving all imported questions...');
         try {
             // Fetch current questions first to act as base
             const templateData = await InventoryService.getTemplate(createdTemplateId);
@@ -266,6 +274,7 @@ const CreateQuestionnaireWizard = ({ open, onClose, onComplete, initialFile }) =
             setError("Failed to save imported questions: " + err.message);
         } finally {
             setLoading(false);
+            setLoadingMessage('');
         }
     };
 
@@ -281,6 +290,7 @@ const CreateQuestionnaireWizard = ({ open, onClose, onComplete, initialFile }) =
 
         try {
             setLoading(true);
+            setLoadingMessage('Adding question...');
             // Construct payload compatible with InventoryService/Backend
             // Backend usually expects: question_text, question_type_id, section, order, is_required, config
 
@@ -370,6 +380,7 @@ const CreateQuestionnaireWizard = ({ open, onClose, onComplete, initialFile }) =
             setError("Failed to add question: " + err.message);
         } finally {
             setLoading(false);
+            setLoadingMessage('');
         }
     };
 
@@ -559,7 +570,14 @@ const CreateQuestionnaireWizard = ({ open, onClose, onComplete, initialFile }) =
                     ))}
                 </Stepper>
                 {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-                {loading && <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>}
+                {loading && (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', p: 4 }}>
+                        <CircularProgress size={48} sx={{ mb: 2 }} />
+                        <Typography variant="h6" color="textSecondary">
+                            {loadingMessage || 'Loading...'}
+                        </Typography>
+                    </Box>
+                )}
                 {!loading && renderStepContent(activeStep)}
             </DialogContent>
             <DialogActions>

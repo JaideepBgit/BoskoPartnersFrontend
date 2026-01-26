@@ -16,7 +16,7 @@ import {
     Button
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
-import SmartToyIcon from '@mui/icons-material/SmartToy';
+// import SmartToyIcon from '@mui/icons-material/SmartToy'; // Removed in favor of AutoAwesomeIcon
 import PersonIcon from '@mui/icons-material/Person';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -521,7 +521,7 @@ Provide helpful, concise, and actionable insights. When suggesting actions, refe
                                     boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
                                 }}
                             >
-                                {message.type === 'user' ? <PersonIcon /> : <SmartToyIcon />}
+                                {message.type === 'user' ? <PersonIcon /> : <AutoAwesomeIcon />}
                             </Avatar>
                             <Box sx={{ flex: 1 }}>
                                 <Paper
@@ -711,7 +711,7 @@ Provide helpful, concise, and actionable insights. When suggesting actions, refe
                                     bgcolor: colors.primaryLight
                                 }}
                             >
-                                <SmartToyIcon />
+                                <AutoAwesomeIcon />
                             </Avatar>
                             <Paper
                                 elevation={1}

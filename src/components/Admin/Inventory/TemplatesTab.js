@@ -39,10 +39,15 @@ import TemplateUtils from './shared/TemplateUtils';
 import InventoryService from '../../../services/Admin/Inventory/InventoryService';
 import EnhancedCopyTemplateDialog from './EnhancedCopyTemplateDialog';
 
-const TemplatesTab = ({ 
-  templateVersions: parentTemplateVersions = [], 
-  templates: parentTemplates = [], 
-  onRefreshData 
+const TemplatesTab = ({
+  templateVersions: parentTemplateVersions = [],
+  templates: parentTemplates = [],
+  onRefreshData,
+  previewMode = false,
+  initialTemplate = null,
+  initialVersion = null,
+  onClose,
+  hideSidebar = false
 }) => {
   const [templateVersions, setTemplateVersions] = useState(parentTemplateVersions);
   const [templates, setTemplates] = useState(parentTemplates);
@@ -88,20 +93,41 @@ const TemplatesTab = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [parentTemplateVersions.length, parentTemplates.length]);
 
+  // Handle Preview Mode Initialization
+  useEffect(() => {
+    if (previewMode) {
+      if (initialTemplate) {
+        // Find the version of this template
+        const version = templateVersions.find(v => v.id === initialTemplate.version_id);
+        if (version) {
+          setSelectedVersion(version);
+        }
+        // Set the template directly
+        fetchTemplate(initialTemplate.id);
+      } else if (initialVersion) {
+        // Just select the version
+        const version = templateVersions.find(v => v.id === initialVersion.id);
+        if (version) {
+          setSelectedVersion(version);
+        }
+      }
+    }
+  }, [previewMode, initialTemplate, initialVersion, templateVersions]);
+
 
 
   // Save responses to localStorage whenever they change
   useEffect(() => {
     if (Object.keys(responses).length > 0) {
       localStorage.setItem('surveyResponses', JSON.stringify(responses));
-      
+
       // Calculate progress
       if (selectedSection && selectedSection.questions) {
         const totalQuestions = selectedSection.questions.length;
-        const answeredQuestions = selectedSection.questions.filter(q => 
+        const answeredQuestions = selectedSection.questions.filter(q =>
           responses[q.id] !== undefined
         ).length;
-        
+
         setSurveyProgress((answeredQuestions / totalQuestions) * 100);
       }
     }
@@ -137,10 +163,10 @@ const TemplatesTab = ({
   const fetchTemplate = async (id) => {
     const data = await TemplateUtils.fetchTemplate(id);
     setSelectedTemplate(data);
-    
+
     // Update the templates array with the latest data to ensure question count is correct
-    setTemplates(prevTemplates => 
-      prevTemplates.map(template => 
+    setTemplates(prevTemplates =>
+      prevTemplates.map(template =>
         template.id === id ? { ...template, questions: data.questions } : template
       )
     );
@@ -204,13 +230,13 @@ const TemplatesTab = ({
 
   const handleNextQuestion = () => {
     const currentQuestion = selectedSection.questions[currentQuestionIndex];
-    
+
     // Check if question is required and has an answer
     if (currentQuestion.is_required && responses[currentQuestion.id] === undefined) {
       alert('This question is required. Please provide an answer.');
       return;
     }
-    
+
     if (currentQuestionIndex < selectedSection.questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
@@ -244,7 +270,7 @@ const TemplatesTab = ({
             required={question.is_required}
           />
         );
-      
+
       case 2: // single_choice
         return (
           <FormControl component="fieldset" sx={{ mt: 2, width: '100%' }} required={question.is_required}>
@@ -264,7 +290,7 @@ const TemplatesTab = ({
             </RadioGroup>
           </FormControl>
         );
-      
+
       case 3: // yes_no
         return (
           <FormControl component="fieldset" sx={{ mt: 2, width: '100%' }} required={question.is_required}>
@@ -287,7 +313,7 @@ const TemplatesTab = ({
             </RadioGroup>
           </FormControl>
         );
-      
+
       case 4: // likert5
         return (
           <FormControl component="fieldset" sx={{ mt: 2, width: '100%' }} required={question.is_required}>
@@ -298,15 +324,15 @@ const TemplatesTab = ({
               {[1, 2, 3, 4, 5].map((value) => {
                 const defaultLabels = {
                   1: 'None',
-                  2: 'A little', 
+                  2: 'A little',
                   3: 'A moderate amount',
                   4: 'A lot',
                   5: 'A great deal'
                 };
-                
+
                 const labels = question.config?.scale_labels || defaultLabels;
                 const labelText = labels[value] || defaultLabels[value] || `Option ${value}`;
-                
+
                 return (
                   <FormControlLabel
                     key={value}
@@ -320,7 +346,7 @@ const TemplatesTab = ({
             </RadioGroup>
           </FormControl>
         );
-      
+
       case 5: // multi_select
         return (
           <FormControl component="fieldset" sx={{ mt: 2, width: '100%' }} required={question.is_required}>
@@ -330,12 +356,12 @@ const TemplatesTab = ({
                 const selectedOptions = responses[question.id] || [];
                 const optionValue = typeof option === 'object' ? option.value : option;
                 const optionLabel = typeof option === 'object' ? option.label : option;
-                
+
                 return (
                   <FormControlLabel
                     key={idx}
                     control={
-                      <Checkbox 
+                      <Checkbox
                         checked={selectedOptions.includes(optionValue)}
                         onChange={(e) => {
                           const current = responses[question.id] || [];
@@ -357,7 +383,7 @@ const TemplatesTab = ({
             </FormGroup>
           </FormControl>
         );
-      
+
       case 6: // paragraph
         return (
           <TextField
@@ -374,7 +400,7 @@ const TemplatesTab = ({
             required={question.is_required}
           />
         );
-      
+
       case 7: // numeric
         return (
           <TextField
@@ -394,7 +420,7 @@ const TemplatesTab = ({
             required={question.is_required}
           />
         );
-      
+
       case 8: // percentage
         return (
           <Box sx={{ mt: 2 }}>
@@ -405,7 +431,7 @@ const TemplatesTab = ({
               const itemValue = typeof item === 'object' ? item.value : item;
               const itemLabel = typeof item === 'object' ? item.label : item;
               const currentResponses = responses[question.id] || {};
-              
+
               return (
                 <Box key={idx} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                   <Typography variant="body2" sx={{ flex: 1, mr: 2 }}>
@@ -438,7 +464,7 @@ const TemplatesTab = ({
             </Typography>
           </Box>
         );
-      
+
       case 9: // flexible_input
         return (
           <Box sx={{ mt: 2 }}>
@@ -451,7 +477,7 @@ const TemplatesTab = ({
               const itemValue = typeof item === 'object' ? item.value : item;
               const itemLabel = typeof item === 'object' ? item.label : item;
               const currentResponses = responses[question.id] || {};
-              
+
               return (
                 <Box key={idx} sx={{ mb: 2 }}>
                   <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
@@ -474,7 +500,7 @@ const TemplatesTab = ({
             })}
           </Box>
         );
-      
+
       case 10: // year_matrix
         return (
           <Box sx={{ mt: 2 }}>
@@ -498,7 +524,7 @@ const TemplatesTab = ({
                   {question.config?.rows?.map((row, rowIdx) => {
                     const rowValue = typeof row === 'object' ? row.value : row;
                     const rowLabel = typeof row === 'object' ? row.label : row;
-                    
+
                     return (
                       <TableRow key={rowIdx}>
                         <TableCell>{rowLabel}</TableCell>
@@ -534,7 +560,7 @@ const TemplatesTab = ({
             </TableContainer>
           </Box>
         );
-      
+
       default:
         return (
           <Typography color="text.secondary" sx={{ mt: 2 }}>
@@ -547,66 +573,68 @@ const TemplatesTab = ({
   return (
     <Box sx={{ display: 'flex', minHeight: 'calc(100vh - 180px)' }}>
       {/* Left sidebar - Version selection */}
-      <Box 
-        sx={{ 
-          width: { xs: selectedSection ? 0 : 240, sm: 280 }, 
-          backgroundColor: '#f5f5f5', 
-          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', 
-          minHeight: '100%',
-          display: { xs: selectedSection ? 'none' : 'flex', sm: 'flex' },
-          flexDirection: 'column',
-          transition: 'width 0.3s ease'
-        }}
-      >
-        <Typography variant="h6" sx={{ p: 2, color: '#633394', fontWeight: 'bold' }}>
-          Template Versions
-        </Typography>
-        
-        <Box sx={{ flex: 1, overflow: 'auto', px: 2 }}>
-          {templateVersions.map(version => (
-            <Button
-              key={version.id}
-              fullWidth
-              variant={selectedVersion?.id === version.id ? 'contained' : 'outlined'}
-              onClick={() => handleSelectVersion(version)}
-              sx={{
-                mb: 1,
-                justifyContent: 'flex-start',
-                textTransform: 'none',
-                backgroundColor: selectedVersion?.id === version.id ? '#633394' : 'transparent',
-                color: selectedVersion?.id === version.id ? 'white' : '#633394',
-                borderColor: '#633394',
-                fontWeight: selectedVersion?.id === version.id ? 600 : 400,
-                transition: 'all 0.2s ease-in-out',
-                '&:hover': {
-                  backgroundColor: selectedVersion?.id === version.id ? '#7c52a5' : 'rgba(99, 51, 148, 0.08)',
-                  transform: 'translateY(-1px)',
-                  boxShadow: '0 3px 5px rgba(99, 51, 148, 0.2)',
-                },
-                '&:active': {
-                  transform: 'translateY(0)',
-                  boxShadow: '0 1px 3px rgba(99, 51, 148, 0.2)',
-                }
-              }}
-            >
-              <Box sx={{ textAlign: 'left', width: '100%' }}>
-                <Typography variant="body2" sx={{ fontWeight: 'inherit', fontSize: '0.875rem' }}>
-                  {version.name}
-                </Typography>
-                <Typography variant="caption" sx={{ color: 'inherit', opacity: 0.8, fontSize: '0.75rem' }}>
-                  {version.description || 'No description'}
-                </Typography>
-              </Box>
-            </Button>
-          ))}
-          {templateVersions.length === 0 && (
-            <Typography color="text.secondary" sx={{ py: 2, fontSize: '0.875rem', textAlign: 'center' }}>
-              No template versions available
-            </Typography>
-          )}
+      {!hideSidebar && (
+        <Box
+          sx={{
+            width: { xs: selectedSection ? 0 : 240, sm: 280 },
+            backgroundColor: '#f5f5f5',
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+            minHeight: '100%',
+            display: { xs: selectedSection ? 'none' : 'flex', sm: 'flex' },
+            flexDirection: 'column',
+            transition: 'width 0.3s ease'
+          }}
+        >
+          <Typography variant="h6" sx={{ p: 2, color: '#633394', fontWeight: 'bold' }}>
+            Template Versions
+          </Typography>
+
+          <Box sx={{ flex: 1, overflow: 'auto', px: 2 }}>
+            {templateVersions.map(version => (
+              <Button
+                key={version.id}
+                fullWidth
+                variant={selectedVersion?.id === version.id ? 'contained' : 'outlined'}
+                onClick={() => handleSelectVersion(version)}
+                sx={{
+                  mb: 1,
+                  justifyContent: 'flex-start',
+                  textTransform: 'none',
+                  backgroundColor: selectedVersion?.id === version.id ? '#633394' : 'transparent',
+                  color: selectedVersion?.id === version.id ? 'white' : '#633394',
+                  borderColor: '#633394',
+                  fontWeight: selectedVersion?.id === version.id ? 600 : 400,
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    backgroundColor: selectedVersion?.id === version.id ? '#7c52a5' : 'rgba(99, 51, 148, 0.08)',
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 3px 5px rgba(99, 51, 148, 0.2)',
+                  },
+                  '&:active': {
+                    transform: 'translateY(0)',
+                    boxShadow: '0 1px 3px rgba(99, 51, 148, 0.2)',
+                  }
+                }}
+              >
+                <Box sx={{ textAlign: 'left', width: '100%' }}>
+                  <Typography variant="body2" sx={{ fontWeight: 'inherit', fontSize: '0.875rem' }}>
+                    {version.name}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'inherit', opacity: 0.8, fontSize: '0.75rem' }}>
+                    {version.description || 'No description'}
+                  </Typography>
+                </Box>
+              </Button>
+            ))}
+            {templateVersions.length === 0 && (
+              <Typography color="text.secondary" sx={{ py: 2, fontSize: '0.875rem', textAlign: 'center' }}>
+                No template versions available
+              </Typography>
+            )}
+          </Box>
         </Box>
-      </Box>
-      
+      )}
+
       {/* Main content area */}
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', pl: 2 }}>
         {selectedVersion ? (
@@ -614,30 +642,48 @@ const TemplatesTab = ({
             {/* Template selection - Only when not viewing a section */}
             {!selectedSection && (
               <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" gutterBottom sx={{ 
-                  color: '#633394', 
-                  fontWeight: 'bold',
-                  fontSize: '1.125rem',
-                  mb: 2
-                }}>
-                  Templates for {selectedVersion.name}
-                </Typography>
-                
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6" gutterBottom sx={{
+                    color: '#633394',
+                    fontWeight: 'bold',
+                    fontSize: '1.125rem',
+                    mb: 0
+                  }}>
+                    Templates for {selectedVersion.name}
+                  </Typography>
+                  {onClose && (
+                    <IconButton
+                      onClick={onClose}
+                      sx={{
+                        color: '#633394',
+                        border: '1px solid rgba(99, 51, 148, 0.5)',
+                        '&:hover': {
+                          backgroundColor: 'rgba(99, 51, 148, 0.08)',
+                          borderColor: '#633394'
+                        }
+                      }}
+                      title="Close Preview"
+                    >
+                      <CloseIcon />
+                    </IconButton>
+                  )}
+                </Box>
+
                 <Grid container spacing={2}>
                   {templates
                     .filter(t => t.version_id === selectedVersion.id)
                     .map(template => (
                       <Grid item xs={12} sm={6} md={4} lg={3} key={template.id}>
-                        <Card 
-                          sx={{ 
-                            backgroundColor: '#fff', 
-                            boxShadow: selectedTemplate?.id === template.id 
+                        <Card
+                          sx={{
+                            backgroundColor: '#fff',
+                            boxShadow: selectedTemplate?.id === template.id
                               ? '0 0 0 2px #633394, 0 4px 8px rgba(99, 51, 148, 0.2)'
                               : '0 1px 3px rgba(0, 0, 0, 0.1)',
                             cursor: 'pointer',
                             transition: 'all 0.2s ease-in-out',
                             '&:hover': {
-                              boxShadow: selectedTemplate?.id === template.id 
+                              boxShadow: selectedTemplate?.id === template.id
                                 ? '0 0 0 2px #633394, 0 6px 16px rgba(99, 51, 148, 0.25)'
                                 : '0 4px 12px rgba(99, 51, 148, 0.15)',
                               transform: 'translateY(-2px)'
@@ -647,11 +693,11 @@ const TemplatesTab = ({
                           onClick={() => handleSelectTemplate(template.id)}
                         >
                           <CardContent sx={{ p: 2 }}>
-                            <Typography 
-                              variant="subtitle1" 
-                              noWrap 
-                              sx={{ 
-                                color: selectedTemplate?.id === template.id ? '#633394' : '#333', 
+                            <Typography
+                              variant="subtitle1"
+                              noWrap
+                              sx={{
+                                color: selectedTemplate?.id === template.id ? '#633394' : '#333',
                                 fontWeight: 600,
                                 fontSize: '0.9rem',
                                 mb: 1,
@@ -662,10 +708,10 @@ const TemplatesTab = ({
                             </Typography>
                             <Divider sx={{ my: 1 }} />
                             <Box display="flex" justifyContent="space-between" alignItems="center">
-                              <Chip 
-                                label={`${template.questions?.length || 0} Questions`} 
-                                size="small" 
-                                sx={{ 
+                              <Chip
+                                label={`${template.questions?.length || 0} Questions`}
+                                size="small"
+                                sx={{
                                   height: '22px',
                                   fontSize: '0.75rem',
                                   borderRadius: '4px',
@@ -673,7 +719,7 @@ const TemplatesTab = ({
                                   color: '#633394',
                                   fontWeight: 500,
                                   border: '1px solid rgba(99, 51, 148, 0.2)',
-                                }} 
+                                }}
                               />
                               <Typography variant="caption" sx={{ color: '#666', fontSize: '0.7rem' }}>
                                 {new Date(template.created_at).toLocaleDateString()}
@@ -684,11 +730,11 @@ const TemplatesTab = ({
                       </Grid>
                     ))}
                 </Grid>
-                
+
                 {templates.filter(t => t.version_id === selectedVersion.id).length === 0 && (
-                  <Alert 
-                    severity="info" 
-                    sx={{ 
+                  <Alert
+                    severity="info"
+                    sx={{
                       mt: 2,
                       borderRadius: '4px',
                       '& .MuiAlert-message': { fontSize: '0.875rem' }
@@ -699,12 +745,12 @@ const TemplatesTab = ({
                 )}
               </Box>
             )}
-            
+
             {/* Template details or Survey View */}
             {selectedTemplate && !selectedSection && (
-              <Paper sx={{ 
-                p: 3, 
-                backgroundColor: '#f5f5f5', 
+              <Paper sx={{
+                p: 3,
+                backgroundColor: '#f5f5f5',
                 boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
                 flex: 1,
                 display: 'flex',
@@ -712,8 +758,8 @@ const TemplatesTab = ({
               }}>
                 <Box sx={{ mb: 3 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                    <Typography variant="h6" sx={{ 
-                      color: '#633394', 
+                    <Typography variant="h6" sx={{
+                      color: '#633394',
                       fontWeight: 600,
                       fontSize: '1.125rem',
                       display: 'flex',
@@ -723,37 +769,57 @@ const TemplatesTab = ({
                       <AssignmentIcon sx={{ fontSize: '1.25rem' }} />
                       {selectedTemplate.survey_code} - Template Preview
                     </Typography>
-                    <Button
-                      variant="outlined"
-                      startIcon={<ContentCopyIcon />}
-                      onClick={() => handleOpenCopyDialog(selectedTemplate)}
-                      sx={{
-                        color: '#633394',
-                        borderColor: '#633394',
-                        '&:hover': {
-                          backgroundColor: 'rgba(99, 51, 148, 0.08)',
+                    <Box>
+                      {onClose && (
+                        <IconButton
+                          onClick={onClose}
+                          sx={{
+                            ml: 1,
+                            color: '#633394',
+                            border: '1px solid rgba(99, 51, 148, 0.5)',
+                            '&:hover': {
+                              backgroundColor: 'rgba(99, 51, 148, 0.08)',
+                              borderColor: '#633394'
+                            }
+                          }}
+                          title="Close Preview"
+                        >
+                          <CloseIcon />
+                        </IconButton>
+                      )}
+                      <Button
+                        variant="outlined"
+                        startIcon={<ContentCopyIcon />}
+                        onClick={() => handleOpenCopyDialog(selectedTemplate)}
+                        sx={{
+                          ml: 1,
+                          color: '#633394',
                           borderColor: '#633394',
-                        },
-                        textTransform: 'none',
-                        fontSize: '0.875rem'
-                      }}
-                    >
-                      Copy Template
-                    </Button>
+                          '&:hover': {
+                            backgroundColor: 'rgba(99, 51, 148, 0.08)',
+                            borderColor: '#633394',
+                          },
+                          textTransform: 'none',
+                          fontSize: '0.875rem'
+                        }}
+                      >
+                        Copy Template
+                      </Button>
+                    </Box>
                   </Box>
-                  
+
                   <Typography variant="body1" sx={{ mb: 2, color: '#555', lineHeight: 1.6 }}>
-                    🔍 <strong>Admin Preview Mode:</strong> This is how your survey template will appear to respondents. 
+                    <strong>Admin Preview Mode:</strong> This is how your survey template will appear to respondents.
                     You can navigate through sections and test question interactions to ensure everything works as expected.
                   </Typography>
-                  
+
                   <Typography variant="body2" sx={{ color: '#666', lineHeight: 1.5 }}>
-                    💡 <strong>Tip:</strong> Click on any section below to experience the survey flow from a user's perspective. 
+                    <strong>Tip:</strong> Click on any section below to experience the survey flow from a user's perspective.
                     Your test responses won't be saved to the database.
                   </Typography>
                 </Box>
-                
-                <Box sx={{ 
+
+                <Box sx={{
                   backgroundColor: '#f8f9fa',
                   borderRadius: '4px',
                   mb: 3,
@@ -762,12 +828,12 @@ const TemplatesTab = ({
                   <Typography variant="subtitle2" sx={{ mb: 2, color: '#333', fontWeight: 600 }}>
                     Survey Overview:
                   </Typography>
-                  
+
                   {/* Calculate survey statistics */}
                   {(() => {
                     const sectionOrder = selectedTemplate.sections || {};
                     const stats = TemplateUtils.calculateSurveyStats(selectedTemplate.questions, sectionOrder);
-                    
+
                     return (
                       <Box
                         sx={{
@@ -782,7 +848,7 @@ const TemplatesTab = ({
                         }}
                       >
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <ListAltIcon sx={{ color: '#633394', fontSize: '1.25rem', mr: 1 }}/>
+                          <ListAltIcon sx={{ color: '#633394', fontSize: '1.25rem', mr: 1 }} />
                           <Typography variant="body2" sx={{ color: '#333', fontWeight: 500 }}>
                             <strong>{stats.sectionCount}</strong> Sections
                           </Typography>
@@ -791,7 +857,7 @@ const TemplatesTab = ({
                         <Divider orientation="vertical" flexItem sx={{ mx: 2, height: '20px' }} />
 
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <QuizIcon sx={{ color: '#633394', fontSize: '1.25rem', mr: 1 }}/>
+                          <QuizIcon sx={{ color: '#633394', fontSize: '1.25rem', mr: 1 }} />
                           <Typography variant="body2" sx={{ color: '#333', fontWeight: 500 }}>
                             <strong>{stats.questionCount}</strong> Questions
                           </Typography>
@@ -800,7 +866,7 @@ const TemplatesTab = ({
                         <Divider orientation="vertical" flexItem sx={{ mx: 2, height: '20px' }} />
 
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <AccessTimeIcon sx={{ color: '#633394', fontSize: '1.25rem', mr: 1 }}/>
+                          <AccessTimeIcon sx={{ color: '#633394', fontSize: '1.25rem', mr: 1 }} />
                           <Typography variant="body2" sx={{ color: '#333', fontWeight: 500 }}>
                             <strong>{stats.estimatedTime}</strong> min
                           </Typography>
@@ -809,23 +875,23 @@ const TemplatesTab = ({
                     );
                   })()}
                 </Box>
-                
+
                 <Box sx={{ flex: 1, minHeight: 0 }}>
                   <Typography variant="subtitle2" sx={{ mb: 2, color: '#333', fontWeight: 600 }}>
                     Section Details:
                   </Typography>
-                  
+
                   {/* Display section cards vertically */}
                   {(() => {
                     // Use ordered sections from template
                     const sectionOrder = selectedTemplate.sections || {};
                     const sections = TemplateUtils.groupQuestionsBySectionWithOrder(selectedTemplate.questions, sectionOrder);
-                    
+
                     return (
-                      <Box sx={{ 
+                      <Box sx={{
                         height: 'auto',
                         overflowY: 'visible',
-                        paddingBottom: 2 
+                        paddingBottom: 2
                       }}>
                         {Object.entries(sections).map(([sectionName, questions]) => (
                           <Box
@@ -844,18 +910,18 @@ const TemplatesTab = ({
                             }}
                             onClick={() => handleOpenSection(sectionName, questions)}
                           >
-                            <Box sx={{ 
-                              display: 'flex', 
-                              alignItems: 'center', 
+                            <Box sx={{
+                              display: 'flex',
+                              alignItems: 'center',
                               justifyContent: 'space-between',
                               p: 2,
                               backgroundColor: '#f9f9f9',
                               borderBottom: '1px solid #e0e0e0'
                             }}>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Box sx={{ 
-                                  display: 'flex', 
-                                  p: 0.5, 
+                                <Box sx={{
+                                  display: 'flex',
+                                  p: 0.5,
                                   borderRadius: '4px',
                                   backgroundColor: 'rgba(99, 51, 148, 0.1)'
                                 }}>
@@ -865,10 +931,10 @@ const TemplatesTab = ({
                                   Section {sectionName}
                                 </Typography>
                               </Box>
-                              <Chip 
+                              <Chip
                                 label={`${questions.length} questions`}
                                 size="small"
-                                sx={{ 
+                                sx={{
                                   height: '24px',
                                   fontSize: '0.75rem',
                                   backgroundColor: 'rgba(99, 51, 148, 0.08)',
@@ -878,9 +944,9 @@ const TemplatesTab = ({
                                 }}
                               />
                             </Box>
-                            <Box sx={{ 
-                              p: 2, 
-                              display: 'flex', 
+                            <Box sx={{
+                              p: 2,
+                              display: 'flex',
                               justifyContent: 'space-between',
                               alignItems: 'center',
                               backgroundColor: 'white'
@@ -888,9 +954,9 @@ const TemplatesTab = ({
                               <Typography variant="body2" sx={{ color: '#666', fontSize: '0.875rem' }}>
                                 {questions.filter(q => q.is_required).length} required questions
                               </Typography>
-                              <Box sx={{ 
-                                display: 'flex', 
-                                alignItems: 'center', 
+                              <Box sx={{
+                                display: 'flex',
+                                alignItems: 'center',
                                 color: '#5c68c3',
                                 gap: 0.5
                               }}>
@@ -908,10 +974,10 @@ const TemplatesTab = ({
                 </Box>
               </Paper>
             )}
-            
+
             {/* Survey view - Full screen when viewing a section */}
             {selectedSection && (
-              <Paper sx={{ 
+              <Paper sx={{
                 flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
@@ -920,21 +986,21 @@ const TemplatesTab = ({
                 boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
               }}>
                 {/* Header - Clean and minimal */}
-                <Box sx={{ 
+                <Box sx={{
                   px: 3,
-                  py: 2, 
-                  display: 'flex', 
-                  alignItems: 'center', 
+                  py: 2,
+                  display: 'flex',
+                  alignItems: 'center',
                   justifyContent: 'space-between',
                   borderBottom: '1px solid #e0e0e0',
                   backgroundColor: '#fff'
                 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     {/* Back button for mobile */}
-                    <IconButton 
-                      onClick={handleCloseSection} 
+                    <IconButton
+                      onClick={handleCloseSection}
                       size="small"
-                      sx={{ 
+                      sx={{
                         display: { xs: 'inline-flex', sm: 'none' },
                         mr: 1,
                         color: '#633394',
@@ -945,17 +1011,17 @@ const TemplatesTab = ({
                     >
                       <ArrowBackIcon fontSize="small" />
                     </IconButton>
-                    <Typography 
-                      variant="subtitle1" 
-                      sx={{ 
-                        fontWeight: 600, 
+                    <Typography
+                      variant="subtitle1"
+                      sx={{
+                        fontWeight: 600,
                         color: '#333',
                         display: 'flex',
                         alignItems: 'center',
                         fontSize: '0.95rem'
                       }}
                     >
-                      <Box component="span" sx={{ 
+                      <Box component="span" sx={{
                         display: 'inline-flex',
                         mr: 1.5,
                         color: '#633394',
@@ -968,10 +1034,10 @@ const TemplatesTab = ({
                       Section {selectedSection.name}
                     </Typography>
                   </Box>
-                  <IconButton 
-                    onClick={handleCloseSection} 
+                  <IconButton
+                    onClick={handleCloseSection}
                     size="small"
-                    sx={{ 
+                    sx={{
                       display: { xs: 'none', sm: 'inline-flex' },
                       color: '#666',
                       '&:hover': {
@@ -984,9 +1050,9 @@ const TemplatesTab = ({
                 </Box>
 
                 {/* Progress bar - More subtle */}
-                <Box sx={{ 
-                  px: 3, 
-                  py: 1.5, 
+                <Box sx={{
+                  px: 3,
+                  py: 1.5,
                   width: '100%',
                   boxSizing: 'border-box',
                   borderBottom: '1px solid #f0f0f0'
@@ -999,25 +1065,25 @@ const TemplatesTab = ({
                       {Math.round(surveyProgress)}% Complete
                     </Typography>
                   </Box>
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={surveyProgress} 
-                    sx={{ 
-                      height: 4, 
+                  <LinearProgress
+                    variant="determinate"
+                    value={surveyProgress}
+                    sx={{
+                      height: 4,
                       borderRadius: 2,
                       backgroundColor: '#f0f0f0',
                       '& .MuiLinearProgress-bar': {
                         backgroundColor: '#633394',
                       },
                       width: '100%'
-                    }} 
+                    }}
                   />
                 </Box>
-                
+
                 {/* Question content - Clean white space */}
-                <Box sx={{ 
-                  py: 4, 
-                  px: 3, 
+                <Box sx={{
+                  py: 4,
+                  px: 3,
                   flex: 1,
                   display: 'flex',
                   flexDirection: 'column',
@@ -1027,11 +1093,11 @@ const TemplatesTab = ({
                   {selectedSection.questions[currentQuestionIndex] && (
                     <>
                       <Box sx={{ mb: 4 }}>
-                        <Typography 
-                          variant="h6" 
-                          sx={{ 
-                            color: '#333', 
-                            mb: 0.5, 
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            color: '#333',
+                            mb: 0.5,
                             fontWeight: 500,
                             fontSize: '1.125rem',
                             lineHeight: 1.4
@@ -1045,16 +1111,16 @@ const TemplatesTab = ({
                           </Typography>
                         )}
                       </Box>
-                      
+
                       <Box sx={{ width: '100%', maxWidth: '900px' }}>
                         {renderQuestionContent(selectedSection.questions[currentQuestionIndex])}
                       </Box>
                     </>
                   )}
                 </Box>
-                
+
                 {/* Footer with navigation - Cleaner buttons */}
-                <Box sx={{ 
+                <Box sx={{
                   px: 3,
                   py: 2,
                   borderTop: '1px solid #e0e0e0',
@@ -1063,12 +1129,12 @@ const TemplatesTab = ({
                   justifyContent: 'space-between',
                   alignItems: 'center'
                 }}>
-                  <Button 
-                    onClick={handlePreviousQuestion} 
+                  <Button
+                    onClick={handlePreviousQuestion}
                     disabled={currentQuestionIndex === 0}
                     startIcon={<ArrowBackIcon fontSize="small" />}
-                    sx={{ 
-                      color: '#633394', 
+                    sx={{
+                      color: '#633394',
                       textTransform: 'none',
                       fontWeight: 500,
                       fontSize: '0.875rem',
@@ -1080,9 +1146,9 @@ const TemplatesTab = ({
                     Previous
                   </Button>
                   <Box>
-                    <Button 
+                    <Button
                       onClick={handleCloseSection}
-                      sx={{ 
+                      sx={{
                         mr: 2,
                         color: '#666',
                         textTransform: 'none',
@@ -1092,13 +1158,13 @@ const TemplatesTab = ({
                     >
                       Save & Exit
                     </Button>
-                    <Button 
+                    <Button
                       onClick={handleNextQuestion}
                       endIcon={<ArrowForwardIcon fontSize="small" />}
                       variant="contained"
                       disableElevation
-                      sx={{ 
-                        backgroundColor: '#633394', 
+                      sx={{
+                        backgroundColor: '#633394',
                         '&:hover': { backgroundColor: '#7c52a5' },
                         px: 2.5,
                         py: 0.75,
@@ -1116,11 +1182,11 @@ const TemplatesTab = ({
             )}
           </>
         ) : (
-          <Paper sx={{ 
-            p: 4, 
-            textAlign: 'center', 
-            backgroundColor: '#f5f5f5', 
-            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', 
+          <Paper sx={{
+            p: 4,
+            textAlign: 'center',
+            backgroundColor: '#f5f5f5',
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
@@ -1130,24 +1196,24 @@ const TemplatesTab = ({
             <Box sx={{ mb: 3 }}>
               <AssignmentIcon sx={{ fontSize: '3rem', color: '#633394', mb: 2 }} />
             </Box>
-            
+
             <Typography variant="h5" sx={{ color: '#633394', fontWeight: 'bold', mb: 2 }}>
               📋 Survey Template Preview Center
             </Typography>
-            
+
             <Typography variant="body1" sx={{ color: '#555', fontSize: '1rem', mb: 2, maxWidth: '600px', lineHeight: 1.6 }}>
-              Welcome to the template preview interface! Here you can test and experience your survey templates 
+              Welcome to the template preview interface! Here you can test and experience your survey templates
               exactly as your respondents will see them.
             </Typography>
-            
+
             <Typography variant="body2" sx={{ color: '#666', fontSize: '0.9rem', maxWidth: '500px', lineHeight: 1.5 }}>
-              <strong>Getting Started:</strong> Select a template version from the left panel to view available templates, 
+              <strong>Getting Started:</strong> Select a template version from the left panel to view available templates,
               then click on any template to start the preview experience.
             </Typography>
-            
+
             <Box sx={{ mt: 3, p: 2, backgroundColor: '#e8f4fd', borderRadius: '8px', maxWidth: '500px' }}>
               <Typography variant="caption" sx={{ color: '#1976d2', fontWeight: 500 }}>
-                💡 Pro Tip: Use this preview to quality-check your surveys before assigning them to users!
+                Pro Tip: Use this preview to quality-check your surveys before assigning them to users!
               </Typography>
             </Box>
           </Paper>

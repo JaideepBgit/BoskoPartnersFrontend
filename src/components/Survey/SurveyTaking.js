@@ -80,17 +80,17 @@ const SurveyTaking = () => {
     console.log('🔄 fetchSurveyData called, isInitialized:', isInitialized);
     try {
       setLoading(true);
-      
+
       if (survey && survey.template_id) {
         const response = await fetch(`${API_BASE_URL}/templates/${survey.template_id}`);
-        
+
         if (!response.ok) {
           throw new Error(`Failed to fetch template: ${response.status} ${response.statusText}`);
         }
-        
+
         const templateData = await response.json();
         setSurveyData(templateData);
-        
+
         // Get or create survey response for this user and template (only once)
         if (!isInitialized) {
           await getOrCreateSurveyResponse();
@@ -99,7 +99,7 @@ const SurveyTaking = () => {
       } else {
         setError('Survey template ID not available.');
       }
-      
+
       setLoading(false);
     } catch (err) {
       console.error('Error fetching survey data:', err);
@@ -110,10 +110,10 @@ const SurveyTaking = () => {
 
   const groupQuestionsBySection = () => {
     if (!surveyData || !surveyData.questions) return {};
-    
+
     const questionsBySection = {};
     const sectionOrder = surveyData.sections || {};
-    
+
     surveyData.questions.forEach(question => {
       const sectionName = question.section || 'General';
       if (!questionsBySection[sectionName]) {
@@ -140,12 +140,12 @@ const SurveyTaking = () => {
 
   const calculateSurveyStats = () => {
     if (!surveyData || !surveyData.questions) return { sectionCount: 0, questionCount: 0, estimatedTime: 0 };
-    
+
     const sections = groupQuestionsBySection();
     const sectionCount = Object.keys(sections).length;
     const questionCount = surveyData.questions.length;
     const estimatedTime = Math.ceil(questionCount * 1.5); // Rough estimate: 1.5 minutes per question
-    
+
     return { sectionCount, questionCount, estimatedTime };
   };
 
@@ -197,25 +197,25 @@ const SurveyTaking = () => {
 
   const handleNextQuestion = () => {
     const currentQuestion = selectedSection.questions[currentQuestionIndex];
-    
+
     // Check if question is required and has a valid answer
     if (currentQuestion.is_required) {
       const response = responses[currentQuestion.id];
-      
+
       // Handle constant-sum questions
       if (currentQuestion.question_type_id === 8) {
         if (!response || typeof response !== 'object') {
           alert('This question is required. Please provide responses for all items.');
           return;
         }
-        
+
         // Check if all items have responses (not empty)
         const items = currentQuestion.config?.items || [];
         const hasAllResponses = items.every(item => {
           const itemId = item.id || item.text;
           return response[itemId] && response[itemId].toString().trim() !== '';
         });
-        
+
         if (!hasAllResponses) {
           alert('Please provide responses for all items.');
           return;
@@ -228,7 +228,7 @@ const SurveyTaking = () => {
         }
       }
     }
-    
+
     if (currentQuestionIndex < selectedSection.questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
@@ -257,10 +257,10 @@ const SurveyTaking = () => {
 
       // First, try to find existing survey response for this user and template
       const existingResponseUrl = `${API_BASE_URL}/users/${userId}/templates/${survey.template_id}/response`;
-      
+
       try {
         const existingResponse = await fetch(existingResponseUrl);
-        
+
         if (existingResponse.ok) {
           // Found existing response, use it
           const responseData = await existingResponse.json();
@@ -389,15 +389,15 @@ const SurveyTaking = () => {
 
   const isAllRequiredQuestionsAnswered = () => {
     if (!surveyData || !surveyData.questions) return false;
-    
+
     const requiredQuestions = surveyData.questions.filter(q => q.is_required);
     return requiredQuestions.every(q => {
       const response = responses[q.id];
-      
+
       // Handle constant-sum questions
       if (q.question_type_id === 8) {
         if (!response || typeof response !== 'object') return false;
-        
+
         // Check if all items have responses (not empty)
         const items = q.config?.items || [];
         return items.every(item => {
@@ -405,7 +405,7 @@ const SurveyTaking = () => {
           return response[itemId] && response[itemId].toString().trim() !== '';
         });
       }
-      
+
       // Handle other question types
       return response && response.toString().trim() !== '';
     });
@@ -421,11 +421,11 @@ const SurveyTaking = () => {
     const requiredQuestions = surveyData.questions.filter(q => q.is_required);
     return requiredQuestions.filter(q => {
       const response = responses[q.id];
-      
+
       // Handle constant-sum questions
       if (q.question_type_id === 8) {
         if (!response || typeof response !== 'object') return false;
-        
+
         // Check if all items have responses (not empty)
         const items = q.config?.items || [];
         return items.every(item => {
@@ -433,7 +433,7 @@ const SurveyTaking = () => {
           return response[itemId] && response[itemId].toString().trim() !== '';
         });
       }
-      
+
       // Handle other question types
       return response && response.toString().trim() !== '';
     }).length;
@@ -510,15 +510,15 @@ const SurveyTaking = () => {
               {[1, 2, 3, 4, 5].map((value) => {
                 const defaultLabels = {
                   1: 'None',
-                  2: 'A little', 
+                  2: 'A little',
                   3: 'A moderate amount',
                   4: 'A lot',
                   5: 'A great deal'
                 };
-                
+
                 const labels = question.config?.scale_labels || defaultLabels;
                 const labelText = labels[value] || defaultLabels[value] || `Option ${value}`;
-                
+
                 return (
                   <FormControlLabel
                     key={value}
@@ -542,12 +542,12 @@ const SurveyTaking = () => {
                 const selectedOptions = currentValue || [];
                 const optionValue = typeof option === 'object' ? option.value : option;
                 const optionLabel = typeof option === 'object' ? option.label : option;
-                
+
                 return (
                   <FormControlLabel
                     key={idx}
                     control={
-                      <Checkbox 
+                      <Checkbox
                         checked={selectedOptions.includes(optionValue)}
                         onChange={(e) => {
                           const current = currentValue || [];
@@ -595,7 +595,7 @@ const SurveyTaking = () => {
               const itemValue = typeof item === 'object' ? item.value : item;
               const itemLabel = typeof item === 'object' ? item.label : item;
               const currentResponses = currentValue || {};
-              
+
               return (
                 <Box key={idx} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                   <Typography variant="body2" sx={{ flex: 1, mr: 2 }}>
@@ -639,16 +639,16 @@ const SurveyTaking = () => {
             )}
             {question.config?.items?.map((item, idx) => {
               // Create unique keys for each item - use multiple fallbacks
-              const itemValue = typeof item === 'object' 
+              const itemValue = typeof item === 'object'
                 ? (item.value || item.id || item.text || `item_${idx}`)
                 : (item || `item_${idx}`);
-              const itemLabel = typeof item === 'object' 
+              const itemLabel = typeof item === 'object'
                 ? (item.label || item.text || item.value || `Item ${idx + 1}`)
                 : (item || `Item ${idx + 1}`);
               const currentResponses = currentValue || {};
-              
+
               console.log(`Flexible Input - Item ${idx}:`, { item, itemValue, itemLabel, currentValue: currentResponses[itemValue] });
-              
+
               return (
                 <Box key={`${questionId}_${itemValue}_${idx}`} sx={{ mb: 2 }}>
                   <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
@@ -712,8 +712,8 @@ const SurveyTaking = () => {
           <Alert severity="error" sx={{ mb: 3 }}>
             {error}
           </Alert>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             onClick={() => navigate('/surveys')}
             sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
           >
@@ -731,7 +731,7 @@ const SurveyTaking = () => {
     <>
       <Navbar />
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4, minHeight: 'calc(100vh - 200px)' }}>
-        
+
         {/* Survey Completion Guidance Modal */}
         <SurveyCompletionGuidance
           open={showCompletionGuidance}
@@ -739,24 +739,24 @@ const SurveyTaking = () => {
           surveyTitle={survey?.template_name || surveyData?.survey_code || "Survey"}
           onNavigateToProfile={handleNavigateToProfile}
         />
-        
+
         {/* Survey Intro Card - When no section is selected */}
         {!selectedSection && (
-          <Paper sx={{ 
+          <Paper sx={{
             backgroundColor: '#fff',
             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
             p: 3,
             minHeight: 'calc(100vh - 250px)'
           }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="h4" sx={{ 
-              color: '#633394', 
-              fontWeight: 'bold',
-              mb: 1
-            }}>
-              {survey.survey_code || surveyData.survey_code}
-            </Typography>
-              <IconButton 
+              <Typography variant="h4" sx={{
+                color: '#633394',
+                fontWeight: 'bold',
+                mb: 1
+              }}>
+                {survey.survey_code || surveyData.survey_code}
+              </Typography>
+              <IconButton
                 aria-label="close"
                 onClick={handleCloseSurvey}
                 sx={{ color: '#633394' }}
@@ -765,9 +765,9 @@ const SurveyTaking = () => {
                 <CloseIcon />
               </IconButton>
             </Box>
-            
-            <Typography variant="h6" sx={{ 
-              color: '#666', 
+
+            <Typography variant="h6" sx={{
+              color: '#666',
               mb: 3,
               fontWeight: 400
             }}>
@@ -778,20 +778,20 @@ const SurveyTaking = () => {
               <Typography variant="body1" sx={{ mb: 2, color: '#333', lineHeight: 1.7, fontWeight: 500 }}>
                 🌟 Welcome to Your Survey Experience!
               </Typography>
-              
+
               <Typography variant="body1" sx={{ mb: 2, color: '#555', lineHeight: 1.6 }}>
-                Thank you for participating in this important research initiative. Your insights and experiences are valuable 
+                Thank you for participating in this important research initiative. Your insights and experiences are valuable
                 in helping us understand and improve our community services and programs.
               </Typography>
-              
+
               <Typography variant="body1" sx={{ mb: 2, color: '#555', lineHeight: 1.6 }}>
-                <strong>What to expect:</strong> This survey is designed to gather meaningful data about your organization, 
-                community involvement, and experiences. Your responses will contribute to research that helps shape better 
+                <strong>What to expect:</strong> This survey is designed to gather meaningful data about your organization,
+                community involvement, and experiences. Your responses will contribute to research that helps shape better
                 policies and programs for communities like yours.
               </Typography>
-              
+
               <Typography variant="body1" sx={{ color: '#633394', lineHeight: 1.6, fontWeight: 500 }}>
-                📋 <strong>How to proceed:</strong> Review the survey overview below, then click on any section to begin. 
+                📋 <strong>How to proceed:</strong> Review the survey overview below, then click on any section to begin.
                 You can complete sections in any order and save your progress at any time.
               </Typography>
             </Box>
@@ -806,11 +806,11 @@ const SurveyTaking = () => {
                   {Math.round(surveyProgress)}%
                 </Typography>
               </Box>
-              <LinearProgress 
-                variant="determinate" 
-                value={surveyProgress} 
-                sx={{ 
-                  height: 8, 
+              <LinearProgress
+                variant="determinate"
+                value={surveyProgress}
+                sx={{
+                  height: 8,
                   borderRadius: 4,
                   backgroundColor: '#f0f0f0',
                   '& .MuiLinearProgress-bar': {
@@ -821,7 +821,7 @@ const SurveyTaking = () => {
             </Box>
 
             {/* Enhanced Survey Overview */}
-            <Box sx={{ 
+            <Box sx={{
               backgroundColor: '#f8f9fa',
               borderRadius: '8px',
               mb: 3,
@@ -831,18 +831,18 @@ const SurveyTaking = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                 <AssignmentIcon sx={{ color: '#633394', fontSize: '1.5rem', mr: 1.5 }} />
                 <Typography variant="h6" sx={{ color: '#333', fontWeight: 700 }}>
-                  📋 Survey Overview & Guide
+                  Survey Overview & Guide
                 </Typography>
               </Box>
 
               {/* Survey Purpose */}
               <Box sx={{ mb: 3, p: 2, backgroundColor: '#fff', borderRadius: '6px', border: '1px solid #e8e8e8' }}>
                 <Typography variant="body1" sx={{ color: '#555', lineHeight: 1.6, mb: 1.5 }}>
-                  <strong>About This Survey:</strong> Your responses contribute to important research that helps improve 
+                  <strong>About This Survey:</strong> Your responses contribute to important research that helps improve
                   community services and programs. Each section focuses on different aspects of your organization and experiences.
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#633394', fontWeight: 500 }}>
-                  💡 Take your time and provide thoughtful responses. Your insights are valuable to our research.
+                  Take your time and provide thoughtful responses. Your insights are valuable to our research.
                 </Typography>
               </Box>
 
@@ -859,15 +859,15 @@ const SurveyTaking = () => {
                   border: '1px solid #e0e0e0'
                 }}
               >
-                <Box sx={{ 
-                  display: 'flex', 
+                <Box sx={{
+                  display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'center', 
+                  alignItems: 'center',
                   justifyContent: 'center',
                   textAlign: 'center',
                   p: 1
                 }}>
-                  <ListAltIcon sx={{ color: '#633394', fontSize: '1.5rem', mb: 0.5 }}/>
+                  <ListAltIcon sx={{ color: '#633394', fontSize: '1.5rem', mb: 0.5 }} />
                   <Typography variant="h6" sx={{ color: '#633394', fontWeight: 700, mb: 0.5 }}>
                     {stats.sectionCount}
                   </Typography>
@@ -876,15 +876,15 @@ const SurveyTaking = () => {
                   </Typography>
                 </Box>
 
-                <Box sx={{ 
-                  display: 'flex', 
+                <Box sx={{
+                  display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'center', 
+                  alignItems: 'center',
                   justifyContent: 'center',
                   textAlign: 'center',
                   p: 1
                 }}>
-                  <QuizIcon sx={{ color: '#633394', fontSize: '1.5rem', mb: 0.5 }}/>
+                  <QuizIcon sx={{ color: '#633394', fontSize: '1.5rem', mb: 0.5 }} />
                   <Typography variant="h6" sx={{ color: '#633394', fontWeight: 700, mb: 0.5 }}>
                     {stats.questionCount}
                   </Typography>
@@ -893,15 +893,15 @@ const SurveyTaking = () => {
                   </Typography>
                 </Box>
 
-                <Box sx={{ 
-                  display: 'flex', 
+                <Box sx={{
+                  display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'center', 
+                  alignItems: 'center',
                   justifyContent: 'center',
                   textAlign: 'center',
                   p: 1
                 }}>
-                  <AccessTimeIcon sx={{ color: '#633394', fontSize: '1.5rem', mb: 0.5 }}/>
+                  <AccessTimeIcon sx={{ color: '#633394', fontSize: '1.5rem', mb: 0.5 }} />
                   <Typography variant="h6" sx={{ color: '#633394', fontWeight: 700, mb: 0.5 }}>
                     {stats.estimatedTime}
                   </Typography>
@@ -910,15 +910,15 @@ const SurveyTaking = () => {
                   </Typography>
                 </Box>
 
-                <Box sx={{ 
-                  display: 'flex', 
+                <Box sx={{
+                  display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'center', 
+                  alignItems: 'center',
                   justifyContent: 'center',
                   textAlign: 'center',
                   p: 1
                 }}>
-                  <CheckCircleIcon sx={{ color: '#633394', fontSize: '1.5rem', mb: 0.5 }}/>
+                  <CheckCircleIcon sx={{ color: '#633394', fontSize: '1.5rem', mb: 0.5 }} />
                   <Typography variant="h6" sx={{ color: '#633394', fontWeight: 700, mb: 0.5 }}>
                     {getTotalRequiredQuestions()}
                   </Typography>
@@ -929,19 +929,19 @@ const SurveyTaking = () => {
               </Box>
 
               {/* Helpful Tips */}
-              <Box sx={{ 
-                p: 2, 
-                backgroundColor: 'rgba(99, 51, 148, 0.05)', 
-                borderRadius: '6px', 
-                border: '1px solid rgba(99, 51, 148, 0.15)' 
+              <Box sx={{
+                p: 2,
+                backgroundColor: 'rgba(99, 51, 148, 0.05)',
+                borderRadius: '6px',
+                border: '1px solid rgba(99, 51, 148, 0.15)'
               }}>
                 <Typography variant="subtitle2" sx={{ mb: 2, color: '#633394', fontWeight: 600 }}>
                   📝 How to Complete This Survey:
                 </Typography>
-                <Box sx={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, 
-                  gap: 1.5 
+                <Box sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
+                  gap: 1.5
                 }}>
                   <Typography variant="body2" sx={{ color: '#555', display: 'flex', alignItems: 'flex-start' }}>
                     <span style={{ marginRight: '8px', color: '#633394' }}>✓</span>
@@ -968,15 +968,15 @@ const SurveyTaking = () => {
               <Typography variant="subtitle2" sx={{ mb: 2, color: '#333', fontWeight: 600 }}>
                 Section Details:
               </Typography>
-              
-              <Box sx={{ 
-                paddingBottom: 2 
+
+              <Box sx={{
+                paddingBottom: 2
               }}>
                 {Object.entries(sections).map(([sectionName, questions]) => {
                   const sectionProgress = questions.filter(q => responses[q.id]).length;
                   const totalQuestions = questions.length;
                   const isCompleted = sectionProgress === totalQuestions;
-                  
+
                   return (
                     <Box
                       key={sectionName}
@@ -994,18 +994,18 @@ const SurveyTaking = () => {
                       }}
                       onClick={() => handleOpenSection(sectionName, questions)}
                     >
-                      <Box sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
+                      <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
                         justifyContent: 'space-between',
                         p: 2,
                         backgroundColor: '#f9f9f9',
                         borderBottom: '1px solid #e0e0e0'
                       }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Box sx={{ 
-                            display: 'flex', 
-                            p: 0.5, 
+                          <Box sx={{
+                            display: 'flex',
+                            p: 0.5,
                             borderRadius: '4px',
                             backgroundColor: isCompleted ? 'rgba(76, 175, 80, 0.1)' : 'rgba(99, 51, 148, 0.1)'
                           }}>
@@ -1019,10 +1019,10 @@ const SurveyTaking = () => {
                             {sectionName}
                           </Typography>
                         </Box>
-                        <Chip 
+                        <Chip
                           label={`${sectionProgress}/${totalQuestions} completed`}
                           size="small"
-                          sx={{ 
+                          sx={{
                             height: '24px',
                             fontSize: '0.75rem',
                             backgroundColor: isCompleted ? 'rgba(76, 175, 80, 0.1)' : 'rgba(99, 51, 148, 0.08)',
@@ -1032,9 +1032,9 @@ const SurveyTaking = () => {
                           }}
                         />
                       </Box>
-                      <Box sx={{ 
-                        p: 2, 
-                        display: 'flex', 
+                      <Box sx={{
+                        p: 2,
+                        display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
                         backgroundColor: 'white'
@@ -1042,9 +1042,9 @@ const SurveyTaking = () => {
                         <Typography variant="body2" sx={{ color: '#666', fontSize: '0.875rem' }}>
                           {questions.filter(q => q.is_required).length} required questions
                         </Typography>
-                        <Box sx={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
+                        <Box sx={{
+                          display: 'flex',
+                          alignItems: 'center',
                           color: '#633394',
                           gap: 0.5
                         }}>
@@ -1075,7 +1075,7 @@ const SurveyTaking = () => {
                   px: 3,
                   py: 1.5,
                   fontSize: '1rem',
-                  '&:hover': { 
+                  '&:hover': {
                     borderColor: '#7c52a5',
                     backgroundColor: 'rgba(99, 51, 148, 0.08)'
                   },
@@ -1101,7 +1101,7 @@ const SurveyTaking = () => {
                   px: 4,
                   py: 1.5,
                   fontSize: '1.1rem',
-                  '&:hover': { 
+                  '&:hover': {
                     backgroundColor: isAllRequiredQuestionsAnswered() ? '#45a049' : '#ccc'
                   },
                   '&:disabled': {
@@ -1120,8 +1120,8 @@ const SurveyTaking = () => {
                 Required Questions: {getAnsweredRequiredQuestions()} of {getTotalRequiredQuestions()} completed
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {isAllRequiredQuestionsAnswered() 
-                  ? "All required questions answered! You can now submit the survey." 
+                {isAllRequiredQuestionsAnswered()
+                  ? "All required questions answered! You can now submit the survey."
                   : "Please complete all required questions to enable submission."}
               </Typography>
             </Box>
@@ -1130,7 +1130,7 @@ const SurveyTaking = () => {
 
         {/* Section View - When a section is selected */}
         {selectedSection && (
-          <Paper sx={{ 
+          <Paper sx={{
             display: 'flex',
             flexDirection: 'column',
             backgroundColor: '#fff',
@@ -1138,20 +1138,20 @@ const SurveyTaking = () => {
             minHeight: 'calc(100vh - 250px)'
           }}>
             {/* Header */}
-            <Box sx={{ 
+            <Box sx={{
               px: 3,
-              py: 2, 
-              display: 'flex', 
-              alignItems: 'center', 
+              py: 2,
+              display: 'flex',
+              alignItems: 'center',
               justifyContent: 'space-between',
               borderBottom: '1px solid #e0e0e0',
               backgroundColor: '#fff'
             }}>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <IconButton 
-                  onClick={handleCloseSection} 
+                <IconButton
+                  onClick={handleCloseSection}
                   size="small"
-                  sx={{ 
+                  sx={{
                     mr: 2,
                     color: '#633394',
                     '&:hover': { backgroundColor: 'rgba(99, 51, 148, 0.08)' }
@@ -1170,11 +1170,11 @@ const SurveyTaking = () => {
 
             {/* Progress Bar */}
             <Box sx={{ px: 3, py: 2, backgroundColor: '#f9f9f9' }}>
-              <LinearProgress 
-                variant="determinate" 
-                value={((currentQuestionIndex + 1) / selectedSection.questions.length) * 100} 
-                sx={{ 
-                  height: 6, 
+              <LinearProgress
+                variant="determinate"
+                value={((currentQuestionIndex + 1) / selectedSection.questions.length) * 100}
+                sx={{
+                  height: 6,
                   borderRadius: 3,
                   backgroundColor: '#e0e0e0',
                   '& .MuiLinearProgress-bar': {
@@ -1195,7 +1195,7 @@ const SurveyTaking = () => {
                         <Typography component="span" sx={{ color: '#f44336', ml: 1 }}>*</Typography>
                       )}
                     </Typography>
-                    
+
                     {renderQuestion(selectedSection.questions[currentQuestionIndex])}
                   </CardContent>
                 </Card>
@@ -1203,9 +1203,9 @@ const SurveyTaking = () => {
             </Box>
 
             {/* Navigation Buttons */}
-            <Box sx={{ 
-              p: 3, 
-              display: 'flex', 
+            <Box sx={{
+              p: 3,
+              display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
               borderTop: '1px solid #e0e0e0',
@@ -1224,7 +1224,7 @@ const SurveyTaking = () => {
               >
                 Previous
               </Button>
-              
+
               {/* Save Draft Button in Section View */}
               <Button
                 variant="text"
@@ -1240,7 +1240,7 @@ const SurveyTaking = () => {
               >
                 Save Draft
               </Button>
-              
+
               <Button
                 variant="contained"
                 endIcon={currentQuestionIndex === selectedSection.questions.length - 1 ? <CheckCircleIcon /> : <ArrowForwardIcon />}

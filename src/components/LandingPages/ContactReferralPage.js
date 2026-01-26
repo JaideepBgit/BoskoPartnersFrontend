@@ -764,81 +764,144 @@ const ContactReferralPage = () => {
           maxWidth="sm"
           fullWidth
         >
-          <DialogTitle sx={{ bgcolor: '#ff9800', color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <DialogTitle sx={{
+            bgcolor: emailCheckDialog.source === 'user' ? '#d32f2f' : '#ff9800',
+            color: 'white',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1
+          }}>
             <WarningIcon />
-            Email Already Exists
+            {emailCheckDialog.source === 'user' ? 'Email Already Registered' : 'Email Already Exists'}
           </DialogTitle>
           <DialogContent sx={{ mt: 2 }}>
-            <Alert severity="warning" sx={{ mb: 2 }}>
-              This email address already exists in our {emailCheckDialog.source === 'user' ? 'users database' : 'contact referrals'}.
-              {emailCheckDialog.isReferral && emailCheckDialog.referrer && (
-                <Box sx={{ mt: 1, fontWeight: 'bold', color: '#633394' }}>
-                  Note: This person will be linked as a referral to {emailCheckDialog.referrer.name} who originally entered this email.
-                </Box>
-              )}
-            </Alert>
+            {emailCheckDialog.source === 'user' ? (
+              /* Show different message for existing users */
+              <>
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  This email address is already registered in our system as an active user.
+                  Please use a different email address to create a new contact referral.
+                </Alert>
 
-            {emailCheckDialog.data && (
-              <Box>
-                <Typography variant="body1" sx={{ mb: 2 }}>
-                  <strong>Existing Record:</strong>
-                </Typography>
-                <Box sx={{ bgcolor: '#f5f5f5', p: 2, borderRadius: 1 }}>
-                  <Typography variant="body2"><strong>Name:</strong> {emailCheckDialog.data.firstName} {emailCheckDialog.data.lastName}</Typography>
-                  <Typography variant="body2"><strong>Email:</strong> {emailCheckDialog.data.email}</Typography>
-                  {emailCheckDialog.data.fullPhone && (
-                    <Typography variant="body2"><strong>Phone:</strong> {emailCheckDialog.data.fullPhone}</Typography>
-                  )}
-                  {emailCheckDialog.data.institutionName && (
-                    <Typography variant="body2"><strong>Institution:</strong> {emailCheckDialog.data.institutionName}</Typography>
-                  )}
-                  {emailCheckDialog.data.country && (
-                    <Typography variant="body2"><strong>Country:</strong> {emailCheckDialog.data.country}</Typography>
-                  )}
-                </Box>
-
-                {emailCheckDialog.referrer && (
-                  <Box sx={{ mt: 2, p: 2, bgcolor: '#e3f2fd', borderRadius: 1, border: '1px solid #2196f3' }}>
-                    <Typography variant="body2" sx={{ color: '#1976d2', fontWeight: 'bold' }}>
-                      📌 Originally entered by: {emailCheckDialog.referrer.name}
+                {emailCheckDialog.data && (
+                  <Box>
+                    <Typography variant="body1" sx={{ mb: 2, fontWeight: 'bold', color: '#d32f2f' }}>
+                      Existing User Information:
                     </Typography>
-                    <Typography variant="caption" sx={{ color: '#1565c0' }}>
-                      {emailCheckDialog.referrer.email}
+                    <Box sx={{ bgcolor: '#ffebee', p: 2, borderRadius: 1, border: '1px solid #ffcdd2' }}>
+                      <Typography variant="body2"><strong>Name:</strong> {emailCheckDialog.data.firstName} {emailCheckDialog.data.lastName}</Typography>
+                      <Typography variant="body2"><strong>Email:</strong> {emailCheckDialog.data.email}</Typography>
+                      {emailCheckDialog.data.institutionName && (
+                        <Typography variant="body2"><strong>Organization:</strong> {emailCheckDialog.data.institutionName}</Typography>
+                      )}
+                    </Box>
+
+                    <Box sx={{ mt: 3, p: 2, bgcolor: '#e3f2fd', borderRadius: 1, border: '1px solid #2196f3' }}>
+                      <Typography variant="body2" sx={{ color: '#1976d2' }}>
+                        <strong>What to do:</strong>
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#1565c0', mt: 1 }}>
+                        • If you are this person, you already have an account - please contact support for login assistance.
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#1565c0' }}>
+                        • If you are referring someone else, please use their correct email address.
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+              </>
+            ) : (
+              /* Show original message for contact referrals */
+              <>
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                  This email address already exists in our contact referrals.
+                  {emailCheckDialog.isReferral && emailCheckDialog.referrer && (
+                    <Box sx={{ mt: 1, fontWeight: 'bold', color: '#633394' }}>
+                      Note: This person will be linked as a referral to {emailCheckDialog.referrer.name} who originally entered this email.
+                    </Box>
+                  )}
+                </Alert>
+
+                {emailCheckDialog.data && (
+                  <Box>
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                      <strong>Existing Record:</strong>
+                    </Typography>
+                    <Box sx={{ bgcolor: '#f5f5f5', p: 2, borderRadius: 1 }}>
+                      <Typography variant="body2"><strong>Name:</strong> {emailCheckDialog.data.firstName} {emailCheckDialog.data.lastName}</Typography>
+                      <Typography variant="body2"><strong>Email:</strong> {emailCheckDialog.data.email}</Typography>
+                      {emailCheckDialog.data.fullPhone && (
+                        <Typography variant="body2"><strong>Phone:</strong> {emailCheckDialog.data.fullPhone}</Typography>
+                      )}
+                      {emailCheckDialog.data.institutionName && (
+                        <Typography variant="body2"><strong>Institution:</strong> {emailCheckDialog.data.institutionName}</Typography>
+                      )}
+                      {emailCheckDialog.data.country && (
+                        <Typography variant="body2"><strong>Country:</strong> {emailCheckDialog.data.country}</Typography>
+                      )}
+                    </Box>
+
+                    {emailCheckDialog.referrer && (
+                      <Box sx={{ mt: 2, p: 2, bgcolor: '#e3f2fd', borderRadius: 1, border: '1px solid #2196f3' }}>
+                        <Typography variant="body2" sx={{ color: '#1976d2', fontWeight: 'bold' }}>
+                          📌 Originally entered by: {emailCheckDialog.referrer.name}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#1565c0' }}>
+                          {emailCheckDialog.referrer.email}
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {emailCheckDialog.subReferrals && emailCheckDialog.subReferrals.length > 0 && (
+                      <Box sx={{ mt: 2, p: 2, bgcolor: '#fff3e0', borderRadius: 1, border: '1px solid #ff9800' }}>
+                        <Typography variant="body2" sx={{ color: '#e65100', fontWeight: 'bold' }}>
+                          👥 This contact has {emailCheckDialog.subReferrals.length} existing sub-referral(s)
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#ef6c00', display: 'block', mt: 0.5 }}>
+                          If you use existing data, all sub-referrals will be populated automatically.
+                        </Typography>
+                      </Box>
+                    )}
+
+                    <Typography variant="body1" sx={{ mt: 2 }}>
+                      Would you like to use the existing data{emailCheckDialog.subReferrals && emailCheckDialog.subReferrals.length > 0 ? ' (including sub-referrals)' : ''} or continue with new information?
                     </Typography>
                   </Box>
                 )}
-
-                {emailCheckDialog.subReferrals && emailCheckDialog.subReferrals.length > 0 && (
-                  <Box sx={{ mt: 2, p: 2, bgcolor: '#fff3e0', borderRadius: 1, border: '1px solid #ff9800' }}>
-                    <Typography variant="body2" sx={{ color: '#e65100', fontWeight: 'bold' }}>
-                      👥 This contact has {emailCheckDialog.subReferrals.length} existing sub-referral(s)
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: '#ef6c00', display: 'block', mt: 0.5 }}>
-                      If you use existing data, all sub-referrals will be populated automatically.
-                    </Typography>
-                  </Box>
-                )}
-
-                <Typography variant="body1" sx={{ mt: 2 }}>
-                  Would you like to use the existing data{emailCheckDialog.subReferrals && emailCheckDialog.subReferrals.length > 0 ? ' (including sub-referrals)' : ''} or continue with new information?
-                </Typography>
-              </Box>
+              </>
             )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleContinueWithNew} color="primary">
-              Continue with New
-            </Button>
-            <Button
-              onClick={handleUseExistingData}
-              variant="contained"
-              sx={{
-                backgroundColor: '#633394',
-                '&:hover': { backgroundColor: '#4a2570' }
-              }}
-            >
-              Use Existing Data
-            </Button>
+            {emailCheckDialog.source === 'user' ? (
+              /* Only show "Use Different Email" button for existing users */
+              <Button
+                onClick={handleContinueWithNew}
+                variant="contained"
+                sx={{
+                  backgroundColor: '#633394',
+                  '&:hover': { backgroundColor: '#4a2570' }
+                }}
+              >
+                Use Different Email
+              </Button>
+            ) : (
+              /* Show both buttons for contact referrals */
+              <>
+                <Button onClick={handleContinueWithNew} color="primary">
+                  Continue with New
+                </Button>
+                <Button
+                  onClick={handleUseExistingData}
+                  variant="contained"
+                  sx={{
+                    backgroundColor: '#633394',
+                    '&:hover': { backgroundColor: '#4a2570' }
+                  }}
+                >
+                  Use Existing Data
+                </Button>
+              </>
+            )}
           </DialogActions>
         </Dialog>
 

@@ -40,13 +40,13 @@ import {
 } from '@mui/icons-material';
 import GoogleMapsService from '../../../../services/GoogleMapsService';
 
-const SurveyMapCard = ({ 
+const SurveyMapCard = ({
     surveyData = {},
     targetSurveyId = null,
     selectedSurveyType = 'church',
-    onSurveySelection = () => {},
-    onAreaSelection = () => {},
-    onSurveyTypeChange = () => {},
+    onSurveySelection = () => { },
+    onAreaSelection = () => { },
+    onSurveyTypeChange = () => { },
     adminColors = {
         primary: '#633394',
         secondary: '#967CB2',
@@ -106,6 +106,22 @@ const SurveyMapCard = ({
         }
         // Note: We don't cleanup when minimized to allow re-expansion
     }, [minimized, mapLoaded]);
+
+    // Track if auto-reload has already happened
+    const autoReloadTriggeredRef = useRef(false);
+
+    // Auto-reload the map once after initial load to ensure maps render properly
+    useEffect(() => {
+        if (mapLoaded && !autoReloadTriggeredRef.current) {
+            const timer = setTimeout(() => {
+                console.log('🔄 Auto-reload triggered to ensure map renders properly');
+                autoReloadTriggeredRef.current = true;
+                reloadMap();
+            }, 3000); // Wait 3 seconds after initial load
+
+            return () => clearTimeout(timer);
+        }
+    }, [mapLoaded]);
 
     // Update markers when survey data or filters change
     useEffect(() => {
@@ -264,9 +280,9 @@ const SurveyMapCard = ({
             if (existing) {
                 console.log('🔄 Google Maps script already loading, attaching to existing...');
                 existing.addEventListener('load', () => setTimeout(checkAndInitializeMap, 500), { once: true });
-                existing.addEventListener('error', () => { 
-                    setError('Failed to load Google Maps API'); 
-                    setLoading(false); 
+                existing.addEventListener('error', () => {
+                    setError('Failed to load Google Maps API');
+                    setLoading(false);
                 }, { once: true });
                 return;
             }
@@ -302,20 +318,20 @@ const SurveyMapCard = ({
 
     const checkAndInitializeMap = () => {
         console.log('🔍 Checking Google Maps libraries...');
-        
+
         let attempts = 0;
         const maxAttempts = 50; // 5 seconds max - give more time
-        
+
         const checkLibraries = () => {
             attempts++;
             console.log(`🔄 Attempt ${attempts}: Checking libraries...`);
-            
+
             // More comprehensive checks
             try {
-                if (window.google && 
-                    window.google.maps && 
-                    window.google.maps.Map && 
-                    window.google.maps.drawing && 
+                if (window.google &&
+                    window.google.maps &&
+                    window.google.maps.Map &&
+                    window.google.maps.drawing &&
                     window.google.maps.drawing.DrawingManager &&
                     window.google.maps.geometry &&
                     window.google.maps.marker &&
@@ -323,7 +339,7 @@ const SurveyMapCard = ({
                     window.google.maps.LatLngBounds &&
                     window.google.maps.SymbolPath &&
                     window.google.maps.event) {
-                    
+
                     console.log('✅ All libraries loaded! Waiting for stability...');
                     // Additional wait for Google Maps internal initialization
                     setTimeout(() => {
@@ -354,18 +370,18 @@ const SurveyMapCard = ({
                 }
             }
         };
-        
+
         checkLibraries();
     };
 
     const initializeMap = () => {
         console.log('🎯 Starting map initialization...');
-        
+
         // Comprehensive checks before initialization
-        if (!window.google || 
-            !window.google.maps || 
-            !window.google.maps.Map || 
-            !window.google.maps.drawing || 
+        if (!window.google ||
+            !window.google.maps ||
+            !window.google.maps.Map ||
+            !window.google.maps.drawing ||
             !window.google.maps.drawing.DrawingManager ||
             !mapRef.current) {
             console.error('❌ Prerequisites not met for map initialization');
@@ -380,7 +396,7 @@ const SurveyMapCard = ({
             if (mapRef.current) {
                 mapRef.current.innerHTML = '';
             }
-            
+
             // Create a dedicated div for Google Maps
             const mapDiv = document.createElement('div');
             mapDiv.style.width = '100%';
@@ -389,12 +405,12 @@ const SurveyMapCard = ({
             mapRef.current.appendChild(mapDiv);
 
             console.log('🗺️ Creating Google Maps instance...');
-            
+
             // Additional safety check before creating map
             if (!window.google.maps.Map) {
                 throw new Error('Google Maps Map constructor not available');
             }
-            
+
             const map = new window.google.maps.Map(mapDiv, {
                 center: { lat: 0, lng: 0 }, // Default center
                 zoom: 2,
@@ -409,7 +425,7 @@ const SurveyMapCard = ({
                     }
                 ]
             });
-            
+
             // Wait for the map to be ready
             window.google.maps.event.addListenerOnce(map, 'idle', () => {
                 console.log('🎉 Map is ready and idle!');
@@ -420,12 +436,12 @@ const SurveyMapCard = ({
 
             // Initialize drawing manager for area selection
             console.log('🎨 Creating drawing manager...');
-            
+
             // Check if drawing manager is available
             if (!window.google.maps.drawing || !window.google.maps.drawing.DrawingManager) {
                 throw new Error('Google Maps drawing library not available');
             }
-            
+
             const drawingManager = new window.google.maps.drawing.DrawingManager({
                 drawingMode: null,
                 drawingControl: false,
@@ -458,7 +474,7 @@ const SurveyMapCard = ({
                 // Find markers within the circle
                 const markersInCircle = findMarkersInCircle(circle);
                 setSelectedMarkers(markersInCircle);
-                
+
                 // Notify parent component
                 onAreaSelection(markersInCircle);
             });
@@ -466,7 +482,7 @@ const SurveyMapCard = ({
             console.log('🎉 Map initialization completed successfully!');
             setMapLoaded(true);
             setLoading(false);
-            
+
             // Update markers after a brief delay to ensure map is ready
             setTimeout(() => {
                 console.log('📍 Adding markers to map...');
@@ -497,7 +513,7 @@ const SurveyMapCard = ({
 
         let bounds = null;
         let hasValidCoordinates = false;
-        
+
         try {
             bounds = new window.google.maps.LatLngBounds();
         } catch (error) {
@@ -505,7 +521,7 @@ const SurveyMapCard = ({
         }
 
         // Get survey responses to display
-        const responsesToShow = showAllTypes 
+        const responsesToShow = showAllTypes
             ? Object.values(surveyData).flat()
             : (surveyData[selectedSurveyType] || []);
         console.log(responsesToShow, surveyData);
@@ -551,7 +567,7 @@ const SurveyMapCard = ({
                 transition: all 0.2s ease;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.3);
             `;
-            
+
             const marker = new window.google.maps.marker.AdvancedMarkerElement({
                 position,
                 map: mapInstanceRef.current,
@@ -559,7 +575,7 @@ const SurveyMapCard = ({
                 content: markerContent,
                 gmpDraggable: false
             });
-            
+
             // Store additional data as properties on the marker
             marker.surveyData = response;
             marker.surveyType = surveyType;
@@ -588,7 +604,7 @@ const SurveyMapCard = ({
             });
 
             markersRef.current.push(marker);
-            
+
             // Safely extend bounds
             if (bounds) {
                 try {
@@ -604,7 +620,7 @@ const SurveyMapCard = ({
         if (hasValidCoordinates && bounds && !bounds.isEmpty()) {
             try {
                 mapInstanceRef.current.fitBounds(bounds);
-                
+
                 // Ensure minimum zoom level
                 const listener = window.google.maps.event.addListener(mapInstanceRef.current, 'bounds_changed', () => {
                     if (mapInstanceRef.current.getZoom() > 10) {
@@ -669,18 +685,18 @@ const SurveyMapCard = ({
         // Toggle marker selection
         const isSelected = selectedMarkers.includes(marker);
         let newSelection;
-        
+
         if (isSelected) {
             newSelection = selectedMarkers.filter(m => m !== marker);
         } else {
             newSelection = [...selectedMarkers, marker];
         }
-        
+
         setSelectedMarkers(newSelection);
-        
+
         // Update marker appearance
         updateMarkerSelection(marker, !isSelected);
-        
+
         // Notify parent component
         onSurveySelection(newSelection.map(m => m.surveyData));
     };
@@ -689,7 +705,7 @@ const SurveyMapCard = ({
         const surveyType = marker.surveyType;
         const config = surveyTypeConfig[surveyType] || surveyTypeConfig.church;
         const isTargetSurvey = marker.isTargetSurvey;
-        
+
         // Update marker content for AdvancedMarkerElement
         const markerContent = marker.content;
         if (markerContent) {
@@ -709,7 +725,7 @@ const SurveyMapCard = ({
     const findMarkersInCircle = (circle) => {
         const center = circle.getCenter();
         const radius = circle.getRadius();
-        
+
         return markersRef.current.filter(marker => {
             const distance = window.google.maps.geometry.spherical.computeDistanceBetween(
                 center,
@@ -720,13 +736,13 @@ const SurveyMapCard = ({
     };
 
     const toggleDrawingMode = () => {
-        if (!drawingManagerRef.current || 
+        if (!drawingManagerRef.current ||
             !drawingManagerRef.current.setDrawingMode ||
             !window.google?.maps?.drawing?.OverlayType) return;
-        
+
         const newDrawingMode = !drawingMode;
         setDrawingMode(newDrawingMode);
-        
+
         try {
             if (newDrawingMode) {
                 drawingManagerRef.current.setDrawingMode(window.google.maps.drawing.OverlayType.CIRCLE);
@@ -751,7 +767,7 @@ const SurveyMapCard = ({
             }
         });
         setSelectedMarkers([]);
-        
+
         // Remove selection circle safely
         if (selectionCircle && selectionCircle.setMap) {
             try {
@@ -761,7 +777,7 @@ const SurveyMapCard = ({
                 console.warn('Error removing selection circle:', error);
             }
         }
-        
+
         // Reset drawing mode safely
         setDrawingMode(false);
         if (drawingManagerRef.current && drawingManagerRef.current.setDrawingMode) {
@@ -771,7 +787,7 @@ const SurveyMapCard = ({
                 console.warn('Error resetting drawing mode:', error);
             }
         }
-        
+
         // Notify parent component
         onSurveySelection([]);
         onAreaSelection([]);
@@ -781,17 +797,17 @@ const SurveyMapCard = ({
         console.log('🔄 Reloading map...');
         setLoading(true);
         setError('');
-        
+
         // Clear all existing map resources
         cleanupMapResources();
-        
+
         // Reset map state
         setMapLoaded(false);
         setSelectedMarkers([]);
         setDrawingMode(false);
         setSelectionCircle(null);
         setMarkers([]);
-        
+
         // Clear any existing Google Maps scripts to force fresh load
         const existingScripts = document.querySelectorAll('script[data-google-maps-loader]');
         existingScripts.forEach(script => {
@@ -801,7 +817,7 @@ const SurveyMapCard = ({
                 console.warn('Error removing existing script:', error);
             }
         });
-        
+
         // Reset global Google Maps state
         if (window.google && window.google.maps) {
             try {
@@ -813,7 +829,7 @@ const SurveyMapCard = ({
                 console.warn('Error clearing Google Maps state:', error);
             }
         }
-        
+
         // Force reload after a brief delay to ensure cleanup is complete
         setTimeout(() => {
             loadGoogleMapsAPI();
@@ -857,21 +873,21 @@ const SurveyMapCard = ({
                             Survey Map
                         </Typography>
                         {filteredMarkersCount > 0 && (
-                            <Chip 
+                            <Chip
                                 label={`${filteredMarkersCount} surveys`}
                                 size="small"
                                 sx={{ backgroundColor: adminColors.secondary, color: 'white' }}
                             />
                         )}
                         {hasTargetSurvey && (
-                            <Chip 
+                            <Chip
                                 label="Target"
                                 size="small"
                                 sx={{ backgroundColor: '#1A237E', color: 'white' }}
                             />
                         )}
                         {selectedMarkersCount > 0 && (
-                            <Chip 
+                            <Chip
                                 label={`${selectedMarkersCount} selected`}
                                 size="small"
                                 sx={{ backgroundColor: '#FFD700', color: adminColors.text }}
@@ -882,11 +898,11 @@ const SurveyMapCard = ({
                 action={
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Tooltip title="Reload map">
-                            <IconButton 
-                                onClick={reloadMap} 
+                            <IconButton
+                                onClick={reloadMap}
                                 size="small"
                                 disabled={loading}
-                                sx={{ 
+                                sx={{
                                     color: loading ? adminColors.secondary : 'inherit',
                                     animation: loading ? 'spin 1s linear infinite' : 'none',
                                     '@keyframes spin': {
@@ -904,9 +920,9 @@ const SurveyMapCard = ({
                                 <FilterIcon />
                             </IconButton>
                         </Tooltip>
-                        
+
                         <Tooltip title={drawingMode ? "Stop drawing" : "Draw selection circle"}>
-                            <IconButton 
+                            <IconButton
                                 onClick={toggleDrawingMode}
                                 size="small"
                                 disabled={loading || !mapLoaded}
@@ -931,20 +947,20 @@ const SurveyMapCard = ({
                                 </IconButton>
                             </Tooltip>
                         )}
-                        
+
                         <IconButton onClick={() => setMinimized(true)} size="small">
                             <MinimizeIcon />
                         </IconButton>
                     </Box>
                 }
             />
-            
+
             <CardContent sx={{ p: 0, height: 'calc(100% - 64px)', position: 'relative' }}>
                 {/* Survey Type Controls */}
-                <Box sx={{ 
-                    position: 'absolute', 
-                    top: 10, 
-                    left: 10, 
+                <Box sx={{
+                    position: 'absolute',
+                    top: 10,
+                    left: 10,
                     zIndex: 1000,
                     display: 'flex',
                     flexDirection: 'column',
@@ -959,7 +975,7 @@ const SurveyMapCard = ({
                             />
                         }
                         label="Show All Types"
-                        sx={{ 
+                        sx={{
                             backgroundColor: 'white',
                             borderRadius: 1,
                             px: 1,
@@ -967,7 +983,7 @@ const SurveyMapCard = ({
                             boxShadow: 1
                         }}
                     />
-                    
+
                     {!showAllTypes && (
                         <FormControl size="small" sx={{ minWidth: 150, backgroundColor: 'white', borderRadius: 1 }}>
                             <InputLabel>Survey Type</InputLabel>
@@ -990,10 +1006,10 @@ const SurveyMapCard = ({
                 </Box>
 
                 {/* Legend */}
-                <Box sx={{ 
-                    position: 'absolute', 
-                    bottom: 10, 
-                    right: 10, 
+                <Box sx={{
+                    position: 'absolute',
+                    bottom: 10,
+                    right: 10,
                     zIndex: 1000,
                     backgroundColor: 'white',
                     borderRadius: 1,
@@ -1005,50 +1021,50 @@ const SurveyMapCard = ({
                     </Typography>
                     {Object.entries(surveyTypeConfig).map(([key, config]) => (
                         <Box key={key} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                            <Box 
-                                sx={{ 
-                                    width: 12, 
-                                    height: 12, 
-                                    borderRadius: '50%', 
-                                    backgroundColor: config.color 
-                                }} 
+                            <Box
+                                sx={{
+                                    width: 12,
+                                    height: 12,
+                                    borderRadius: '50%',
+                                    backgroundColor: config.color
+                                }}
                             />
                             <Typography variant="caption">{config.label}</Typography>
                         </Box>
                     ))}
                     <Divider sx={{ my: 1 }} />
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                        <Box 
-                            sx={{ 
-                                width: 12, 
-                                height: 12, 
-                                borderRadius: '50%', 
+                        <Box
+                            sx={{
+                                width: 12,
+                                height: 12,
+                                borderRadius: '50%',
                                 backgroundColor: '#1A237E',
                                 border: '2px solid #FFD700'
-                            }} 
+                            }}
                         />
                         <Typography variant="caption">Target Survey</Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box 
-                            sx={{ 
-                                width: 12, 
-                                height: 12, 
-                                borderRadius: '50%', 
+                        <Box
+                            sx={{
+                                width: 12,
+                                height: 12,
+                                borderRadius: '50%',
                                 backgroundColor: '#FFD700',
                                 border: `2px solid ${adminColors.primary}`
-                            }} 
+                            }}
                         />
                         <Typography variant="caption">Selected</Typography>
                     </Box>
                 </Box>
 
                 {/* Map Container */}
-                <Box 
+                <Box
                     key={`map-container-${mapLoaded ? 'loaded' : 'not-loaded'}`}
                     ref={mapRef}
-                    sx={{ 
-                        width: '100%', 
+                    sx={{
+                        width: '100%',
                         height: '100%',
                         backgroundColor: '#f0f0f0',
                         position: 'relative'
@@ -1056,8 +1072,8 @@ const SurveyMapCard = ({
                 >
                     {/* Loading/Error/Not Loaded Overlay */}
                     {(loading || error || !mapLoaded) && (
-                        <Box 
-                            sx={{ 
+                        <Box
+                            sx={{
                                 position: 'absolute',
                                 top: 0,
                                 left: 0,
@@ -1081,10 +1097,10 @@ const SurveyMapCard = ({
                             {error && (
                                 <Box sx={{ textAlign: 'center' }}>
                                     <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
-                                    <Typography 
-                                        variant="body2" 
+                                    <Typography
+                                        variant="body2"
                                         color="primary"
-                                        sx={{ 
+                                        sx={{
                                             cursor: 'pointer',
                                             '&:hover': { textDecoration: 'underline' }
                                         }}
@@ -1099,10 +1115,10 @@ const SurveyMapCard = ({
                                 </Box>
                             )}
                             {!loading && !error && !mapLoaded && (
-                                <Typography 
-                                    variant="body2" 
+                                <Typography
+                                    variant="body2"
                                     color="primary"
-                                    sx={{ 
+                                    sx={{
                                         cursor: 'pointer',
                                         '&:hover': { textDecoration: 'underline' }
                                     }}
@@ -1188,7 +1204,7 @@ const SurveyMapCard = ({
                             const name = response.church_name || response.institution_name || response.organization_name || `Survey ${index + 1}`;
                             const location = [response.city, response.country].filter(Boolean).join(', ');
                             const config = surveyTypeConfig[marker.surveyType] || surveyTypeConfig.church;
-                            
+
                             return (
                                 <React.Fragment key={index}>
                                     <ListItem>
@@ -1219,8 +1235,8 @@ const SurveyMapCard = ({
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setComparisonDialogOpen(false)}>Close</Button>
-                    <Button 
-                        variant="contained" 
+                    <Button
+                        variant="contained"
                         sx={{ backgroundColor: adminColors.primary }}
                         onClick={() => {
                             const selected = selectedMarkers.map(m => m.surveyData);

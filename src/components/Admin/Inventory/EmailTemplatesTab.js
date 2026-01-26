@@ -17,8 +17,8 @@ import {
   TextField,
   useMediaQuery,
   useTheme,
-  
-  
+
+
   FormControl,
   InputLabel,
   Select,
@@ -73,10 +73,10 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
   // Function to convert text to HTML
   const convertTextToHtml = (text) => {
     if (!text.trim()) return '';
-    
+
     // Split text into paragraphs
     const paragraphs = text.split('\n\n').filter(p => p.trim());
-    
+
     // Basic HTML email template with platform colors
     let html = `<!DOCTYPE html>
 <html lang="en">
@@ -192,7 +192,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
     // Process each paragraph
     paragraphs.forEach((paragraph, index) => {
       const trimmedParagraph = paragraph.trim();
-      
+
       // Check if it's a greeting (first paragraph starting with Dear, Hello, Hi, etc.)
       if (index === 0 && /^(Dear|Hello|Hi|Greetings)/i.test(trimmedParagraph)) {
         html += `        <p class="greeting">${trimmedParagraph}</p>\n`;
@@ -254,14 +254,14 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
   // Fetch sample templates when dialog opens
   const fetchSampleTemplates = async () => {
     if (sampleTemplates.length > 0) return; // Already loaded
-    
+
     try {
       setLoadingSampleTemplates(true);
       // Fetch public templates and default templates as samples
       const response = await EmailService.getTemplates();
       const data = response.templates || response;
-      const samples = (data || []).filter(template => 
-        template.is_public || 
+      const samples = (data || []).filter(template =>
+        template.is_public ||
         (template.name && (template.name.includes('Default') || template.name.includes('Sample')))
       );
       setSampleTemplates(samples);
@@ -279,7 +279,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
       setSelectedSampleTemplate('');
       return;
     }
-    
+
     const template = sampleTemplates.find(t => t.id.toString() === templateId);
     if (template) {
       setSelectedSampleTemplate(templateId);
@@ -300,7 +300,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
       text_body: template.text_body || '',
       // Don't copy organization_id or is_public - let user set these
     }));
-    
+
     // Disable auto-generation since we're copying existing HTML
     setAutoGenerateHtml(false);
     setSelectedSampleTemplate('');
@@ -351,12 +351,12 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
         const renderedPreview = await EmailService.renderPreview(templateType, variables);
         return renderedPreview.html_body || htmlContent;
       }
-      
+
       // For custom templates, we can't use backend rendering since they don't match template types
       // Fall back to simple variable replacement (this is a limitation until backend supports custom template rendering)
       const variables = getSampleVariables(organizationName);
       let processedHtml = htmlContent;
-      
+
       // Replace common template variables manually as fallback
       Object.entries(variables).forEach(([key, value]) => {
         const singleBrace = new RegExp(`{${key}}`, 'gi');
@@ -364,7 +364,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
         processedHtml = processedHtml.replace(singleBrace, value);
         processedHtml = processedHtml.replace(doubleBrace, value);
       });
-      
+
       return processedHtml;
     } catch (error) {
       console.error('Error rendering template:', error);
@@ -376,20 +376,20 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
   // Generate preview content with sample variables
   const generatePreviewContent = async () => {
     let htmlContent = formData.html_body;
-    
+
     // If auto-generating HTML and we have text content, use that
     if (autoGenerateHtml && formData.text_body.trim()) {
       htmlContent = convertTextToHtml(formData.text_body);
     }
-    
+
     if (!htmlContent.trim()) {
       return '<p style="color: #666; text-align: center; padding: 40px;">No content to preview. Please add text or HTML content.</p>';
     }
-    
+
     // Get organization name for context
     const selectedOrg = orgOptions.find(org => org.id.toString() === formData.organization_id?.toString());
     const organizationName = selectedOrg?.name || 'Sample Organization';
-    
+
     // Determine template type based on name (for backend rendering)
     const templateName = formData.name?.toLowerCase() || '';
     let templateType = 'custom';
@@ -398,7 +398,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
     } else if (templateName.includes('reminder')) {
       templateType = 'reminder';
     }
-    
+
     return await renderTemplateContent(templateType, htmlContent, organizationName);
   };
 
@@ -424,7 +424,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
   // Preview an existing template
   const previewExistingTemplate = async (template) => {
     let previewHtml = template.html_body || '<p style="color: #666; text-align: center; padding: 40px;">No HTML content available for this template.</p>';
-    
+
     // Use the centralized variable replacement function
     const organizationName = template.organization_name || 'Sample Organization';
     // Determine template type based on name (for backend rendering)
@@ -435,7 +435,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
     } else if (templateName.includes('reminder')) {
       templateType = 'reminder';
     }
-    
+
     previewHtml = await renderTemplateContent(templateType, previewHtml, organizationName);
 
     // Temporarily set form data for preview display
@@ -445,12 +445,12 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
       html_body: template.html_body,
       text_body: template.text_body
     };
-    
+
     const prevFormData = formData;
     setFormData(tempFormData);
     setPreviewContent(previewHtml);
     setPreviewDialogOpen(true);
-    
+
     // Reset form data when preview closes
     setTimeout(() => setFormData(prevFormData), 100);
   };
@@ -489,13 +489,13 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterOrganization, setFilterOrganization] = useState('');
   const [filterRole, setFilterRole] = useState('');
-  
+
   // State for tracking data inconsistencies
   const [dataWarnings, setDataWarnings] = useState([]);
-  
+
   // State for initializing default templates
   const [initializingTemplates, setInitializingTemplates] = useState(false);
-  
+
   // State for debugging
   const [debugInfo, setDebugInfo] = useState(null);
   const [showDebugInfo, setShowDebugInfo] = useState(false);
@@ -511,36 +511,36 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
   try {
     console.log('EmailTemplatesTab received templates:', emailTemplates);
     filteredTemplates = (emailTemplates || []).filter((template) => {
-    try {
-      // Debug logging for first template to understand data structure
-      if (emailTemplates && emailTemplates.length > 0 && template === emailTemplates[0]) {
-        console.log('Sample email template structure:', template);
-        console.log('Current filters:', { filterOrganization, filterRole, searchTerm });
-      }
-      // Ensure template has required properties
-      if (!template || typeof template !== 'object') {
+      try {
+        // Debug logging for first template to understand data structure
+        if (emailTemplates && emailTemplates.length > 0 && template === emailTemplates[0]) {
+          console.log('Sample email template structure:', template);
+          console.log('Current filters:', { filterOrganization, filterRole, searchTerm });
+        }
+        // Ensure template has required properties
+        if (!template || typeof template !== 'object') {
+          return false;
+        }
+
+        // Search by name or subject only (roles removed)
+        const matchesSearch = !searchTerm ||
+          (template.name && template.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (template.subject && template.subject.toLowerCase().includes(searchTerm.toLowerCase()));
+
+        // Organization filter by template.organization_id
+        const matchesOrganization = !filterOrganization || (
+          typeof template.organization_id !== 'undefined' &&
+          template.organization_id === parseInt(filterOrganization, 10)
+        );
+
+        // Role filter removed
+        const matchesRole = true;
+
+        return matchesSearch && matchesOrganization && matchesRole;
+      } catch (error) {
+        console.error('Error filtering template:', template, error);
         return false;
       }
-
-      // Search by name or subject only (roles removed)
-      const matchesSearch = !searchTerm || 
-        (template.name && template.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (template.subject && template.subject.toLowerCase().includes(searchTerm.toLowerCase()));
-
-      // Organization filter by template.organization_id
-      const matchesOrganization = !filterOrganization || (
-        typeof template.organization_id !== 'undefined' && 
-        template.organization_id === parseInt(filterOrganization, 10)
-      );
-
-      // Role filter removed
-      const matchesRole = true;
-
-      return matchesSearch && matchesOrganization && matchesRole;
-    } catch (error) {
-      console.error('Error filtering template:', template, error);
-      return false;
-    }
     });
   } catch (filterError) {
     console.error('Critical error in email template filtering:', filterError);
@@ -558,10 +558,10 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
   };
 
   const resetForm = () => {
-    setFormData({ 
-      name: '', 
-      subject: '', 
-      html_body: '', 
+    setFormData({
+      name: '',
+      subject: '',
+      html_body: '',
       text_body: '',
       organization_id: '',
       is_public: false,
@@ -578,18 +578,18 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
 
   const openEditDialog = (template) => {
     setEditingTemplate(template);
-    
+
     // Clear previous warnings
     setDataWarnings([]);
     const warnings = [];
-    
+
     // Survey template association removed; roles removed
-    
+
     // Set warnings if any were found
     if (warnings.length > 0) {
       setDataWarnings(warnings);
     }
-    
+
     setFormData({
       name: template.name || '',
       subject: template.subject || '',
@@ -625,12 +625,12 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
       alert('Template name is required.');
       return;
     }
-    
+
     if (!formData.subject.trim()) {
       alert('Subject is required.');
       return;
     }
-    
+
     if (!formData.html_body.trim()) {
       alert('HTML body is required.');
       return;
@@ -655,7 +655,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
       onRefreshData && onRefreshData();
     } catch (err) {
       console.error('Failed to save email template:', err.response || err);
-      
+
       // Handle API error responses with user-friendly messages
       if (err.response && err.response.data) {
         const errorData = err.response.data;
@@ -753,11 +753,11 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
             size={isMobile ? 'small' : 'medium'}
             onClick={handleInitializeDefaultTemplates}
             disabled={initializingTemplates}
-            sx={{ 
-              color: '#633394', 
+            sx={{
+              color: '#633394',
               borderColor: '#633394',
               fontSize: isMobile ? '0.75rem' : '0.875rem',
-              '&:hover': { 
+              '&:hover': {
                 backgroundColor: '#f5f5f5',
                 borderColor: '#7c52a5'
               }
@@ -769,11 +769,11 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
             variant="outlined"
             size={isMobile ? 'small' : 'medium'}
             onClick={handleDebugEmailTemplates}
-            sx={{ 
-              color: '#ff9800', 
+            sx={{
+              color: '#ff9800',
               borderColor: '#ff9800',
               fontSize: isMobile ? '0.75rem' : '0.875rem',
-              '&:hover': { 
+              '&:hover': {
                 backgroundColor: '#fff3e0',
                 borderColor: '#f57c00'
               }
@@ -799,9 +799,9 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
               }}
             />
           </Grid>
-          
+
           {/* Survey Template filter removed */}
-          
+
           <Grid item xs={12} sm={6} md={2}>
             <FormControl fullWidth size="small">
               <InputLabel>Organization</InputLabel>
@@ -828,9 +828,9 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
               </Select>
             </FormControl>
           </Grid>
-          
+
           {/* Role filter removed */}
-          
+
           <Grid item xs={12} sm={6} md={2}>
             <Button
               fullWidth
@@ -857,7 +857,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
         {filteredTemplates.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <Typography variant="body1" color="text.secondary">
-              {(emailTemplates || []).length === 0 
+              {(emailTemplates || []).length === 0
                 ? 'No email templates found. Create your first template to get started.'
                 : 'No templates match your current filters. Try adjusting your search or filters.'
               }
@@ -867,19 +867,19 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
           <List>
             {filteredTemplates.map((tpl) => {
               const isDefaultTemplate = tpl.name && (tpl.name.includes('Default Welcome') || tpl.name.includes('Default Reminder'));
-              const templateTypeChip = tpl.name?.includes('Welcome') ? 'Welcome Email' : 
-                                     tpl.name?.includes('Reminder') ? 'Reminder Email' : 
-                                     'Custom';
-              
+              const templateTypeChip = tpl.name?.includes('Welcome') ? 'Welcome Email' :
+                tpl.name?.includes('Reminder') ? 'Reminder Email' :
+                  'Custom';
+
               const orgText = tpl.organization_name ? `Organization: ${tpl.organization_name}` : '';
               const secondaryText = [tpl.subject, orgText].filter(Boolean).join(' • ');
-              
+
               return (
-                <ListItem 
-                  key={tpl.id} 
-                  divider 
-                  sx={{ 
-                    flexDirection: 'column', 
+                <ListItem
+                  key={tpl.id}
+                  divider
+                  sx={{
+                    flexDirection: 'column',
                     alignItems: 'flex-start',
                     backgroundColor: isDefaultTemplate ? '#fafafa' : 'inherit',
                     border: isDefaultTemplate ? '1px solid #e0e0e0' : 'none',
@@ -894,12 +894,12 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
                           {tpl.name}
                         </Typography>
                         {isDefaultTemplate && (
-                          <Box sx={{ 
-                            backgroundColor: '#f3f4f6', 
-                            color: '#374151', 
-                            px: 1, 
-                            py: 0.25, 
-                            borderRadius: 1, 
+                          <Box sx={{
+                            backgroundColor: '#f3f4f6',
+                            color: '#374151',
+                            px: 1,
+                            py: 0.25,
+                            borderRadius: 1,
                             fontSize: '0.75rem',
                             fontWeight: 'bold',
                             border: '1px solid #d1d5db'
@@ -907,24 +907,24 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
                             DEFAULT
                           </Box>
                         )}
-                        <Box sx={{ 
-                          backgroundColor: '#f9fafb', 
-                          color: '#6b7280', 
-                          px: 1, 
-                          py: 0.25, 
-                          borderRadius: 1, 
+                        <Box sx={{
+                          backgroundColor: '#f9fafb',
+                          color: '#6b7280',
+                          px: 1,
+                          py: 0.25,
+                          borderRadius: 1,
                           fontSize: '0.75rem',
                           border: '1px solid #e5e7eb'
                         }}>
                           {templateTypeChip}
                         </Box>
                         {tpl.is_public && (
-                          <Box sx={{ 
-                            backgroundColor: '#fef3f2', 
-                            color: '#b91c1c', 
-                            px: 1, 
-                            py: 0.25, 
-                            borderRadius: 1, 
+                          <Box sx={{
+                            backgroundColor: '#fef3f2',
+                            color: '#b91c1c',
+                            px: 1,
+                            py: 0.25,
+                            borderRadius: 1,
                             fontSize: '0.75rem',
                             border: '1px solid #fecaca'
                           }}>
@@ -937,32 +937,32 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
                       </Typography>
                     </Box>
                     <ListItemSecondaryAction>
-                      <IconButton 
-                        edge="end" 
+                      <IconButton
+                        edge="end"
                         onClick={async () => await previewExistingTemplate(tpl)}
                         title="Preview this template"
                         sx={{ mr: 0.5 }}
                       >
                         <VisibilityIcon />
                       </IconButton>
-                      <IconButton 
-                        edge="end" 
+                      <IconButton
+                        edge="end"
                         onClick={() => copyExistingTemplate(tpl)}
                         title="Copy this template"
                         sx={{ mr: 0.5 }}
                       >
                         <ContentCopyIcon />
                       </IconButton>
-                      <IconButton 
-                        edge="end" 
+                      <IconButton
+                        edge="end"
                         onClick={() => openEditDialog(tpl)}
                         title="Edit this template"
                         sx={{ mr: 0.5 }}
                       >
                         <EditIcon />
                       </IconButton>
-                      <IconButton 
-                        edge="end" 
+                      <IconButton
+                        edge="end"
                         onClick={() => handleDelete(tpl.id)}
                         disabled={isDefaultTemplate}
                         title={isDefaultTemplate ? "Cannot delete default templates" : "Delete template"}
@@ -981,7 +981,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
       {/* Add / Edit dialog */}
       <Dialog open={dialogOpen} onClose={closeDialog} fullWidth maxWidth="md" fullScreen={isMobile}>
         <DialogTitle>{editingTemplate ? 'Edit Email Template' : 'Add Email Template'}</DialogTitle>
-        
+
         {/* Display data warnings if any */}
         {dataWarnings.length > 0 && (
           <Box sx={{ px: 3, pb: 1 }}>
@@ -998,13 +998,13 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
                 }}
               >
                 <Typography variant="body2">
-                  ⚠️ {warning}
+                  {warning}
                 </Typography>
               </Box>
             ))}
           </Box>
         )}
-        
+
         <DialogContent>
           {/* Organization selector (required) */}
           <FormControl fullWidth margin="normal" size={isMobile ? 'small' : 'medium'}>
@@ -1073,7 +1073,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
                       variant="contained"
                       size="small"
                       onClick={copySampleTemplate}
-                      sx={{ 
+                      sx={{
                         backgroundColor: '#633394',
                         fontSize: '0.75rem',
                         '&:hover': { backgroundColor: '#7c52a5' }
@@ -1085,7 +1085,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
                       variant="outlined"
                       size="small"
                       onClick={() => setSelectedSampleTemplate('')}
-                      sx={{ 
+                      sx={{
                         borderColor: '#633394',
                         color: '#633394',
                         fontSize: '0.75rem'
@@ -1127,7 +1127,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
             label="Auto-generate HTML from text content"
             sx={{ mt: 2, mb: 1 }}
           />
-          
+
           <TextField
             label="Text Content"
             fullWidth
@@ -1139,7 +1139,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
             onChange={(e) => handleTextBodyChange(e.target.value)}
             helperText="Write your email content here. Separate paragraphs with empty lines. HTML will be auto-generated if enabled above."
           />
-          
+
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2, mb: 1 }}>
             <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
               HTML Body:
@@ -1150,11 +1150,11 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
                 size="small"
                 onClick={() => setFormData(prev => ({ ...prev, html_body: convertTextToHtml(prev.text_body) }))}
                 disabled={!formData.text_body.trim()}
-                sx={{ 
+                sx={{
                   borderColor: '#633394',
                   color: '#633394',
                   fontSize: '0.75rem',
-                  '&:hover': { 
+                  '&:hover': {
                     backgroundColor: 'rgba(99, 51, 148, 0.04)',
                     borderColor: '#7c52a5'
                   }
@@ -1164,7 +1164,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
               </Button>
             )}
           </Box>
-          
+
           <TextField
             fullWidth
             multiline
@@ -1176,7 +1176,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
             disabled={autoGenerateHtml}
             sx={{ mt: 0 }}
           />
-          
+
           <FormControlLabel
             control={
               <Checkbox
@@ -1191,14 +1191,14 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
         </DialogContent>
         <DialogActions>
           <Button onClick={closeDialog}>Cancel</Button>
-          <Button 
+          <Button
             onClick={openPreview}
             variant="outlined"
             disabled={!formData.html_body.trim() && !formData.text_body.trim()}
-            sx={{ 
+            sx={{
               borderColor: '#633394',
               color: '#633394',
-              '&:hover': { 
+              '&:hover': {
                 backgroundColor: 'rgba(99, 51, 148, 0.04)',
                 borderColor: '#7c52a5'
               }
@@ -1213,10 +1213,10 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
       </Dialog>
 
       {/* Email Preview Dialog */}
-      <Dialog 
-        open={previewDialogOpen} 
-        onClose={closePreview} 
-        fullWidth 
+      <Dialog
+        open={previewDialogOpen}
+        onClose={closePreview}
+        fullWidth
         maxWidth="md"
         fullScreen={isMobile}
       >
@@ -1230,21 +1230,21 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
         </DialogTitle>
         <DialogContent sx={{ p: 0 }}>
           {/* Preview Info Banner */}
-          <Box sx={{ 
-            backgroundColor: '#f5f5f5', 
-            p: 2, 
+          <Box sx={{
+            backgroundColor: '#f5f5f5',
+            p: 2,
             borderBottom: '1px solid #e0e0e0',
             display: 'flex',
             alignItems: 'center',
             gap: 1
           }}>
             <Typography variant="body2" color="text.secondary">
-              📧 This preview shows how your email will appear to recipients with sample data.
+              This preview shows how your email will appear to recipients with sample data.
             </Typography>
           </Box>
-          
+
           {/* Email Preview Content */}
-          <Box sx={{ 
+          <Box sx={{
             minHeight: '400px',
             backgroundColor: '#ffffff',
             border: '1px solid #e0e0e0',
@@ -1263,24 +1263,24 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
               }}
             />
           </Box>
-          
+
           {/* Sample Variables Info */}
           <Box sx={{ p: 2, backgroundColor: '#f9f9f9', borderTop: '1px solid #e0e0e0' }}>
             <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
               Available Template Variables:
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.4 }}>
-              <strong>User Variables:</strong> {'{greeting}'}, {'{username}'}, {'{email}'}, {'{first_name}'}, {'{last_name}'}, {'{user_fullname}'}<br/>
-              <strong>Survey Variables:</strong> {'{survey_code}'}, {'{survey_url}'}, {'{login_url}'}<br/>
-              <strong>Organization:</strong> {'{organization_name}'}<br/>
-              <strong>Platform:</strong> {'{platform_name}'}, {'{support_email}'}, {'{current_date}'}, {'{current_year}'}<br/>
+              <strong>User Variables:</strong> {'{greeting}'}, {'{username}'}, {'{email}'}, {'{first_name}'}, {'{last_name}'}, {'{user_fullname}'}<br />
+              <strong>Survey Variables:</strong> {'{survey_code}'}, {'{survey_url}'}, {'{login_url}'}<br />
+              <strong>Organization:</strong> {'{organization_name}'}<br />
+              <strong>Platform:</strong> {'{platform_name}'}, {'{support_email}'}, {'{current_date}'}, {'{current_year}'}<br />
               <em>Note: Use {'{variable}'} or {'{{variable}}'} format in your templates.</em>
             </Typography>
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={closePreview}>Close</Button>
-          <Button 
+          <Button
             variant="outlined"
             onClick={() => {
               // Copy preview HTML to clipboard
@@ -1290,7 +1290,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
                 alert('Failed to copy to clipboard');
               });
             }}
-            sx={{ 
+            sx={{
               borderColor: '#633394',
               color: '#633394'
             }}
@@ -1301,10 +1301,10 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
       </Dialog>
 
       {/* Debug Info Dialog */}
-      <Dialog 
-        open={showDebugInfo} 
-        onClose={() => setShowDebugInfo(false)} 
-        fullWidth 
+      <Dialog
+        open={showDebugInfo}
+        onClose={() => setShowDebugInfo(false)}
+        fullWidth
         maxWidth="md"
         fullScreen={isMobile}
       >
@@ -1326,22 +1326,22 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
                 </Typography>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Box sx={{ 
-                      width: 12, 
-                      height: 12, 
-                      borderRadius: '50%', 
-                      backgroundColor: debugInfo.database_connection ? '#4caf50' : '#f44336' 
+                    <Box sx={{
+                      width: 12,
+                      height: 12,
+                      borderRadius: '50%',
+                      backgroundColor: debugInfo.database_connection ? '#4caf50' : '#f44336'
                     }} />
                     <Typography variant="body2">
                       Database Connection: {debugInfo.database_connection ? 'Connected' : 'Failed'}
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Box sx={{ 
-                      width: 12, 
-                      height: 12, 
-                      borderRadius: '50%', 
-                      backgroundColor: debugInfo.table_exists ? '#4caf50' : '#f44336' 
+                    <Box sx={{
+                      width: 12,
+                      height: 12,
+                      borderRadius: '50%',
+                      backgroundColor: debugInfo.table_exists ? '#4caf50' : '#f44336'
                     }} />
                     <Typography variant="body2">
                       Email Templates Table: {debugInfo.table_exists ? 'Exists' : 'Missing'}
@@ -1372,10 +1372,10 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
                     Sample Templates
                   </Typography>
                   {debugInfo.sample_templates.map((template, index) => (
-                    <Box key={index} sx={{ 
-                      p: 2, 
-                      mb: 1, 
-                      backgroundColor: '#f5f5f5', 
+                    <Box key={index} sx={{
+                      p: 2,
+                      mb: 1,
+                      backgroundColor: '#f5f5f5',
                       borderRadius: 1,
                       border: '1px solid #e0e0e0'
                     }}>
@@ -1383,7 +1383,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
                         {template.name} (ID: {template.id})
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        Org ID: {template.organization_id} | Public: {template.is_public ? 'Yes' : 'No'} | 
+                        Org ID: {template.organization_id} | Public: {template.is_public ? 'Yes' : 'No'} |
                         HTML: {template.has_html_body ? 'Yes' : 'No'} | Text: {template.has_text_body ? 'Yes' : 'No'}
                       </Typography>
                     </Box>
@@ -1398,10 +1398,10 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
                     Errors
                   </Typography>
                   {debugInfo.errors.map((error, index) => (
-                    <Box key={index} sx={{ 
-                      p: 2, 
-                      mb: 1, 
-                      backgroundColor: '#ffebee', 
+                    <Box key={index} sx={{
+                      p: 2,
+                      mb: 1,
+                      backgroundColor: '#ffebee',
                       borderRadius: 1,
                       border: '1px solid #ffcdd2'
                     }}>
@@ -1417,7 +1417,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowDebugInfo(false)}>Close</Button>
-          <Button 
+          <Button
             variant="outlined"
             onClick={() => {
               navigator.clipboard.writeText(JSON.stringify(debugInfo, null, 2)).then(() => {
@@ -1426,7 +1426,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
                 alert('Failed to copy to clipboard');
               });
             }}
-            sx={{ 
+            sx={{
               borderColor: '#633394',
               color: '#633394'
             }}

@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { Container, Typography, Box, Select, MenuItem, FormControl,
+import {
+    Container, Typography, Box, Select, MenuItem, FormControl,
     InputLabel, Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, TablePagination, Card, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, TextField, Grid, Checkbox, Alert, CircularProgress, Chip } from '@mui/material';
+    TableHead, TableRow, TablePagination, Card, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, TextField, Grid, Checkbox, Alert, CircularProgress, Chip
+} from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import SendIcon from '@mui/icons-material/Send';
 import EmailIcon from '@mui/icons-material/Email';
@@ -34,11 +36,12 @@ const adminColors = {
 
 function AdminDashboard({ onLogout }) {
     const tabs = [
-        { label: 'Home', path: '/home'},
+        { label: 'Home', path: '/home' },
         { label: 'Dashboard', path: '/dashboard' },
         { label: 'Assessment Overview', path: '/root-dashboard' },
         { label: '360 Degree Assessment', path: '/edit-assessments' },
         { label: 'Users Management', path: '/users' },
+        { label: 'Organizations', path: '/organizations' },
         { label: 'Settings', path: '/settings' },
         { label: 'Reports', path: '/reports' },
         { label: 'Report Builder', path: '/reportbuilder' },
@@ -62,7 +65,7 @@ function AdminDashboard({ onLogout }) {
     const [isDateEditorOpen, setIsDateEditorOpen] = useState(false);
     const [companyCoachDetails, setCompanyCoachDetails] = useState([]);
     const [isDataLoaded, setIsDataLoaded] = useState(false);
-    
+
     // Add dashboard statistics state
     const [dashboardStats, setDashboardStats] = useState({
         total_users: 0,
@@ -80,12 +83,12 @@ function AdminDashboard({ onLogout }) {
     const [showReminderResults, setShowReminderResults] = useState(false);
     const [showEmailPreview, setShowEmailPreview] = useState(false);
     const [emailPreviewType, setEmailPreviewType] = useState('text'); // 'text' or 'html'
-    
+
     // Add states for welcome email preview functionality
     const [showWelcomeEmailPreview, setShowWelcomeEmailPreview] = useState(false);
     const [welcomeEmailPreviewType, setWelcomeEmailPreviewType] = useState('text'); // 'text' or 'html'
     const [welcomeEmailPreviewUser, setWelcomeEmailPreviewUser] = useState(null);
-    
+
     // Add states for welcome email template selection
     const [availableWelcomeTemplates, setAvailableWelcomeTemplates] = useState([]);
     const [selectedWelcomeTemplateId, setSelectedWelcomeTemplateId] = useState('');
@@ -93,7 +96,7 @@ function AdminDashboard({ onLogout }) {
     const [loadingWelcomeTemplates, setLoadingWelcomeTemplates] = useState(false);
     const [welcomeEmailPreviewContent, setWelcomeEmailPreviewContent] = useState(null);
     const [loadingWelcomeEmailPreview, setLoadingWelcomeEmailPreview] = useState(false);
-    
+
     // Add states for template selection
     const [availableTemplates, setAvailableTemplates] = useState([]);
     const [selectedTemplateId, setSelectedTemplateId] = useState('');
@@ -102,20 +105,20 @@ function AdminDashboard({ onLogout }) {
     const [loadingTemplates, setLoadingTemplates] = useState(false);
     const [emailPreviewContent, setEmailPreviewContent] = useState(null);
     const [loadingEmailPreview, setLoadingEmailPreview] = useState(false);
-    
+
     // Add states for survey response dates
     const [surveyResponses, setSurveyResponses] = useState([]);
     const [dateEditDialog, setDateEditDialog] = useState(false);
     const [selectedResponse, setSelectedResponse] = useState(null);
     const [editDates, setEditDates] = useState({ start_date: '', end_date: '' });
-    
+
     const highlightStyle = { fontWeight: 'bold', color: adminColors.secondary };
     const highlightStyleBackgroundColor = adminColors.highlightBg;
 
     // Load email preview for the selected user and template
     const loadEmailPreview = useCallback(async () => {
         if (!selectedRecipient) return;
-        
+
         setLoadingEmailPreview(true);
         try {
             const pendingUser = pendingUsers.find(p => p.id === selectedRecipient.id);
@@ -164,7 +167,7 @@ function AdminDashboard({ onLogout }) {
                 }
             }
         };
-        
+
         loadBulkEmailPreview();
     }, [showEmailPreview, bulkReminderDialog, selectedUsers, data.users, pendingUsers]);
 
@@ -172,24 +175,24 @@ function AdminDashboard({ onLogout }) {
         const loadData = async () => {
             try {
                 console.log('Starting to fetch data...');
-                
+
                 // Fetch dashboard statistics
                 const statsResponse = await fetch('/api/admin/dashboard-stats');
                 const stats = await statsResponse.json();
                 setDashboardStats(stats);
-                
+
                 // Fetch pending surveys for reminder functionality
                 const pendingResponse = await fetch('/api/users/pending-surveys');
                 const pendingData = await pendingResponse.json();
                 setPendingUsers(pendingData.users || []);
                 console.log('Fetched Pending Users:', pendingData);
-                
+
                 // Fetch survey responses
                 const responsesResponse = await fetch('/api/responses');
                 const responsesData = await responsesResponse.json();
                 setSurveyResponses(responsesData || []);
                 console.log('Fetched Survey Responses:', responsesData);
-                
+
                 // Fetch users
                 const usersResponse = await fetch('/api/users/role/user');
                 const users = await usersResponse.json();
@@ -229,7 +232,7 @@ function AdminDashboard({ onLogout }) {
                         name: user.organization.name,
                         accreditation_status: user.organization.accreditation_status_or_body
                     }))
-                    .filter((company, index, self) => 
+                    .filter((company, index, self) =>
                         index === self.findIndex((c) => c.id === company.id)
                     );
                 console.log('Extracted Companies:', companies);
@@ -251,9 +254,10 @@ function AdminDashboard({ onLogout }) {
                 console.error('Failed to fetch dashboard data:', error);
             }
         };
-        
+
         const userRole = localStorage.getItem('userRole');
-        if (userRole && userRole !== 'admin') {
+        // Allow both admin and root users to access this dashboard
+        if (userRole && userRole !== 'admin' && userRole !== 'root') {
             navigate('/home');
         } else {
             loadData();
@@ -299,11 +303,11 @@ function AdminDashboard({ onLogout }) {
                         )
                     )
                     .filter(Boolean);
-    
+
                 // Separate completion status for leader and observers
                 const leaderCompleted = leaderResponse?.CompletePartial === 'Complete';
                 const observerCompleted = observerResponses.some((response) => response?.CompletePartial === 'Complete');
-    
+
                 // Calculate reminders sent
                 const leader = data.users.find((user) => user.id === assessment.leader_id);
                 const totalObserverReminders = observersForAssessment.reduce(
@@ -311,11 +315,11 @@ function AdminDashboard({ onLogout }) {
                     0
                 );
                 const reminderCount = observersForAssessment.length ? totalObserverReminders : leader.reminder || 0;
-    
+
                 // Determine userID based on who we're looking at
-                const userID = leaderResponse ? assessment.leader_id : 
-                            (observerResponses.length > 0 ? observerResponses[0].userID : null);
-    
+                const userID = leaderResponse ? assessment.leader_id :
+                    (observerResponses.length > 0 ? observerResponses[0].userID : null);
+
                 return {
                     ...assessment,
                     leaderCompleted: leaderCompleted ? 1 : 0,
@@ -348,7 +352,7 @@ function AdminDashboard({ onLogout }) {
 
     const handleSendReminder = async () => {
         setReminderStatus({ sending: true, results: null });
-        
+
         try {
             const user = data.users.find(u => u.id === selectedId);
             if (!user) {
@@ -394,31 +398,31 @@ function AdminDashboard({ onLogout }) {
                 }
                 setData(updatedData);
 
-                setReminderStatus({ 
-                    sending: false, 
-                    results: { 
-                        success: true, 
+                setReminderStatus({
+                    sending: false,
+                    results: {
+                        success: true,
                         message: `Reminder email sent successfully to ${user.email}`,
-                        method: result.method 
-                    } 
+                        method: result.method
+                    }
                 });
             } else {
-                setReminderStatus({ 
-                    sending: false, 
-                    results: { 
-                        success: false, 
-                        message: result.error || 'Failed to send reminder email' 
-                    } 
+                setReminderStatus({
+                    sending: false,
+                    results: {
+                        success: false,
+                        message: result.error || 'Failed to send reminder email'
+                    }
                 });
             }
         } catch (error) {
             console.error('Error sending reminder:', error);
-            setReminderStatus({ 
-                sending: false, 
-                results: { 
-                    success: false, 
-                    message: `Error sending reminder: ${error.message}` 
-                } 
+            setReminderStatus({
+                sending: false,
+                results: {
+                    success: false,
+                    message: `Error sending reminder: ${error.message}`
+                }
             });
         }
     };
@@ -459,7 +463,7 @@ function AdminDashboard({ onLogout }) {
         } else {
             setTemplatePreview(null);
         }
-        
+
         // Reload email preview if it's currently being shown
         if (showEmailPreview && selectedRecipient) {
             await loadEmailPreview();
@@ -477,10 +481,10 @@ function AdminDashboard({ onLogout }) {
         setCurrentUserOrganization(user.organization_id);
         setSelectedTemplateId(''); // Reset template selection
         setTemplatePreview(null);
-        
+
         // Load available templates
         await loadReminderTemplates(user.organization_id);
-        
+
         setOpenReminderDialog(true);
     };
 
@@ -535,12 +539,12 @@ function AdminDashboard({ onLogout }) {
                 organization_name: user.company_name || '',
                 survey_code: user.survey_code || 'N/A',
                 platform_name: 'Saurara Platform',
-                support_email: 'support@saurara.org',
+                support_email: 'info@saurara.org',
                 survey_url: 'https://www.saurara.org'
             };
-            
+
             let renderedPreview;
-            
+
             // If a specific template is selected, use it
             if (templateId) {
                 const response = await fetch('/api/email-templates/render-preview', {
@@ -553,7 +557,7 @@ function AdminDashboard({ onLogout }) {
                         variables: templateVariables
                     }),
                 });
-                
+
                 if (response.ok) {
                     renderedPreview = await response.json();
                 } else {
@@ -563,10 +567,10 @@ function AdminDashboard({ onLogout }) {
                 // Use default template logic with organization awareness
                 const organizationParam = user.organization_id ? `?organization_id=${user.organization_id}` : '';
                 const templateResponse = await fetch(`/api/email-templates/by-type/welcome${organizationParam}`);
-                
+
                 if (templateResponse.ok) {
                     const templateData = await templateResponse.json();
-                    
+
                     // Render the template with variables
                     const renderResponse = await fetch('/api/email-templates/render-preview', {
                         method: 'POST',
@@ -578,7 +582,7 @@ function AdminDashboard({ onLogout }) {
                             variables: templateVariables
                         }),
                     });
-                    
+
                     if (renderResponse.ok) {
                         renderedPreview = await renderResponse.json();
                     } else {
@@ -607,20 +611,20 @@ function AdminDashboard({ onLogout }) {
                     throw new Error('No welcome template available');
                 }
             }
-            
+
             return {
                 text: renderedPreview.text_body || 'No text version available',
                 html: renderedPreview.html_body || 'No HTML version available',
                 subject: renderedPreview.subject || 'Welcome to Saurara Platform'
             };
-            
+
         } catch (error) {
             console.error('Error generating welcome email preview:', error);
-            
+
             // Fallback to simple preview on error
             const username = user.username;
             const firstname = user.name.split(' ')[0] || username;
-            
+
             return {
                 text: `Dear ${firstname},\n\nWelcome to the Saurara Platform!\n\nYour account has been created successfully.\n\nUsername: ${username}\nSurvey Code: ${user.survey_code || 'N/A'}\nWebsite: www.saurara.org\n\nBest regards,\nThe Saurara Team`,
                 html: `<h2>Welcome to Saurara!</h2><p>Dear ${firstname},</p><p>Welcome to the Saurara Platform! Your account has been created successfully.</p><p><strong>Username:</strong> ${username}<br><strong>Survey Code:</strong> ${user.survey_code || 'N/A'}<br><strong>Website:</strong> <a href="http://www.saurara.org">www.saurara.org</a></p><p>Best regards,<br>The Saurara Team</p>`,
@@ -632,7 +636,7 @@ function AdminDashboard({ onLogout }) {
     // Load welcome email preview for the selected user and template
     const loadWelcomeEmailPreview = useCallback(async () => {
         if (!welcomeEmailPreviewUser) return;
-        
+
         setLoadingWelcomeEmailPreview(true);
         try {
             const preview = await generateWelcomeEmailPreview(welcomeEmailPreviewUser, selectedWelcomeTemplateId || null);
@@ -672,7 +676,7 @@ function AdminDashboard({ onLogout }) {
         } else {
             setWelcomeTemplatePreview(null);
         }
-        
+
         // Reload email preview if it's currently being shown
         if (showWelcomeEmailPreview && welcomeEmailPreviewUser) {
             await loadWelcomeEmailPreview();
@@ -685,10 +689,10 @@ function AdminDashboard({ onLogout }) {
         setSelectedWelcomeTemplateId(''); // Reset template selection
         setWelcomeTemplatePreview(null);
         setWelcomeEmailPreviewContent(null);
-        
+
         // Load available templates
         await loadWelcomeTemplates(user.organization_id);
-        
+
         setShowWelcomeEmailPreview(true);
     };
 
@@ -714,7 +718,7 @@ function AdminDashboard({ onLogout }) {
             const firstname = user.name.split(' ')[0];
             const organizationName = user.company_name;
             const daysRemaining = pendingUser?.days_since_creation ? Math.max(30 - pendingUser.days_since_creation, 0) : null;
-            
+
             // Prepare variables for email template
             const templateVariables = {
                 greeting: firstname ? `Dear ${firstname}` : `Dear ${username}`,
@@ -728,12 +732,12 @@ function AdminDashboard({ onLogout }) {
                 org_text: organizationName ? ` from ${organizationName}` : '',
                 deadline_text: daysRemaining ? ` You have ${daysRemaining} days remaining to complete it.` : '',
                 platform_name: 'Saurara Platform',
-                support_email: 'support@saurara.org',
+                support_email: 'info@saurara.org',
                 survey_url: 'https://www.saurara.org'
             };
-            
+
             let renderedPreview;
-            
+
             // If a specific template is selected, use it
             if (templateId) {
                 const response = await fetch('/api/email-templates/render-preview', {
@@ -746,7 +750,7 @@ function AdminDashboard({ onLogout }) {
                         variables: templateVariables
                     }),
                 });
-                
+
                 if (response.ok) {
                     renderedPreview = await response.json();
                 } else {
@@ -756,10 +760,10 @@ function AdminDashboard({ onLogout }) {
                 // Use default template logic with organization awareness
                 const organizationParam = user.organization_id ? `?organization_id=${user.organization_id}` : '';
                 const templateResponse = await fetch(`/api/email-templates/by-type/reminder${organizationParam}`);
-                
+
                 if (templateResponse.ok) {
                     const templateData = await templateResponse.json();
-                    
+
                     // Render the template with variables
                     const renderResponse = await fetch('/api/email-templates/render-preview', {
                         method: 'POST',
@@ -771,7 +775,7 @@ function AdminDashboard({ onLogout }) {
                             variables: templateVariables
                         }),
                     });
-                    
+
                     if (renderResponse.ok) {
                         renderedPreview = await renderResponse.json();
                     } else {
@@ -782,21 +786,21 @@ function AdminDashboard({ onLogout }) {
                     renderedPreview = await EmailService.renderPreview('reminder', templateVariables);
                 }
             }
-            
+
             return {
                 text: renderedPreview.text_body || 'No text version available',
                 html: renderedPreview.html_body || 'No HTML version available',
                 subject: renderedPreview.subject || '🔔 Reminder: Complete Your Saurara Survey'
             };
-            
+
         } catch (error) {
             console.error('Error generating email preview:', error);
-            
+
             // Fallback to simple preview on error
             const username = user.username;
             const surveyCode = pendingUser?.survey_code || user.survey_code || 'N/A';
             const firstname = user.name.split(' ')[0];
-            
+
             return {
                 text: `Dear ${firstname || username},\n\nThis is a friendly reminder that you have a pending survey on the Saurara Platform.\n\nSurvey Code: ${surveyCode}\nVisit: www.saurara.org\n\nBest regards,\nThe Saurara Team`,
                 html: `<h2>Survey Reminder</h2><p>Dear ${firstname || username},</p><p>This is a friendly reminder that you have a pending survey on the Saurara Platform.</p><p><strong>Survey Code:</strong> ${surveyCode}<br><strong>Website:</strong> <a href="http://www.saurara.org">www.saurara.org</a></p><p>Best regards,<br>The Saurara Team</p>`,
@@ -812,13 +816,13 @@ function AdminDashboard({ onLogout }) {
     // Add bulk reminder functionality
     const handleSendBulkReminders = async () => {
         setReminderStatus({ sending: true, results: null });
-        
+
         try {
             const usersToSend = selectedUsers.map(userId => {
                 const user = data.users.find(u => u.id === userId);
                 const pendingUser = pendingUsers.find(p => p.id === userId);
                 const surveyCode = pendingUser?.survey_code || user?.survey_code || 'N/A';
-                
+
                 return {
                     to_email: user?.email,
                     username: user?.username,
@@ -855,33 +859,33 @@ function AdminDashboard({ onLogout }) {
                 });
                 setData(updatedData);
 
-                setReminderStatus({ 
-                    sending: false, 
-                    results: { 
-                        success: true, 
+                setReminderStatus({
+                    sending: false,
+                    results: {
+                        success: true,
                         message: `Bulk reminders processed: ${result.results.successful_sends} successful, ${result.results.failed_sends} failed`,
                         bulkResults: result.results,
                         successRate: result.success_rate
-                    } 
+                    }
                 });
                 setShowReminderResults(true);
             } else {
-                setReminderStatus({ 
-                    sending: false, 
-                    results: { 
-                        success: false, 
-                        message: result.error || 'Failed to send bulk reminder emails' 
-                    } 
+                setReminderStatus({
+                    sending: false,
+                    results: {
+                        success: false,
+                        message: result.error || 'Failed to send bulk reminder emails'
+                    }
                 });
             }
         } catch (error) {
             console.error('Error sending bulk reminders:', error);
-            setReminderStatus({ 
-                sending: false, 
-                results: { 
-                    success: false, 
-                    message: `Error sending bulk reminders: ${error.message}` 
-                } 
+            setReminderStatus({
+                sending: false,
+                results: {
+                    success: false,
+                    message: `Error sending bulk reminders: ${error.message}`
+                }
             });
         } finally {
             setBulkReminderDialog(false);
@@ -891,8 +895,8 @@ function AdminDashboard({ onLogout }) {
     };
 
     const handleSelectUser = (userId) => {
-        setSelectedUsers(prev => 
-            prev.includes(userId) 
+        setSelectedUsers(prev =>
+            prev.includes(userId)
                 ? prev.filter(id => id !== userId)
                 : [...prev, userId]
         );
@@ -907,8 +911,8 @@ function AdminDashboard({ onLogout }) {
                 return organizationMatch && userMatch && statusMatch && user.status === 'Not-Filled'; // Only select users who haven't filled
             })
             .map(user => user.id);
-        
-        setSelectedUsers(prev => 
+
+        setSelectedUsers(prev =>
             prev.length === filteredUserIds.length ? [] : filteredUserIds
         );
     };
@@ -924,12 +928,12 @@ function AdminDashboard({ onLogout }) {
         const observer = data.observers.find(o => o.assessment_id === assessment.id);
         const company = data.companies.find(c => leader && c.id === leader.company_id);
         const isCompanyMatch = !filters.organization || (company && company.name === filters.organization);
-        
+
         // Get status based on assessment
         const { status } = getStatusAndUrgency(assessment);
-        
+
         // Check if user matches filter (could be leader or observer)
-        const userMatch = !filters.users || 
+        const userMatch = !filters.users ||
             (leader && leader.name.includes(filters.users)) ||
             (observer && observer.name.includes(filters.users));
 
@@ -962,8 +966,8 @@ function AdminDashboard({ onLogout }) {
                 // Update local state after successful API call
                 setData(prevData => ({
                     ...prevData,
-                    assessments: prevData.assessments.map(assessment => 
-                        assessment.id === assessmentId 
+                    assessments: prevData.assessments.map(assessment =>
+                        assessment.id === assessmentId
                             ? { ...assessment, start_date: newStartDate, end_date: newEndDate }
                             : assessment
                     )
@@ -1039,13 +1043,13 @@ function AdminDashboard({ onLogout }) {
                 {
                     label: 'Filled',
                     data: filledData,
-                    backgroundColor: chartLabels.map((_, index) => 
-                        index === chartLabels.length - 1 && chartLabels[index].includes('Others') 
+                    backgroundColor: chartLabels.map((_, index) =>
+                        index === chartLabels.length - 1 && chartLabels[index].includes('Others')
                             ? '#B39DDB' // Different shade for "Others"
                             : adminColors.filledColor
                     ),
-                    borderColor: chartLabels.map((_, index) => 
-                        index === chartLabels.length - 1 && chartLabels[index].includes('Others') 
+                    borderColor: chartLabels.map((_, index) =>
+                        index === chartLabels.length - 1 && chartLabels[index].includes('Others')
                             ? '#B39DDB'
                             : adminColors.filledColor
                     ),
@@ -1054,13 +1058,13 @@ function AdminDashboard({ onLogout }) {
                 {
                     label: 'Not Filled',
                     data: notFilledData,
-                    backgroundColor: chartLabels.map((_, index) => 
-                        index === chartLabels.length - 1 && chartLabels[index].includes('Others') 
+                    backgroundColor: chartLabels.map((_, index) =>
+                        index === chartLabels.length - 1 && chartLabels[index].includes('Others')
                             ? '#D1C4E9' // Different shade for "Others"
                             : adminColors.notFilledColor
                     ),
-                    borderColor: chartLabels.map((_, index) => 
-                        index === chartLabels.length - 1 && chartLabels[index].includes('Others') 
+                    borderColor: chartLabels.map((_, index) =>
+                        index === chartLabels.length - 1 && chartLabels[index].includes('Others')
                             ? '#D1C4E9'
                             : adminColors.notFilledColor
                     ),
@@ -1086,7 +1090,7 @@ function AdminDashboard({ onLogout }) {
             },
             tooltip: {
                 callbacks: {
-                    label: function(context) {
+                    label: function (context) {
                         const label = context.label || '';
                         const value = context.parsed;
                         const total = context.dataset.data.reduce((a, b) => a + b, 0);
@@ -1112,7 +1116,7 @@ function AdminDashboard({ onLogout }) {
             user_name: user.name,
             user_email: user.email
         };
-        
+
         setSelectedResponse(responseObj);
         setEditDates({
             start_date: user.start_date ? user.start_date.split('T')[0] : '',
@@ -1139,7 +1143,7 @@ function AdminDashboard({ onLogout }) {
 
         try {
             let response;
-            
+
             if (selectedResponse.id) {
                 // Update existing survey response
                 response = await fetch(`/api/responses/${selectedResponse.id}/dates`, {
@@ -1157,15 +1161,15 @@ function AdminDashboard({ onLogout }) {
                 // First, get available templates to use the first one
                 const templatesResponse = await fetch('/api/templates');
                 const templatesData = await templatesResponse.json();
-                
+
                 if (templatesData.length === 0) {
                     alert('No survey templates found. Please create a survey template first.');
                     return;
                 }
-                
+
                 // Use the first available template
                 const templateId = templatesData[0].id;
-                
+
                 response = await fetch(`/api/templates/${templateId}/responses`, {
                     method: 'POST',
                     headers: {
@@ -1184,29 +1188,29 @@ function AdminDashboard({ onLogout }) {
             if (response.ok) {
                 const updatedResponse = await response.json();
                 console.log('Survey response dates updated successfully:', updatedResponse);
-                
+
                 // Update local user data state
                 setData(prevData => ({
                     ...prevData,
-                    users: prevData.users.map(user => 
-                        user.id === selectedResponse.user_id 
-                            ? { 
-                                ...user, 
+                    users: prevData.users.map(user =>
+                        user.id === selectedResponse.user_id
+                            ? {
+                                ...user,
                                 response_id: updatedResponse.id || selectedResponse.id,
-                                start_date: updatedResponse.start_date, 
+                                start_date: updatedResponse.start_date,
                                 end_date: updatedResponse.end_date,
                                 response_status: updatedResponse.status || selectedResponse.status
-                              }
+                            }
                             : user
                     )
                 }));
-                
+
                 // Also update survey responses state
                 setSurveyResponses(prev => {
                     if (selectedResponse.id) {
                         // Update existing
-                        return prev.map(resp => 
-                            resp.id === selectedResponse.id 
+                        return prev.map(resp =>
+                            resp.id === selectedResponse.id
                                 ? { ...resp, start_date: updatedResponse.start_date, end_date: updatedResponse.end_date }
                                 : resp
                         );
@@ -1223,7 +1227,7 @@ function AdminDashboard({ onLogout }) {
                         }];
                     }
                 });
-                
+
                 handleCloseDateEditDialog();
             } else {
                 const errorData = await response.json();
@@ -1249,13 +1253,13 @@ function AdminDashboard({ onLogout }) {
                 <Typography variant="h4" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
                     Admin Dashboard
                 </Typography>
-                
+
                 {/* Statistics Cards */}
                 <Grid container spacing={3} sx={{ mb: 4 }}>
                     <Grid item xs={12} sm={6} md={3}>
-                        <Card sx={{ 
-                            height: '100%', 
-                            backgroundColor: adminColors.background, 
+                        <Card sx={{
+                            height: '100%',
+                            backgroundColor: adminColors.background,
                             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
                             '&:hover': { boxShadow: '0 6px 12px rgba(0, 0, 0, 0.15)' }
                         }}>
@@ -1272,11 +1276,11 @@ function AdminDashboard({ onLogout }) {
                             </Box>
                         </Card>
                     </Grid>
-                    
+
                     <Grid item xs={12} sm={6} md={3}>
-                        <Card sx={{ 
-                            height: '100%', 
-                            backgroundColor: adminColors.background, 
+                        <Card sx={{
+                            height: '100%',
+                            backgroundColor: adminColors.background,
                             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
                             '&:hover': { boxShadow: '0 6px 12px rgba(0, 0, 0, 0.15)' }
                         }}>
@@ -1293,11 +1297,11 @@ function AdminDashboard({ onLogout }) {
                             </Box>
                         </Card>
                     </Grid>
-                    
+
                     <Grid item xs={12} sm={6} md={3}>
-                        <Card sx={{ 
-                            height: '100%', 
-                            backgroundColor: adminColors.background, 
+                        <Card sx={{
+                            height: '100%',
+                            backgroundColor: adminColors.background,
                             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
                             '&:hover': { boxShadow: '0 6px 12px rgba(0, 0, 0, 0.15)' }
                         }}>
@@ -1314,11 +1318,11 @@ function AdminDashboard({ onLogout }) {
                             </Box>
                         </Card>
                     </Grid>
-                    
+
                     <Grid item xs={12} sm={6} md={3}>
-                        <Card sx={{ 
-                            height: '100%', 
-                            backgroundColor: adminColors.background, 
+                        <Card sx={{
+                            height: '100%',
+                            backgroundColor: adminColors.background,
                             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
                             '&:hover': { boxShadow: '0 6px 12px rgba(0, 0, 0, 0.15)' }
                         }}>
@@ -1338,10 +1342,10 @@ function AdminDashboard({ onLogout }) {
                 </Grid>
 
                 {/* Quick Actions */}
-                <Card sx={{ 
-                    mb: 4, 
-                    backgroundColor: adminColors.background, 
-                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' 
+                <Card sx={{
+                    mb: 4,
+                    backgroundColor: adminColors.background,
+                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
                 }}>
                     <Box sx={{ p: 3 }}>
                         <Typography variant="h6" sx={{ fontWeight: 'bold', color: adminColors.primary, mb: 3 }}>
@@ -1350,19 +1354,19 @@ function AdminDashboard({ onLogout }) {
                         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                             <Button
                                 variant="contained"
-                                sx={{ 
+                                sx={{
                                     backgroundColor: adminColors.primary,
                                     '&:hover': { backgroundColor: adminColors.secondary },
                                     px: 3,
                                     py: 1.5
                                 }}
-                                onClick={() => navigate('/users')}
+                                onClick={() => navigate('/organizations')}
                             >
                                 Manage Organizations
                             </Button>
                             <Button
                                 variant="contained"
-                                sx={{ 
+                                sx={{
                                     backgroundColor: adminColors.primary,
                                     '&:hover': { backgroundColor: adminColors.secondary },
                                     px: 3,
@@ -1374,7 +1378,7 @@ function AdminDashboard({ onLogout }) {
                             </Button>
                             <Button
                                 variant="contained"
-                                sx={{ 
+                                sx={{
                                     backgroundColor: adminColors.primary,
                                     '&:hover': { backgroundColor: adminColors.secondary },
                                     px: 3,
@@ -1387,7 +1391,7 @@ function AdminDashboard({ onLogout }) {
                             <Button
                                 variant="contained"
                                 startIcon={<SendIcon />}
-                                sx={{ 
+                                sx={{
                                     backgroundColor: '#f57c00',
                                     '&:hover': { backgroundColor: '#e65100' },
                                     px: 3,
@@ -1401,7 +1405,7 @@ function AdminDashboard({ onLogout }) {
                         </Box>
                     </Box>
                 </Card>
-                
+
                 <Box sx={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 2 }}>
                     {/* Table Section */}
                     <Box>
@@ -1472,7 +1476,7 @@ function AdminDashboard({ onLogout }) {
                                                 const organizationMatch = !filters.organization || user.company_name === filters.organization;
                                                 const userMatch = !filters.users || user.name.toLowerCase().includes(filters.users.toLowerCase());
                                                 const statusMatch = !filters.status || user.status === filters.status;
-                                                
+
                                                 return organizationMatch && userMatch && statusMatch;
                                             })
                                             .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
@@ -1483,10 +1487,10 @@ function AdminDashboard({ onLogout }) {
                                                 const progressLabel = progressStatus === 'completed' ? 'Completed' : (progressStatus === 'in_progress' ? 'In Progress' : 'Not Started');
                                                 const progressColor = progressStatus === 'completed' ? 'success' : (progressStatus === 'in_progress' ? 'info' : 'default');
                                                 const isSelectable = user.status === 'Not-Filled';
-                                                
+
                                                 return (
-                                                    <TableRow key={user.id} sx={{ 
-                                                        height: '30px', 
+                                                    <TableRow key={user.id} sx={{
+                                                        height: '30px',
                                                         '& td': { padding: '4px', height: 'auto' },
                                                         backgroundColor: selectedUsers.includes(user.id) ? adminColors.highlightBg : 'inherit'
                                                     }}>
@@ -1511,14 +1515,14 @@ function AdminDashboard({ onLogout }) {
                                                                 </Typography>
                                                             </Box>
                                                         </TableCell>
-                                                        <TableCell 
-                                                            sx={{ 
+                                                        <TableCell
+                                                            sx={{
                                                                 borderRight: `1px solid ${adminColors.borderColor}`,
                                                                 color: user.status === 'Filled' ? adminColors.filledColor : adminColors.notFilledColor,
                                                                 fontWeight: 'bold'
                                                             }}
                                                         >
-                                                            <Chip 
+                                                            <Chip
                                                                 label={user.status}
                                                                 size="small"
                                                                 color={user.status === 'Filled' ? 'success' : 'warning'}
@@ -1531,17 +1535,17 @@ function AdminDashboard({ onLogout }) {
                                                                     {daysSinceCreated} days
                                                                 </Typography>
                                                                 {daysSinceCreated > 14 && (
-                                                                    <Chip 
-                                                                        label="Overdue" 
-                                                                        size="small" 
-                                                                        color="error" 
+                                                                    <Chip
+                                                                        label="Overdue"
+                                                                        size="small"
+                                                                        color="error"
                                                                         variant="outlined"
                                                                     />
                                                                 )}
                                                             </Box>
                                                         </TableCell>
                                                         <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}` }}>
-                                                            <Chip 
+                                                            <Chip
                                                                 label={progressLabel}
                                                                 size="small"
                                                                 color={progressColor}
@@ -1554,19 +1558,19 @@ function AdminDashboard({ onLogout }) {
                                                                     {user.reminder || 0}
                                                                 </Typography>
                                                                 {(user.reminder || 0) > 2 && (
-                                                                    <Chip 
-                                                                        label="Many" 
-                                                                        size="small" 
-                                                                        color="warning" 
+                                                                    <Chip
+                                                                        label="Many"
+                                                                        size="small"
+                                                                        color="warning"
                                                                         variant="outlined"
                                                                     />
                                                                 )}
                                                             </Box>
                                                         </TableCell>
                                                         <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}` }}>
-                                                            <Typography 
-                                                                variant="body2" 
-                                                                sx={{ 
+                                                            <Typography
+                                                                variant="body2"
+                                                                sx={{
                                                                     cursor: 'pointer',
                                                                     color: user.start_date ? adminColors.primary : 'text.secondary',
                                                                     textDecoration: 'underline',
@@ -1578,9 +1582,9 @@ function AdminDashboard({ onLogout }) {
                                                             </Typography>
                                                         </TableCell>
                                                         <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}` }}>
-                                                            <Typography 
-                                                                variant="body2" 
-                                                                sx={{ 
+                                                            <Typography
+                                                                variant="body2"
+                                                                sx={{
                                                                     cursor: 'pointer',
                                                                     color: user.end_date ? adminColors.primary : 'text.secondary',
                                                                     textDecoration: 'underline',
@@ -1683,7 +1687,7 @@ function AdminDashboard({ onLogout }) {
                     <DialogContentText sx={{ mb: 2 }}>
                         Send a professional reminder email to <strong>{selectedRecipient?.name}</strong> about their pending survey.
                     </DialogContentText>
-                    
+
                     {selectedRecipient && (
                         <Box sx={{ mb: 2, p: 2, bgcolor: adminColors.highlightBg, borderRadius: 1 }}>
                             <Typography variant="body2"><strong>User:</strong> {selectedRecipient.name}</Typography>
@@ -1711,7 +1715,7 @@ function AdminDashboard({ onLogout }) {
                                 </MenuItem>
                                 {availableTemplates.map((template) => (
                                     <MenuItem key={template.id} value={template.id.toString()}>
-                                        {template.name} 
+                                        {template.name}
                                         <Typography variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
                                             ({template.organization_name})
                                         </Typography>
@@ -1728,8 +1732,8 @@ function AdminDashboard({ onLogout }) {
                             )}
                         </FormControl>
                         <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                            {selectedTemplateId 
-                                ? 'Using selected custom template' 
+                            {selectedTemplateId
+                                ? 'Using selected custom template'
                                 : 'Will automatically use institution-specific template if available, otherwise system default'
                             }
                         </Typography>
@@ -1758,8 +1762,8 @@ function AdminDashboard({ onLogout }) {
                     )}
 
                     {reminderStatus.results && (
-                        <Alert 
-                            severity={reminderStatus.results.success ? 'success' : 'error'} 
+                        <Alert
+                            severity={reminderStatus.results.success ? 'success' : 'error'}
                             sx={{ mb: 2 }}
                         >
                             {reminderStatus.results.message}
@@ -1788,7 +1792,7 @@ function AdminDashboard({ onLogout }) {
                                 {/* Email Preview Header */}
                                 <Box sx={{ bgcolor: adminColors.headerBg, p: 2, borderBottom: 1, borderColor: 'divider' }}>
                                     <Typography variant="h6" sx={{ mb: 1 }}>
-                                        📧 Email Preview
+                                        Email Preview
                                     </Typography>
                                     <Box sx={{ display: 'flex', gap: 1 }}>
                                         <Button
@@ -1834,11 +1838,11 @@ function AdminDashboard({ onLogout }) {
 
                                             {/* Email Body */}
                                             {emailPreviewType === 'text' ? (
-                                                <Box sx={{ 
-                                                    bgcolor: '#fafafa', 
-                                                    p: 2, 
-                                                    borderRadius: 1, 
-                                                    maxHeight: 400, 
+                                                <Box sx={{
+                                                    bgcolor: '#fafafa',
+                                                    p: 2,
+                                                    borderRadius: 1,
+                                                    maxHeight: 400,
                                                     overflow: 'auto',
                                                     fontFamily: 'monospace',
                                                     fontSize: '0.875rem',
@@ -1847,11 +1851,11 @@ function AdminDashboard({ onLogout }) {
                                                     {emailPreviewContent.text}
                                                 </Box>
                                             ) : (
-                                                <Box sx={{ 
-                                                    border: 1, 
-                                                    borderColor: 'divider', 
-                                                    borderRadius: 1, 
-                                                    maxHeight: 400, 
+                                                <Box sx={{
+                                                    border: 1,
+                                                    borderColor: 'divider',
+                                                    borderRadius: 1,
+                                                    maxHeight: 400,
                                                     overflow: 'auto'
                                                 }}>
                                                     <iframe
@@ -1888,9 +1892,9 @@ function AdminDashboard({ onLogout }) {
                         {reminderStatus.results ? 'Close' : 'Cancel'}
                     </Button>
                     {!reminderStatus.results && (
-                        <Button 
-                            onClick={handleSendReminder} 
-                            variant="contained" 
+                        <Button
+                            onClick={handleSendReminder}
+                            variant="contained"
                             color="primary"
                             disabled={reminderStatus.sending}
                             startIcon={reminderStatus.sending ? <CircularProgress size={16} /> : <EmailIcon />}
@@ -1911,7 +1915,7 @@ function AdminDashboard({ onLogout }) {
                     <DialogContentText sx={{ mb: 2 }}>
                         Send reminder emails to {selectedUsers.length} selected users who haven't completed their surveys.
                     </DialogContentText>
-                    
+
                     <Box sx={{ mb: 2 }}>
                         <Typography variant="h6" sx={{ mb: 1 }}>Selected Users:</Typography>
                         <Box sx={{ maxHeight: 200, overflow: 'auto', border: 1, borderColor: 'divider', borderRadius: 1, p: 1 }}>
@@ -1954,7 +1958,7 @@ function AdminDashboard({ onLogout }) {
                             <Box sx={{ mt: 2, border: 1, borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
                                 <Box sx={{ bgcolor: adminColors.headerBg, p: 2, borderBottom: 1, borderColor: 'divider' }}>
                                     <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                                        📧 Sample Email Preview
+                                        Sample Email Preview
                                     </Typography>
                                     <Typography variant="body2" color="text.secondary">
                                         This shows what the email will look like (personalized for each user)
@@ -1995,11 +1999,11 @@ function AdminDashboard({ onLogout }) {
                                             </Box>
 
                                             {emailPreviewType === 'text' ? (
-                                                <Box sx={{ 
-                                                    bgcolor: '#fafafa', 
-                                                    p: 2, 
-                                                    borderRadius: 1, 
-                                                    maxHeight: 300, 
+                                                <Box sx={{
+                                                    bgcolor: '#fafafa',
+                                                    p: 2,
+                                                    borderRadius: 1,
+                                                    maxHeight: 300,
                                                     overflow: 'auto',
                                                     fontFamily: 'monospace',
                                                     fontSize: '0.75rem',
@@ -2008,11 +2012,11 @@ function AdminDashboard({ onLogout }) {
                                                     {emailPreviewContent.text}
                                                 </Box>
                                             ) : (
-                                                <Box sx={{ 
-                                                    border: 1, 
-                                                    borderColor: 'divider', 
-                                                    borderRadius: 1, 
-                                                    maxHeight: 300, 
+                                                <Box sx={{
+                                                    border: 1,
+                                                    borderColor: 'divider',
+                                                    borderRadius: 1,
+                                                    maxHeight: 300,
                                                     overflow: 'auto'
                                                 }}>
                                                     <iframe
@@ -2040,9 +2044,9 @@ function AdminDashboard({ onLogout }) {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setBulkReminderDialog(false)}>Cancel</Button>
-                    <Button 
-                        onClick={handleSendBulkReminders} 
-                        variant="contained" 
+                    <Button
+                        onClick={handleSendBulkReminders}
+                        variant="contained"
                         color="primary"
                         disabled={reminderStatus.sending || selectedUsers.length === 0}
                         startIcon={reminderStatus.sending ? <CircularProgress size={16} /> : <SendIcon />}
@@ -2058,8 +2062,8 @@ function AdminDashboard({ onLogout }) {
                 <DialogContent>
                     {reminderStatus.results?.bulkResults && (
                         <Box>
-                            <Alert 
-                                severity={reminderStatus.results.success ? 'success' : 'error'} 
+                            <Alert
+                                severity={reminderStatus.results.success ? 'success' : 'error'}
                                 sx={{ mb: 2 }}
                             >
                                 {reminderStatus.results.message}
@@ -2071,13 +2075,13 @@ function AdminDashboard({ onLogout }) {
                             <Typography variant="h6" sx={{ mb: 2 }}>Detailed Results:</Typography>
                             <Box sx={{ maxHeight: 300, overflow: 'auto' }}>
                                 {reminderStatus.results.bulkResults.results.map((result, index) => (
-                                    <Box 
-                                        key={index} 
-                                        sx={{ 
-                                            display: 'flex', 
-                                            justifyContent: 'space-between', 
+                                    <Box
+                                        key={index}
+                                        sx={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
                                             alignItems: 'center',
-                                            py: 1, 
+                                            py: 1,
                                             px: 2,
                                             mb: 1,
                                             bgcolor: result.success ? '#e8f5e8' : '#ffebee',
@@ -2093,7 +2097,7 @@ function AdminDashboard({ onLogout }) {
                                             </Typography>
                                         </Box>
                                         <Box sx={{ textAlign: 'right' }}>
-                                            <Chip 
+                                            <Chip
                                                 label={result.success ? 'Sent' : 'Failed'}
                                                 size="small"
                                                 color={result.success ? 'success' : 'error'}
@@ -2163,7 +2167,7 @@ function AdminDashboard({ onLogout }) {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setIsDateEditorOpen(false)}>Cancel</Button>
-                    <Button 
+                    <Button
                         onClick={() => {
                             handleDateUpdate(
                                 selectedAssessment.id,
@@ -2172,7 +2176,7 @@ function AdminDashboard({ onLogout }) {
                             );
                             setIsDateEditorOpen(false);
                         }}
-                        variant="contained" 
+                        variant="contained"
                         color="primary"
                     >
                         Update Dates
@@ -2187,7 +2191,7 @@ function AdminDashboard({ onLogout }) {
                     <DialogContentText sx={{ mb: 2 }}>
                         Set or update the start and end dates for the survey.
                     </DialogContentText>
-                    
+
                     {selectedResponse && (
                         <Box sx={{ mb: 2, p: 2, bgcolor: adminColors.highlightBg, borderRadius: 1 }}>
                             <Typography variant="body2"><strong>User:</strong> {selectedResponse.user_name}</Typography>
@@ -2227,11 +2231,11 @@ function AdminDashboard({ onLogout }) {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseDateEditDialog}>Cancel</Button>
-                    <Button 
+                    <Button
                         onClick={handleSaveDates}
-                        variant="contained" 
+                        variant="contained"
                         color="primary"
-                        sx={{ 
+                        sx={{
                             bgcolor: adminColors.primary,
                             '&:hover': { bgcolor: adminColors.secondary }
                         }}
@@ -2251,7 +2255,7 @@ function AdminDashboard({ onLogout }) {
                     <DialogContentText sx={{ mb: 2 }}>
                         Preview the welcome email that will be sent to new users.
                     </DialogContentText>
-                    
+
                     {welcomeEmailPreviewUser && (
                         <Box sx={{ mb: 2, p: 2, bgcolor: adminColors.highlightBg, borderRadius: 1 }}>
                             <Typography variant="body2"><strong>User:</strong> {welcomeEmailPreviewUser.name}</Typography>
@@ -2279,7 +2283,7 @@ function AdminDashboard({ onLogout }) {
                                 </MenuItem>
                                 {availableWelcomeTemplates.map((template) => (
                                     <MenuItem key={template.id} value={template.id.toString()}>
-                                        {template.name} 
+                                        {template.name}
                                         <Typography variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
                                             ({template.organization_name})
                                         </Typography>
@@ -2296,8 +2300,8 @@ function AdminDashboard({ onLogout }) {
                             )}
                         </FormControl>
                         <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                            {selectedWelcomeTemplateId 
-                                ? 'Using selected custom template' 
+                            {selectedWelcomeTemplateId
+                                ? 'Using selected custom template'
                                 : 'Will automatically use institution-specific template if available, otherwise system default'
                             }
                         </Typography>
@@ -2322,7 +2326,7 @@ function AdminDashboard({ onLogout }) {
                         {/* Email Preview Header */}
                         <Box sx={{ bgcolor: adminColors.headerBg, p: 2, borderBottom: 1, borderColor: 'divider' }}>
                             <Typography variant="h6" sx={{ mb: 1 }}>
-                                📧 Welcome Email Preview
+                                Welcome Email Preview
                             </Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                                 This shows what the welcome email will look like
@@ -2371,11 +2375,11 @@ function AdminDashboard({ onLogout }) {
 
                                     {/* Email Body */}
                                     {welcomeEmailPreviewType === 'text' ? (
-                                        <Box sx={{ 
-                                            bgcolor: '#fafafa', 
-                                            p: 2, 
-                                            borderRadius: 1, 
-                                            maxHeight: 400, 
+                                        <Box sx={{
+                                            bgcolor: '#fafafa',
+                                            p: 2,
+                                            borderRadius: 1,
+                                            maxHeight: 400,
                                             overflow: 'auto',
                                             fontFamily: 'monospace',
                                             fontSize: '0.875rem',
@@ -2384,11 +2388,11 @@ function AdminDashboard({ onLogout }) {
                                             {welcomeEmailPreviewContent.text}
                                         </Box>
                                     ) : (
-                                        <Box sx={{ 
-                                            border: 1, 
-                                            borderColor: 'divider', 
-                                            borderRadius: 1, 
-                                            maxHeight: 400, 
+                                        <Box sx={{
+                                            border: 1,
+                                            borderColor: 'divider',
+                                            borderRadius: 1,
+                                            maxHeight: 400,
                                             overflow: 'auto'
                                         }}>
                                             <iframe

@@ -14,11 +14,11 @@ import { useNavigate } from 'react-router-dom';
 import UserService from '../../services/Login/UserService';
 
 const LoginPage = ({ onLogin }) => {
-  const [email, setEmail]       = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError]       = useState('');
-  const [success, setSuccess]   = useState('');
-  const navigate                = useNavigate();
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const navigate = useNavigate();
 
   const logoImage = process.env.PUBLIC_URL + '/assets/saurara-high-resolution-logo-transparent.png';
 
@@ -69,6 +69,9 @@ const LoginPage = ({ onLogin }) => {
       switch (userData.role) {
         case 'admin':
           navigate('/admin');
+          break;
+        case 'root':
+          navigate('/root-dashboard');
           break;
         case 'user':
           // Always redirect users to survey code validation page

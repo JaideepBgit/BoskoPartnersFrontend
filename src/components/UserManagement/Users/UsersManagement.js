@@ -1,18 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-    Box, Typography, Button, Table, TableBody, TableCell, TableContainer, 
-    TableHead, TableRow, Paper, IconButton, Dialog, DialogActions, 
-    DialogContent, DialogTitle, TextField, Select, MenuItem, FormControl, 
+import { useNavigate } from 'react-router-dom';
+import {
+    Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
+    TableHead, TableRow, Paper, IconButton, Dialog, DialogActions,
+    DialogContent, DialogTitle, TextField, Select, MenuItem, FormControl,
     InputLabel, TablePagination, Card, CardContent, Grid, Chip, useTheme,
-    Autocomplete, CircularProgress, Tooltip, Stack
+    Autocomplete, CircularProgress, Tooltip, Stack, Collapse
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
-import { 
-    fetchUsers, addUser, updateUser, deleteUser, 
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import {
+    fetchUsers, addUser, updateUser, deleteUser,
     fetchOrganizations, fetchRoles, uploadUserFile, addRole,
     addUserOrganizationalRole, fetchUserOrganizationalRoles,
     updateUserOrganizationalRoles, fetchTemplatesByOrganization
@@ -29,7 +31,8 @@ import SurveyAssignmentCard from './SurveyAssignmentCard';
 
 function UsersManagement() {
     const theme = useTheme();
-    
+    const navigate = useNavigate();
+
     // State variables
     const [users, setUsers] = useState([]);
     const [organizations, setOrganizations] = useState([]);
@@ -39,7 +42,7 @@ function UsersManagement() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [totalUsers, setTotalUsers] = useState(0);
-    
+
     // Dialog states
     const [openAddDialog, setOpenAddDialog] = useState(false);
     const [openEditDialog, setOpenEditDialog] = useState(false);
@@ -47,7 +50,8 @@ function UsersManagement() {
     const [openUploadDialog, setOpenUploadDialog] = useState(false);
     const [openEmailDialog, setOpenEmailDialog] = useState(false);
     const [openEmailPreviewDialog, setOpenEmailPreviewDialog] = useState(false);
-    
+    const [showStats, setShowStats] = useState(false);
+
     // Form states
     const [formData, setFormData] = useState({
         username: '',
@@ -75,7 +79,7 @@ function UsersManagement() {
             longitude: 0
         }
     });
-    
+
     const [selectedUser, setSelectedUser] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [uploadStatus, setUploadStatus] = useState('');
@@ -92,7 +96,7 @@ function UsersManagement() {
     const [selectedOrganizationId, setSelectedOrganizationId] = useState('');
     const [selectedRoleType, setSelectedRoleType] = useState('');
     const [organizationalRoleToAdd, setOrganizationalRoleToAdd] = useState('');
-    
+
     // Email dialog states
     const [emailData, setEmailData] = useState({
         to: '',
@@ -104,7 +108,7 @@ function UsersManagement() {
     });
     const [emailSending, setEmailSending] = useState(false);
     const [emailSent, setEmailSent] = useState(false);
-    
+
     // Email preview states for Add User dialog
     const [showEmailPreview, setShowEmailPreview] = useState(false);
     const [emailPreviewData, setEmailPreviewData] = useState({
@@ -114,10 +118,10 @@ function UsersManagement() {
         to: ''
     });
     const [emailPreviewType, setEmailPreviewType] = useState('text'); // 'text' or 'html'
-    
+
     // Google Places state
     const [addressSearch, setAddressSearch] = useState('');
-    
+
     // Search, Filter, and Sort states
     const [searchTerm, setSearchTerm] = useState('');
     const [filterOrganization, setFilterOrganization] = useState('');
@@ -129,18 +133,18 @@ function UsersManagement() {
     const generateWelcomeEmailPreview = async () => {
         try {
             setEmailPreviewLoading(true);
-            
+
             const firstname = formData.firstname || 'User';
             const username = formData.username || 'your-username';
             const email = formData.email || 'user@example.com';
             const password = formData.password || 'auto-generated-password';
-            const organizationName = formData.organization_id ? 
-                organizations.find(org => org.id === parseInt(formData.organization_id))?.name || 'Organization' : 
+            const organizationName = formData.organization_id ?
+                organizations.find(org => org.id === parseInt(formData.organization_id))?.name || 'Organization' :
                 'Organization';
-            
+
             // Generate a sample survey code (UUID format)
             const surveyCode = `survey-${Math.random().toString(36).substr(2, 9)}-${Date.now().toString(36)}`;
-            
+
             // Prepare variables for email template
             const templateVariables = {
                 greeting: `Dear ${firstname}`,
@@ -159,10 +163,10 @@ function UsersManagement() {
                 current_date: new Date().toLocaleDateString(),
                 current_year: new Date().getFullYear().toString(),
             };
-            
+
             // Get rendered email template from backend
             let renderedPreview;
-            
+
             if (formData.email_template_id) {
                 // Use specific template if selected
                 renderedPreview = await EmailService.renderPreview(null, templateVariables, parseInt(formData.email_template_id));
@@ -172,14 +176,14 @@ function UsersManagement() {
                 console.log(`Using organization ID: ${organizationId} for template lookup`);
                 renderedPreview = await EmailService.renderPreview('welcome', templateVariables, null, organizationId);
             }
-            
+
             setEmailPreviewData({
                 textVersion: renderedPreview.text_body || 'No text version available',
                 htmlVersion: renderedPreview.html_body || 'No HTML version available',
                 subject: renderedPreview.subject || 'Welcome to Saurara!',
                 to: email
             });
-            
+
         } catch (error) {
             console.error('Error generating email preview:', error);
             // Fallback to simple preview on error
@@ -220,8 +224,8 @@ function UsersManagement() {
             // Filter organizations by type
             const filteredOrgs = data.filter(org => {
                 console.log(org.organization_type, org.organization_type.type);
-                return org.organization_type && 
-                ['church', 'non_formal_organizations', 'institution'].includes(org.organization_type.type.toLowerCase())
+                return org.organization_type &&
+                    ['church', 'non_formal_organizations', 'institution'].includes(org.organization_type.type.toLowerCase())
             });
             setOrganizations(filteredOrgs);
         } catch (error) {
@@ -264,18 +268,18 @@ function UsersManagement() {
             console.log(`Loading email templates for organization: ${organizationId}`);
             const data = await InventoryService.getEmailTemplates(organizationId);
             console.log('Email templates loaded:', data);
-            
+
             // Filter for welcome templates specifically
-            const welcomeTemplates = (data || []).filter(template => 
+            const welcomeTemplates = (data || []).filter(template =>
                 template.name && (
                     template.name.toLowerCase().includes('welcome') ||
                     template.name.toLowerCase().includes('default welcome')
                 )
             );
-            
+
             console.log('Welcome templates found:', welcomeTemplates);
             setEmailTemplates(welcomeTemplates);
-            
+
             if (welcomeTemplates.length === 0) {
                 console.warn('No welcome email templates found for this organization');
             }
@@ -310,7 +314,7 @@ function UsersManagement() {
     // Handle form input changes
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        
+
         // Handle nested geo_location fields
         if (name.startsWith('geo_location.')) {
             const geoField = name.split('.')[1];
@@ -345,7 +349,7 @@ function UsersManagement() {
     const handleRoleSelection = (e, organizationId, roleId) => {
         const isChecked = e.target.checked;
         let updatedRoles = [...formData.roles];
-        
+
         if (isChecked) {
             updatedRoles.push({ organization_id: organizationId, role_id: roleId });
         } else {
@@ -353,7 +357,7 @@ function UsersManagement() {
                 role => !(role.organization_id === organizationId && role.role_id === roleId)
             );
         }
-        
+
         setFormData({
             ...formData,
             roles: updatedRoles
@@ -363,21 +367,21 @@ function UsersManagement() {
     // Handle adding a new role
     const handleAddNewRole = async () => {
         if (!newRoleName.trim()) return;
-        
+
         setRoleLoading(true);
         try {
             const roleData = {
                 name: newRoleName.trim(),
                 description: `Created for user with ${formData.ui_role} role`
             };
-            
+
             const newRole = await addRole(roleData);
             setNewRoleName('');
             setIsAddingNewRole(false);
-            
+
             // Reload roles
             await loadRoles();
-            
+
         } catch (error) {
             console.error('Failed to add new role:', error);
             alert(`Failed to add new role: ${error.message}`);
@@ -401,13 +405,13 @@ function UsersManagement() {
         try {
             const formData = new FormData();
             formData.append('file', selectedFile);
-            
+
             const response = await uploadUserFile(formData);
             setUploadStatus(`File uploaded successfully: ${response.filename}`);
-            
+
             // Reload users after successful upload
             loadUsers();
-            
+
             // Close the dialog after a delay
             setTimeout(() => {
                 setOpenUploadDialog(false);
@@ -419,42 +423,15 @@ function UsersManagement() {
         }
     };
 
-    // Open add user dialog
+    // Navigate to add user page
     const handleOpenAddDialog = () => {
-        setFormData({
-            username: '',
-            email: '',
-            password: '',
-            ui_role: 'user',
-            firstname: '',
-            lastname: '',
-            phone: '',
-            organization_id: '',
-            template_id: '',
-            email_template_id: '',
-            roles: [],
-            geo_location: {
-                continent: '',
-                region: '',
-                country: '',
-                province: '',
-                city: '',
-                town: '',
-                address_line1: '',
-                address_line2: '',
-                postal_code: '',
-                latitude: 0,
-                longitude: 0
-            }
-        });
-        setTemplates([]); // Reset templates
-        setOpenAddDialog(true);
+        navigate('/users/add');
     };
 
     // Open edit user dialog
     const handleOpenEditDialog = async (user) => {
         setSelectedUser(user);
-        
+
         // Load organizational roles for the user if they have the 'other' role
         let userRoles = user.roles || [];
         if (user.ui_role === 'other') {
@@ -465,7 +442,7 @@ function UsersManagement() {
                 console.warn('Failed to fetch organizational roles for user:', error);
             }
         }
-        
+
         setFormData({
             username: user.username,
             email: user.email,
@@ -504,7 +481,7 @@ function UsersManagement() {
                 longitude: 0
             }
         });
-        
+
         // Load templates for the user's organization
         if (user.organization_id) {
             loadTemplates(user.organization_id);
@@ -642,18 +619,18 @@ function UsersManagement() {
                 role: formData.ui_role, // Map ui_role to role for backend
                 geo_location: hasValidGeoData(formData.geo_location) ? formData.geo_location : null
             };
-            
+
             // Remove ui_role and roles from the user data as they're handled separately
             delete userData.ui_role;
             const organizationalRoles = userData.roles || [];
             delete userData.roles;
-            
+
             // First, create the user
             const newUser = await addUser(userData);
             console.log('Backend response for new user:', newUser);
             console.log('Password from backend:', newUser.password);
             console.log('Password from form:', formData.password);
-            
+
             // Then, if there are organizational roles, save them
             if (organizationalRoles.length > 0) {
                 try {
@@ -663,12 +640,12 @@ function UsersManagement() {
                     alert('User created successfully, but there was an issue saving organizational roles. You can edit the user to add roles.');
                 }
             }
-            
+
             // Show success message - backend automatically sends welcome email
             alert(`User "${newUser.username}" created successfully! Welcome email has been sent to ${newUser.email}.`);
-            
+
             loadUsers();
-            
+
             // Close the add dialog - no email dialog needed
             setOpenAddDialog(false);
         } catch (error) {
@@ -680,14 +657,14 @@ function UsersManagement() {
     // Helper function to check if geo_location has any meaningful data
     const hasValidGeoData = (geoData) => {
         if (!geoData) return false;
-        
+
         // Check all fields except latitude and longitude for meaningful string data
         const stringFields = ['continent', 'region', 'country', 'province', 'city', 'town', 'address_line1', 'address_line2', 'postal_code'];
         const hasStringData = stringFields.some(field => geoData[field] && geoData[field].trim() !== '');
-        
+
         // Check if latitude and longitude have been set (not 0 or empty)
         const hasCoordinates = (geoData.latitude && geoData.latitude !== 0) || (geoData.longitude && geoData.longitude !== 0);
-        
+
         return hasStringData || hasCoordinates;
     };
 
@@ -715,10 +692,10 @@ function UsersManagement() {
                 name: organizationalRoleToAdd.trim(),
                 description: `Created for organizational role: ${organizationalRoleToAdd.trim()}`
             };
-            
+
             // This will add to roles table
             await addRole(roleData);
-            
+
             // Add the new organizational role to the form data
             const newRole = {
                 organization_id: parseInt(selectedOrganizationId),
@@ -734,7 +711,7 @@ function UsersManagement() {
             // Reset the form
             setSelectedOrganizationId('');
             setOrganizationalRoleToAdd('');
-            
+
             alert('Role added successfully!');
         } catch (error) {
             // If the role already exists in the database, that's okay
@@ -779,27 +756,27 @@ function UsersManagement() {
     // Handle Google Places selection
     const handlePlaceSelect = (placeData) => {
         const { geoLocationData, formattedAddress } = placeData;
-        
+
         // Ensure latitude and longitude are numbers, defaulting to 0 if not provided
         const updatedGeoLocation = {
             ...geoLocationData,
             latitude: geoLocationData.latitude ? Number(geoLocationData.latitude) : 0,
             longitude: geoLocationData.longitude ? Number(geoLocationData.longitude) : 0
         };
-        
+
         // Update form data with the selected place information
         setFormData({
             ...formData,
             geo_location: updatedGeoLocation
         });
-        
+
         // Show a brief success message
         console.log('Address auto-filled:', formattedAddress);
-        console.log('Coordinates set:', { 
-            latitude: updatedGeoLocation.latitude, 
-            longitude: updatedGeoLocation.longitude 
+        console.log('Coordinates set:', {
+            latitude: updatedGeoLocation.latitude,
+            longitude: updatedGeoLocation.longitude
         });
-        
+
         // Clear the search field
         setAddressSearch('');
     };
@@ -812,7 +789,7 @@ function UsersManagement() {
     // Update an existing user
     const handleUpdateUser = async () => {
         if (!selectedUser) return;
-        
+
         try {
             // Transform form data for backend
             const userData = {
@@ -820,12 +797,12 @@ function UsersManagement() {
                 role: formData.ui_role, // Map ui_role to role for backend
                 geo_location: hasValidGeoData(formData.geo_location) ? formData.geo_location : null
             };
-            
+
             // Remove ui_role and roles from the user data as they're handled separately
             delete userData.ui_role;
             const organizationalRoles = userData.roles || [];
             delete userData.roles;
-            
+
             // Debug logging
             console.log('=== UPDATE USER DEBUG ===');
             console.log('Selected User ID:', selectedUser.id);
@@ -833,10 +810,10 @@ function UsersManagement() {
             console.log('User Data being sent:', userData);
             console.log('Template ID in userData:', userData.template_id);
             console.log('========================');
-            
+
             // First, update the user
             await updateUser(selectedUser.id, userData);
-            
+
             // Then, update organizational roles
             if (formData.ui_role === 'other') {
                 try {
@@ -846,7 +823,7 @@ function UsersManagement() {
                     alert('User updated successfully, but there was an issue saving organizational roles.');
                 }
             }
-            
+
             loadUsers();
             handleCloseDialogs();
         } catch (error) {
@@ -858,7 +835,7 @@ function UsersManagement() {
     // Delete a user
     const handleDeleteUser = async () => {
         if (!selectedUser) return;
-        
+
         try {
             await deleteUser(selectedUser.id);
             loadUsers();
@@ -901,11 +878,11 @@ function UsersManagement() {
     // Filter and sort users
     const getFilteredAndSortedUsers = () => {
         let filtered = [...users];
-        
+
         // Apply search filter
         if (searchTerm) {
             const search = searchTerm.toLowerCase();
-            filtered = filtered.filter(user => 
+            filtered = filtered.filter(user =>
                 user.username?.toLowerCase().includes(search) ||
                 user.email?.toLowerCase().includes(search) ||
                 user.firstname?.toLowerCase().includes(search) ||
@@ -914,43 +891,43 @@ function UsersManagement() {
                 user.organization?.name?.toLowerCase().includes(search)
             );
         }
-        
+
         // Apply organization filter
         if (filterOrganization) {
             filtered = filtered.filter(user => user.organization_id === parseInt(filterOrganization));
         }
-        
+
         // Apply role filter
         if (filterRole) {
             filtered = filtered.filter(user => user.ui_role === filterRole);
         }
-        
+
         // Apply sorting
         filtered.sort((a, b) => {
             let aValue = a[sortBy];
             let bValue = b[sortBy];
-            
+
             // Handle organization name sorting
             if (sortBy === 'organization') {
                 aValue = a.organization?.name || '';
                 bValue = b.organization?.name || '';
             }
-            
+
             // Handle null/undefined values
             if (!aValue) aValue = '';
             if (!bValue) bValue = '';
-            
+
             // Convert to lowercase for string comparison
             if (typeof aValue === 'string') aValue = aValue.toLowerCase();
             if (typeof bValue === 'string') bValue = bValue.toLowerCase();
-            
+
             if (sortOrder === 'asc') {
                 return aValue > bValue ? 1 : -1;
             } else {
                 return aValue < bValue ? 1 : -1;
             }
         });
-        
+
         return filtered;
     };
 
@@ -973,25 +950,25 @@ function UsersManagement() {
                 <Table>
                     <TableHead sx={{ backgroundColor: '#633394' }}>
                         <TableRow>
-                            <TableCell 
+                            <TableCell
                                 sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
                                 onClick={() => handleSort('username')}
                             >
                                 Username {sortBy === 'username' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </TableCell>
-                            <TableCell 
+                            <TableCell
                                 sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
                                 onClick={() => handleSort('email')}
                             >
                                 Email {sortBy === 'email' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </TableCell>
-                            <TableCell 
+                            <TableCell
                                 sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
                                 onClick={() => handleSort('firstname')}
                             >
                                 First Name {sortBy === 'firstname' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </TableCell>
-                            <TableCell 
+                            <TableCell
                                 sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
                                 onClick={() => handleSort('lastname')}
                             >
@@ -1000,7 +977,7 @@ function UsersManagement() {
                             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Title</TableCell>
                             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Phone</TableCell>
                             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>User Address</TableCell>
-                            <TableCell 
+                            <TableCell
                                 sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
                                 onClick={() => handleSort('organization')}
                             >
@@ -1066,13 +1043,13 @@ function UsersManagement() {
                                         )}
                                     </TableCell>
                                     <TableCell>
-                                        <IconButton 
+                                        <IconButton
                                             onClick={() => handleOpenEditDialog(user)}
                                             color="primary"
                                         >
                                             <EditIcon />
                                         </IconButton>
-                                        <IconButton 
+                                        <IconButton
                                             onClick={() => handleOpenDeleteDialog(user)}
                                             color="error"
                                         >
@@ -1101,187 +1078,155 @@ function UsersManagement() {
         return (
             <Box component="form" noValidate autoComplete="off">
                 <Paper
-                sx={{
-                    p: 2,
-                    backgroundColor: '#f5f5f5',
-                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                    mb: 3,
-                    width: '96.5%',
-                }}
-                >
-                <Typography
-                    variant="h6"
-                    gutterBottom
                     sx={{
-                    color: '#633394',
-                    fontWeight: 'bold',
-                    mb: 2,
-                    textAlign: 'center',
+                        p: 2,
+                        backgroundColor: '#f5f5f5',
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                        mb: 3,
+                        width: '96.5%',
                     }}
                 >
-                    User Information
-                </Typography>
+                    <Typography
+                        variant="h6"
+                        gutterBottom
+                        sx={{
+                            color: '#633394',
+                            fontWeight: 'bold',
+                            mb: 2,
+                            textAlign: 'center',
+                        }}
+                    >
+                        User Information
+                    </Typography>
 
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                    {/* Column 1 */}
-                    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <TextField
-                        required
-                        fullWidth
-                        label="Username"
-                        name="username"
-                        value={formData.username}
-                        onChange={handleInputChange}
-                        variant="outlined"
-                    />
-                    <TextField
-                        fullWidth
-                        label="First Name"
-                        name="firstname"
-                        value={formData.firstname}
-                        onChange={handleInputChange}
-                        variant="outlined"
-                    />
-                    <TextField
-                        fullWidth
-                        label="Phone"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        variant="outlined"
-                    />
-                    </Box>
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                        {/* Column 1 */}
+                        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <TextField
+                                required
+                                fullWidth
+                                label="Username"
+                                name="username"
+                                value={formData.username}
+                                onChange={handleInputChange}
+                                variant="outlined"
+                            />
+                            <TextField
+                                fullWidth
+                                label="First Name"
+                                name="firstname"
+                                value={formData.firstname}
+                                onChange={handleInputChange}
+                                variant="outlined"
+                            />
+                            <TextField
+                                fullWidth
+                                label="Phone"
+                                name="phone"
+                                value={formData.phone}
+                                onChange={handleInputChange}
+                                variant="outlined"
+                            />
+                        </Box>
 
-                    {/* Column 2 */}
-                    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <TextField
-                        required
-                        fullWidth
-                        label="Email"
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        variant="outlined"
-                    />
-                    <TextField
-                        fullWidth
-                        label="Last Name"
-                        name="lastname"
-                        value={formData.lastname}
-                        onChange={handleInputChange}
-                        variant="outlined"
-                    />
-                    {isEdit ? (
-                        <TextField
-                        fullWidth
-                        label="New Password (leave blank to keep current)"
-                        name="password"
-                        type="password"
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        variant="outlined"
-                        />
-                    ) : (
-                        <TextField
-                        fullWidth
-                        label="Password (auto-generated if empty)"
-                        name="password"
-                        type="password"
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        variant="outlined"
-                        helperText="Leave empty for auto-generated password"
-                        />
-                    )}
-                    </Box>
-
-                    {/* Column 3 */}
-                    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        <Autocomplete
-                            value={roles.find(role => role.name === formData.ui_role) || null}
-                            onChange={(event, newValue) => {
-                                setFormData({
-                                    ...formData,
-                                    ui_role: newValue ? newValue.name : ''
-                                });
-                            }}
-                            options={roles}
-                            getOptionLabel={(option) => option.name.charAt(0).toUpperCase() + option.name.slice(1)}
-                            renderInput={(params) => (
+                        {/* Column 2 */}
+                        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <TextField
+                                required
+                                fullWidth
+                                label="Email"
+                                name="email"
+                                type="email"
+                                value={formData.email}
+                                onChange={handleInputChange}
+                                variant="outlined"
+                            />
+                            <TextField
+                                fullWidth
+                                label="Last Name"
+                                name="lastname"
+                                value={formData.lastname}
+                                onChange={handleInputChange}
+                                variant="outlined"
+                            />
+                            {isEdit ? (
                                 <TextField
-                                    {...params}
-                                    label="UI Role"
+                                    fullWidth
+                                    label="New Password (leave blank to keep current)"
+                                    name="password"
+                                    type="password"
+                                    value={formData.password}
+                                    onChange={handleInputChange}
                                     variant="outlined"
-                                    required
+                                />
+                            ) : (
+                                <TextField
+                                    fullWidth
+                                    label="Password (auto-generated if empty)"
+                                    name="password"
+                                    type="password"
+                                    value={formData.password}
+                                    onChange={handleInputChange}
+                                    variant="outlined"
+                                    helperText="Leave empty for auto-generated password"
                                 />
                             )}
-                            isOptionEqualToValue={(option, value) => option.name === value.name}
-                            renderOption={(props, option) => (
-                                <li {...props}>
-                                    {option.name.charAt(0).toUpperCase() + option.name.slice(1)}
-                                </li>
-                            )}
-                        />
+                        </Box>
 
-                        <FormControl fullWidth variant="outlined">
-                            <InputLabel>Organization</InputLabel>
-                            <Select
-                                name="organization_id"
-                                value={formData.organization_id}
-                                onChange={handleInputChange}
-                                label="Organization"
-                            >
-                                <MenuItem value="">No Organization</MenuItem>
-                                {organizations.map((org) => (
-                                    <MenuItem key={org.id} value={org.id}>
-                                        {org.name} ({org.organization_type?.type || 'N/A'})
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
+                        {/* Column 3 */}
+                        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <Autocomplete
+                                value={roles.find(role => role.name === formData.ui_role) || null}
+                                onChange={(event, newValue) => {
+                                    setFormData({
+                                        ...formData,
+                                        ui_role: newValue ? newValue.name : ''
+                                    });
+                                }}
+                                options={roles}
+                                getOptionLabel={(option) => option.name.charAt(0).toUpperCase() + option.name.slice(1)}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="UI Role"
+                                        variant="outlined"
+                                        required
+                                    />
+                                )}
+                                isOptionEqualToValue={(option, value) => option.name === value.name}
+                                renderOption={(props, option) => (
+                                    <li {...props}>
+                                        {option.name.charAt(0).toUpperCase() + option.name.slice(1)}
+                                    </li>
+                                )}
+                            />
 
-                        {/* Template Selection - Only shown when organization is selected */}
-                        {formData.organization_id && (
                             <FormControl fullWidth variant="outlined">
-                                <InputLabel>Survey Template</InputLabel>
+                                <InputLabel>Organization</InputLabel>
                                 <Select
-                                    name="template_id"
-                                    value={formData.template_id}
+                                    name="organization_id"
+                                    value={formData.organization_id}
                                     onChange={handleInputChange}
-                                    label="Survey Template"
-                                    MenuProps={{
-                                        PaperProps: {
-                                            style: {
-                                                maxWidth: '400px', // Limit dropdown width
-                                            },
-                                        },
-                                    }}
+                                    label="Organization"
                                 >
-                                    <MenuItem value="">No Template Selected</MenuItem>
-                                    {templates.map((template) => (
-                                        <MenuItem 
-                                            key={template.id} 
-                                            value={template.id}
-                                            title={`${template.survey_code} - ${template.version_name}`} // Show full text on hover
-                                        >
-                                            {truncateText(`${template.survey_code} - ${template.version_name}`, 35)}
+                                    <MenuItem value="">No Organization</MenuItem>
+                                    {organizations.map((org) => (
+                                        <MenuItem key={org.id} value={org.id}>
+                                            {org.name} ({org.organization_type?.type || 'N/A'})
                                         </MenuItem>
                                     ))}
                                 </Select>
                             </FormControl>
-                        )}
 
-                        {/* Email Template Selection - Only shown when organization is selected */}
-                        {formData.organization_id && (
-                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
+                            {/* Template Selection - Only shown when organization is selected */}
+                            {formData.organization_id && (
                                 <FormControl fullWidth variant="outlined">
-                                    <InputLabel>Welcome Email Template</InputLabel>
+                                    <InputLabel>Survey Template</InputLabel>
                                     <Select
-                                        name="email_template_id"
-                                        value={formData.email_template_id}
+                                        name="template_id"
+                                        value={formData.template_id}
                                         onChange={handleInputChange}
-                                        label="Welcome Email Template"
+                                        label="Survey Template"
                                         MenuProps={{
                                             PaperProps: {
                                                 style: {
@@ -1290,54 +1235,86 @@ function UsersManagement() {
                                             },
                                         }}
                                     >
-                                        <MenuItem value="">Use Default Welcome Email</MenuItem>
-                                        {emailTemplates.map((template) => (
-                                            <MenuItem 
-                                                key={template.id} 
+                                        <MenuItem value="">No Template Selected</MenuItem>
+                                        {templates.map((template) => (
+                                            <MenuItem
+                                                key={template.id}
                                                 value={template.id}
-                                                title={`${template.name} - ${template.subject}`} // Show full text on hover
+                                                title={`${template.survey_code} - ${template.version_name}`} // Show full text on hover
                                             >
-                                                {truncateText(`${template.name} - ${template.subject}`, 35)}
+                                                {truncateText(`${template.survey_code} - ${template.version_name}`, 35)}
                                             </MenuItem>
                                         ))}
                                     </Select>
                                 </FormControl>
-                                <Button
-                                    variant="outlined"
-                                    onClick={handleEmailTemplatePreview}
-                                    sx={{ 
-                                        minWidth: '120px',
-                                        height: '56px', // Match FormControl height
-                                        borderColor: '#633394',
-                                        color: '#633394',
-                                        '&:hover': {
-                                            borderColor: '#7c52a5',
-                                            backgroundColor: 'rgba(99, 51, 148, 0.04)'
-                                        }
-                                    }}
-                                    startIcon={<VisibilityIcon />}
-                                >
-                                    Preview
-                                </Button>
-                            </Box>
-                        )}
+                            )}
+
+                            {/* Email Template Selection - Only shown when organization is selected */}
+                            {formData.organization_id && (
+                                <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
+                                    <FormControl fullWidth variant="outlined">
+                                        <InputLabel>Welcome Email Template</InputLabel>
+                                        <Select
+                                            name="email_template_id"
+                                            value={formData.email_template_id}
+                                            onChange={handleInputChange}
+                                            label="Welcome Email Template"
+                                            MenuProps={{
+                                                PaperProps: {
+                                                    style: {
+                                                        maxWidth: '400px', // Limit dropdown width
+                                                    },
+                                                },
+                                            }}
+                                        >
+                                            <MenuItem value="">Use Default Welcome Email</MenuItem>
+                                            {emailTemplates.map((template) => (
+                                                <MenuItem
+                                                    key={template.id}
+                                                    value={template.id}
+                                                    title={`${template.name} - ${template.subject}`} // Show full text on hover
+                                                >
+                                                    {truncateText(`${template.name} - ${template.subject}`, 35)}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                    <Button
+                                        variant="outlined"
+                                        onClick={handleEmailTemplatePreview}
+                                        sx={{
+                                            minWidth: '120px',
+                                            height: '56px', // Match FormControl height
+                                            borderColor: '#633394',
+                                            color: '#633394',
+                                            '&:hover': {
+                                                borderColor: '#7c52a5',
+                                                backgroundColor: 'rgba(99, 51, 148, 0.04)'
+                                            }
+                                        }}
+                                        startIcon={<VisibilityIcon />}
+                                    >
+                                        Preview
+                                    </Button>
+                                </Box>
+                            )}
+                        </Box>
                     </Box>
-                </Box>
                 </Paper>
 
-                
+
                 {/* Organizational Roles Section - Only shown when UI role is 'other' */}
                 {formData.ui_role === 'other' && (
-                    <Paper sx={{ p: 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',mb: 3 }}>
+                    <Paper sx={{ p: 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', mb: 3 }}>
                         <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold', mb: 2, textAlign: 'center' }}>
                             Organizational Roles
                         </Typography>
                         <Box sx={{ maxWidth: '900px', mx: 'auto' }}>
-                            
+
                             {/* Add New Role Section */}
-                            <Box sx={{ 
-                                p: 2, 
-                                border: '1px solid #e0e0e0', 
+                            <Box sx={{
+                                p: 2,
+                                border: '1px solid #e0e0e0',
                                 borderRadius: 1,
                                 backgroundColor: 'white',
                                 mb: 3
@@ -1347,10 +1324,10 @@ function UsersManagement() {
                                 </Typography>
                                 <Grid container spacing={2} alignItems="end">
                                     <Grid item xs={12} md={4}>
-                                        <FormControl 
+                                        <FormControl
                                             // fixed width
                                             variant="outlined"
-                                            sx={{width: 300,  minHeight: '56px' }}
+                                            sx={{ width: 300, minHeight: '56px' }}
                                         >
                                             <InputLabel id="select-organization-label">Select Organization</InputLabel>
                                             <Select
@@ -1358,7 +1335,7 @@ function UsersManagement() {
                                                 value={selectedOrganizationId}
                                                 onChange={(e) => setSelectedOrganizationId(e.target.value)}
                                                 label="Select Organization"
-                                                sx={{ 
+                                                sx={{
                                                     minHeight: '56px',
                                                     '& .MuiSelect-select': {
                                                         minHeight: '20px',
@@ -1389,12 +1366,12 @@ function UsersManagement() {
                                         />
                                     </Grid>
                                     <Grid item xs={12} md={4}>
-                                        <Button 
-                                            variant="contained" 
+                                        <Button
+                                            variant="contained"
                                             fullWidth
                                             onClick={handleAddOrganizationalRole}
                                             disabled={!selectedOrganizationId || !organizationalRoleToAdd.trim() || addingOrganizationalRole}
-                                            sx={{ 
+                                            sx={{
                                                 backgroundColor: '#633394',
                                                 '&:hover': { backgroundColor: '#7c52a5' }
                                             }}
@@ -1408,9 +1385,9 @@ function UsersManagement() {
 
                             {/* Display Current Roles */}
                             {formData.roles.length > 0 && (
-                                <Box sx={{ 
-                                    p: 2, 
-                                    border: '1px solid #e0e0e0', 
+                                <Box sx={{
+                                    p: 2,
+                                    border: '1px solid #e0e0e0',
                                     borderRadius: 1,
                                     backgroundColor: 'white'
                                 }}>
@@ -1421,12 +1398,12 @@ function UsersManagement() {
                                         {organizations.map((org) => {
                                             const orgRoles = getOrganizationRoles(org.id);
                                             if (orgRoles.length === 0) return null;
-                                            
+
                                             return (
                                                 <Grid item xs={12} key={org.id}>
-                                                    <Box sx={{ 
-                                                        p: 2, 
-                                                        border: '1px solid #ddd', 
+                                                    <Box sx={{
+                                                        p: 2,
+                                                        border: '1px solid #ddd',
                                                         borderRadius: 1,
                                                         backgroundColor: '#fafafa'
                                                     }}>
@@ -1441,7 +1418,7 @@ function UsersManagement() {
                                                                     color="primary"
                                                                     variant="filled"
                                                                     onDelete={() => handleRemoveOrganizationalRole(role.organization_id, role.role_type)}
-                                                                    sx={{ 
+                                                                    sx={{
                                                                         backgroundColor: '#633394',
                                                                         '&:hover': { backgroundColor: '#7c52a5' }
                                                                     }}
@@ -1458,13 +1435,13 @@ function UsersManagement() {
                         </Box>
                     </Paper>
                 )}
-                
+
                 {/* Address Information Section */}
                 <Paper sx={{ p: 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', mb: 3 }}>
                     <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold', mb: 2, textAlign: 'center' }}>
                         Address Information
                     </Typography>
-                    
+
                     <Box sx={{ maxWidth: '900px', mx: 'auto' }}>
                         {/* Enhanced Address Input */}
                         <Box sx={{ mb: 3 }}>
@@ -1478,7 +1455,7 @@ function UsersManagement() {
 
                     </Box>
                 </Paper>
-                
+
                 {/* Email Preview Section - Only shown for Add User dialog */}
                 {!isEdit && (
                     <Paper sx={{ p: 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', mb: 3 }}>
@@ -1494,8 +1471,8 @@ function UsersManagement() {
                                     }
                                     setShowEmailPreview(!showEmailPreview);
                                 }}
-                                sx={{ 
-                                    backgroundColor: '#633394', 
+                                sx={{
+                                    backgroundColor: '#633394',
                                     '&:hover': { backgroundColor: '#7c52a5' },
                                     minWidth: '200px'
                                 }}
@@ -1503,7 +1480,7 @@ function UsersManagement() {
                                 {showEmailPreview ? 'Hide Email Preview' : 'Preview Email Content'}
                             </Button>
                         </Box>
-                        
+
                         {showEmailPreview && (
                             <Box sx={{ mt: 2 }}>
                                 {/* Email Details */}
@@ -1524,13 +1501,13 @@ function UsersManagement() {
                                     <Button
                                         variant={emailPreviewType === 'text' ? 'contained' : 'outlined'}
                                         onClick={() => setEmailPreviewType('text')}
-                                        sx={{ 
+                                        sx={{
                                             backgroundColor: emailPreviewType === 'text' ? '#633394' : 'transparent',
                                             color: emailPreviewType === 'text' ? 'white' : '#633394',
                                             borderColor: '#633394',
-                                            '&:hover': { 
+                                            '&:hover': {
                                                 backgroundColor: emailPreviewType === 'text' ? '#7c52a5' : '#f5f5f5',
-                                                borderColor: '#7c52a5' 
+                                                borderColor: '#7c52a5'
                                             }
                                         }}
                                     >
@@ -1539,13 +1516,13 @@ function UsersManagement() {
                                     <Button
                                         variant={emailPreviewType === 'html' ? 'contained' : 'outlined'}
                                         onClick={() => setEmailPreviewType('html')}
-                                        sx={{ 
+                                        sx={{
                                             backgroundColor: emailPreviewType === 'html' ? '#633394' : 'transparent',
                                             color: emailPreviewType === 'html' ? 'white' : '#633394',
                                             borderColor: '#633394',
-                                            '&:hover': { 
+                                            '&:hover': {
                                                 backgroundColor: emailPreviewType === 'html' ? '#7c52a5' : '#f5f5f5',
-                                                borderColor: '#7c52a5' 
+                                                borderColor: '#7c52a5'
                                             }
                                         }}
                                     >
@@ -1555,16 +1532,16 @@ function UsersManagement() {
 
                                 {/* Email Content Display */}
                                 {emailPreviewType === 'text' ? (
-                                    <Paper sx={{ 
-                                        p: 2, 
-                                        backgroundColor: 'white', 
+                                    <Paper sx={{
+                                        p: 2,
+                                        backgroundColor: 'white',
                                         border: '1px solid #ddd',
                                         maxHeight: '400px',
                                         overflow: 'auto'
                                     }}>
-                                        <Typography 
-                                            variant="body2" 
-                                            sx={{ 
+                                        <Typography
+                                            variant="body2"
+                                            sx={{
                                                 whiteSpace: 'pre-line',
                                                 fontFamily: 'monospace',
                                                 fontSize: '0.85rem',
@@ -1575,9 +1552,9 @@ function UsersManagement() {
                                         </Typography>
                                     </Paper>
                                 ) : (
-                                    <Paper sx={{ 
-                                        p: 1, 
-                                        backgroundColor: 'white', 
+                                    <Paper sx={{
+                                        p: 1,
+                                        backgroundColor: 'white',
                                         border: '1px solid #ddd',
                                         maxHeight: '400px',
                                         overflow: 'auto'
@@ -1596,10 +1573,10 @@ function UsersManagement() {
                                 )}
 
                                 {/* Preview Notice */}
-                                <Paper sx={{ 
-                                    p: 2, 
+                                <Paper sx={{
+                                    p: 2,
                                     mt: 2,
-                                    backgroundColor: '#e3f2fd', 
+                                    backgroundColor: '#e3f2fd',
                                     border: '1px solid #2196f3',
                                     borderRadius: 1
                                 }}>
@@ -1607,7 +1584,7 @@ function UsersManagement() {
                                         📋 Preview Notice
                                     </Typography>
                                     <Typography variant="body2" sx={{ color: '#1976d2', mt: 1 }}>
-                                        This is a preview of the welcome email that will be sent to the user after their account is created. 
+                                        This is a preview of the welcome email that will be sent to the user after their account is created.
                                         The email contains their login credentials and getting started information.
                                     </Typography>
                                 </Paper>
@@ -1615,92 +1592,77 @@ function UsersManagement() {
                         )}
                     </Paper>
                 )}
-                
+
             </Box>
         );
     };
 
     return (
-        <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                <Typography variant="h5" sx={{ color: '#633394', fontWeight: 'bold' }}>
-                    Users Management
+        <Box sx={{ p: { xs: 1, md: 3 } }}>
+            {/* Header with Title and Buttons */}
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
+                <Typography variant="h4" sx={{ color: '#633394', fontWeight: 'bold' }}>
+                    User Management
                 </Typography>
                 <Box>
-                    <Button 
-                        variant="contained" 
-                        startIcon={<AddIcon />} 
+                    <Button
+                        variant="contained"
+                        startIcon={<UploadFileIcon />}
+                        onClick={handleOpenUploadDialog}
+                        sx={{ mr: 2, backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
+                    >
+                        Upload Users
+                    </Button>
+                    <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
                         onClick={handleOpenAddDialog}
-                        sx={{ mr: 1, backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
+                        sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
                     >
                         Add User
-                    </Button>
-                    <Button 
-                        variant="outlined" 
-                        startIcon={<UploadFileIcon />} 
-                        onClick={handleOpenUploadDialog}
-                        sx={{ color: '#633394', borderColor: '#633394', '&:hover': { borderColor: '#7c52a5', color: '#7c52a5' } }}
-                    >
-                        Upload CSV/XLSX
                     </Button>
                 </Box>
             </Box>
 
-            <Card sx={{ mb: 4, boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
-                <CardContent>
-                    <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold' }}>
-                        User Statistics
-                    </Typography>
-                    <Grid container spacing={2}>
-                        <Grid item xs={12} sm={3}>
-                            <Paper sx={{ p: 2, textAlign: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
-                                <Typography variant="h4" sx={{ color: '#633394' }}>{users.length}</Typography>
-                                <Typography variant="body2" sx={{ color: '#633394' }}>Total Users</Typography>
-                            </Paper>
+            {/* User Statistics */}
+            <Box sx={{ mb: 3 }}>
+                <Button
+                    startIcon={<AssessmentIcon />}
+                    onClick={() => setShowStats(!showStats)}
+                    sx={{ color: '#633394', mb: 2 }}
+                >
+                    {showStats ? 'Hide Statistics' : 'Show Statistics'}
+                </Button>
+                <Collapse in={showStats}>
+                    <Grid container spacing={3}>
+                        <Grid item xs={12} sm={6} md={3}>
+                            <Card sx={{ bgcolor: '#f3e5f5' }}>
+                                <CardContent>
+                                    <Typography color="textSecondary" gutterBottom>Total Users</Typography>
+                                    <Typography variant="h5" sx={{ color: '#633394', fontWeight: 'bold' }}>
+                                        {totalUsers}
+                                    </Typography>
+                                </CardContent>
+                            </Card>
                         </Grid>
-                        <Grid item xs={12} sm={3}>
-                            <Paper sx={{ p: 2, textAlign: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
-                                <Typography variant="h4" sx={{ color: '#633394' }}>
-                                    {users.filter(user => user.ui_role === 'admin').length}
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: '#633394' }}>Administrators</Typography>
-                            </Paper>
-                        </Grid>
-                        <Grid item xs={12} sm={3}>
-                            <Paper sx={{ p: 2, textAlign: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
-                                <Typography variant="h4" sx={{ color: '#633394' }}>
-                                    {users.filter(user => user.ui_role === 'user').length}
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: '#633394' }}>Regular Users</Typography>
-                            </Paper>
-                        </Grid>
-                        <Grid item xs={12} sm={3}>
-                            <Paper sx={{ p: 2, textAlign: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
-                                <Typography variant="h4" sx={{ color: '#633394' }}>
-                                    {filteredUsers.length}
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: '#633394' }}>Filtered Results</Typography>
-                            </Paper>
-                        </Grid>
+                        {/* Add more stats cards here as needed */}
                     </Grid>
-                </CardContent>
-            </Card>
+                </Collapse>
+            </Box>
 
-            {/* Search and Filter Controls */}
-            <Card sx={{ mb: 3, boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
+            {/* Search and Filter Bar */}
+            <Card sx={{ mb: 3, boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
                 <CardContent>
-                    <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold', mb: 2 }}>
-                        Search & Filter
-                    </Typography>
-                    <Grid container spacing={2}>
+                    <Grid container spacing={2} alignItems="center">
                         <Grid item xs={12} md={4}>
                             <TextField
                                 fullWidth
+                                size="small"
                                 label="Search Users"
-                                placeholder="Search by name, email, phone..."
+                                variant="outlined"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                size="small"
+                                placeholder="Name, email, organization..."
                             />
                         </Grid>
                         <Grid item xs={12} md={3}>
@@ -1741,9 +1703,9 @@ function UsersManagement() {
                                     setFilterOrganization('');
                                     setFilterRole('');
                                 }}
-                                sx={{ 
+                                sx={{
                                     height: '40px',
-                                    color: '#633394', 
+                                    color: '#633394',
                                     borderColor: '#633394',
                                     '&:hover': { borderColor: '#7c52a5', backgroundColor: 'rgba(99, 51, 148, 0.04)' }
                                 }}
@@ -1758,45 +1720,10 @@ function UsersManagement() {
             {renderUsersTable()}
 
             {/* Survey Assignment Card */}
-            <SurveyAssignmentCard 
-                users={users} 
+            <SurveyAssignmentCard
+                users={users}
                 onRefreshUsers={loadUsers}
             />
-
-            {/* Add User Dialog */}
-            <Dialog open={openAddDialog} onClose={handleCloseDialogs} maxWidth="md" fullWidth>
-                <DialogTitle sx={{ backgroundColor: '#633394', color: 'white' }}>
-                    Add New User
-                </DialogTitle>
-                <DialogContent dividers>
-                    {renderUserForm()}
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleCloseDialogs} color="secondary">Cancel</Button>
-                    <Button 
-                        onClick={() => setOpenEmailPreviewDialog(true)}
-                        variant="outlined"
-                        disabled={!formData.username || !formData.email}
-                        sx={{ 
-                            color: '#633394', 
-                            borderColor: '#633394',
-                            '&:hover': { 
-                                backgroundColor: '#f5f5f5',
-                                borderColor: '#7c52a5'
-                            }
-                        }}
-                    >
-                        Preview Welcome Email
-                    </Button>
-                    <Button 
-                        onClick={handleAddUser} 
-                        variant="contained" 
-                        sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
-                    >
-                        Add User
-                    </Button>
-                </DialogActions>
-            </Dialog>
 
             {/* Edit User Dialog */}
             <Dialog open={openEditDialog} onClose={handleCloseDialogs} maxWidth="md" fullWidth>
@@ -1808,9 +1735,9 @@ function UsersManagement() {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseDialogs} color="secondary">Cancel</Button>
-                    <Button 
-                        onClick={handleUpdateUser} 
-                        variant="contained" 
+                    <Button
+                        onClick={handleUpdateUser}
+                        variant="contained"
                         sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
                     >
                         Update User
@@ -1825,15 +1752,15 @@ function UsersManagement() {
                 </DialogTitle>
                 <DialogContent dividers>
                     <Typography>
-                        Are you sure you want to delete the user "{selectedUser?.username}"? 
+                        Are you sure you want to delete the user "{selectedUser?.username}"?
                         This action cannot be undone.
                     </Typography>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseDialogs} color="secondary">Cancel</Button>
-                    <Button 
-                        onClick={handleDeleteUser} 
-                        variant="contained" 
+                    <Button
+                        onClick={handleDeleteUser}
+                        variant="contained"
                         sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
                     >
                         Delete
@@ -1848,7 +1775,7 @@ function UsersManagement() {
                 </DialogTitle>
                 <DialogContent dividers>
                     <Typography gutterBottom>
-                        Upload a CSV or XLSX file containing user data. 
+                        Upload a CSV or XLSX file containing user data.
                         The file should have columns for username, email, password, etc.
                     </Typography>
                     <Box sx={{ mt: 2 }}>
@@ -1856,7 +1783,7 @@ function UsersManagement() {
                             accept=".csv,.xlsx"
                             type="file"
                             onChange={handleFileChange}
-                            style={{ 
+                            style={{
                                 padding: '10px',
                                 border: `1px solid #633394`,
                                 borderRadius: '4px'
@@ -1871,9 +1798,9 @@ function UsersManagement() {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseDialogs} color="secondary">Cancel</Button>
-                    <Button 
-                        onClick={handleFileUpload} 
-                        variant="contained" 
+                    <Button
+                        onClick={handleFileUpload}
+                        variant="contained"
                         sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
                         disabled={!selectedFile}
                     >
@@ -1883,11 +1810,11 @@ function UsersManagement() {
             </Dialog>
 
             {/* Welcome Email Dialog */}
-            <Dialog 
-                open={openEmailDialog} 
-                onClose={() => {}} // Prevent closing by clicking outside
+            <Dialog
+                open={openEmailDialog}
+                onClose={() => { }} // Prevent closing by clicking outside
                 disableEscapeKeyDown // Prevent closing with Escape key
-                maxWidth="md" 
+                maxWidth="md"
                 fullWidth
             >
                 <DialogTitle sx={{ backgroundColor: '#633394', color: 'white' }}>
@@ -1899,32 +1826,32 @@ function UsersManagement() {
                             <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold', mb: 2 }}>
                                 Email Details
                             </Typography>
-                            
+
                             <Box sx={{ mb: 2 }}>
                                 <Typography variant="subtitle1" sx={{ color: '#633394', fontWeight: 'bold', mb: 1 }}>
-                                    <span style={{ fontSize: '1.2em', marginRight: '5px' }}>📧</span> To:
+                                    To:
                                 </Typography>
                                 <Box sx={{ p: 1, backgroundColor: 'white', borderRadius: '4px' }}>
                                     {emailData.to}
                                 </Box>
                             </Box>
-                            
+
                             <Box sx={{ mb: 2 }}>
                                 <Typography variant="subtitle1" sx={{ color: '#633394', fontWeight: 'bold', mb: 1 }}>
-                                    <span style={{ fontSize: '1.2em', marginRight: '5px' }}>📝</span> Subject:
+                                    Subject:
                                 </Typography>
                                 <Box sx={{ p: 1, backgroundColor: 'white', borderRadius: '4px' }}>
                                     {emailData.subject}
                                 </Box>
                             </Box>
-                            
+
                             <Box>
                                 <Typography variant="subtitle1" sx={{ color: '#633394', fontWeight: 'bold', mb: 1 }}>
-                                    <span style={{ fontSize: '1.2em', marginRight: '5px' }}>✉️</span> Message Body:
+                                    Message Body:
                                 </Typography>
-                                <Box sx={{ 
-                                    p: 2, 
-                                    backgroundColor: 'white', 
+                                <Box sx={{
+                                    p: 2,
+                                    backgroundColor: 'white',
                                     borderRadius: '4px',
                                     border: '1px solid #e0e0e0',
                                     maxHeight: '400px',
@@ -1937,27 +1864,24 @@ function UsersManagement() {
                                 </Box>
                             </Box>
                         </Paper>
-                        
-                        <Paper sx={{ 
-                            p: 2, 
-                            backgroundColor: emailSent ? '#e8f5e8' : '#fff3e0', 
+
+                        <Paper sx={{
+                            p: 2,
+                            backgroundColor: emailSent ? '#e8f5e8' : '#fff3e0',
                             border: emailSent ? '2px solid #4caf50' : '2px solid #ff9800',
                             borderRadius: '8px'
                         }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                <Typography variant="h6" sx={{ 
-                                    color: emailSent ? '#2e7d32' : '#e65100', 
+                                <Typography variant="h6" sx={{
+                                    color: emailSent ? '#2e7d32' : '#e65100',
                                     fontWeight: 'bold',
                                     display: 'flex',
                                     alignItems: 'center'
                                 }}>
-                                    <span style={{ fontSize: '1.2em', marginRight: '8px' }}>
-                                        {emailSent ? '✅' : '📧'}
-                                    </span>
                                     {emailSent ? 'Email Sent Successfully!' : 'Ready to Send'}
                                 </Typography>
                             </Box>
-                            
+
                             <Box sx={{ mt: 1 }}>
                                 <Typography variant="body1" sx={{ color: emailSent ? '#2e7d32' : '#e65100', mb: 1 }}>
                                     <strong>Username:</strong> {emailData.username}
@@ -1966,15 +1890,14 @@ function UsersManagement() {
                                     <strong>Password:</strong> {emailData.password}
                                 </Typography>
                             </Box>
-                            
+
                             {emailSent && (
-                                <Typography variant="body1" sx={{ 
-                                    color: '#2e7d32', 
+                                <Typography variant="body1" sx={{
+                                    color: '#2e7d32',
                                     mt: 2,
                                     display: 'flex',
                                     alignItems: 'center'
                                 }}>
-                                    <span style={{ fontSize: '1.2em', marginRight: '8px' }}>📨</span>
                                     The welcome email has been delivered to {emailData.to}
                                 </Typography>
                             )}
@@ -1983,13 +1906,13 @@ function UsersManagement() {
                 </DialogContent>
                 <DialogActions>
                     {!emailSent && (
-                        <Button 
-                            onClick={handleSendWelcomeEmail} 
-                            variant="contained" 
+                        <Button
+                            onClick={handleSendWelcomeEmail}
+                            variant="contained"
                             disabled={emailSending}
                             startIcon={emailSending ? <CircularProgress size={20} color="inherit" /> : null}
-                            sx={{ 
-                                backgroundColor: '#4caf50', 
+                            sx={{
+                                backgroundColor: '#4caf50',
                                 '&:hover': { backgroundColor: '#45a049' },
                                 mr: 1
                             }}
@@ -1997,19 +1920,19 @@ function UsersManagement() {
                             {emailSending ? 'Sending...' : 'Send Email'}
                         </Button>
                     )}
-                    <Button 
-                        onClick={handleCloseEmailDialog} 
+                    <Button
+                        onClick={handleCloseEmailDialog}
                         variant="contained"
-                        sx={{ 
-                            backgroundColor: '#633394', 
-                            '&:hover': { backgroundColor: '#7c52a5' } 
+                        sx={{
+                            backgroundColor: '#633394',
+                            '&:hover': { backgroundColor: '#7c52a5' }
                         }}
                     >
                         Close
                     </Button>
                 </DialogActions>
             </Dialog>
-            
+
             {/* Email Template Preview Dialog */}
             <EmailPreviewDialog
                 open={emailPreviewDialogOpen}
@@ -2026,7 +1949,7 @@ function UsersManagement() {
                 }}
                 selectedTemplate={selectedEmailTemplate}
             />
-            
+
             {/* Email Preview Dialog */}
             <EmailPreviewDialog
                 open={openEmailPreviewDialog}

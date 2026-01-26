@@ -18,11 +18,25 @@ const InteractiveBarChart = ({
     targetData,
     showComparison = false,
     maxValue = 5,
+    minValue = 0,
     height = 400,
     questionLabels = {},
     adminColors = {},
+    formatCurrency = false,
 }) => {
     const theme = useTheme();
+
+    const formatValue = (val) => {
+        if (formatCurrency) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+            }).format(val);
+        }
+        return val;
+    };
 
     // Prepare data for Recharts
     const chartData = Object.entries(data)
@@ -60,14 +74,14 @@ const InteractiveBarChart = ({
                         <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                             <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: entry.color }} />
                             <Typography variant="body2">
-                                {entry.name}: <strong>{entry.value}</strong>
+                                {entry.name}: <strong>{formatValue(entry.value)}</strong>
                             </Typography>
                         </Box>
                     ))}
                     {showComparison && payload.length >= 2 && (
                         <Box sx={{ mt: 1, pt: 1, borderTop: `1px solid ${theme.palette.divider}` }}>
                             <Typography variant="caption" color={payload[0].value >= payload[1].value ? 'success.main' : 'warning.main'} sx={{ fontWeight: 'bold' }}>
-                                Difference: {payload[0].value >= payload[1].value ? '+' : ''}{(payload[0].value - payload[1].value).toFixed(2)}
+                                Difference: {payload[0].value >= payload[1].value ? '+' : ''}{formatValue(payload[0].value - payload[1].value)}
                             </Typography>
                         </Box>
                     )}
@@ -89,7 +103,12 @@ const InteractiveBarChart = ({
                         barGap={0}
                     >
                         <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                        <XAxis type="number" domain={[0, maxValue]} hide={false} />
+                        <XAxis
+                            type="number"
+                            domain={[minValue, maxValue]}
+                            hide={false}
+                            tickFormatter={formatValue}
+                        />
                         <YAxis
                             dataKey="name"
                             type="category"

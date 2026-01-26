@@ -17,13 +17,13 @@ import {
 } from '@mui/material';
 import { EmailService } from '../../services/EmailService';
 
-const InvitationEmailDialog = ({ 
-    open, 
-    onClose, 
-    user = null, 
+const InvitationEmailDialog = ({
+    open,
+    onClose,
+    user = null,
     onSuccess = null,
     organizationName = null,
-    organizationId = null 
+    organizationId = null
 }) => {
     const [formData, setFormData] = useState({
         to_email: user?.email || '',
@@ -34,7 +34,7 @@ const InvitationEmailDialog = ({
         organization_name: organizationName || user?.organization?.name || '',
         organization_id: organizationId || user?.organization_id || null
     });
-    
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -60,18 +60,18 @@ const InvitationEmailDialog = ({
             }
 
             const result = await EmailService.sendInvitationEmail(formData);
-            
+
             setSuccess(`Invitation email sent successfully to ${formData.to_email}`);
-            
+
             if (onSuccess) {
                 onSuccess(result);
             }
-            
+
             // Close dialog after a short delay
             setTimeout(() => {
                 onClose();
             }, 2000);
-            
+
         } catch (error) {
             setError(error.message || 'Failed to send invitation email');
         } finally {
@@ -97,16 +97,16 @@ const InvitationEmailDialog = ({
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
             <DialogTitle>
-                📧 Send Invitation Email
+                Send Invitation Email
             </DialogTitle>
-            
+
             <DialogContent>
                 {error && (
                     <Alert severity="error" sx={{ mb: 2 }}>
                         {error}
                     </Alert>
                 )}
-                
+
                 {success && (
                     <Alert severity="success" sx={{ mb: 2 }}>
                         {success}
@@ -184,9 +184,9 @@ const InvitationEmailDialog = ({
                 <Button onClick={handleClose} disabled={loading}>
                     Cancel
                 </Button>
-                <Button 
-                    onClick={handleSubmit} 
-                    variant="contained" 
+                <Button
+                    onClick={handleSubmit}
+                    variant="contained"
                     disabled={loading || !formData.to_email || !formData.username || !formData.password}
                     startIcon={loading ? <CircularProgress size={20} /> : null}
                 >

@@ -24,11 +24,11 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
-const SurveyCompletionGuidance = ({ 
-  open, 
-  onClose, 
+const SurveyCompletionGuidance = ({
+  open,
+  onClose,
   surveyTitle = "Survey",
-  onNavigateToProfile 
+  onNavigateToProfile
 }) => {
   const navigate = useNavigate();
   const [showSecondStep, setShowSecondStep] = useState(false);
@@ -108,13 +108,13 @@ const SurveyCompletionGuidance = ({
         {/* Step 1: Completion Confirmation */}
         <Fade in={open} timeout={800}>
           <Box>
-            <CheckCircleIcon 
-              sx={{ 
-                fontSize: 60, 
-                color: '#633394', 
+            <CheckCircleIcon
+              sx={{
+                fontSize: 60,
+                color: '#633394',
                 mb: 2,
                 filter: 'drop-shadow(0 2px 8px rgba(99, 51, 148, 0.3))'
-              }} 
+              }}
             />
             <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
               Survey Completed!
@@ -146,15 +146,15 @@ const SurveyCompletionGuidance = ({
                 What's Next?
               </Typography>
             </Box>
-            
+
             <Typography variant="body1" sx={{ mb: 3, opacity: 0.9 }}>
               Visit your Profile page to manage your account or log out
             </Typography>
-            
+
             {/* Reports Contact Information */}
-            <Box sx={{ 
-              mb: 3, 
-              p: 2, 
+            <Box sx={{
+              mb: 3,
+              p: 2,
               backgroundColor: 'rgba(255, 255, 255, 0.05)',
               borderRadius: '8px',
               border: '1px solid rgba(255, 255, 255, 0.1)'
@@ -194,7 +194,7 @@ const SurveyCompletionGuidance = ({
                   to manage your account
                 </Typography>
               </Box>
-              
+
               {/* Logout guidance */}
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Chip
@@ -229,9 +229,9 @@ const SurveyCompletionGuidance = ({
                   }}
                 />
               </Box>
-              
+
               <Typography variant="body2" sx={{ opacity: 0.7, textAlign: 'center', fontSize: '0.85rem' }}>
-                💡 Tip: Click the hamburger menu (☰) in the top navigation to access logout
+                Tip: Click the hamburger menu (☰) in the top navigation to access logout
               </Typography>
             </Box>
           </Paper>

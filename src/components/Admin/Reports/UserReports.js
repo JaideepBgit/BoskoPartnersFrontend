@@ -22,7 +22,8 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  IconButton
+  IconButton,
+  Paper
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import AssessmentIcon from '@mui/icons-material/Assessment';
@@ -30,6 +31,7 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import DescriptionIcon from '@mui/icons-material/Description';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import PersonIcon from '@mui/icons-material/Person'; // Added PersonIcon
 import Navbar from '../../shared/Navbar/Navbar';
 import SampleDataService from '../../../services/Admin/Reports/SampleDataService';
 import BackendDataService from '../../../services/Admin/Reports/BackendDataService';
@@ -118,6 +120,286 @@ const UserReports = () => {
 
     const locationString = locationParts.join(', ');
     return locationString ? `${displayName} - ${locationString}` : displayName;
+  };
+
+  /**
+   * Categorize comparison data into meaningful chart groups based on data scale and semantic category.
+   * This creates separate datasets for different types of metrics to enable proper chart scaling.
+   * 
+   * Categories:
+   * - ratings: Likert scale questions (1-5 range)
+   * - counts: Number of staff, students, leaders, etc. (typically 0-100)
+   * - years: Year-related questions (e.g., establishment year, start year)
+   * - financial: Budget and monetary values (can be in thousands/millions)
+   * - percentages: Percentage values (0-100)
+   * - demographics: Age, years of experience, etc.
+   * - other: Anything that doesn't fit above categories
+   */
+  const categorizeComparisonData = (averages, targetScores, questionLabels, questionMeta) => {
+    if (!averages || Object.keys(averages).length === 0) {
+      return { categories: [], hasData: false };
+    }
+
+    const categories = {
+      ratings: {
+        title: 'Performance Ratings (1-5 Scale)',
+        icon: '⭐',
+        data: {},
+        targetData: {},
+        maxValue: 5,
+        description: 'Self-assessment and evaluation metrics on a 1-5 scale',
+        chartType: 'bar',
+        priority: 1
+      },
+      counts: {
+        title: 'Staff & Resource Counts',
+        icon: '👥',
+        data: {},
+        targetData: {},
+        maxValue: 100,
+        description: 'Number of staff, faculty, students, and other personnel',
+        chartType: 'bar',
+        priority: 2
+      },
+      demographics: {
+        title: 'Demographics (Age)',
+        icon: '👤',
+        data: {},
+        targetData: {},
+        maxValue: 100,
+        description: 'Age profiles and personal demographics',
+        chartType: 'bar',
+        priority: 3
+      },
+      experience: {
+        title: 'Experience & Tenure',
+        icon: '⏳',
+        data: {},
+        targetData: {},
+        maxValue: 50,
+        description: 'Years of experience, tenure in role, and duration metrics',
+        chartType: 'bar',
+        priority: 4
+      },
+      years: {
+        title: 'Timeline & Key Dates',
+        icon: '📅',
+        data: {},
+        targetData: {},
+        maxValue: 2030,
+        minValue: 1950,
+        description: 'Establishment years and key dates (calendar years)',
+        chartType: 'bar',
+        priority: 4
+      },
+      financial: {
+        title: 'Financial Overview',
+        icon: '💰',
+        data: {},
+        targetData: {},
+        maxValue: 1000000,
+        description: 'Budget and funding comparison - your organization vs. group average',
+        chartType: 'comparison', // Special chart type for side-by-side comparison
+        priority: 5,
+        formatCurrency: true, // Format values as currency
+        comparisonMode: 'sideBySide', // Show clear side-by-side bars
+        valuePrefix: '$',
+        specialRender: true // Needs special rendering logic
+      },
+      percentages: {
+        title: 'Percentages & Ratios',
+        icon: '📈',
+        data: {},
+        targetData: {},
+        maxValue: 100,
+        description: 'Percentage-based metrics and allocations',
+        chartType: 'bar',
+        priority: 6
+      },
+      other: {
+        title: 'Other Metrics',
+        icon: '📋',
+        data: {},
+        targetData: {},
+        maxValue: 100,
+        description: 'Miscellaneous survey metrics',
+        chartType: 'bar',
+        priority: 7
+      }
+    };
+
+    // Keywords for categorization
+    const categoryPatterns = {
+      ratings: [
+        /extent/i, /rating/i, /satisfaction/i, /effectiveness/i, /quality/i,
+        /leadership.*extent/i, /support.*extent/i, /training/i, /agree/i,
+        /board.*express/i, /institution.*extent/i
+      ],
+      counts: [
+        /number\s*of/i, /^number/i, /count/i, /total\s*(staff|faculty|student|leader)/i,
+        /^staff/i, /^faculty/i, /^student/i, /^leader/i, /administrative/i,
+        /full.*time/i, /part.*time/i, /enrollment/i
+      ],
+      years: [
+        /year\s*(start|establish|found|complet|last|first)/i, /start.*year/i,
+        /establish.*year/i, /^year\s+\w+/i, /when.*start/i, /founded/i,
+        /institution.*start/i, /last.*formal/i, /date/i
+      ],
+      experience: [
+        /years?\s*(as|in|of)/i, /experience/i, /tenure/i, /duration/i,
+        /how\s*long/i, /^years$/i, /serve/i
+      ],
+      demographics: [
+        /^age$/i, /your\s*age/i, /age.*group/i
+      ],
+      financial: [
+        /budget/i, /dollar/i, /funding/i, /revenue/i, /income/i, /expense/i,
+        /cost/i, /salary/i, /current\s*year/i, /annual/i, /financial/i
+      ],
+      percentages: [
+        /percent/i, /%/i, /ratio/i, /proportion/i, /allocation/i
+      ]
+    };
+
+    // Categorize each question
+    Object.entries(averages).forEach(([key, avgValue]) => {
+      const label = (questionLabels && questionLabels[key]) || key;
+      const targetValue = targetScores ? targetScores[key] : undefined;
+      const meta = questionMeta ? questionMeta[key] : {};
+
+      // Skip non-numeric values
+      if (typeof avgValue !== 'number' || isNaN(avgValue)) return;
+
+      let assignedCategory = 'other';
+
+      // First, try to categorize by label patterns
+      for (const [category, patterns] of Object.entries(categoryPatterns)) {
+        for (const pattern of patterns) {
+          if (pattern.test(label)) {
+            assignedCategory = category;
+            break;
+          }
+        }
+        if (assignedCategory !== 'other') break;
+      }
+
+      // If still 'other', use value-based heuristics
+      if (assignedCategory === 'other') {
+        const maxVal = Math.max(avgValue, targetValue || 0);
+        const minVal = Math.min(avgValue, targetValue || avgValue);
+
+        if (maxVal <= 5 && minVal >= 1) {
+          // Likely a 1-5 rating scale
+          assignedCategory = 'ratings';
+        } else if (maxVal > 1900 && maxVal < 2100) {
+          // Likely a year
+          assignedCategory = 'years';
+        } else if (maxVal > 10000) {
+          // Likely financial
+          assignedCategory = 'financial';
+        } else if (maxVal <= 100 && label.toLowerCase().includes('number')) {
+          // Likely a count
+          assignedCategory = 'counts';
+        } else if (maxVal <= 100) {
+          // Could be age, count, or percentage
+          if (/age/i.test(label)) {
+            assignedCategory = 'demographics';
+          } else {
+            assignedCategory = 'counts';
+          }
+        }
+      }
+
+      // Add to the appropriate category
+      categories[assignedCategory].data[key] = avgValue;
+      if (targetValue !== undefined) {
+        categories[assignedCategory].targetData[key] = targetValue;
+      }
+    });
+
+    // Post-categorization sanity check
+    ['demographics', 'experience'].forEach(catName => {
+      Object.keys(categories[catName].data).forEach(key => {
+        const val = categories[catName].data[key];
+        const label = (questionLabels && questionLabels[key]) || key;
+
+        // Move to years if value looks like a calendar year
+        if (val > 1800 && val < 2100) {
+          categories.years.data[key] = val;
+          delete categories[catName].data[key];
+          if (categories[catName].targetData[key]) {
+            categories.years.targetData[key] = categories[catName].targetData[key];
+            delete categories[catName].targetData[key];
+          }
+        }
+        // Move to experience if label says "years" but value is small (duration) and it's in demographics (Age)
+        else if (catName === 'demographics' && (/year/i.test(label) || /experience/i.test(label)) && val < 100) {
+          categories.experience.data[key] = val;
+          delete categories.demographics.data[key];
+          if (categories.demographics.targetData[key]) {
+            categories.experience.targetData[key] = categories.demographics.targetData[key];
+            delete categories.demographics.targetData[key];
+          }
+        }
+      });
+    });
+
+    // Also check targetData directly
+    ['demographics', 'experience'].forEach(catName => {
+      Object.keys(categories[catName].targetData).forEach(key => {
+        const val = categories[catName].targetData[key];
+        if (val > 1800 && val < 2100) {
+          if (!categories.years.targetData[key]) {
+            categories.years.targetData[key] = val;
+            delete categories[catName].targetData[key];
+            if (categories[catName].data[key]) {
+              categories.years.data[key] = categories[catName].data[key];
+              delete categories[catName].data[key];
+            }
+          }
+        }
+      });
+    });
+
+    // Calculate appropriate maxValue for each category based on actual data
+    Object.values(categories).forEach(cat => {
+      if (Object.keys(cat.data).length > 0) {
+        const allValues = [
+          ...Object.values(cat.data),
+          ...Object.values(cat.targetData)
+        ].filter(v => typeof v === 'number' && !isNaN(v));
+
+        if (allValues.length > 0) {
+          const maxDataValue = Math.max(...allValues);
+          const minDataValue = Math.min(...allValues);
+
+          // Special handling for years
+          if (cat.title.includes('Timeline')) {
+            cat.minValue = Math.floor(minDataValue / 10) * 10;
+            cat.maxValue = Math.ceil(maxDataValue / 10) * 10;
+          } else {
+            // Add 20% padding to max value for visual clarity
+            cat.maxValue = Math.ceil(maxDataValue * 1.2);
+          }
+        }
+      }
+    });
+
+    // Filter out empty categories and sort by priority
+    const nonEmptyCategories = Object.entries(categories)
+      .filter(([_, cat]) => Object.keys(cat.data).length > 0)
+      .sort((a, b) => a[1].priority - b[1].priority)
+      .map(([key, cat]) => ({
+        key,
+        ...cat,
+        questionCount: Object.keys(cat.data).length
+      }));
+
+    return {
+      categories: nonEmptyCategories,
+      hasData: nonEmptyCategories.length > 0,
+      totalQuestions: Object.keys(averages).length
+    };
   };
 
   // Load questions for chart builder
@@ -1015,6 +1297,9 @@ const UserReports = () => {
               comparisonData={comparisonData}
               chartBuilderQuestions={chartBuilderQuestions}
               selectedSurveyType={selectedSurveyType}
+              targetOrganizationId={comparisonData?.target?.organization_id || null}
+              targetOrganizationName={comparisonData?.target?.organization_name || null}
+              targetUserName={comparisonData?.target?.user_name || null}
               onSave={(document) => {
                 console.log('Document saved:', document);
                 setSelectedReportDocument(null); // Clear after save
@@ -1218,6 +1503,65 @@ const UserReports = () => {
               </CardContent>
             </Card>
 
+            {/* Currently Analyzing - Person and Organization Info */}
+            {comparisonData?.target && (
+              <Card sx={{
+                mb: 3,
+                p: 2,
+                backgroundColor: adminColors.lightPurple,
+                border: `2px solid ${adminColors.primary}`,
+                borderRadius: 2
+              }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: adminColors.primary }}>
+                    Currently Analyzing:
+                  </Typography>
+                  {comparisonData.target.user_name && (
+                    <Chip
+                      icon={<PersonIcon sx={{ ml: 1, fontSize: '1.2rem !important' }} />}
+                      label={comparisonData.target.user_name}
+                      sx={{
+                        bgcolor: 'white',
+                        color: adminColors.text,
+                        fontWeight: 600,
+                        fontSize: '0.95rem',
+                        border: `1px solid ${adminColors.primary}`,
+                        '& .MuiChip-label': { px: 1.5 }
+                      }}
+                    />
+                  )}
+                  {comparisonData.target.organization_name && (
+                    <Chip
+                      label={comparisonData.target.organization_name}
+                      sx={{
+                        bgcolor: adminColors.primary,
+                        color: 'white',
+                        fontWeight: 600,
+                        fontSize: '0.95rem',
+                        '& .MuiChip-label': { px: 1.5 }
+                      }}
+                    />
+                  )}
+                  {comparisonData.target.organization_type && (
+                    <Chip
+                      label={comparisonData.target.organization_type}
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        borderColor: adminColors.secondary,
+                        color: adminColors.secondary,
+                        fontWeight: 500
+                      }}
+                    />
+                  )}
+                  <Box sx={{ flexGrow: 1 }} />
+                  <Typography variant="caption" color="text.secondary">
+                    Template: {comparisonData.target.template_code}
+                  </Typography>
+                </Box>
+              </Card>
+            )}
+
             {/* Survey Map Card */}
             <Card sx={{ mb: 3, p: 3, backgroundColor: adminColors.headerBg, border: `1px solid ${adminColors.borderColor}` }}>
               <Typography variant="h6" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
@@ -1325,53 +1669,208 @@ const UserReports = () => {
                   />
                 </Grid>
 
-                {/* Score Comparison Charts - Bar and Radar side-by-side */}
-                <Grid item xs={12} lg={8}>
-                  <Card sx={{ p: 0, backgroundColor: 'transparent', border: 'none', boxShadow: 'none' }}>
+                {/* Score Comparison Charts - Categorized by Data Type */}
+                {(() => {
+                  const categorizedData = categorizeComparisonData(
+                    comparisonData.averages,
+                    comparisonData.targetScores,
+                    comparisonData.question_labels,
+                    comparisonData.question_meta
+                  );
+
+                  if (!categorizedData.hasData) {
+                    return (
+                      <Grid item xs={12}>
+                        <Alert severity="info">No numeric data available for chart visualization.</Alert>
+                      </Grid>
+                    );
+                  }
+
+                  return (
+                    <>
+                      {/* Category summary */}
+                      <Grid item xs={12}>
+                        <Box sx={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: 1,
+                          mb: 2,
+                          p: 2,
+                          bgcolor: adminColors.headerBg,
+                          borderRadius: 2,
+                          border: `1px solid ${adminColors.borderColor}`
+                        }}>
+                          <Typography variant="subtitle2" sx={{ width: '100%', mb: 1, color: adminColors.primary, fontWeight: 'bold' }}>
+                            Data Categories ({categorizedData.totalQuestions} questions organized into {categorizedData.categories.length} groups)
+                          </Typography>
+                          {categorizedData.categories.map(cat => (
+                            <Chip
+                              key={cat.key}
+                              label={`${cat.title} (${cat.questionCount})`}
+                              size="small"
+                              sx={{
+                                bgcolor: adminColors.lightPurple,
+                                color: adminColors.primary,
+                                border: `1px solid ${adminColors.primary}`,
+                                fontWeight: 500
+                              }}
+                            />
+                          ))}
+                        </Box>
+                      </Grid>
+
+                      {/* Render each category as a separate chart */}
+                      {categorizedData.categories.map((category, index) => {
+                        const isRatingsCategory = category.key === 'ratings';
+                        const isFinancialCategory = category.key === 'financial';
+                        const showRadar = isRatingsCategory && Object.keys(category.data).length >= 3;
+
+                        // For noAggregate categories (years, demographics), only show individual values
+                        const isNoAggregate = category.noAggregate === true;
+                        const hasTargetData = Object.keys(category.targetData).length > 0;
+
+                        // Standard chart rendering for all categories (including financial)
+                        return (
+                          <React.Fragment key={category.key}>
+                            {/* Bar Chart for this category */}
+                            <Grid item xs={12} lg={showRadar ? 8 : 12}>
+                              <Card sx={{
+                                p: 2,
+                                backgroundColor: adminColors.cardBg,
+                                border: `1px solid ${adminColors.borderColor}`,
+                                borderRadius: 2,
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                              }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, flexWrap: 'wrap' }}>
+                                  <Typography variant="h6" sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
+                                    {category.title}
+                                  </Typography>
+                                  <Chip
+                                    label={`${category.questionCount} metrics`}
+                                    size="small"
+                                    sx={{ bgcolor: adminColors.secondary, color: 'white' }}
+                                  />
+                                  {isNoAggregate && (
+                                    <Chip
+                                      label="Individual Values Only"
+                                      size="small"
+                                      variant="outlined"
+                                      sx={{
+                                        borderColor: '#ff9800',
+                                        color: '#ff9800',
+                                        fontSize: '0.7rem'
+                                      }}
+                                    />
+                                  )}
+                                  {!isNoAggregate && hasTargetData && (
+                                    <Chip
+                                      label="Comparison View"
+                                      size="small"
+                                      variant="outlined"
+                                      sx={{
+                                        borderColor: '#4caf50',
+                                        color: '#4caf50',
+                                        fontSize: '0.7rem'
+                                      }}
+                                    />
+                                  )}
+                                </Box>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                  {category.description}
+                                </Typography>
+                                <InteractiveBarChart
+                                  title=""
+                                  data={isNoAggregate ? category.targetData : category.data}
+                                  targetData={isNoAggregate ? null : (hasTargetData ? category.targetData : null)}
+                                  showComparison={!isNoAggregate && hasTargetData}
+                                  maxValue={category.maxValue}
+                                  minValue={category.minValue || 0}
+                                  adminColors={adminColors}
+                                  questionLabels={comparisonData.question_labels}
+                                  height={Math.max(200, Object.keys(category.data).length * 45)}
+                                  formatCurrency={category.formatCurrency}
+                                />
+                              </Card>
+                            </Grid>
+
+                            {/* Radar Chart - only for ratings category with enough data points */}
+                            {showRadar && (
+                              <Grid item xs={12} lg={4}>
+                                <Card sx={{
+                                  p: 2,
+                                  backgroundColor: adminColors.cardBg,
+                                  border: `1px solid ${adminColors.borderColor}`,
+                                  borderRadius: 2,
+                                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                                }}>
+                                  <Typography variant="h6" sx={{ color: adminColors.primary, fontWeight: 'bold', mb: 1 }}>
+                                    Performance Profile
+                                  </Typography>
+                                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                    Radar view of rating metrics
+                                  </Typography>
+                                  <InteractiveRadarChart
+                                    title=""
+                                    data={category.data}
+                                    targetData={Object.keys(category.targetData).length > 0 ? category.targetData : null}
+                                    showComparison={Object.keys(category.targetData).length > 0}
+                                    maxValue={category.maxValue}
+                                    adminColors={adminColors}
+                                    questionLabels={comparisonData.question_labels}
+                                    height={350}
+                                  />
+                                </Card>
+                              </Grid>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                    </>
+                  );
+                })()}
+
+                {/* Geographic Distribution */}
+                <Grid item xs={12} md={6}>
+                  <Card sx={{
+                    p: 2,
+                    backgroundColor: adminColors.cardBg,
+                    border: `1px solid ${adminColors.borderColor}`,
+                    borderRadius: 2
+                  }}>
+                    <Typography variant="h6" sx={{ color: adminColors.primary, fontWeight: 'bold', mb: 1 }}>
+                      Geographic Distribution
+                    </Typography>
                     <InteractiveBarChart
-                      title={`${comparisonData.stats?.section_summary || 'Survey Metrics'}: Individual vs Group Average`}
-                      data={comparisonData.averages}
-                      targetData={comparisonData.targetScores}
-                      showComparison={true}
-                      maxValue={5}
+                      title=""
+                      data={Object.fromEntries(Object.entries(geographicData).map(([k, v]) => [k, v.count]))}
+                      maxValue={Math.max(...Object.values(geographicData).map(v => v.count), 1)}
                       adminColors={adminColors}
-                      questionLabels={comparisonData.question_labels}
-                      height={500}
+                      height={300}
                     />
                   </Card>
                 </Grid>
 
-                <Grid item xs={12} lg={4}>
-                  <InteractiveRadarChart
-                    title="Performance Profile"
-                    data={comparisonData.averages}
-                    targetData={comparisonData.targetScores}
-                    showComparison={true}
-                    maxValue={5}
-                    adminColors={adminColors}
-                    questionLabels={comparisonData.question_labels}
-                    height={500}
-                  />
-                </Grid>
-
-                {/* Geographic Distribution and Group Averages */}
                 <Grid item xs={12} md={6}>
-                  <InteractiveBarChart
-                    title="Geographic Response Distrubution"
-                    data={Object.fromEntries(Object.entries(geographicData).map(([k, v]) => [k, v.count]))}
-                    maxValue={Math.max(...Object.values(geographicData).map(v => v.count), 1)}
-                    adminColors={adminColors}
-                    height={400}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <InteractivePieChart
-                    title="Overall Group Distribution"
-                    data={comparisonData.averages}
-                    adminColors={adminColors}
-                    height={400}
-                  />
+                  <Card sx={{
+                    p: 2,
+                    backgroundColor: adminColors.cardBg,
+                    border: `1px solid ${adminColors.borderColor}`,
+                    borderRadius: 2
+                  }}>
+                    <Typography variant="h6" sx={{ color: adminColors.primary, fontWeight: 'bold', mb: 1 }}>
+                      Response Distribution by Country
+                    </Typography>
+                    <InteractivePieChart
+                      title=""
+                      data={Object.fromEntries(
+                        Object.entries(geographicData)
+                          .map(([k, v]) => [k, v.count])
+                          .sort((a, b) => b[1] - a[1])
+                      )}
+                      adminColors={adminColors}
+                      height={300}
+                    />
+                  </Card>
                 </Grid>
 
                 {/* Text Analytics from text_analytics.py */}

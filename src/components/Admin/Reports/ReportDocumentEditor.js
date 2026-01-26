@@ -48,6 +48,7 @@ import {
     FormatAlignRight,
     FormatAlignJustify,
     Image,
+    Person as PersonIcon,
     TableChart,
     BarChart,
     PieChart,
@@ -212,24 +213,34 @@ const generateSampleChartData = () => ({
 const generateId = () => `block_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 // Initial document state
-const createInitialDocument = () => ({
-    id: generateId(),
-    title: 'Untitled Report',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    blocks: [
-        {
-            id: generateId(),
-            type: BLOCK_TYPES.HEADING1,
-            content: 'Survey Analysis Report',
-        },
-        {
-            id: generateId(),
-            type: BLOCK_TYPES.PARAGRAPH,
-            content: 'This report provides comprehensive analysis of survey data collected throughout the reporting period. The insights below highlight key findings and recommendations.',
-        },
-    ],
-});
+const createInitialDocument = (userName, orgName) => {
+    const title = orgName ? `${orgName} - Survey Analysis Report` : 'Survey Analysis Report';
+    const subtitle = userName ? `Prepared for: ${userName}` : '';
+
+    return {
+        id: generateId(),
+        title: title,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        blocks: [
+            {
+                id: generateId(),
+                type: BLOCK_TYPES.HEADING1,
+                content: title,
+            },
+            ...(subtitle ? [{
+                id: generateId(),
+                type: BLOCK_TYPES.HEADING3,
+                content: subtitle,
+            }] : []),
+            {
+                id: generateId(),
+                type: BLOCK_TYPES.PARAGRAPH,
+                content: `This report provides comprehensive analysis of survey data${orgName ? ` for ${orgName}` : ''}${userName ? ` (completed by ${userName})` : ''}. The insights below highlight key findings and recommendations based on the collected responses.`,
+            },
+        ],
+    };
+};
 
 // Block component that renders different content types
 const DocumentBlock = ({
@@ -1802,11 +1813,14 @@ const ReportDocumentEditor = ({
     comparisonData = null,
     chartBuilderQuestions = [],
     selectedSurveyType = 'institution',
+    targetOrganizationId = null, // Organization ID of the survey being analyzed
+    targetOrganizationName = null, // Organization name for display
+    targetUserName = null, // User name (person who completed the survey)
     onSave,
     onExport,
     onClose,
 }) => {
-    const [document, setDocument] = useState(initialDocument || createInitialDocument());
+    const [document, setDocument] = useState(() => initialDocument || createInitialDocument(targetUserName, targetOrganizationName));
     const [selectedBlockId, setSelectedBlockId] = useState(null);
     const [insertMenuAnchor, setInsertMenuAnchor] = useState(null);
     const [chartDialogOpen, setChartDialogOpen] = useState(false);
@@ -2040,7 +2054,12 @@ const ReportDocumentEditor = ({
 
             // Try to get ID from multiple possible sources
             const userId = localStorage.getItem('userId') || userObj.id || userObj.user_id;
-            const organizationId = localStorage.getItem('organizationId') || userObj.organization_id;
+
+            // For organization_id, prioritize:
+            // 1. targetOrganizationId prop (the organization being analyzed in the report)
+            // 2. User's organization from localStorage
+            // 3. null (backend will look up from user's profile)
+            const organizationId = targetOrganizationId || localStorage.getItem('organizationId') || userObj.organization_id || null;
 
             if (!userId) {
                 console.error('User ID not found in localStorage');
@@ -2061,7 +2080,7 @@ const ReportDocumentEditor = ({
             const reportData = {
                 id: isDbId ? document.id : null,
                 user_id: userId,
-                organization_id: organizationId || 1, // Default org if missing
+                organization_id: organizationId, // Use the target organization (analyzed org) or fallback
                 title: document.title || 'Untitled Report',
                 content: document // Store the entire document structure
             };
@@ -2103,6 +2122,14 @@ const ReportDocumentEditor = ({
     // Export to PDF with proper multi-page handling
     const handleExportPDF = async () => {
         setIsExporting(true);
+
+        // Save current selection and clear it to prevent selection border from appearing in PDF
+        const previousSelection = selectedBlockId;
+        setSelectedBlockId(null);
+
+        // Wait for React to re-render without the selection
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         try {
             const documentContainer = documentRef.current;
             if (!documentContainer) return;
@@ -2164,6 +2191,8 @@ const ReportDocumentEditor = ({
             setSnackbar({ open: true, message: 'Error exporting PDF', severity: 'error' });
         } finally {
             setIsExporting(false);
+            // Restore the previous selection after export
+            setSelectedBlockId(previousSelection);
         }
     };
 
@@ -2193,9 +2222,21 @@ const ReportDocumentEditor = ({
                 }}
             >
                 <Box sx={{ p: 2 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 600, color: colors.primary, mb: 2 }}>
-                        Insert Elements
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 600, color: colors.primary }}>
+                            Insert Elements
+                        </Typography>
+                        <IconButton
+                            onClick={() => setSidebarOpen(false)}
+                            size="small"
+                            sx={{
+                                bgcolor: colors.background,
+                                '&:hover': { bgcolor: colors.border },
+                            }}
+                        >
+                            <ChevronLeft />
+                        </IconButton>
+                    </Box>
 
                     {/* Text Blocks */}
                     <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
@@ -2397,21 +2438,23 @@ const ReportDocumentEditor = ({
                 </Box>
             </Drawer>
 
-            {/* Toggle Sidebar Button */}
-            <IconButton
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                sx={{
-                    position: 'absolute',
-                    left: sidebarOpen ? 268 : 8,
-                    top: 80,
-                    zIndex: 1200,
-                    bgcolor: 'white',
-                    boxShadow: 1,
-                    '&:hover': { bgcolor: colors.background },
-                }}
-            >
-                {sidebarOpen ? <ChevronLeft /> : <ChevronRight />}
-            </IconButton>
+            {/* Toggle Sidebar Button - Only show when sidebar is closed */}
+            {!sidebarOpen && (
+                <IconButton
+                    onClick={() => setSidebarOpen(true)}
+                    sx={{
+                        position: 'absolute',
+                        left: 8,
+                        top: 400,
+                        zIndex: 1200,
+                        bgcolor: 'white',
+                        boxShadow: 1,
+                        '&:hover': { bgcolor: colors.background },
+                    }}
+                >
+                    <ChevronRight />
+                </IconButton>
+            )}
 
             {/* Main Content */}
             <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -2424,6 +2467,38 @@ const ReportDocumentEditor = ({
                         onChange={(e) => setDocument({ ...document, title: e.target.value })}
                         sx={{ width: 300, '& input': { fontWeight: 600, fontSize: '1.1rem' } }}
                     />
+
+                    {/* Survey Target Info - Person and Organization */}
+                    {(targetUserName || targetOrganizationName) && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {targetUserName && (
+                                <Chip
+                                    icon={<PersonIcon sx={{ ml: 1, fontSize: '1.2rem !important' }} />}
+                                    label={targetUserName}
+                                    size="small"
+                                    sx={{
+                                        bgcolor: colors.background,
+                                        color: colors.text,
+                                        fontWeight: 500,
+                                        border: `1px solid ${colors.primary}`,
+                                        '& .MuiChip-label': { px: 1 }
+                                    }}
+                                />
+                            )}
+                            {targetOrganizationName && (
+                                <Chip
+                                    label={targetOrganizationName}
+                                    size="small"
+                                    sx={{
+                                        bgcolor: colors.primaryLight,
+                                        color: 'white',
+                                        fontWeight: 500,
+                                        '& .MuiChip-label': { px: 1 }
+                                    }}
+                                />
+                            )}
+                        </Box>
+                    )}
 
                     <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
@@ -2609,8 +2684,6 @@ const ReportDocumentEditor = ({
                                                     isLast={globalIndex === document.blocks.length - 1}
                                                     availableCharts={availableCharts}
                                                     surveyData={surveyData}
-                                                    chartBuilderQuestions={chartBuilderQuestions}
-                                                    selectedSurveyType={selectedSurveyType}
                                                     chartBuilderQuestions={chartBuilderQuestions}
                                                     selectedSurveyType={selectedSurveyType}
                                                     onOpenTableDialog={(block) => {

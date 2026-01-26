@@ -21,7 +21,9 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   DragIndicator as DragIndicatorIcon,
-  Reorder as ReorderIcon
+  Reorder as ReorderIcon,
+  Close as CloseIcon,
+  Visibility as VisibilityIcon
 } from '@mui/icons-material';
 import {
   DndContext,
@@ -63,10 +65,10 @@ const CompactQuestionItem = ({ question, index, onEdit, onDelete, getQuestionTyp
   };
 
   return (
-    <Paper 
-      ref={setNodeRef} 
+    <Paper
+      ref={setNodeRef}
       style={style}
-      sx={{ 
+      sx={{
         mb: 0.5,
         backgroundColor: '#fff',
         border: isDragging ? '2px dashed #633394' : '1px solid #e0e0e0',
@@ -84,13 +86,13 @@ const CompactQuestionItem = ({ question, index, onEdit, onDelete, getQuestionTyp
           <Box
             {...attributes}
             {...listeners}
-            sx={{ 
+            sx={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               width: 20,
               height: 20,
-              mr: 1.5, 
+              mr: 1.5,
               cursor: 'grab',
               color: '#633394',
               borderRadius: 1,
@@ -105,12 +107,12 @@ const CompactQuestionItem = ({ question, index, onEdit, onDelete, getQuestionTyp
           >
             <DragIndicatorIcon fontSize="small" />
           </Box>
-          
+
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                fontWeight: 600, 
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: 600,
                 color: '#333',
                 mb: 0.25,
                 overflow: 'hidden',
@@ -122,12 +124,12 @@ const CompactQuestionItem = ({ question, index, onEdit, onDelete, getQuestionTyp
               {index + 1}. {question.question_text}
             </Typography>
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
-              <Chip 
-                label={getQuestionTypeName(question.question_type_id)} 
-                size="small" 
+              <Chip
+                label={getQuestionTypeName(question.question_type_id)}
+                size="small"
                 variant="outlined"
-                sx={{ 
-                  height: 18, 
+                sx={{
+                  height: 18,
                   fontSize: '0.65rem',
                   borderColor: '#633394',
                   color: '#633394',
@@ -135,13 +137,13 @@ const CompactQuestionItem = ({ question, index, onEdit, onDelete, getQuestionTyp
                 }}
               />
               {question.is_required && (
-                <Chip 
-                  label="Required" 
-                  size="small" 
+                <Chip
+                  label="Required"
+                  size="small"
                   color="error"
                   variant="outlined"
-                  sx={{ 
-                    height: 18, 
+                  sx={{
+                    height: 18,
                     fontSize: '0.65rem',
                     '& .MuiChip-label': { px: 1 }
                   }}
@@ -150,32 +152,32 @@ const CompactQuestionItem = ({ question, index, onEdit, onDelete, getQuestionTyp
             </Box>
           </Box>
         </Box>
-        
+
         <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
-          <IconButton 
-            size="small" 
-            color="primary" 
+          <IconButton
+            size="small"
+            color="primary"
             onClick={() => onEdit(question)}
-            sx={{ 
+            sx={{
               p: 0.5,
               color: '#633394',
               transition: 'all 0.2s ease-in-out',
-              '&:hover': { 
+              '&:hover': {
                 backgroundColor: 'rgba(99, 51, 148, 0.08)',
                 transform: 'scale(1.1)',
-              } 
+              }
             }}
           >
             <EditIcon fontSize="small" />
           </IconButton>
-          <IconButton 
-            size="small" 
-            color="error" 
+          <IconButton
+            size="small"
+            color="error"
             onClick={() => onDelete(question.id)}
-            sx={{ 
+            sx={{
               p: 0.5,
               transition: 'all 0.2s ease-in-out',
-              '&:hover': { 
+              '&:hover': {
                 backgroundColor: 'rgba(211, 47, 47, 0.08)',
                 transform: 'scale(1.1)',
               }
@@ -190,15 +192,16 @@ const CompactQuestionItem = ({ question, index, onEdit, onDelete, getQuestionTyp
 };
 
 // Template Chip Component for the template selection list
-const TemplateChip = ({ 
-  template, 
-  isSelected, 
-  onSelect, 
-  onToggleSelect, 
-  isMultiSelectMode, 
+const TemplateChip = ({
+  template,
+  isSelected,
+  onSelect,
+  onToggleSelect,
+  isMultiSelectMode,
   isChecked,
   onDelete,
-  onEdit 
+  onEdit,
+  onPreview
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(template.survey_code);
@@ -243,10 +246,10 @@ const TemplateChip = ({
   };
 
   return (
-    <Box 
-      sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
         mb: 1,
         p: 1,
         borderRadius: 1,
@@ -264,14 +267,14 @@ const TemplateChip = ({
       onClick={handleClick}
     >
       {isMultiSelectMode && (
-        <Checkbox 
+        <Checkbox
           checked={isChecked}
           onClick={(e) => {
             e.stopPropagation();
             onToggleSelect();
           }}
-          sx={{ 
-            p: 0.5, 
+          sx={{
+            p: 0.5,
             mr: 1,
             color: '#633394',
             '&.Mui-checked': {
@@ -302,24 +305,26 @@ const TemplateChip = ({
             onClick={(e) => e.stopPropagation()}
           />
         ) : (
-          <Typography 
-            variant="body2" 
-            sx={{ 
+          <Typography
+            variant="body2"
+            sx={{
               fontWeight: isSelected ? 600 : 400,
               color: isSelected ? '#633394' : '#333',
               transition: 'color 0.2s ease-in-out',
+              wordBreak: 'break-word',
+              whiteSpace: 'normal'
             }}
           >
             {template.survey_code}
           </Typography>
         )}
         <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
-          <Chip 
-            label={`${template.questions?.length || 0} Questions`} 
-            size="small" 
+          <Chip
+            label={`${template.questions?.length || 0} Questions`}
+            size="small"
             variant="outlined"
-            sx={{ 
-              height: 18, 
+            sx={{
+              height: 18,
               fontSize: '0.65rem',
               borderColor: '#633394',
               color: '#633394',
@@ -331,14 +336,33 @@ const TemplateChip = ({
           </Typography>
         </Box>
       </Box>
-      
+
       {!isMultiSelectMode && !isEditing && (
         <Box sx={{ display: 'flex', gap: 0.5 }}>
-          <IconButton 
-            size="small" 
-            color="primary" 
+          {onPreview && (
+            <IconButton
+              size="small"
+              color="primary"
+              onClick={(e) => {
+                e.stopPropagation();
+                onPreview(template);
+              }}
+              sx={{
+                color: '#633394',
+                '&:hover': {
+                  backgroundColor: 'rgba(99, 51, 148, 0.08)',
+                }
+              }}
+              title="Preview Survey"
+            >
+              <VisibilityIcon fontSize="small" />
+            </IconButton>
+          )}
+          <IconButton
+            size="small"
+            color="primary"
             onClick={handleStartEdit}
-            sx={{ 
+            sx={{
               color: '#633394',
               '&:hover': {
                 backgroundColor: 'rgba(99, 51, 148, 0.08)',
@@ -347,9 +371,9 @@ const TemplateChip = ({
           >
             <EditIcon fontSize="small" />
           </IconButton>
-          <IconButton 
-            size="small" 
-            color="error" 
+          <IconButton
+            size="small"
+            color="error"
             onClick={(e) => {
               e.stopPropagation();
               console.log('Delete button clicked for template:', template.survey_code, 'ID:', template.id);
@@ -370,10 +394,14 @@ const TemplateChip = ({
   );
 };
 
-const QuestionsTab = ({ 
-  templateVersions: parentTemplateVersions = [], 
-  templates: parentTemplates = [], 
-  onRefreshData 
+const QuestionsTab = ({
+  templateVersions: parentTemplateVersions = [],
+  templates: parentTemplates = [],
+  onRefreshData,
+  currentVersion,
+  hideSidebar = false,
+  onClose,
+  onPreview
 }) => {
   const [templateVersions, setTemplateVersions] = useState(parentTemplateVersions);
   const [templates, setTemplates] = useState(parentTemplates);
@@ -386,7 +414,7 @@ const QuestionsTab = ({
   });
   const [selectedTemplates, setSelectedTemplates] = useState([]);
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
-  
+
   // Question dialog state
   const [openQDialog, setOpenQDialog] = useState(false);
   const [selectedQuestion, setSelectedQuestion] = useState(null);
@@ -435,6 +463,13 @@ const QuestionsTab = ({
     }
   }, [onRefreshData]);
 
+  // Sync with parent's selected version
+  useEffect(() => {
+    if (currentVersion) {
+      handleSelectVersion(currentVersion);
+    }
+  }, [currentVersion]);
+
   const fetchTemplates = useCallback(async () => {
     if (onRefreshData) {
       onRefreshData(); // Use parent's refresh function
@@ -447,10 +482,10 @@ const QuestionsTab = ({
   const fetchTemplate = async (id) => {
     const data = await TemplateUtils.fetchTemplate(id);
     setSelectedTemplate(data);
-    
+
     // Update the templates array with the latest data to ensure question count is correct
-    setTemplates(prevTemplates => 
-      prevTemplates.map(template => 
+    setTemplates(prevTemplates =>
+      prevTemplates.map(template =>
         template.id === id ? { ...template, questions: data.questions } : template
       )
     );
@@ -458,12 +493,12 @@ const QuestionsTab = ({
 
   const handleAddTemplate = async () => {
     if (!newTemplateData.survey_code || !selectedVersion?.id) return;
-    
+
     const templateToAdd = {
       ...newTemplateData,
       version_id: selectedVersion.id
     };
-    
+
     const success = await TemplateUtils.addTemplate(templateToAdd);
     if (success) {
       setNewTemplateData({ survey_code: '', version_id: '', questions: [] });
@@ -476,7 +511,7 @@ const QuestionsTab = ({
       console.log('Attempting to delete template with ID:', templateId);
       const success = await TemplateUtils.deleteTemplate(templateId);
       console.log('Delete result:', success);
-      
+
       if (success) {
         console.log('Template deleted successfully, updating UI...');
         if (selectedTemplate?.id === templateId) {
@@ -499,18 +534,18 @@ const QuestionsTab = ({
       console.log('Attempting to edit template with ID:', templateId, 'to name:', newName);
       const success = await TemplateUtils.updateTemplateName(templateId, newName);
       console.log('Edit result:', success);
-      
+
       if (success) {
         console.log('Template name updated successfully, updating UI...');
         // Update the templates list
         await fetchTemplates();
-        
+
         // Update selected template if it's the one being edited
         if (selectedTemplate?.id === templateId) {
           const updatedTemplate = { ...selectedTemplate, survey_code: newName };
           setSelectedTemplate(updatedTemplate);
         }
-        
+
         console.log('UI updated after template name change');
       } else {
         console.error('Failed to edit template:', templateId);
@@ -524,23 +559,23 @@ const QuestionsTab = ({
 
   const handleDeleteSelectedTemplates = async () => {
     if (selectedTemplates.length === 0) return;
-    
+
     // Delete selected templates one by one
-    const deletePromises = selectedTemplates.map(templateId => 
+    const deletePromises = selectedTemplates.map(templateId =>
       TemplateUtils.deleteTemplate(templateId)
     );
-    
+
     try {
       await Promise.all(deletePromises);
-      
+
       // Clear selection and refresh
       setSelectedTemplates([]);
       setIsMultiSelectMode(false);
-      
+
       if (selectedTemplates.includes(selectedTemplate?.id)) {
         setSelectedTemplate(null);
       }
-      
+
       fetchTemplates();
     } catch (error) {
       console.error('Error deleting templates:', error);
@@ -553,15 +588,15 @@ const QuestionsTab = ({
     }
     fetchTemplate(templateId);
   };
-  
+
   const handleToggleSelectTemplate = (templateId) => {
-    setSelectedTemplates(prev => 
+    setSelectedTemplates(prev =>
       prev.includes(templateId)
         ? prev.filter(id => id !== templateId)
         : [...prev, templateId]
     );
   };
-  
+
   const toggleMultiSelectMode = () => {
     setIsMultiSelectMode(prev => !prev);
     if (!isMultiSelectMode) {
@@ -571,47 +606,47 @@ const QuestionsTab = ({
 
   const handleDragEnd = async (event) => {
     const { active, over } = event;
-    
+
     if (!active || !over || active.id === over.id || !selectedTemplate) return;
-    
+
     // Extract question IDs from the drag identifiers
     const activeId = active.id.toString();
     const overId = over.id.toString();
-    
+
     const activeQuestionId = parseInt(activeId.split('-').pop());
     const overQuestionId = parseInt(overId.split('-').pop());
-    
+
     // Find question indices
     const questions = [...selectedTemplate.questions];
     const oldIndex = questions.findIndex(q => q.id === activeQuestionId);
     const newIndex = questions.findIndex(q => q.id === overQuestionId);
-    
+
     if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
-    
+
     // Reorder questions
     const reorderedQuestions = arrayMove(questions, oldIndex, newIndex);
-    
+
     // Update order property
     const updatedQuestions = reorderedQuestions.map((q, index) => ({
       ...q,
       order: index
     }));
-    
+
     // Update locally
     setSelectedTemplate(prev => ({
       ...prev,
       questions: updatedQuestions
     }));
-    
+
     // Update templates array
-    setTemplates(prev => 
-      prev.map(t => 
-        t.id === selectedTemplate.id 
-          ? { ...t, questions: updatedQuestions } 
+    setTemplates(prev =>
+      prev.map(t =>
+        t.id === selectedTemplate.id
+          ? { ...t, questions: updatedQuestions }
           : t
       )
     );
-    
+
     // Save to backend
     try {
       await TemplateUtils.updateTemplateQuestions(selectedTemplate.id, updatedQuestions);
@@ -632,11 +667,11 @@ const QuestionsTab = ({
 
   const handleOpenSectionOrder = async () => {
     if (!selectedTemplate) return;
-    
+
     try {
       // Get sections from the template
       const sections = await TemplateUtils.fetchTemplateSections(selectedTemplate.id);
-      
+
       // If no sections from backend, derive from questions
       if (sections.length === 0) {
         const sectionOrder = selectedTemplate.sections || {};
@@ -657,7 +692,7 @@ const QuestionsTab = ({
         }));
         setTemplateSections(sectionsWithCount);
       }
-      
+
       setOpenSectionDialog(true);
     } catch (error) {
       console.error('Error loading sections:', error);
@@ -666,7 +701,7 @@ const QuestionsTab = ({
 
   const handleSaveSectionOrder = async (orderedSections) => {
     if (!selectedTemplate) return;
-    
+
     try {
       const success = await TemplateUtils.updateTemplateSectionsOrder(selectedTemplate.id, orderedSections);
       if (success) {
@@ -701,11 +736,11 @@ const QuestionsTab = ({
 
   const handleSaveQuestion = async (finalQuestionData) => {
     if (!selectedTemplate) return;
-    
+
     const payload = finalQuestionData;
-    
+
     let updatedQuestions = [...(selectedTemplate.questions || [])];
-    
+
     if (selectedQuestion) {
       // Editing existing question
       const index = updatedQuestions.findIndex(q => q.id === selectedQuestion.id);
@@ -714,17 +749,17 @@ const QuestionsTab = ({
       }
     } else {
       // Adding new question - assign order within the section
-      const sectionQuestions = updatedQuestions.filter(q => 
+      const sectionQuestions = updatedQuestions.filter(q =>
         (q.section || 'Uncategorized') === (payload.section || 'Uncategorized')
       );
       const newId = Math.max(0, ...updatedQuestions.map(q => q.id || 0)) + 1;
-      updatedQuestions.push({ 
-        id: newId, 
+      updatedQuestions.push({
+        id: newId,
         ...payload,
         order: updatedQuestions.length
       });
     }
-    
+
     // Sort questions by section and order within section
     updatedQuestions.sort((a, b) => {
       const sectionA = a.section || 'Uncategorized';
@@ -734,35 +769,35 @@ const QuestionsTab = ({
       }
       return (a.order || 0) - (b.order || 0);
     });
-    
+
     const success = await TemplateUtils.updateTemplateQuestions(selectedTemplate.id, updatedQuestions);
     if (success) {
       // Update local state
       const updatedTemplate = { ...selectedTemplate, questions: updatedQuestions };
       setSelectedTemplate(updatedTemplate);
-      
+
       // Update templates array
-      const updatedTemplates = templates.map(t => 
+      const updatedTemplates = templates.map(t =>
         t.id === selectedTemplate.id ? { ...t, questions: updatedQuestions } : t
       );
       setTemplates(updatedTemplates);
-      
+
       setOpenQDialog(false);
     }
   };
 
   const handleDeleteQuestion = async (questionId) => {
     if (!selectedTemplate) return;
-    
+
     const success = await TemplateUtils.deleteTemplateQuestion(selectedTemplate.id, questionId);
     if (success) {
       // Update local state
       const updatedQuestions = selectedTemplate.questions.filter(q => q.id !== questionId);
       const updatedTemplate = { ...selectedTemplate, questions: updatedQuestions };
       setSelectedTemplate(updatedTemplate);
-      
+
       // Update templates array
-      const updatedTemplates = templates.map(t => 
+      const updatedTemplates = templates.map(t =>
         t.id === selectedTemplate.id ? { ...t, questions: updatedQuestions } : t
       );
       setTemplates(updatedTemplates);
@@ -774,7 +809,7 @@ const QuestionsTab = ({
     // Reset multi-select mode when changing version
     setIsMultiSelectMode(false);
     setSelectedTemplates([]);
-    
+
     // Filter templates for this version
     const versionTemplates = templates.filter(t => t.version_id === version.id);
     if (versionTemplates.length > 0) {
@@ -792,62 +827,64 @@ const QuestionsTab = ({
   return (
     <Box sx={{ display: 'flex', minHeight: 'calc(100vh - 180px)' }}>
       {/* Left sidebar - Version selection */}
-      <Box 
-        sx={{ 
-          width: 240, 
-          backgroundColor: '#f5f5f5', 
-          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', 
-          display: 'flex',
-          flexDirection: 'column'
-        }}
-      >
-        <Typography variant="h6" sx={{ p: 2, color: '#633394', fontWeight: 'bold' }}>
-          Template Versions
-        </Typography>
-        
-        <Box sx={{ px: 2, pb: 2 }}>
-          {templateVersions.map(version => (
-            <Button
-              key={version.id}
-              fullWidth
-              variant={selectedVersion?.id === version.id ? 'contained' : 'outlined'}
-              onClick={() => handleSelectVersion(version)}
-              sx={{
-                mb: 1,
-                justifyContent: 'flex-start',
-                textTransform: 'none',
-                backgroundColor: selectedVersion?.id === version.id ? '#633394' : 'transparent',
-                color: selectedVersion?.id === version.id ? 'white' : '#633394',
-                borderColor: '#633394',
-                fontWeight: selectedVersion?.id === version.id ? 600 : 400,
-                transition: 'all 0.2s ease-in-out',
-                '&:hover': {
-                  backgroundColor: selectedVersion?.id === version.id ? '#7c52a5' : 'rgba(99, 51, 148, 0.08)',
-                  transform: 'translateY(-1px)',
-                  boxShadow: '0 3px 5px rgba(99, 51, 148, 0.2)',
-                },
-                '&:active': {
-                  transform: 'translateY(0)',
-                  boxShadow: '0 1px 3px rgba(99, 51, 148, 0.2)',
-                }
-              }}
-            >
-              {version.name}
-            </Button>
-          ))}
+      {!hideSidebar && (
+        <Box
+          sx={{
+            width: 240,
+            backgroundColor: '#f5f5f5',
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+            display: 'flex',
+            flexDirection: 'column'
+          }}
+        >
+          <Typography variant="h6" sx={{ p: 2, color: '#633394', fontWeight: 'bold' }}>
+            Template Versions
+          </Typography>
+
+          <Box sx={{ px: 2, pb: 2 }}>
+            {templateVersions.map(version => (
+              <Button
+                key={version.id}
+                fullWidth
+                variant={selectedVersion?.id === version.id ? 'contained' : 'outlined'}
+                onClick={() => handleSelectVersion(version)}
+                sx={{
+                  mb: 1,
+                  justifyContent: 'flex-start',
+                  textTransform: 'none',
+                  backgroundColor: selectedVersion?.id === version.id ? '#633394' : 'transparent',
+                  color: selectedVersion?.id === version.id ? 'white' : '#633394',
+                  borderColor: '#633394',
+                  fontWeight: selectedVersion?.id === version.id ? 600 : 400,
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    backgroundColor: selectedVersion?.id === version.id ? '#7c52a5' : 'rgba(99, 51, 148, 0.08)',
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 3px 5px rgba(99, 51, 148, 0.2)',
+                  },
+                  '&:active': {
+                    transform: 'translateY(0)',
+                    boxShadow: '0 1px 3px rgba(99, 51, 148, 0.2)',
+                  }
+                }}
+              >
+                {version.name}
+              </Button>
+            ))}
+          </Box>
         </Box>
-      </Box>
-      
+      )}
+
       {/* Main content area */}
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', pl: 2 }}>
         {selectedVersion ? (
           <>
             {/* Templates section */}
-            <Paper 
-              sx={{ 
-                p: 2, 
-                mb: 2, 
-                backgroundColor: '#f5f5f5', 
+            <Paper
+              sx={{
+                p: 2,
+                mb: 2,
+                backgroundColor: '#f5f5f5',
                 boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
               }}
             >
@@ -855,28 +892,46 @@ const QuestionsTab = ({
                 <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold' }}>
                   Templates for {selectedVersion.name}
                 </Typography>
-                
+
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Typography variant="h6" sx={{ mr: 2, color: '#633394', fontWeight: 'bold' }}>
                     List of Templates
                   </Typography>
-                  
+
+                  {onClose && (
+                    <IconButton
+                      onClick={onClose}
+                      sx={{
+                        ml: 1,
+                        color: '#633394',
+                        border: '1px solid rgba(99, 51, 148, 0.5)',
+                        '&:hover': {
+                          backgroundColor: 'rgba(99, 51, 148, 0.08)',
+                          borderColor: '#633394'
+                        }
+                      }}
+                      title="Close View"
+                    >
+                      <CloseIcon />
+                    </IconButton>
+                  )}
+
                   <Box>
-                    <IconButton 
-                      size="small" 
+                    <IconButton
+                      size="small"
                       onClick={toggleMultiSelectMode}
                       color={isMultiSelectMode ? "primary" : "default"}
-                      sx={{ 
+                      sx={{
                         mr: 1,
                         backgroundColor: isMultiSelectMode ? 'rgba(99, 51, 148, 0.1)' : 'transparent',
-                        '&:hover': { 
+                        '&:hover': {
                           backgroundColor: isMultiSelectMode ? 'rgba(99, 51, 148, 0.15)' : 'rgba(99, 51, 148, 0.05)'
                         }
                       }}
                     >
-                      <Checkbox 
+                      <Checkbox
                         checked={isMultiSelectMode}
-                        sx={{ 
+                        sx={{
                           p: 0,
                           color: '#633394',
                           '&.Mui-checked': {
@@ -885,11 +940,11 @@ const QuestionsTab = ({
                         }}
                       />
                     </IconButton>
-                    
+
                     {selectedTemplates.length > 0 && (
-                      <IconButton 
-                        size="small" 
-                        color="error" 
+                      <IconButton
+                        size="small"
+                        color="error"
                         onClick={handleDeleteSelectedTemplates}
                         sx={{
                           transition: 'all 0.2s ease-in-out',
@@ -905,7 +960,7 @@ const QuestionsTab = ({
                   </Box>
                 </Box>
               </Box>
-              
+
               <Box sx={{ display: 'flex' }}>
                 {/* Left side - Add template form */}
                 <Box sx={{ width: '40%', pr: 2 }}>
@@ -913,11 +968,11 @@ const QuestionsTab = ({
                     label="Template Name"
                     fullWidth
                     value={newTemplateData.survey_code}
-                    onChange={e => setNewTemplateData(prev => ({ 
-                      ...prev, 
-                      survey_code: e.target.value 
+                    onChange={e => setNewTemplateData(prev => ({
+                      ...prev,
+                      survey_code: e.target.value
                     }))}
-                    sx={{ 
+                    sx={{
                       mb: 2,
                       '& .MuiOutlinedInput-root': {
                         '&.Mui-focused fieldset': {
@@ -929,17 +984,17 @@ const QuestionsTab = ({
                       }
                     }}
                   />
-                  
+
                   <Button
                     variant="contained"
                     startIcon={<AddIcon />}
                     onClick={handleAddTemplate}
                     disabled={!newTemplateData.survey_code}
                     fullWidth
-                    sx={{ 
-                      backgroundColor: '#633394', 
+                    sx={{
+                      backgroundColor: '#633394',
                       transition: 'all 0.2s ease-in-out',
-                      '&:hover': { 
+                      '&:hover': {
                         backgroundColor: '#7c52a5',
                         transform: 'translateY(-1px)',
                         boxShadow: '0 4px 8px rgba(99, 51, 148, 0.3)',
@@ -954,11 +1009,11 @@ const QuestionsTab = ({
                     Add Template
                   </Button>
                 </Box>
-                
+
                 {/* Right side - Templates list */}
                 <Box sx={{ width: '60%' }}>
-                  <Box 
-                    sx={{ 
+                  <Box
+                    sx={{
                       bgcolor: 'white',
                       borderRadius: 1,
                       p: 1,
@@ -978,9 +1033,10 @@ const QuestionsTab = ({
                           isChecked={selectedTemplates.includes(template.id)}
                           onDelete={handleDeleteTemplate}
                           onEdit={handleEditTemplate}
+                          onPreview={onPreview}
                         />
                       ))}
-                      
+
                     {templates.filter(t => t.version_id === selectedVersion.id).length === 0 && (
                       <Box sx={{ p: 2, textAlign: 'center' }}>
                         <Typography variant="body2" color="text.secondary">
@@ -992,13 +1048,13 @@ const QuestionsTab = ({
                 </Box>
               </Box>
             </Paper>
-            
+
             {/* Questions section */}
             {selectedTemplate && (
-              <Paper 
-                sx={{ 
-                  p: 2, 
-                  backgroundColor: '#f5f5f5', 
+              <Paper
+                sx={{
+                  p: 2,
+                  backgroundColor: '#f5f5f5',
                   boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
                 }}
               >
@@ -1007,15 +1063,37 @@ const QuestionsTab = ({
                     Questions for {selectedTemplate.survey_code}
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button 
-                      variant="outlined" 
-                      startIcon={<ReorderIcon />} 
+                    {onPreview && (
+                      <Button
+                        variant="outlined"
+                        startIcon={<VisibilityIcon />}
+                        onClick={() => onPreview(selectedTemplate)}
+                        sx={{
+                          borderColor: '#633394',
+                          color: '#633394',
+                          transition: 'all 0.2s ease-in-out',
+                          '&:hover': {
+                            borderColor: '#7c52a5',
+                            backgroundColor: 'rgba(99, 51, 148, 0.04)',
+                            transform: 'translateY(-1px)',
+                          },
+                          '&:active': {
+                            transform: 'translateY(0)',
+                          }
+                        }}
+                      >
+                        Preview
+                      </Button>
+                    )}
+                    <Button
+                      variant="outlined"
+                      startIcon={<ReorderIcon />}
                       onClick={handleOpenSectionOrder}
-                      sx={{ 
+                      sx={{
                         borderColor: '#633394',
                         color: '#633394',
                         transition: 'all 0.2s ease-in-out',
-                        '&:hover': { 
+                        '&:hover': {
                           borderColor: '#7c52a5',
                           backgroundColor: 'rgba(99, 51, 148, 0.04)',
                           transform: 'translateY(-1px)',
@@ -1027,15 +1105,15 @@ const QuestionsTab = ({
                     >
                       Reorder Sections
                     </Button>
-                    <Button 
-                      variant="contained" 
-                      startIcon={<AddIcon />} 
+                    <Button
+                      variant="contained"
+                      startIcon={<AddIcon />}
                       onClick={handleOpenAdd}
-                      sx={{ 
-                        backgroundColor: '#633394 !important', 
+                      sx={{
+                        backgroundColor: '#633394 !important',
                         color: 'white !important',
                         transition: 'all 0.2s ease-in-out',
-                        '&:hover': { 
+                        '&:hover': {
                           backgroundColor: '#7c52a5 !important',
                           transform: 'translateY(-1px)',
                           boxShadow: '0 4px 8px rgba(99, 51, 148, 0.3)',
@@ -1050,10 +1128,10 @@ const QuestionsTab = ({
                     </Button>
                   </Box>
                 </Box>
-                
+
                 <Box sx={{ bgcolor: 'white', borderRadius: 1, p: 1, boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.1)' }}>
                   {selectedTemplate.questions?.length > 0 ? (
-                    <DndContext 
+                    <DndContext
                       sensors={sensors}
                       collisionDetection={closestCenter}
                       onDragEnd={handleDragEnd}
@@ -1063,18 +1141,18 @@ const QuestionsTab = ({
                           // Group questions by section with ordering
                           const sectionOrder = selectedTemplate.sections || {};
                           const questionsBySection = TemplateUtils.groupQuestionsBySectionWithOrder(selectedTemplate.questions, sectionOrder);
-                          
+
                           return Object.keys(questionsBySection).map(sectionName => {
                             const sectionQuestions = questionsBySection[sectionName]
                               .sort((a, b) => (a.order || 0) - (b.order || 0));
-                            
+
                             return (
                               <Box key={sectionName} sx={{ mb: 2 }}>
-                                <Typography 
-                                  variant="h6" 
-                                  sx={{ 
-                                    mb: 1, 
-                                    color: '#633394', 
+                                <Typography
+                                  variant="h6"
+                                  sx={{
+                                    mb: 1,
+                                    color: '#633394',
                                     fontWeight: 'bold',
                                     borderBottom: '2px solid #633394',
                                     pb: 0.5
@@ -1082,14 +1160,14 @@ const QuestionsTab = ({
                                 >
                                   {sectionName} ({sectionQuestions.length} questions)
                                 </Typography>
-                                
-                                <SortableContext 
+
+                                <SortableContext
                                   items={sectionQuestions.map(q => `${sectionName}-${q.id}`)}
                                   strategy={verticalListSortingStrategy}
                                 >
                                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                                     {sectionQuestions.map((question, index) => (
-                                      <CompactQuestionItem 
+                                      <CompactQuestionItem
                                         key={question.id}
                                         question={question}
                                         index={index}
@@ -1122,7 +1200,7 @@ const QuestionsTab = ({
           </Paper>
         )}
       </Box>
-      
+
       {/* Question Dialog */}
       <QuestionDialog
         open={openQDialog}

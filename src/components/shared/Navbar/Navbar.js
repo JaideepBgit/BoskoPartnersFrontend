@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  AppBar, 
-  Toolbar, 
-  Button, 
-  Box, 
-  IconButton, 
-  Drawer, 
-  List, 
-  ListItem, 
-  ListItemIcon, 
+import {
+  AppBar,
+  Toolbar,
+  Button,
+  Box,
+  IconButton,
+  Drawer,
+  List,
+  ListItem,
+  ListItemIcon,
   ListItemText,
   Divider,
   useMediaQuery,
@@ -25,6 +25,8 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import MenuIcon from '@mui/icons-material/Menu';
+import BusinessIcon from '@mui/icons-material/Business';
+import SecurityIcon from '@mui/icons-material/Security';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -37,7 +39,7 @@ const Navbar = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const logoImage = process.env.PUBLIC_URL + '/assets/saurara-high-resolution-logo-transparent.png';
-  
+
   const handleSidebarToggle = () => {
     setSidebarOpen(!sidebarOpen);
   };
@@ -50,24 +52,23 @@ const Navbar = () => {
 
   // sync tab value when route or user changes
   useEffect(() => {
-    if (user?.role === 'admin') {
+    if (user?.role === 'admin' || user?.role === 'root') {
       const p = location.pathname.toLowerCase();
-      if (p.includes('/home'))         setTabValue(0); // Home tab
-      else if (p.includes('/dashboard')) setTabValue(1); // Dashboard tab
-      else if (p.includes('/inventory')) setTabValue(2);
-      else if (p.includes('/users'))     setTabValue(3);
-      else if (p.includes('/reports'))   setTabValue(4);
-      else if (p.includes('/visual-builder')) setTabValue(5);
-      else if (p.includes('/user-reports')) setTabValue(6);
-      else if (p.includes('/settings'))  setTabValue(7);
-      else                                setTabValue(0);
+      // Simplified 6-item menu matching
+      if (p.includes('/dashboard')) setTabValue(1);           // 1. Dashboard
+      else if (p.includes('/inventory')) setTabValue(2);      // 2. Surveys
+      else if (p.includes('/organization')) setTabValue(3);   // 3. Organizations
+      else if (p.includes('/users')) setTabValue(4);          // 4. Users
+      else if (p.includes('/reports') || p.includes('/user-reports')) setTabValue(5); // 5. Reports
+      else if (p.includes('/settings')) setTabValue(6);       // 6. Settings
+      else setTabValue(1); // Default to Dashboard
     } else {
       // For regular users
       const p = location.pathname.toLowerCase();
-      if (p.includes('/profile') || p.includes('/home'))    setUserTabValue(0);
+      if (p.includes('/profile') || p.includes('/home')) setUserTabValue(0);
       else if (p.includes('/survey')) setUserTabValue(1); // This covers both /surveys and /survey
       else if (p.includes('/reports')) setUserTabValue(2);
-      else                             setUserTabValue(0);
+      else setUserTabValue(0);
     }
   }, [location, user]);
 
@@ -91,37 +92,12 @@ const Navbar = () => {
           style={{ maxWidth: '180px', height: 'auto' }}
         />
       </Box>
-      {user?.role === 'admin' ? (
+      {(user?.role === 'admin' || user?.role === 'root') ? (
         <List sx={{ pt: 2 }}>
-          <ListItem 
-            button 
-            onClick={() => handleNavigation('/home')} 
-            selected={tabValue === 0}
-            sx={{
-              '&.Mui-selected': {
-                backgroundColor: '#633394',
-                color: 'white',
-                '& .MuiListItemIcon-root': {
-                  color: 'white',
-                },
-                '&:hover': {
-                  backgroundColor: '#533082',
-                },
-              },
-              '&:hover': {
-                backgroundColor: '#f5f5f5',
-              },
-              borderRadius: '8px',
-              mx: 1,
-              mb: 0.5,
-            }}
-          >
-            <ListItemIcon><HomeIcon /></ListItemIcon>
-            <ListItemText primary="Home" />
-          </ListItem>
-          <ListItem 
-            button 
-            onClick={() => handleNavigation('/dashboard')} 
+          {/* 1. Dashboard */}
+          <ListItem
+            button
+            onClick={() => handleNavigation('/dashboard')}
             selected={tabValue === 1}
             sx={{
               '&.Mui-selected': {
@@ -145,9 +121,11 @@ const Navbar = () => {
             <ListItemIcon><DashboardIcon /></ListItemIcon>
             <ListItemText primary="Dashboard" />
           </ListItem>
-          <ListItem 
-            button 
-            onClick={() => handleNavigation('/inventory')} 
+
+          {/* 2. Surveys */}
+          <ListItem
+            button
+            onClick={() => handleNavigation('/inventory')}
             selected={tabValue === 2}
             sx={{
               '&.Mui-selected': {
@@ -168,12 +146,14 @@ const Navbar = () => {
               mb: 0.5,
             }}
           >
-            <ListItemIcon><Inventory2Icon /></ListItemIcon>
-            <ListItemText primary="Inventory Page" />
+            <ListItemIcon><AssignmentIcon /></ListItemIcon>
+            <ListItemText primary="Surveys" />
           </ListItem>
-          <ListItem 
-            button 
-            onClick={() => handleNavigation('/users')} 
+
+          {/* 3. Organizations */}
+          <ListItem
+            button
+            onClick={() => handleNavigation('/organization-management')}
             selected={tabValue === 3}
             sx={{
               '&.Mui-selected': {
@@ -194,12 +174,14 @@ const Navbar = () => {
               mb: 0.5,
             }}
           >
-            <ListItemIcon><PeopleIcon /></ListItemIcon>
-            <ListItemText primary="Users Management" />
+            <ListItemIcon><BusinessIcon /></ListItemIcon>
+            <ListItemText primary="Organizations" />
           </ListItem>
-          <ListItem 
-            button 
-            onClick={() => handleNavigation('/reports')} 
+
+          {/* 4. Users */}
+          <ListItem
+            button
+            onClick={() => handleNavigation('/users')}
             selected={tabValue === 4}
             sx={{
               '&.Mui-selected': {
@@ -220,12 +202,14 @@ const Navbar = () => {
               mb: 0.5,
             }}
           >
-            <ListItemIcon><BarChartIcon /></ListItemIcon>
-            <ListItemText primary="Reports Page" />
+            <ListItemIcon><PeopleIcon /></ListItemIcon>
+            <ListItemText primary="Users" />
           </ListItem>
-          <ListItem 
-            button 
-            onClick={() => handleNavigation('/visual-builder')} 
+
+          {/* 5. Reports */}
+          <ListItem
+            button
+            onClick={() => handleNavigation('/user-reports')}
             selected={tabValue === 5}
             sx={{
               '&.Mui-selected': {
@@ -247,38 +231,14 @@ const Navbar = () => {
             }}
           >
             <ListItemIcon><BarChartIcon /></ListItemIcon>
-            <ListItemText primary="Visual Builder" />
+            <ListItemText primary="Reports" />
           </ListItem>
-          <ListItem 
-            button 
-            onClick={() => handleNavigation('/user-reports')} 
+
+          {/* 6. Settings */}
+          <ListItem
+            button
+            onClick={() => handleNavigation('/settings')}
             selected={tabValue === 6}
-            sx={{
-              '&.Mui-selected': {
-                backgroundColor: '#633394',
-                color: 'white',
-                '& .MuiListItemIcon-root': {
-                  color: 'white',
-                },
-                '&:hover': {
-                  backgroundColor: '#533082',
-                },
-              },
-              '&:hover': {
-                backgroundColor: '#f5f5f5',
-              },
-              borderRadius: '8px',
-              mx: 1,
-              mb: 0.5,
-            }}
-          >
-            <ListItemIcon><AssessmentIcon /></ListItemIcon>
-            <ListItemText primary="User Reports" />
-          </ListItem>
-          <ListItem 
-            button 
-            onClick={() => handleNavigation('/settings')} 
-            selected={tabValue === 7}
             sx={{
               '&.Mui-selected': {
                 backgroundColor: '#633394',
@@ -304,9 +264,9 @@ const Navbar = () => {
         </List>
       ) : (
         <List sx={{ pt: 2 }}>
-          <ListItem 
-            button 
-            onClick={() => handleNavigation('/profile')} 
+          <ListItem
+            button
+            onClick={() => handleNavigation('/profile')}
             selected={userTabValue === 0}
             sx={{
               '&.Mui-selected': {
@@ -330,9 +290,9 @@ const Navbar = () => {
             <ListItemIcon><HomeIcon /></ListItemIcon>
             <ListItemText primary="Profile" />
           </ListItem>
-          <ListItem 
-            button 
-            onClick={() => handleNavigation('/surveys')} 
+          <ListItem
+            button
+            onClick={() => handleNavigation('/surveys')}
             selected={userTabValue === 1}
             sx={{
               '&.Mui-selected': {
@@ -361,8 +321,8 @@ const Navbar = () => {
       <Box sx={{ position: 'absolute', bottom: 0, width: '100%' }}>
         <Divider />
         <List>
-          <ListItem 
-            button 
+          <ListItem
+            button
             onClick={handleLogout}
             sx={{
               '&:hover': {
@@ -402,12 +362,12 @@ const Navbar = () => {
 
           {/* Logo in center */}
           <Box
-            sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              flexGrow: 1, 
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              flexGrow: 1,
               justifyContent: 'center',
-              cursor: 'pointer' 
+              cursor: 'pointer'
             }}
             onClick={() => navigate('/')}
           >
@@ -432,8 +392,8 @@ const Navbar = () => {
           keepMounted: true, // Better open performance
         }}
         sx={{
-          '& .MuiDrawer-paper': { 
-            boxSizing: 'border-box', 
+          '& .MuiDrawer-paper': {
+            boxSizing: 'border-box',
             width: 280,
             height: '100vh',
             position: 'relative'

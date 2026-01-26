@@ -4,9 +4,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import LoginPage from './components/Login/Login';
 import FormContainer from './components/UserDetailsForm/FormContainer';
 import UserLandingPage from './components/LandingPages/UserLandingPage';
-import AdminLandingPage from './components/LandingPages/AdminLandingPage';
 import UserDashboard from './components/Dashboard/UserDashboard';
 import AdminDashboard from './components/Dashboard/AdminDashboard';
+import RootDashboard from './components/Dashboard/RootDashboard';
 import InventoryPage from './components/Admin/Inventory/InventoryPage';
 import UserManagementMain from './components/UserManagement/UserManagementMain';
 import SurveysPage from './components/Surveys/SurveysPage';
@@ -21,6 +21,9 @@ import ContactReferralPage from './components/LandingPages/ContactReferralPage';
 import ForgotPassword from './components/Login/ForgotPassword';
 import ResetPassword from './components/Login/ResetPassword';
 import SettingsPage from './components/Settings/SettingsPage';
+import OrganizationManagementPage from './components/Admin/OrganizationManagement/OrganizationManagementPage';
+import OrganizationDetailPage from './components/Admin/OrganizationManagement/OrganizationDetailPage';
+import AddUserPage from './components/UserManagement/Users/AddUserPage';
 
 import './App.css';
 import './styles/form.css';
@@ -30,15 +33,10 @@ function RoleBasedDashboard() {
   const userRole = localStorage.getItem('userRole');
   const location = useLocation();
 
-  if (userRole === 'admin') {
-    // If admin is on /home route, show AdminLandingPage
-    if (location.pathname === '/home') {
-      return <AdminLandingPage />;
-    }
-    // If admin is on /dashboard route, show AdminDashboard
-    if (location.pathname === '/dashboard') {
-      return <AdminDashboard />;
-    }
+  // Root and Admin users: Show AdminDashboard for both /home and /dashboard
+  // This consolidates the redundant routes into a single dashboard experience
+  if (userRole === 'root' || userRole === 'admin') {
+    return <AdminDashboard />;
   }
 
   // For regular users on /dashboard, redirect to their profile
@@ -46,7 +44,7 @@ function RoleBasedDashboard() {
     return <Navigate to="/profile" replace />;
   }
 
-  // For regular users, show UserDashboard only on /home or /profile
+  // For regular users, show UserDashboard on /home or /profile
   return <UserDashboard />;
 }
 
@@ -113,11 +111,13 @@ function Main({ isAuthenticated, userRole, login, logout }) {
             <FormContainer onLogout={logout} />
           </ProtectedRoute>
         } />
+        {/* /home route commented out - using /dashboard only
         <Route path="/home" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <RoleBasedDashboard />
           </ProtectedRoute>
         } />
+        */}
         <Route path="/dashboard" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <RoleBasedDashboard />
@@ -132,7 +132,7 @@ function Main({ isAuthenticated, userRole, login, logout }) {
         } />
         <Route path="/admin" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
-            <AdminLandingPage onLogout={logout} />
+            <AdminDashboard onLogout={logout} />
           </ProtectedRoute>
         } />
 
@@ -148,10 +148,24 @@ function Main({ isAuthenticated, userRole, login, logout }) {
           </ProtectedRoute>
         } />
 
+        {/* Root Dashboard Route */}
+        <Route path="/root-dashboard" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <RootDashboard onLogout={logout} />
+          </ProtectedRoute>
+        } />
+
         {/* User Management Route */}
         <Route path="/users" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <UserManagementMain onLogout={logout} />
+          </ProtectedRoute>
+        } />
+
+        {/* Add User Page Route */}
+        <Route path="/users/add" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <AddUserPage />
           </ProtectedRoute>
         } />
 
@@ -169,12 +183,12 @@ function Main({ isAuthenticated, userRole, login, logout }) {
           </ProtectedRoute>
         } />
 
-        {/* Reports Route - Role-based */}
+        {/* Reports Route - Role-based 
         <Route path="/reports" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <RoleBasedReports onLogout={logout} />
           </ProtectedRoute>
-        } />
+        } />*/}
 
         {/* Report Builder Route */}
         <Route path="/reportbuilder" element={
@@ -201,6 +215,23 @@ function Main({ isAuthenticated, userRole, login, logout }) {
         <Route path="/user-reports" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <AdminUserReports onLogout={logout} />
+          </ProtectedRoute>
+        } />
+
+        {/* Organization Management Routes */}
+        <Route path="/organization-management" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <OrganizationManagementPage onLogout={logout} />
+          </ProtectedRoute>
+        } />
+        <Route path="/organization-management/:id" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <OrganizationDetailPage onLogout={logout} />
+          </ProtectedRoute>
+        } />
+        <Route path="/organizations" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <OrganizationManagementPage onLogout={logout} />
           </ProtectedRoute>
         } />
 

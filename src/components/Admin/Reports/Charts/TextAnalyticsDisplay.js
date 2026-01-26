@@ -81,7 +81,7 @@ const TextAnalyticsDisplay = ({ textAnalytics, adminColors }) => {
   return (
     <Paper sx={{ p: 3 }}>
       <Typography variant="h6" gutterBottom sx={{ color: adminColors?.primary || '#633394', fontWeight: 'bold' }}>
-        📊 Text Analytics (AI-Powered Analysis)
+        Text Analytics (AI-Powered Analysis)
       </Typography>
       <Typography variant="body2" color="text.secondary" paragraph>
         Sentiment analysis, topic modeling, and clustering of open-ended text responses using NLP and machine learning.

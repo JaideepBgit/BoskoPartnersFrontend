@@ -44,7 +44,7 @@ const AdminLandingPage = () => {
         <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold', color: '#633394' }}>
           Welcome, {user?.name || 'Admin'}!
         </Typography>
-        
+
         <Grid container spacing={3}>
           {/* Summary Cards */}
           <Grid item xs={12} md={4}>
@@ -62,7 +62,7 @@ const AdminLandingPage = () => {
               </CardContent>
             </Card>
           </Grid>
-          
+
           <Grid item xs={12} md={4}>
             <Card sx={{ height: '100%', backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
               <CardContent>
@@ -78,7 +78,7 @@ const AdminLandingPage = () => {
               </CardContent>
             </Card>
           </Grid>
-          
+
           <Grid item xs={12} md={4}>
             <Card sx={{ height: '100%', backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
               <CardContent>
@@ -94,7 +94,7 @@ const AdminLandingPage = () => {
               </CardContent>
             </Card>
           </Grid>
-          
+
           {/* Quick Actions */}
           <Grid item xs={12}>
             <Paper sx={{ p: 3, mt: 3, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
@@ -102,23 +102,23 @@ const AdminLandingPage = () => {
                 Quick Actions
               </Typography>
               <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                <Card 
-                  sx={{ 
-                    p: 2, 
-                    cursor: 'pointer', 
+                <Card
+                  sx={{
+                    p: 2,
+                    cursor: 'pointer',
                     minWidth: '200px',
                     backgroundColor: '#633394',
                     color: 'white',
                     '&:hover': { backgroundColor: '#967CB2' }
                   }}
-                  onClick={() => navigate('/users')}
+                  onClick={() => navigate('/organizations')}
                 >
                   <Typography>Manage Organizations</Typography>
                 </Card>
-                <Card 
-                  sx={{ 
-                    p: 2, 
-                    cursor: 'pointer', 
+                <Card
+                  sx={{
+                    p: 2,
+                    cursor: 'pointer',
                     minWidth: '200px',
                     backgroundColor: '#633394',
                     color: 'white',
@@ -128,10 +128,10 @@ const AdminLandingPage = () => {
                 >
                   <Typography>Manage Users</Typography>
                 </Card>
-                <Card 
-                  sx={{ 
-                    p: 2, 
-                    cursor: 'pointer', 
+                <Card
+                  sx={{
+                    p: 2,
+                    cursor: 'pointer',
                     minWidth: '200px',
                     backgroundColor: '#633394',
                     color: 'white',
@@ -141,10 +141,10 @@ const AdminLandingPage = () => {
                 >
                   <Typography>Survey Inventory</Typography>
                 </Card>
-                <Card 
-                  sx={{ 
-                    p: 2, 
-                    cursor: 'pointer', 
+                <Card
+                  sx={{
+                    p: 2,
+                    cursor: 'pointer',
                     minWidth: '200px',
                     backgroundColor: '#633394',
                     color: 'white',

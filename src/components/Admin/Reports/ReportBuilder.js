@@ -114,7 +114,7 @@ const chartColors = [
 
 function ReportBuilder({ onLogout }) {
     const tabs = [
-        { label: 'Home', path: '/home'},
+        { label: 'Home', path: '/home' },
         { label: 'Dashboard', path: '/dashboard' },
         { label: 'Assessment Overview', path: '/root-dashboard' },
         { label: '360 Degree Assessment', path: '/edit-assessments' },
@@ -375,9 +375,9 @@ function ReportBuilder({ onLogout }) {
 
     // Organization types and heads for sample data
     const organizationTypes = [
-        { 
-            id: 'church', 
-            name: 'Church', 
+        {
+            id: 'church',
+            name: 'Church',
             description: 'Church or religious organization',
             icon: <ChurchIcon />,
             heads: [
@@ -386,9 +386,9 @@ function ReportBuilder({ onLogout }) {
                 { id: 'pastor_david', name: 'Pastor David Brown', role: 'Senior Pastor', organization: 'First Baptist Church' }
             ]
         },
-        { 
-            id: 'institution', 
-            name: 'Educational Institution', 
+        {
+            id: 'institution',
+            name: 'Educational Institution',
             description: 'Theological education institution',
             icon: <SchoolIcon />,
             heads: [
@@ -397,9 +397,9 @@ function ReportBuilder({ onLogout }) {
                 { id: 'rector_james', name: 'Dr. James Wilson', role: 'Rector', organization: 'Christian University College' }
             ]
         },
-        { 
-            id: 'non_formal', 
-            name: 'Non-Formal Education', 
+        {
+            id: 'non_formal',
+            name: 'Non-Formal Education',
             description: 'Non-formal theological education provider',
             icon: <GroupIcon />,
             heads: [
@@ -517,9 +517,9 @@ function ReportBuilder({ onLogout }) {
             description: 'Compare survey responses across selected geographic regions',
             targetRole: 'all',
             config: {
-                dataScope: { 
-                    surveys: [], 
-                    sections: [], 
+                dataScope: {
+                    surveys: [],
+                    sections: [],
                     dateRange: { start: '', end: '' },
                     geography: { circles: [] }
                 },
@@ -546,7 +546,7 @@ function ReportBuilder({ onLogout }) {
     const loadAvailableData = async () => {
         try {
             setLoading(true);
-            
+
             if (testMode) {
                 // Load sample data in test mode
                 await loadSampleAvailableData();
@@ -555,15 +555,15 @@ function ReportBuilder({ onLogout }) {
                 // Fetch surveys and templates
                 const surveysResponse = await fetch('/api/survey-templates/available');
                 const surveysData = await surveysResponse.json();
-                
+
                 // Fetch organizations
                 const orgsResponse = await fetch('/api/organizations');
                 const orgsData = await orgsResponse.json();
-                
+
                 // Fetch users
                 const usersResponse = await fetch('/api/users');
                 const usersData = await usersResponse.json();
-                
+
                 // Extract geographic data from organizations
                 const continents = [...new Set(orgsData.map(org => org.geo_location?.continent).filter(Boolean))];
                 const countries = [...new Set(orgsData.map(org => org.geo_location?.country).filter(Boolean))];
@@ -589,25 +589,25 @@ function ReportBuilder({ onLogout }) {
     const loadSampleAvailableData = async () => {
         try {
             console.log('🔄 Loading sample data in test mode...');
-            
+
             // Load sample survey questions (this returns a nested object structure)
             const questionsData = await SampleDataService.loadSurveyQuestions();
             console.log('📋 Survey questions loaded:', questionsData);
-            
+
             // Load all sample responses to extract organization and user data
             const [churchResponses, institutionResponses, nonFormalResponses] = await Promise.all([
                 SampleDataService.loadChurchResponses(),
                 SampleDataService.loadInstitutionResponses(),
                 SampleDataService.loadNonFormalResponses()
             ]);
-            
+
             console.log('⛪ Church responses:', churchResponses.length);
             console.log('🏫 Institution responses:', institutionResponses.length);
             console.log('👥 Non-formal responses:', nonFormalResponses.length);
-            
+
             const allResponses = [...churchResponses, ...institutionResponses, ...nonFormalResponses];
             console.log('📊 Total responses loaded:', allResponses.length);
-            
+
             // Extract unique organizations from sample data
             const organizations = [
                 ...new Map(allResponses.map(r => [r.organization_name, {
@@ -621,7 +621,7 @@ function ReportBuilder({ onLogout }) {
                     }
                 }])).values()
             ];
-            
+
             // Extract unique users from sample data
             const users = [
                 ...new Map(allResponses.map(r => [r.respondent_name, {
@@ -631,7 +631,7 @@ function ReportBuilder({ onLogout }) {
                     organization: r.organization_name
                 }])).values()
             ];
-            
+
             // Extract all questions from the nested structure
             const extractQuestionsFromSurveyData = (surveyData) => {
                 const allQuestions = [];
@@ -652,10 +652,10 @@ function ReportBuilder({ onLogout }) {
                 });
                 return allQuestions;
             };
-            
+
             const allQuestions = extractQuestionsFromSurveyData(questionsData);
             console.log('❓ All questions extracted:', allQuestions.length);
-            
+
             // Create mock survey templates from the structured data
             const mockSurveys = [
                 {
@@ -680,18 +680,14 @@ function ReportBuilder({ onLogout }) {
                     questions: allQuestions.filter(q => q.survey_type?.includes('non-formal') || q.survey_type?.includes('Non-Formal'))
                 }
             ];
-            
-            console.log('📝 Mock surveys created:', mockSurveys);
-            console.log('🏢 Organizations extracted:', organizations);
-            console.log('👤 Users extracted:', users);
-            
+
             // Extract geographic data from sample responses
             const countries = SampleDataService.getUniqueCountries(allResponses);
             const continents = ['Africa']; // Sample data is primarily from Africa
             const regions = countries; // Use countries as regions for simplicity
-            
+
             console.log('🌍 Geographic data:', { countries, continents, regions });
-            
+
             const finalAvailableData = {
                 surveys: mockSurveys,
                 sections: extractSectionsFromSurveys(mockSurveys),
@@ -700,7 +696,7 @@ function ReportBuilder({ onLogout }) {
                 users: users,
                 geographicData: { continents, countries, regions }
             };
-            
+
             console.log('✅ Final available data set:', finalAvailableData);
             setAvailableData(finalAvailableData);
         } catch (error) {
@@ -762,7 +758,7 @@ function ReportBuilder({ onLogout }) {
         try {
             setLoading(true);
             setError('');
-            
+
             console.log('🚀 Starting report generation...');
             console.log('🔬 Test mode:', testMode);
             console.log('📊 Current configuration:', {
@@ -813,36 +809,36 @@ function ReportBuilder({ onLogout }) {
     const generateTestReport = async () => {
         try {
             console.log('🧪 Generating test report...');
-            
+
             let sampleData = [];
-            
+
             // Check if enhanced test mode filtering is active
             if (testModeFilters.selectedRole && testModeFilters.selectedUser) {
                 console.log('🎭 Using enhanced test mode with role/user filtering');
                 console.log('Selected role:', testModeFilters.selectedRole);
                 console.log('Selected user:', testModeFilters.selectedUser);
                 console.log('Selected survey:', testModeFilters.selectedSurvey);
-                
+
                 // Load data for specific user and survey
                 const userData = await SampleDataService.getUserSurveyData(
-                    testModeFilters.selectedUser, 
+                    testModeFilters.selectedUser,
                     testModeFilters.selectedSurvey
                 );
-                
+
                 if (userData.success) {
                     sampleData = userData.data.responses;
                     console.log('👤 User survey data loaded:', sampleData.length, 'responses');
-                    
+
                     // If comparison is enabled, load other users' data for comparison
                     if (testModeFilters.showComparison && testModeFilters.compareUsers.length > 0) {
                         console.log('🔄 Loading comparison data for other users...');
-                        
+
                         const comparisonData = await SampleDataService.getComparisonDataForRole(
                             testModeFilters.selectedRole,
                             testModeFilters.selectedUser,
                             testModeFilters.compareUsers
                         );
-                        
+
                         if (comparisonData.success) {
                             sampleData = [...sampleData, ...comparisonData.data.responses];
                             console.log('👥 Comparison data added:', comparisonData.data.responses.length, 'additional responses');
@@ -875,7 +871,7 @@ function ReportBuilder({ onLogout }) {
                 dimensions: selectedDimensions
             });
 
-                        // Generate sample report data based on selected metrics and dimensions
+            // Generate sample report data based on selected metrics and dimensions
             const processedData = SampleDataService.generateSampleReportData(
                 sampleData,
                 chartConfig.type,
@@ -886,10 +882,10 @@ function ReportBuilder({ onLogout }) {
             );
 
             console.log('📈 Processed report data:', processedData);
-            
+
             setReportData(processedData);
             setPreviewData(processDataForChart(processedData));
-            
+
             console.log('✅ Test report generated successfully');
         } catch (error) {
             console.error('❌ Error generating test report:', error);
@@ -1109,16 +1105,16 @@ function ReportBuilder({ onLogout }) {
 
         setSampleDataLoading(true);
         setSampleDataResults(null);
-        
+
         try {
             // Load specific organization data based on selection
             const results = await SampleDataService.loadOrganizationData(selectedOrganization, selectedOrganizationHead);
             setSampleDataResults(results);
             setSampleDataDialog(true);
-            
+
             // Refresh the report builder data after loading sample data
             await loadAvailableData();
-            
+
         } catch (error) {
             console.error('Error loading sample data:', error);
             setSampleDataResults({
@@ -1148,7 +1144,7 @@ function ReportBuilder({ onLogout }) {
     // Enhanced test mode handlers
     const handleTestModeRoleChange = async (role) => {
         console.log('🎭 Test mode role selected:', role);
-        
+
         setTestModeFilters(prev => ({
             ...prev,
             selectedRole: role,
@@ -1164,7 +1160,7 @@ function ReportBuilder({ onLogout }) {
             try {
                 const users = await SampleDataService.getUsersByRole(role);
                 console.log('👥 Users found for role', role, ':', users);
-                
+
                 setTestModeFilters(prev => ({
                     ...prev,
                     availableUsers: users
@@ -1177,7 +1173,7 @@ function ReportBuilder({ onLogout }) {
 
     const handleTestModeUserChange = async (userId) => {
         console.log('👤 Test mode user selected:', userId);
-        
+
         setTestModeFilters(prev => ({
             ...prev,
             selectedUser: userId,
@@ -1189,7 +1185,7 @@ function ReportBuilder({ onLogout }) {
             try {
                 const surveys = await SampleDataService.getSurveysByUser(userId);
                 console.log('📋 Surveys found for user', userId, ':', surveys);
-                
+
                 setTestModeFilters(prev => ({
                     ...prev,
                     availableSurveys: surveys
@@ -1202,7 +1198,7 @@ function ReportBuilder({ onLogout }) {
 
     const handleTestModeSurveyChange = (surveyId) => {
         console.log('📊 Test mode survey selected:', surveyId);
-        
+
         setTestModeFilters(prev => ({
             ...prev,
             selectedSurvey: surveyId
@@ -1211,7 +1207,7 @@ function ReportBuilder({ onLogout }) {
 
     const handleTestModeComparison = async () => {
         console.log('🔄 Loading test mode comparison data...');
-        
+
         if (!testModeFilters.selectedRole) {
             alert('Please select a role first');
             return;
@@ -1219,16 +1215,16 @@ function ReportBuilder({ onLogout }) {
 
         try {
             const otherUsers = await SampleDataService.getOtherUsersInRole(
-                testModeFilters.selectedRole, 
+                testModeFilters.selectedRole,
                 testModeFilters.selectedUser
             );
-            
+
             setTestModeFilters(prev => ({
                 ...prev,
                 compareUsers: otherUsers,
                 showComparison: true
             }));
-            
+
             console.log('👥 Comparison users loaded:', otherUsers);
         } catch (error) {
             console.error('Error loading comparison users:', error);
@@ -1293,7 +1289,7 @@ function ReportBuilder({ onLogout }) {
                         </BarChart>
                     </ResponsiveContainer>
                 );
-                
+
             case 'line':
                 return (
                     <ResponsiveContainer {...chartProps}>
@@ -1307,7 +1303,7 @@ function ReportBuilder({ onLogout }) {
                         </LineChart>
                     </ResponsiveContainer>
                 );
-                
+
             case 'pie':
                 return (
                     <ResponsiveContainer {...chartProps}>
@@ -1330,7 +1326,7 @@ function ReportBuilder({ onLogout }) {
                         </PieChart>
                     </ResponsiveContainer>
                 );
-                
+
             case 'table':
                 return (
                     <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
@@ -1387,9 +1383,9 @@ function ReportBuilder({ onLogout }) {
                             <RechartsTooltip />
                             <Legend />
                             {demographicCategories.map((category, index) => (
-                                <Bar 
-                                    key={category.id} 
-                                    dataKey={category.id} 
+                                <Bar
+                                    key={category.id}
+                                    dataKey={category.id}
                                     fill={chartColors[index % chartColors.length]}
                                     name={category.name}
                                 />
@@ -1431,11 +1427,11 @@ function ReportBuilder({ onLogout }) {
             case 'role_heatmap':
                 return (
                     <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
-                        <Box sx={{ 
-                            display: 'grid', 
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
-                            gap: 2, 
-                            p: 2 
+                        <Box sx={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                            gap: 2,
+                            p: 2
                         }}>
                             {previewData.map((item, index) => (
                                 <Box
@@ -1463,11 +1459,11 @@ function ReportBuilder({ onLogout }) {
 
             case 'kpi':
                 return (
-                    <Box sx={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-                        gap: 2, 
-                        p: 2 
+                    <Box sx={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                        gap: 2,
+                        p: 2
                     }}>
                         {previewData.map((item, index) => (
                             <Card key={index} sx={{ p: 2, textAlign: 'center' }}>
@@ -1543,7 +1539,7 @@ function ReportBuilder({ onLogout }) {
                         </LineChart>
                     </ResponsiveContainer>
                 );
-                
+
             default:
                 return <Typography>Unsupported chart type</Typography>;
         }
@@ -1552,13 +1548,13 @@ function ReportBuilder({ onLogout }) {
     return (
         <Box sx={{ minHeight: '100vh', backgroundColor: adminColors.background }}>
             <Navbar tabs={tabs} onLogout={onLogout} />
-            
+
             <Container maxWidth="xl" sx={{ mt: 4, pb: 4 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                     <Typography variant="h4" sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
                         Report Builder
                     </Typography>
-                    
+
                     {/* Test Mode Toggle */}
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -1567,7 +1563,7 @@ function ReportBuilder({ onLogout }) {
                                 Backend Data
                             </Typography>
                         </Box>
-                        
+
                         <Button
                             variant="outlined"
                             onClick={() => setTestMode(!testMode)}
@@ -1588,7 +1584,7 @@ function ReportBuilder({ onLogout }) {
                         >
                             {testMode ? 'Test Mode' : 'Normal Mode'}
                         </Button>
-                        
+
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <StorageIcon sx={{ color: testMode ? '#4caf50' : '#ccc' }} />
                             <Typography variant="body2" sx={{ color: testMode ? '#4caf50' : '#ccc', fontWeight: 500 }}>
@@ -1597,7 +1593,7 @@ function ReportBuilder({ onLogout }) {
                         </Box>
                     </Box>
                 </Box>
-                
+
                 {error && (
                     <Alert severity="error" sx={{ mb: 2 }}>
                         {error}
@@ -1608,7 +1604,7 @@ function ReportBuilder({ onLogout }) {
                 {testMode && (
                     <Alert severity="info" sx={{ mb: 2 }}>
                         <Typography variant="body2">
-                            <strong>Enhanced Test Mode Active:</strong> Select a role, user, and survey to test role-based comparisons. 
+                            <strong>Enhanced Test Mode Active:</strong> Select a role, user, and survey to test role-based comparisons.
                             Load comparison users to compare survey responses between users with the same role.
                         </Typography>
                     </Alert>
@@ -1616,11 +1612,11 @@ function ReportBuilder({ onLogout }) {
 
                 {/* Sub-tabs */}
                 <Paper sx={{ mb: 3 }}>
-                    <Tabs 
-                        value={activeSubTab} 
+                    <Tabs
+                        value={activeSubTab}
                         onChange={(e, v) => setActiveSubTab(v)}
                         variant="standard"
-                        sx={{ 
+                        sx={{
                             mb: 3,
                             '& .MuiTab-root': {
                                 color: adminColors.primary,
@@ -1666,13 +1662,13 @@ function ReportBuilder({ onLogout }) {
                                     {/* Quick Start Guide */}
                                     <Alert severity="info" sx={{ mb: 2 }}>
                                         <Typography variant="body2">
-                                            <strong>Quick Start:</strong> 
+                                            <strong>Quick Start:</strong>
                                             {testMode ? (
                                                 <span>
-                                                    1️⃣ Select Role → User → Survey in "Test Mode Filtering" → 
-                                                    2️⃣ (Optional) Load comparison users → 
-                                                    3️⃣ Choose metrics in "Metrics" → 
-                                                    4️⃣ Pick dimensions in "Dimensions" → 
+                                                    1️⃣ Select Role → User → Survey in "Test Mode Filtering" →
+                                                    2️⃣ (Optional) Load comparison users →
+                                                    3️⃣ Choose metrics in "Metrics" →
+                                                    4️⃣ Pick dimensions in "Dimensions" →
                                                     5️⃣ Click "Generate Test Report" button
                                                 </span>
                                             ) : (
@@ -1682,7 +1678,7 @@ function ReportBuilder({ onLogout }) {
                                             )}
                                         </Typography>
                                     </Alert>
-                                    
+
                                     <Tabs value={currentTab} onChange={(e, v) => setCurrentTab(v)} orientation="vertical">
                                         <Tab label="Data Scope" />
                                         <Tab label="Metrics" />
@@ -1694,261 +1690,593 @@ function ReportBuilder({ onLogout }) {
                                 </CardContent>
                             </Card>
 
-                        {/* Configuration Panels */}
-                        <Box sx={{ mt: 2 }}>
-                            {/* Enhanced Test Mode Filtering */}
-                            {testMode && (
-                                <Card sx={{ mb: 2 }}>
-                                    <CardHeader title="🧪 Test Mode Filtering" />
-                                    <CardContent>
-                                        <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-                                            Select a role, user, and survey to test role-based comparisons with sample data.
-                                        </Typography>
+                            {/* Configuration Panels */}
+                            <Box sx={{ mt: 2 }}>
+                                {/* Enhanced Test Mode Filtering */}
+                                {testMode && (
+                                    <Card sx={{ mb: 2 }}>
+                                        <CardHeader title="🧪 Test Mode Filtering" />
+                                        <CardContent>
+                                            <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                                                Select a role, user, and survey to test role-based comparisons with sample data.
+                                            </Typography>
 
-                                        <FormControl fullWidth sx={{ mb: 2 }}>
-                                            <InputLabel>Select Role</InputLabel>
-                                            <Select
-                                                value={testModeFilters.selectedRole}
-                                                onChange={(e) => handleTestModeRoleChange(e.target.value)}
-                                                label="Select Role"
-                                            >
-                                                <MenuItem value="pastor">Pastor</MenuItem>
-                                                <MenuItem value="president">Institution President</MenuItem>
-                                                <MenuItem value="ministry_leader">Ministry Leader</MenuItem>
-                                                <MenuItem value="faculty">Faculty Member</MenuItem>
-                                                <MenuItem value="administrator">Administrator</MenuItem>
-                                            </Select>
-                                        </FormControl>
-
-                                        {testModeFilters.selectedRole && (
                                             <FormControl fullWidth sx={{ mb: 2 }}>
-                                                <InputLabel>Select User</InputLabel>
+                                                <InputLabel>Select Role</InputLabel>
                                                 <Select
-                                                    value={testModeFilters.selectedUser}
-                                                    onChange={(e) => handleTestModeUserChange(e.target.value)}
-                                                    label="Select User"
+                                                    value={testModeFilters.selectedRole}
+                                                    onChange={(e) => handleTestModeRoleChange(e.target.value)}
+                                                    label="Select Role"
                                                 >
-                                                    {testModeFilters.availableUsers.map((user) => (
-                                                        <MenuItem key={user.id} value={user.id}>
-                                                            <Box>
-                                                                <Typography variant="body2" fontWeight="bold">
-                                                                    {user.name}
-                                                                </Typography>
-                                                                <Typography variant="caption" color="textSecondary">
-                                                                    {user.organization} • {user.location}
-                                                                </Typography>
-                                                            </Box>
-                                                        </MenuItem>
-                                                    ))}
+                                                    <MenuItem value="pastor">Pastor</MenuItem>
+                                                    <MenuItem value="president">Institution President</MenuItem>
+                                                    <MenuItem value="ministry_leader">Ministry Leader</MenuItem>
+                                                    <MenuItem value="faculty">Faculty Member</MenuItem>
+                                                    <MenuItem value="administrator">Administrator</MenuItem>
                                                 </Select>
                                             </FormControl>
-                                        )}
 
-                                        {testModeFilters.selectedUser && (
-                                            <FormControl fullWidth sx={{ mb: 2 }}>
-                                                <InputLabel>Select Survey</InputLabel>
-                                                <Select
-                                                    value={testModeFilters.selectedSurvey}
-                                                    onChange={(e) => handleTestModeSurveyChange(e.target.value)}
-                                                    label="Select Survey"
-                                                >
-                                                    {testModeFilters.availableSurveys.map((survey) => (
-                                                        <MenuItem key={survey.id} value={survey.id}>
-                                                            <Box>
-                                                                <Typography variant="body2" fontWeight="bold">
-                                                                    {survey.title}
-                                                                </Typography>
-                                                                <Typography variant="caption" color="textSecondary">
-                                                                    {survey.responses} responses • {survey.completion_rate}% complete
-                                                                </Typography>
+                                            {testModeFilters.selectedRole && (
+                                                <FormControl fullWidth sx={{ mb: 2 }}>
+                                                    <InputLabel>Select User</InputLabel>
+                                                    <Select
+                                                        value={testModeFilters.selectedUser}
+                                                        onChange={(e) => handleTestModeUserChange(e.target.value)}
+                                                        label="Select User"
+                                                    >
+                                                        {testModeFilters.availableUsers.map((user) => (
+                                                            <MenuItem key={user.id} value={user.id}>
+                                                                <Box>
+                                                                    <Typography variant="body2" fontWeight="bold">
+                                                                        {user.name}
+                                                                    </Typography>
+                                                                    <Typography variant="caption" color="textSecondary">
+                                                                        {user.organization} • {user.location}
+                                                                    </Typography>
+                                                                </Box>
+                                                            </MenuItem>
+                                                        ))}
+                                                    </Select>
+                                                </FormControl>
+                                            )}
+
+                                            {testModeFilters.selectedUser && (
+                                                <FormControl fullWidth sx={{ mb: 2 }}>
+                                                    <InputLabel>Select Survey</InputLabel>
+                                                    <Select
+                                                        value={testModeFilters.selectedSurvey}
+                                                        onChange={(e) => handleTestModeSurveyChange(e.target.value)}
+                                                        label="Select Survey"
+                                                    >
+                                                        {testModeFilters.availableSurveys.map((survey) => (
+                                                            <MenuItem key={survey.id} value={survey.id}>
+                                                                <Box>
+                                                                    <Typography variant="body2" fontWeight="bold">
+                                                                        {survey.title}
+                                                                    </Typography>
+                                                                    <Typography variant="caption" color="textSecondary">
+                                                                        {survey.responses} responses • {survey.completion_rate}% complete
+                                                                    </Typography>
+                                                                </Box>
+                                                            </MenuItem>
+                                                        ))}
+                                                    </Select>
+                                                </FormControl>
+                                            )}
+
+                                            {testModeFilters.selectedSurvey && (
+                                                <Box>
+                                                    <Button
+                                                        variant="outlined"
+                                                        onClick={handleTestModeComparison}
+                                                        sx={{ mb: 2 }}
+                                                        startIcon={<GroupIcon />}
+                                                    >
+                                                        Load Other {testModeFilters.selectedRole}s for Comparison
+                                                    </Button>
+
+                                                    {testModeFilters.showComparison && testModeFilters.compareUsers.length > 0 && (
+                                                        <Alert severity="success" sx={{ mt: 2 }}>
+                                                            <Typography variant="body2">
+                                                                <strong>Comparison Ready!</strong> Loaded {testModeFilters.compareUsers.length} other {testModeFilters.selectedRole}s for comparison:
+                                                            </Typography>
+                                                            <Box sx={{ mt: 1 }}>
+                                                                {testModeFilters.compareUsers.map((user) => (
+                                                                    <Chip
+                                                                        key={user.id}
+                                                                        label={user.name}
+                                                                        size="small"
+                                                                        sx={{ mr: 1, mb: 1 }}
+                                                                    />
+                                                                ))}
                                                             </Box>
-                                                        </MenuItem>
-                                                    ))}
-                                                </Select>
-                                            </FormControl>
-                                        )}
+                                                        </Alert>
+                                                    )}
+                                                </Box>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                )}
 
-                                        {testModeFilters.selectedSurvey && (
-                                            <Box>
-                                                <Button
-                                                    variant="outlined"
-                                                    onClick={handleTestModeComparison}
-                                                    sx={{ mb: 2 }}
-                                                    startIcon={<GroupIcon />}
-                                                >
-                                                    Load Other {testModeFilters.selectedRole}s for Comparison
-                                                </Button>
-
-                                                {testModeFilters.showComparison && testModeFilters.compareUsers.length > 0 && (
-                                                    <Alert severity="success" sx={{ mt: 2 }}>
-                                                        <Typography variant="body2">
-                                                            <strong>Comparison Ready!</strong> Loaded {testModeFilters.compareUsers.length} other {testModeFilters.selectedRole}s for comparison:
-                                                        </Typography>
-                                                        <Box sx={{ mt: 1 }}>
-                                                            {testModeFilters.compareUsers.map((user) => (
-                                                                <Chip
-                                                                    key={user.id}
-                                                                    label={user.name}
-                                                                    size="small"
-                                                                    sx={{ mr: 1, mb: 1 }}
-                                                                />
+                                {currentTab === 0 && (
+                                    <Card>
+                                        <CardHeader title="Data Scope" />
+                                        <CardContent>
+                                            <FormControl fullWidth sx={{ mb: 2 }}>
+                                                <InputLabel>Select Surveys</InputLabel>
+                                                <Select
+                                                    multiple
+                                                    value={dataScope.surveys}
+                                                    onChange={(e) => setDataScope(prev => ({ ...prev, surveys: e.target.value }))}
+                                                    renderValue={(selected) => (
+                                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                            {selected.map((value) => (
+                                                                <Chip key={value} label={
+                                                                    availableData.surveys.find(s => s.id === value)?.version_name || value
+                                                                } size="small" />
                                                             ))}
                                                         </Box>
-                                                    </Alert>
-                                                )}
-                                            </Box>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            )}
+                                                    )}
+                                                >
+                                                    {availableData.surveys.map((survey) => (
+                                                        <MenuItem key={survey.id} value={survey.id}>
+                                                            {survey.version_name}
+                                                        </MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </FormControl>
 
-                            {currentTab === 0 && (
-                                <Card>
-                                    <CardHeader title="Data Scope" />
-                                    <CardContent>
-                                        <FormControl fullWidth sx={{ mb: 2 }}>
-                                            <InputLabel>Select Surveys</InputLabel>
-                                            <Select
-                                                multiple
-                                                value={dataScope.surveys}
-                                                onChange={(e) => setDataScope(prev => ({ ...prev, surveys: e.target.value }))}
-                                                renderValue={(selected) => (
+                                            <TextField
+                                                fullWidth
+                                                label="Start Date"
+                                                type="date"
+                                                value={dataScope.dateRange.start}
+                                                onChange={(e) => setDataScope(prev => ({
+                                                    ...prev,
+                                                    dateRange: { ...prev.dateRange, start: e.target.value }
+                                                }))}
+                                                InputLabelProps={{ shrink: true }}
+                                                sx={{ mb: 2 }}
+                                            />
+
+                                            <TextField
+                                                fullWidth
+                                                label="End Date"
+                                                type="date"
+                                                value={dataScope.dateRange.end}
+                                                onChange={(e) => setDataScope(prev => ({
+                                                    ...prev,
+                                                    dateRange: { ...prev.dateRange, end: e.target.value }
+                                                }))}
+                                                InputLabelProps={{ shrink: true }}
+                                                sx={{ mb: 3 }}
+                                            />
+
+                                            <Typography variant="h6" gutterBottom sx={{ mt: 2, mb: 2 }}>
+                                                Geographic Filtering
+                                            </Typography>
+
+                                            <Button
+                                                fullWidth
+                                                variant="outlined"
+                                                startIcon={<MapIcon />}
+                                                onClick={openMapDialog}
+                                                sx={{ mb: 2 }}
+                                            >
+                                                Select Geographic Regions on Map
+                                            </Button>
+
+                                            {dataScope.geography.circles && dataScope.geography.circles.length > 0 && (
+                                                <Box sx={{ mb: 2 }}>
+                                                    <Typography variant="body2" color="textSecondary" gutterBottom>
+                                                        Selected Regions ({dataScope.geography.circles.length}):
+                                                    </Typography>
                                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                        {selected.map((value) => (
-                                                            <Chip key={value} label={
-                                                                availableData.surveys.find(s => s.id === value)?.version_name || value
-                                                            } size="small" />
+                                                        {dataScope.geography.circles.map((circle) => (
+                                                            <Chip
+                                                                key={circle.id}
+                                                                label={`${circle.name} (${circle.radius > 1000 ?
+                                                                    `${(circle.radius / 1000).toFixed(1)}km` :
+                                                                    `${circle.radius}m`})`}
+                                                                size="small"
+                                                                icon={<LocationOnIcon />}
+                                                                onDelete={() => {
+                                                                    const updatedCircles = dataScope.geography.circles.filter(c => c.id !== circle.id);
+                                                                    handleCirclesUpdate(updatedCircles);
+                                                                }}
+                                                            />
                                                         ))}
                                                     </Box>
-                                                )}
-                                            >
-                                                {availableData.surveys.map((survey) => (
-                                                    <MenuItem key={survey.id} value={survey.id}>
-                                                        {survey.version_name}
-                                                    </MenuItem>
-                                                ))}
-                                            </Select>
-                                        </FormControl>
-
-                                        <TextField
-                                            fullWidth
-                                            label="Start Date"
-                                            type="date"
-                                            value={dataScope.dateRange.start}
-                                            onChange={(e) => setDataScope(prev => ({
-                                                ...prev,
-                                                dateRange: { ...prev.dateRange, start: e.target.value }
-                                            }))}
-                                            InputLabelProps={{ shrink: true }}
-                                            sx={{ mb: 2 }}
-                                        />
-
-                                        <TextField
-                                            fullWidth
-                                            label="End Date"
-                                            type="date"
-                                            value={dataScope.dateRange.end}
-                                            onChange={(e) => setDataScope(prev => ({
-                                                ...prev,
-                                                dateRange: { ...prev.dateRange, end: e.target.value }
-                                            }))}
-                                            InputLabelProps={{ shrink: true }}
-                                            sx={{ mb: 3 }}
-                                        />
-
-                                        <Typography variant="h6" gutterBottom sx={{ mt: 2, mb: 2 }}>
-                                            Geographic Filtering
-                                        </Typography>
-
-                                        <Button
-                                            fullWidth
-                                            variant="outlined"
-                                            startIcon={<MapIcon />}
-                                            onClick={openMapDialog}
-                                            sx={{ mb: 2 }}
-                                        >
-                                            Select Geographic Regions on Map
-                                        </Button>
-
-                                        {dataScope.geography.circles && dataScope.geography.circles.length > 0 && (
-                                            <Box sx={{ mb: 2 }}>
-                                                <Typography variant="body2" color="textSecondary" gutterBottom>
-                                                    Selected Regions ({dataScope.geography.circles.length}):
-                                                </Typography>
-                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                    {dataScope.geography.circles.map((circle) => (
-                                                        <Chip
-                                                            key={circle.id}
-                                                            label={`${circle.name} (${circle.radius > 1000 ? 
-                                                                `${(circle.radius / 1000).toFixed(1)}km` : 
-                                                                `${circle.radius}m`})`}
-                                                            size="small"
-                                                            icon={<LocationOnIcon />}
-                                                            onDelete={() => {
-                                                                const updatedCircles = dataScope.geography.circles.filter(c => c.id !== circle.id);
-                                                                handleCirclesUpdate(updatedCircles);
-                                                            }}
-                                                        />
-                                                    ))}
                                                 </Box>
-                                            </Box>
-                                        )}
+                                            )}
 
-                                        <Divider sx={{ my: 3 }} />
+                                            <Divider sx={{ my: 3 }} />
 
-                                        <Typography variant="h6" gutterBottom sx={{ mt: 2, mb: 2 }}>
-                                            Individual Response Filtering
-                                        </Typography>
+                                            <Typography variant="h6" gutterBottom sx={{ mt: 2, mb: 2 }}>
+                                                Individual Response Filtering
+                                            </Typography>
 
-                                        <FormControlLabel
-                                            control={
-                                                <Checkbox
-                                                    checked={dataScope.individualFilters.includeIndividualResponses}
-                                                    onChange={(e) => setDataScope(prev => ({
-                                                        ...prev,
-                                                        individualFilters: {
-                                                            ...prev.individualFilters,
-                                                            includeIndividualResponses: e.target.checked
+                                            <FormControlLabel
+                                                control={
+                                                    <Checkbox
+                                                        checked={dataScope.individualFilters.includeIndividualResponses}
+                                                        onChange={(e) => setDataScope(prev => ({
+                                                            ...prev,
+                                                            individualFilters: {
+                                                                ...prev.individualFilters,
+                                                                includeIndividualResponses: e.target.checked
+                                                            }
+                                                        }))}
+                                                    />
+                                                }
+                                                label="Include Individual Response Analysis"
+                                                sx={{ mb: 2 }}
+                                            />
+
+                                            {dataScope.individualFilters.includeIndividualResponses && (
+                                                <Box sx={{ pl: 2 }}>
+                                                    <FormControlLabel
+                                                        control={
+                                                            <Checkbox
+                                                                checked={dataScope.individualFilters.filterByRole}
+                                                                onChange={(e) => setDataScope(prev => ({
+                                                                    ...prev,
+                                                                    individualFilters: {
+                                                                        ...prev.individualFilters,
+                                                                        filterByRole: e.target.checked
+                                                                    }
+                                                                }))}
+                                                            />
                                                         }
-                                                    }))}
-                                                />
-                                            }
-                                            label="Include Individual Response Analysis"
-                                            sx={{ mb: 2 }}
-                                        />
+                                                        label="Filter by Role"
+                                                        sx={{ mb: 1 }}
+                                                    />
 
-                                        {dataScope.individualFilters.includeIndividualResponses && (
-                                            <Box sx={{ pl: 2 }}>
-                                                <FormControlLabel
-                                                    control={
-                                                        <Checkbox
-                                                            checked={dataScope.individualFilters.filterByRole}
-                                                            onChange={(e) => setDataScope(prev => ({
-                                                                ...prev,
-                                                                individualFilters: {
-                                                                    ...prev.individualFilters,
-                                                                    filterByRole: e.target.checked
-                                                                }
-                                                            }))}
-                                                        />
-                                                    }
-                                                    label="Filter by Role"
-                                                    sx={{ mb: 1 }}
-                                                />
+                                                    {dataScope.individualFilters.filterByRole && (
+                                                        <FormControl fullWidth sx={{ mb: 2 }}>
+                                                            <InputLabel>Select Roles</InputLabel>
+                                                            <Select
+                                                                multiple
+                                                                value={dataScope.individualFilters.selectedRoles}
+                                                                onChange={(e) => setDataScope(prev => ({
+                                                                    ...prev,
+                                                                    individualFilters: {
+                                                                        ...prev.individualFilters,
+                                                                        selectedRoles: e.target.value
+                                                                    }
+                                                                }))}
+                                                                renderValue={(selected) => (
+                                                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                                        {selected.map((value) => (
+                                                                            <Chip key={value} label={
+                                                                                userRoles.find(r => r.id === value)?.name || value
+                                                                            } size="small" />
+                                                                        ))}
+                                                                    </Box>
+                                                                )}
+                                                            >
+                                                                {userRoles.map((role) => (
+                                                                    <MenuItem key={role.id} value={role.id}>
+                                                                        {role.name}
+                                                                    </MenuItem>
+                                                                ))}
+                                                            </Select>
+                                                        </FormControl>
+                                                    )}
 
-                                                {dataScope.individualFilters.filterByRole && (
+                                                    <FormControlLabel
+                                                        control={
+                                                            <Checkbox
+                                                                checked={dataScope.individualFilters.filterByOrganization}
+                                                                onChange={(e) => setDataScope(prev => ({
+                                                                    ...prev,
+                                                                    individualFilters: {
+                                                                        ...prev.individualFilters,
+                                                                        filterByOrganization: e.target.checked
+                                                                    }
+                                                                }))}
+                                                            />
+                                                        }
+                                                        label="Filter by Organization"
+                                                        sx={{ mb: 1 }}
+                                                    />
+
+                                                    {dataScope.individualFilters.filterByOrganization && (
+                                                        <FormControl fullWidth sx={{ mb: 2 }}>
+                                                            <InputLabel>Select Organizations</InputLabel>
+                                                            <Select
+                                                                multiple
+                                                                value={dataScope.individualFilters.selectedOrganizations}
+                                                                onChange={(e) => setDataScope(prev => ({
+                                                                    ...prev,
+                                                                    individualFilters: {
+                                                                        ...prev.individualFilters,
+                                                                        selectedOrganizations: e.target.value
+                                                                    }
+                                                                }))}
+                                                                renderValue={(selected) => (
+                                                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                                        {selected.map((value) => (
+                                                                            <Chip key={value} label={value} size="small" />
+                                                                        ))}
+                                                                    </Box>
+                                                                )}
+                                                            >
+                                                                {availableData.organizations.map((org) => (
+                                                                    <MenuItem key={org.id} value={org.name}>
+                                                                        {org.name}
+                                                                    </MenuItem>
+                                                                ))}
+                                                            </Select>
+                                                        </FormControl>
+                                                    )}
+
+                                                    <FormControlLabel
+                                                        control={
+                                                            <Checkbox
+                                                                checked={dataScope.individualFilters.filterByDemographics}
+                                                                onChange={(e) => setDataScope(prev => ({
+                                                                    ...prev,
+                                                                    individualFilters: {
+                                                                        ...prev.individualFilters,
+                                                                        filterByDemographics: e.target.checked
+                                                                    }
+                                                                }))}
+                                                            />
+                                                        }
+                                                        label="Filter by Demographics"
+                                                        sx={{ mb: 1 }}
+                                                    />
+
+                                                    {dataScope.individualFilters.filterByDemographics && (
+                                                        <Box sx={{ pl: 2, mb: 2 }}>
+                                                            <Typography variant="body2" color="textSecondary" gutterBottom>
+                                                                Age Range
+                                                            </Typography>
+                                                            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                                                                <TextField
+                                                                    label="Min Age"
+                                                                    type="number"
+                                                                    size="small"
+                                                                    value={dataScope.individualFilters.ageRange.min}
+                                                                    onChange={(e) => setDataScope(prev => ({
+                                                                        ...prev,
+                                                                        individualFilters: {
+                                                                            ...prev.individualFilters,
+                                                                            ageRange: {
+                                                                                ...prev.individualFilters.ageRange,
+                                                                                min: e.target.value
+                                                                            }
+                                                                        }
+                                                                    }))}
+                                                                />
+                                                                <TextField
+                                                                    label="Max Age"
+                                                                    type="number"
+                                                                    size="small"
+                                                                    value={dataScope.individualFilters.ageRange.max}
+                                                                    onChange={(e) => setDataScope(prev => ({
+                                                                        ...prev,
+                                                                        individualFilters: {
+                                                                            ...prev.individualFilters,
+                                                                            ageRange: {
+                                                                                ...prev.individualFilters.ageRange,
+                                                                                max: e.target.value
+                                                                            }
+                                                                        }
+                                                                    }))}
+                                                                />
+                                                            </Box>
+
+                                                            <Typography variant="body2" color="textSecondary" gutterBottom>
+                                                                Experience Range (Years)
+                                                            </Typography>
+                                                            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                                                                <TextField
+                                                                    label="Min Experience"
+                                                                    type="number"
+                                                                    size="small"
+                                                                    value={dataScope.individualFilters.experienceRange.min}
+                                                                    onChange={(e) => setDataScope(prev => ({
+                                                                        ...prev,
+                                                                        individualFilters: {
+                                                                            ...prev.individualFilters,
+                                                                            experienceRange: {
+                                                                                ...prev.individualFilters.experienceRange,
+                                                                                min: e.target.value
+                                                                            }
+                                                                        }
+                                                                    }))}
+                                                                />
+                                                                <TextField
+                                                                    label="Max Experience"
+                                                                    type="number"
+                                                                    size="small"
+                                                                    value={dataScope.individualFilters.experienceRange.max}
+                                                                    onChange={(e) => setDataScope(prev => ({
+                                                                        ...prev,
+                                                                        individualFilters: {
+                                                                            ...prev.individualFilters,
+                                                                            experienceRange: {
+                                                                                ...prev.individualFilters.experienceRange,
+                                                                                max: e.target.value
+                                                                            }
+                                                                        }
+                                                                    }))}
+                                                                />
+                                                            </Box>
+
+                                                            <FormControl fullWidth sx={{ mb: 2 }}>
+                                                                <InputLabel>Education Levels</InputLabel>
+                                                                <Select
+                                                                    multiple
+                                                                    value={dataScope.individualFilters.educationLevels}
+                                                                    onChange={(e) => setDataScope(prev => ({
+                                                                        ...prev,
+                                                                        individualFilters: {
+                                                                            ...prev.individualFilters,
+                                                                            educationLevels: e.target.value
+                                                                        }
+                                                                    }))}
+                                                                    renderValue={(selected) => (
+                                                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                                            {selected.map((value) => (
+                                                                                <Chip key={value} label={value} size="small" />
+                                                                            ))}
+                                                                        </Box>
+                                                                    )}
+                                                                >
+                                                                    {['High School', 'Certificate', 'Diploma', 'Bachelor', 'Master', 'PhD', 'Other'].map((level) => (
+                                                                        <MenuItem key={level} value={level}>
+                                                                            {level}
+                                                                        </MenuItem>
+                                                                    ))}
+                                                                </Select>
+                                                            </FormControl>
+                                                        </Box>
+                                                    )}
+
+                                                    <FormControlLabel
+                                                        control={
+                                                            <Checkbox
+                                                                checked={dataScope.individualFilters.compareAcrossIndividuals}
+                                                                onChange={(e) => setDataScope(prev => ({
+                                                                    ...prev,
+                                                                    individualFilters: {
+                                                                        ...prev.individualFilters,
+                                                                        compareAcrossIndividuals: e.target.checked
+                                                                    }
+                                                                }))}
+                                                            />
+                                                        }
+                                                        label="Compare Across Individuals"
+                                                        sx={{ mb: 1 }}
+                                                    />
+
+                                                    {dataScope.individualFilters.compareAcrossIndividuals && (
+                                                        <Alert severity="info" sx={{ mt: 1 }}>
+                                                            <Typography variant="body2">
+                                                                This will compare individual responses within the same survey,
+                                                                allowing you to see how different people answered the same questions.
+                                                            </Typography>
+                                                        </Alert>
+                                                    )}
+                                                </Box>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                )}
+
+                                {currentTab === 1 && (
+                                    <Card>
+                                        <CardHeader title="Select Metrics" />
+                                        <CardContent>
+                                            <FormGroup>
+                                                {metrics.map((metric) => (
+                                                    <FormControlLabel
+                                                        key={metric.id}
+                                                        control={
+                                                            <Checkbox
+                                                                checked={selectedMetrics.includes(metric.id)}
+                                                                onChange={(e) => {
+                                                                    if (e.target.checked) {
+                                                                        setSelectedMetrics(prev => [...prev, metric.id]);
+                                                                    } else {
+                                                                        setSelectedMetrics(prev => prev.filter(m => m !== metric.id));
+                                                                    }
+                                                                }}
+                                                            />
+                                                        }
+                                                        label={
+                                                            <Box>
+                                                                <Typography variant="body2" fontWeight="bold">
+                                                                    {metric.name}
+                                                                </Typography>
+                                                                <Typography variant="caption" color="textSecondary">
+                                                                    {metric.description}
+                                                                </Typography>
+                                                            </Box>
+                                                        }
+                                                    />
+                                                ))}
+                                            </FormGroup>
+                                        </CardContent>
+                                    </Card>
+                                )}
+
+                                {currentTab === 2 && (
+                                    <Card>
+                                        <CardHeader title="Select Dimensions" />
+                                        <CardContent>
+                                            <FormGroup>
+                                                {dimensions.map((dimension) => (
+                                                    <FormControlLabel
+                                                        key={dimension.id}
+                                                        control={
+                                                            <Checkbox
+                                                                checked={selectedDimensions.includes(dimension.id)}
+                                                                onChange={(e) => {
+                                                                    if (e.target.checked) {
+                                                                        setSelectedDimensions(prev => [...prev, dimension.id]);
+                                                                    } else {
+                                                                        setSelectedDimensions(prev => prev.filter(d => d !== dimension.id));
+                                                                    }
+                                                                }}
+                                                            />
+                                                        }
+                                                        label={
+                                                            <Box>
+                                                                <Typography variant="body2" fontWeight="bold">
+                                                                    {dimension.name}
+                                                                </Typography>
+                                                                <Typography variant="caption" color="textSecondary">
+                                                                    {dimension.description}
+                                                                </Typography>
+                                                            </Box>
+                                                        }
+                                                    />
+                                                ))}
+                                            </FormGroup>
+                                        </CardContent>
+                                    </Card>
+                                )}
+
+                                {currentTab === 3 && (
+                                    <Card>
+                                        <CardHeader title="Role-Based Comparison" />
+                                        <CardContent>
+                                            <FormControlLabel
+                                                control={
+                                                    <Checkbox
+                                                        checked={roleComparison.enabled}
+                                                        onChange={(e) => setRoleComparison(prev => ({ ...prev, enabled: e.target.checked }))}
+                                                    />
+                                                }
+                                                label="Enable Role-Based Comparison"
+                                                sx={{ mb: 2 }}
+                                            />
+
+                                            {roleComparison.enabled && (
+                                                <>
                                                     <FormControl fullWidth sx={{ mb: 2 }}>
-                                                        <InputLabel>Select Roles</InputLabel>
+                                                        <InputLabel>Comparison Mode</InputLabel>
+                                                        <Select
+                                                            value={roleComparison.comparisonMode}
+                                                            onChange={(e) => setRoleComparison(prev => ({ ...prev, comparisonMode: e.target.value }))}
+                                                        >
+                                                            <MenuItem value="within_role">Compare Within Same Role</MenuItem>
+                                                            <MenuItem value="across_roles">Compare Across Different Roles</MenuItem>
+                                                            <MenuItem value="role_vs_average">Compare Role vs Overall Average</MenuItem>
+                                                            <MenuItem value="cross_regional">Compare Same Role Across Regions</MenuItem>
+                                                        </Select>
+                                                    </FormControl>
+
+                                                    <FormControl fullWidth sx={{ mb: 2 }}>
+                                                        <InputLabel>Select Roles to Compare</InputLabel>
                                                         <Select
                                                             multiple
-                                                            value={dataScope.individualFilters.selectedRoles}
-                                                            onChange={(e) => setDataScope(prev => ({
-                                                                ...prev,
-                                                                individualFilters: {
-                                                                    ...prev.individualFilters,
-                                                                    selectedRoles: e.target.value
-                                                                }
-                                                            }))}
+                                                            value={roleComparison.selectedRoles}
+                                                            onChange={(e) => setRoleComparison(prev => ({ ...prev, selectedRoles: e.target.value }))}
                                                             renderValue={(selected) => (
                                                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                                                     {selected.map((value) => (
@@ -1961,167 +2289,88 @@ function ReportBuilder({ onLogout }) {
                                                         >
                                                             {userRoles.map((role) => (
                                                                 <MenuItem key={role.id} value={role.id}>
-                                                                    {role.name}
+                                                                    <Box>
+                                                                        <Typography variant="body2" fontWeight="bold">
+                                                                            {role.name}
+                                                                        </Typography>
+                                                                        <Typography variant="caption" color="textSecondary">
+                                                                            {role.description}
+                                                                        </Typography>
+                                                                    </Box>
                                                                 </MenuItem>
                                                             ))}
                                                         </Select>
                                                     </FormControl>
-                                                )}
 
-                                                <FormControlLabel
-                                                    control={
-                                                        <Checkbox
-                                                            checked={dataScope.individualFilters.filterByOrganization}
-                                                            onChange={(e) => setDataScope(prev => ({
-                                                                ...prev,
-                                                                individualFilters: {
-                                                                    ...prev.individualFilters,
-                                                                    filterByOrganization: e.target.checked
-                                                                }
-                                                            }))}
-                                                        />
-                                                    }
-                                                    label="Filter by Organization"
-                                                    sx={{ mb: 1 }}
-                                                />
-
-                                                {dataScope.individualFilters.filterByOrganization && (
                                                     <FormControl fullWidth sx={{ mb: 2 }}>
-                                                        <InputLabel>Select Organizations</InputLabel>
+                                                        <InputLabel>Demographics to Include</InputLabel>
                                                         <Select
                                                             multiple
-                                                            value={dataScope.individualFilters.selectedOrganizations}
-                                                            onChange={(e) => setDataScope(prev => ({
-                                                                ...prev,
-                                                                individualFilters: {
-                                                                    ...prev.individualFilters,
-                                                                    selectedOrganizations: e.target.value
-                                                                }
-                                                            }))}
+                                                            value={roleComparison.selectedDemographics}
+                                                            onChange={(e) => setRoleComparison(prev => ({ ...prev, selectedDemographics: e.target.value }))}
                                                             renderValue={(selected) => (
                                                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                                                     {selected.map((value) => (
-                                                                        <Chip key={value} label={value} size="small" />
+                                                                        <Chip key={value} label={
+                                                                            demographicCategories.find(d => d.id === value)?.name || value
+                                                                        } size="small" />
                                                                     ))}
                                                                 </Box>
                                                             )}
                                                         >
-                                                            {availableData.organizations.map((org) => (
-                                                                <MenuItem key={org.id} value={org.name}>
-                                                                    {org.name}
+                                                            {demographicCategories.map((category) => (
+                                                                <MenuItem key={category.id} value={category.id}>
+                                                                    {category.name}
                                                                 </MenuItem>
                                                             ))}
                                                         </Select>
                                                     </FormControl>
-                                                )}
 
-                                                <FormControlLabel
-                                                    control={
-                                                        <Checkbox
-                                                            checked={dataScope.individualFilters.filterByDemographics}
-                                                            onChange={(e) => setDataScope(prev => ({
-                                                                ...prev,
-                                                                individualFilters: {
-                                                                    ...prev.individualFilters,
-                                                                    filterByDemographics: e.target.checked
-                                                                }
-                                                            }))}
-                                                        />
-                                                    }
-                                                    label="Filter by Demographics"
-                                                    sx={{ mb: 1 }}
-                                                />
-
-                                                {dataScope.individualFilters.filterByDemographics && (
-                                                    <Box sx={{ pl: 2, mb: 2 }}>
-                                                        <Typography variant="body2" color="textSecondary" gutterBottom>
-                                                            Age Range
-                                                        </Typography>
-                                                        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                                                            <TextField
-                                                                label="Min Age"
-                                                                type="number"
-                                                                size="small"
-                                                                value={dataScope.individualFilters.ageRange.min}
-                                                                onChange={(e) => setDataScope(prev => ({
-                                                                    ...prev,
-                                                                    individualFilters: {
-                                                                        ...prev.individualFilters,
-                                                                        ageRange: {
-                                                                            ...prev.individualFilters.ageRange,
-                                                                            min: e.target.value
-                                                                        }
-                                                                    }
-                                                                }))}
-                                                            />
-                                                            <TextField
-                                                                label="Max Age"
-                                                                type="number"
-                                                                size="small"
-                                                                value={dataScope.individualFilters.ageRange.max}
-                                                                onChange={(e) => setDataScope(prev => ({
-                                                                    ...prev,
-                                                                    individualFilters: {
-                                                                        ...prev.individualFilters,
-                                                                        ageRange: {
-                                                                            ...prev.individualFilters.ageRange,
-                                                                            max: e.target.value
-                                                                        }
-                                                                    }
-                                                                }))}
-                                                            />
-                                                        </Box>
-
-                                                        <Typography variant="body2" color="textSecondary" gutterBottom>
-                                                            Experience Range (Years)
-                                                        </Typography>
-                                                        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                                                            <TextField
-                                                                label="Min Experience"
-                                                                type="number"
-                                                                size="small"
-                                                                value={dataScope.individualFilters.experienceRange.min}
-                                                                onChange={(e) => setDataScope(prev => ({
-                                                                    ...prev,
-                                                                    individualFilters: {
-                                                                        ...prev.individualFilters,
-                                                                        experienceRange: {
-                                                                            ...prev.individualFilters.experienceRange,
-                                                                            min: e.target.value
-                                                                        }
-                                                                    }
-                                                                }))}
-                                                            />
-                                                            <TextField
-                                                                label="Max Experience"
-                                                                type="number"
-                                                                size="small"
-                                                                value={dataScope.individualFilters.experienceRange.max}
-                                                                onChange={(e) => setDataScope(prev => ({
-                                                                    ...prev,
-                                                                    individualFilters: {
-                                                                        ...prev.individualFilters,
-                                                                        experienceRange: {
-                                                                            ...prev.individualFilters.experienceRange,
-                                                                            max: e.target.value
-                                                                        }
-                                                                    }
-                                                                }))}
-                                                            />
-                                                        </Box>
-
+                                                    {roleComparison.comparisonMode === 'role_vs_average' && (
                                                         <FormControl fullWidth sx={{ mb: 2 }}>
-                                                            <InputLabel>Education Levels</InputLabel>
+                                                            <InputLabel>Benchmark Role</InputLabel>
+                                                            <Select
+                                                                value={roleComparison.benchmarkRole}
+                                                                onChange={(e) => setRoleComparison(prev => ({ ...prev, benchmarkRole: e.target.value }))}
+                                                            >
+                                                                {userRoles.map((role) => (
+                                                                    <MenuItem key={role.id} value={role.id}>
+                                                                        {role.name}
+                                                                    </MenuItem>
+                                                                ))}
+                                                            </Select>
+                                                        </FormControl>
+                                                    )}
+
+                                                    <FormControlLabel
+                                                        control={
+                                                            <Checkbox
+                                                                checked={roleComparison.showStatistics}
+                                                                onChange={(e) => setRoleComparison(prev => ({ ...prev, showStatistics: e.target.checked }))}
+                                                            />
+                                                        }
+                                                        label="Show Statistical Analysis"
+                                                    />
+
+                                                    <FormControl fullWidth sx={{ mb: 2 }}>
+                                                        <InputLabel>Region Filter</InputLabel>
+                                                        <Select
+                                                            value={roleComparison.regionFilter}
+                                                            onChange={(e) => setRoleComparison(prev => ({ ...prev, regionFilter: e.target.value }))}
+                                                        >
+                                                            <MenuItem value="all">All Regions</MenuItem>
+                                                            <MenuItem value="specific_regions">Specific Regions Only</MenuItem>
+                                                            <MenuItem value="cross_regional">Cross-Regional Comparison</MenuItem>
+                                                        </Select>
+                                                    </FormControl>
+
+                                                    {roleComparison.regionFilter === 'specific_regions' && (
+                                                        <FormControl fullWidth sx={{ mb: 2 }}>
+                                                            <InputLabel>Select Regions</InputLabel>
                                                             <Select
                                                                 multiple
-                                                                value={dataScope.individualFilters.educationLevels}
-                                                                onChange={(e) => setDataScope(prev => ({
-                                                                    ...prev,
-                                                                    individualFilters: {
-                                                                        ...prev.individualFilters,
-                                                                        educationLevels: e.target.value
-                                                                    }
-                                                                }))}
+                                                                value={roleComparison.selectedRegions}
+                                                                onChange={(e) => setRoleComparison(prev => ({ ...prev, selectedRegions: e.target.value }))}
                                                                 renderValue={(selected) => (
                                                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                                                         {selected.map((value) => (
@@ -2130,735 +2379,482 @@ function ReportBuilder({ onLogout }) {
                                                                     </Box>
                                                                 )}
                                                             >
-                                                                {['High School', 'Certificate', 'Diploma', 'Bachelor', 'Master', 'PhD', 'Other'].map((level) => (
-                                                                    <MenuItem key={level} value={level}>
-                                                                        {level}
+                                                                {['East Africa', 'West Africa', 'Central Africa', 'Southern Africa', 'North Africa'].map((region) => (
+                                                                    <MenuItem key={region} value={region}>
+                                                                        {region}
                                                                     </MenuItem>
                                                                 ))}
                                                             </Select>
                                                         </FormControl>
-                                                    </Box>
-                                                )}
+                                                    )}
 
-                                                <FormControlLabel
-                                                    control={
-                                                        <Checkbox
-                                                            checked={dataScope.individualFilters.compareAcrossIndividuals}
-                                                            onChange={(e) => setDataScope(prev => ({
-                                                                ...prev,
-                                                                individualFilters: {
-                                                                    ...prev.individualFilters,
-                                                                    compareAcrossIndividuals: e.target.checked
-                                                                }
-                                                            }))}
+                                                    <FormGroup sx={{ mb: 2 }}>
+                                                        <FormControlLabel
+                                                            control={
+                                                                <Checkbox
+                                                                    checked={roleComparison.includeRegionalAnalysis}
+                                                                    onChange={(e) => setRoleComparison(prev => ({ ...prev, includeRegionalAnalysis: e.target.checked }))}
+                                                                />
+                                                            }
+                                                            label="Include Regional Analysis"
                                                         />
-                                                    }
-                                                    label="Compare Across Individuals"
-                                                    sx={{ mb: 1 }}
-                                                />
-
-                                                {dataScope.individualFilters.compareAcrossIndividuals && (
-                                                    <Alert severity="info" sx={{ mt: 1 }}>
-                                                        <Typography variant="body2">
-                                                            This will compare individual responses within the same survey, 
-                                                            allowing you to see how different people answered the same questions.
-                                                        </Typography>
-                                                    </Alert>
-                                                )}
-                                            </Box>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            )}
-
-                            {currentTab === 1 && (
-                                <Card>
-                                    <CardHeader title="Select Metrics" />
-                                    <CardContent>
-                                        <FormGroup>
-                                            {metrics.map((metric) => (
-                                                <FormControlLabel
-                                                    key={metric.id}
-                                                    control={
-                                                        <Checkbox
-                                                            checked={selectedMetrics.includes(metric.id)}
-                                                            onChange={(e) => {
-                                                                if (e.target.checked) {
-                                                                    setSelectedMetrics(prev => [...prev, metric.id]);
-                                                                } else {
-                                                                    setSelectedMetrics(prev => prev.filter(m => m !== metric.id));
-                                                                }
-                                                            }}
+                                                        <FormControlLabel
+                                                            control={
+                                                                <Checkbox
+                                                                    checked={roleComparison.showRoleDemographics}
+                                                                    onChange={(e) => setRoleComparison(prev => ({ ...prev, showRoleDemographics: e.target.checked }))}
+                                                                />
+                                                            }
+                                                            label="Show Role Demographics"
                                                         />
-                                                    }
-                                                    label={
-                                                        <Box>
-                                                            <Typography variant="body2" fontWeight="bold">
-                                                                {metric.name}
-                                                            </Typography>
-                                                            <Typography variant="caption" color="textSecondary">
-                                                                {metric.description}
-                                                            </Typography>
-                                                        </Box>
-                                                    }
-                                                />
-                                            ))}
-                                        </FormGroup>
-                                    </CardContent>
-                                </Card>
-                            )}
-
-                            {currentTab === 2 && (
-                                <Card>
-                                    <CardHeader title="Select Dimensions" />
-                                    <CardContent>
-                                        <FormGroup>
-                                            {dimensions.map((dimension) => (
-                                                <FormControlLabel
-                                                    key={dimension.id}
-                                                    control={
-                                                        <Checkbox
-                                                            checked={selectedDimensions.includes(dimension.id)}
-                                                            onChange={(e) => {
-                                                                if (e.target.checked) {
-                                                                    setSelectedDimensions(prev => [...prev, dimension.id]);
-                                                                } else {
-                                                                    setSelectedDimensions(prev => prev.filter(d => d !== dimension.id));
-                                                                }
-                                                            }}
+                                                        <FormControlLabel
+                                                            control={
+                                                                <Checkbox
+                                                                    checked={roleComparison.compareExperienceLevels}
+                                                                    onChange={(e) => setRoleComparison(prev => ({ ...prev, compareExperienceLevels: e.target.checked }))}
+                                                                />
+                                                            }
+                                                            label="Compare Experience Levels"
                                                         />
-                                                    }
-                                                    label={
-                                                        <Box>
-                                                            <Typography variant="body2" fontWeight="bold">
-                                                                {dimension.name}
-                                                            </Typography>
-                                                            <Typography variant="caption" color="textSecondary">
-                                                                {dimension.description}
-                                                            </Typography>
-                                                        </Box>
-                                                    }
-                                                />
-                                            ))}
-                                        </FormGroup>
-                                    </CardContent>
-                                </Card>
-                            )}
+                                                    </FormGroup>
+                                                </>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                )}
 
-                            {currentTab === 3 && (
-                                <Card>
-                                    <CardHeader title="Role-Based Comparison" />
-                                    <CardContent>
-                                        <FormControlLabel
-                                            control={
-                                                <Checkbox
-                                                    checked={roleComparison.enabled}
-                                                    onChange={(e) => setRoleComparison(prev => ({ ...prev, enabled: e.target.checked }))}
-                                                />
-                                            }
-                                            label="Enable Role-Based Comparison"
-                                            sx={{ mb: 2 }}
-                                        />
-
-                                        {roleComparison.enabled && (
-                                            <>
-                                                <FormControl fullWidth sx={{ mb: 2 }}>
-                                                    <InputLabel>Comparison Mode</InputLabel>
-                                                    <Select
-                                                        value={roleComparison.comparisonMode}
-                                                        onChange={(e) => setRoleComparison(prev => ({ ...prev, comparisonMode: e.target.value }))}
-                                                    >
-                                                        <MenuItem value="within_role">Compare Within Same Role</MenuItem>
-                                                        <MenuItem value="across_roles">Compare Across Different Roles</MenuItem>
-                                                        <MenuItem value="role_vs_average">Compare Role vs Overall Average</MenuItem>
-                                                        <MenuItem value="cross_regional">Compare Same Role Across Regions</MenuItem>
-                                                    </Select>
-                                                </FormControl>
-
-                                                <FormControl fullWidth sx={{ mb: 2 }}>
-                                                    <InputLabel>Select Roles to Compare</InputLabel>
-                                                    <Select
-                                                        multiple
-                                                        value={roleComparison.selectedRoles}
-                                                        onChange={(e) => setRoleComparison(prev => ({ ...prev, selectedRoles: e.target.value }))}
-                                                        renderValue={(selected) => (
-                                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                                {selected.map((value) => (
-                                                                    <Chip key={value} label={
-                                                                        userRoles.find(r => r.id === value)?.name || value
-                                                                    } size="small" />
-                                                                ))}
-                                                            </Box>
-                                                        )}
-                                                    >
-                                                        {userRoles.map((role) => (
-                                                            <MenuItem key={role.id} value={role.id}>
-                                                                <Box>
-                                                                    <Typography variant="body2" fontWeight="bold">
-                                                                        {role.name}
-                                                                    </Typography>
-                                                                    <Typography variant="caption" color="textSecondary">
-                                                                        {role.description}
-                                                                    </Typography>
-                                                                </Box>
-                                                            </MenuItem>
-                                                        ))}
-                                                    </Select>
-                                                </FormControl>
-
-                                                <FormControl fullWidth sx={{ mb: 2 }}>
-                                                    <InputLabel>Demographics to Include</InputLabel>
-                                                    <Select
-                                                        multiple
-                                                        value={roleComparison.selectedDemographics}
-                                                        onChange={(e) => setRoleComparison(prev => ({ ...prev, selectedDemographics: e.target.value }))}
-                                                        renderValue={(selected) => (
-                                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                                {selected.map((value) => (
-                                                                    <Chip key={value} label={
-                                                                        demographicCategories.find(d => d.id === value)?.name || value
-                                                                    } size="small" />
-                                                                ))}
-                                                            </Box>
-                                                        )}
-                                                    >
-                                                        {demographicCategories.map((category) => (
-                                                            <MenuItem key={category.id} value={category.id}>
-                                                                {category.name}
-                                                            </MenuItem>
-                                                        ))}
-                                                    </Select>
-                                                </FormControl>
-
-                                                {roleComparison.comparisonMode === 'role_vs_average' && (
-                                                    <FormControl fullWidth sx={{ mb: 2 }}>
-                                                        <InputLabel>Benchmark Role</InputLabel>
-                                                        <Select
-                                                            value={roleComparison.benchmarkRole}
-                                                            onChange={(e) => setRoleComparison(prev => ({ ...prev, benchmarkRole: e.target.value }))}
-                                                        >
-                                                            {userRoles.map((role) => (
-                                                                <MenuItem key={role.id} value={role.id}>
-                                                                    {role.name}
-                                                                </MenuItem>
-                                                            ))}
-                                                        </Select>
-                                                    </FormControl>
-                                                )}
-
-                                                <FormControlLabel
-                                                    control={
-                                                        <Checkbox
-                                                            checked={roleComparison.showStatistics}
-                                                            onChange={(e) => setRoleComparison(prev => ({ ...prev, showStatistics: e.target.checked }))}
-                                                        />
-                                                    }
-                                                    label="Show Statistical Analysis"
-                                                />
-
-                                                <FormControl fullWidth sx={{ mb: 2 }}>
-                                                    <InputLabel>Region Filter</InputLabel>
-                                                    <Select
-                                                        value={roleComparison.regionFilter}
-                                                        onChange={(e) => setRoleComparison(prev => ({ ...prev, regionFilter: e.target.value }))}
-                                                    >
-                                                        <MenuItem value="all">All Regions</MenuItem>
-                                                        <MenuItem value="specific_regions">Specific Regions Only</MenuItem>
-                                                        <MenuItem value="cross_regional">Cross-Regional Comparison</MenuItem>
-                                                    </Select>
-                                                </FormControl>
-
-                                                {roleComparison.regionFilter === 'specific_regions' && (
-                                                    <FormControl fullWidth sx={{ mb: 2 }}>
-                                                        <InputLabel>Select Regions</InputLabel>
-                                                        <Select
-                                                            multiple
-                                                            value={roleComparison.selectedRegions}
-                                                            onChange={(e) => setRoleComparison(prev => ({ ...prev, selectedRegions: e.target.value }))}
-                                                            renderValue={(selected) => (
-                                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                                    {selected.map((value) => (
-                                                                        <Chip key={value} label={value} size="small" />
-                                                                    ))}
-                                                                </Box>
-                                                            )}
-                                                        >
-                                                            {['East Africa', 'West Africa', 'Central Africa', 'Southern Africa', 'North Africa'].map((region) => (
-                                                                <MenuItem key={region} value={region}>
-                                                                    {region}
-                                                                </MenuItem>
-                                                            ))}
-                                                        </Select>
-                                                    </FormControl>
-                                                )}
-
-                                                <FormGroup sx={{ mb: 2 }}>
-                                                    <FormControlLabel
-                                                        control={
-                                                            <Checkbox
-                                                                checked={roleComparison.includeRegionalAnalysis}
-                                                                onChange={(e) => setRoleComparison(prev => ({ ...prev, includeRegionalAnalysis: e.target.checked }))}
-                                                            />
-                                                        }
-                                                        label="Include Regional Analysis"
-                                                    />
-                                                    <FormControlLabel
-                                                        control={
-                                                            <Checkbox
-                                                                checked={roleComparison.showRoleDemographics}
-                                                                onChange={(e) => setRoleComparison(prev => ({ ...prev, showRoleDemographics: e.target.checked }))}
-                                                            />
-                                                        }
-                                                        label="Show Role Demographics"
-                                                    />
-                                                    <FormControlLabel
-                                                        control={
-                                                            <Checkbox
-                                                                checked={roleComparison.compareExperienceLevels}
-                                                                onChange={(e) => setRoleComparison(prev => ({ ...prev, compareExperienceLevels: e.target.checked }))}
-                                                            />
-                                                        }
-                                                        label="Compare Experience Levels"
-                                                    />
-                                                </FormGroup>
-                                            </>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            )}
-
-                            {currentTab === 4 && (
-                                <Card>
-                                    <CardHeader title="Visualization Settings" />
-                                    <CardContent>
-                                        <FormControl fullWidth sx={{ mb: 2 }}>
-                                            <InputLabel>Chart Type</InputLabel>
-                                            <Select
-                                                value={chartConfig.type}
-                                                onChange={(e) => setChartConfig(prev => ({ ...prev, type: e.target.value }))}
-                                            >
-                                                {chartTypes.map((type) => (
-                                                    <MenuItem key={type.id} value={type.id}>
-                                                        {type.icon} {type.name}
-                                                    </MenuItem>
-                                                ))}
-                                            </Select>
-                                        </FormControl>
-
-                                        <TextField
-                                            fullWidth
-                                            label="Chart Title"
-                                            value={chartConfig.title}
-                                            onChange={(e) => setChartConfig(prev => ({ ...prev, title: e.target.value }))}
-                                            sx={{ mb: 2 }}
-                                        />
-
-                                        <TextField
-                                            fullWidth
-                                            label="Subtitle"
-                                            value={chartConfig.subtitle}
-                                            onChange={(e) => setChartConfig(prev => ({ ...prev, subtitle: e.target.value }))}
-                                            sx={{ mb: 2 }}
-                                        />
-
-                                        <FormControlLabel
-                                            control={
-                                                <Checkbox
-                                                    checked={chartConfig.showMissingData}
-                                                    onChange={(e) => setChartConfig(prev => ({ ...prev, showMissingData: e.target.checked }))}
-                                                />
-                                            }
-                                            label="Show Missing Data as 'Unknown'"
-                                        />
-                                    </CardContent>
-                                </Card>
-                            )}
-
-                            {currentTab === 5 && (
-                                <Card>
-                                    <CardHeader title="Report Templates" />
-                                    <CardContent>
-                                        <Accordion defaultExpanded>
-                                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                                                <Typography variant="h6">Role-Specific Templates</Typography>
-                                            </AccordionSummary>
-                                            <AccordionDetails>
-                                                <List>
-                                                    {roleTemplates.map((template, index) => (
-                                                        <ListItem key={index}>
-                                                            <ListItemText
-                                                                primary={template.name}
-                                                                secondary={
-                                                                    <Box>
-                                                                        <Typography variant="body2" color="textSecondary">
-                                                                            {template.description}
-                                                                        </Typography>
-                                                                        <Chip 
-                                                                            label={template.role === 'all' ? 'All Roles' : 
-                                                                                userRoles.find(r => r.id === template.role)?.name || template.role}
-                                                                            size="small" 
-                                                                            sx={{ mt: 1 }}
-                                                                        />
-                                                                    </Box>
-                                                                }
-                                                            />
-                                                            <ListItemSecondaryAction>
-                                                                <IconButton onClick={() => loadRoleTemplate(template)}>
-                                                                    <PlayArrowIcon />
-                                                                </IconButton>
-                                                            </ListItemSecondaryAction>
-                                                        </ListItem>
+                                {currentTab === 4 && (
+                                    <Card>
+                                        <CardHeader title="Visualization Settings" />
+                                        <CardContent>
+                                            <FormControl fullWidth sx={{ mb: 2 }}>
+                                                <InputLabel>Chart Type</InputLabel>
+                                                <Select
+                                                    value={chartConfig.type}
+                                                    onChange={(e) => setChartConfig(prev => ({ ...prev, type: e.target.value }))}
+                                                >
+                                                    {chartTypes.map((type) => (
+                                                        <MenuItem key={type.id} value={type.id}>
+                                                            {type.icon} {type.name}
+                                                        </MenuItem>
                                                     ))}
-                                                </List>
-                                            </AccordionDetails>
-                                        </Accordion>
+                                                </Select>
+                                            </FormControl>
 
-                                        {testMode && (
-                                            <Accordion>
+                                            <TextField
+                                                fullWidth
+                                                label="Chart Title"
+                                                value={chartConfig.title}
+                                                onChange={(e) => setChartConfig(prev => ({ ...prev, title: e.target.value }))}
+                                                sx={{ mb: 2 }}
+                                            />
+
+                                            <TextField
+                                                fullWidth
+                                                label="Subtitle"
+                                                value={chartConfig.subtitle}
+                                                onChange={(e) => setChartConfig(prev => ({ ...prev, subtitle: e.target.value }))}
+                                                sx={{ mb: 2 }}
+                                            />
+
+                                            <FormControlLabel
+                                                control={
+                                                    <Checkbox
+                                                        checked={chartConfig.showMissingData}
+                                                        onChange={(e) => setChartConfig(prev => ({ ...prev, showMissingData: e.target.checked }))}
+                                                    />
+                                                }
+                                                label="Show Missing Data as 'Unknown'"
+                                            />
+                                        </CardContent>
+                                    </Card>
+                                )}
+
+                                {currentTab === 5 && (
+                                    <Card>
+                                        <CardHeader title="Report Templates" />
+                                        <CardContent>
+                                            <Accordion defaultExpanded>
                                                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                                                    <Typography variant="h6">Sample Data Testing</Typography>
+                                                    <Typography variant="h6">Role-Specific Templates</Typography>
                                                 </AccordionSummary>
                                                 <AccordionDetails>
-                                                    <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-                                                        Load sample data for specific organization heads to test and compare survey responses.
-                                                    </Typography>
-                                                
-                                                <FormControl fullWidth sx={{ mb: 2 }}>
-                                                    <InputLabel>Select Organization Type</InputLabel>
-                                                    <Select
-                                                        value={selectedOrganization}
-                                                        onChange={(e) => handleOrganizationChange(e.target.value)}
-                                                        label="Select Organization Type"
-                                                    >
-                                                        {organizationTypes.map((org) => (
-                                                            <MenuItem key={org.id} value={org.id}>
-                                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                                    {org.icon}
-                                                                    <Box>
-                                                                        <Typography variant="body2" fontWeight="bold">
-                                                                            {org.name}
-                                                                        </Typography>
-                                                                        <Typography variant="caption" color="textSecondary">
-                                                                            {org.description}
-                                                                        </Typography>
-                                                                    </Box>
-                                                                </Box>
-                                                            </MenuItem>
-                                                        ))}
-                                                    </Select>
-                                                </FormControl>
-
-                                                <FormControl fullWidth sx={{ mb: 2 }} disabled={!selectedOrganization}>
-                                                    <InputLabel>Select Organization Head</InputLabel>
-                                                    <Select
-                                                        value={selectedOrganizationHead}
-                                                        onChange={(e) => handleOrganizationHeadChange(e.target.value)}
-                                                        label="Select Organization Head"
-                                                    >
-                                                        {organizationHeads.map((head) => (
-                                                            <MenuItem key={head.id} value={head.id}>
-                                                                <Box>
-                                                                    <Typography variant="body2" fontWeight="bold">
-                                                                        {head.name}
-                                                                    </Typography>
-                                                                    <Typography variant="caption" color="textSecondary">
-                                                                        {head.role} • {head.organization}
-                                                                    </Typography>
-                                                                </Box>
-                                                            </MenuItem>
-                                                        ))}
-                                                    </Select>
-                                                </FormControl>
-
-                                                <Button
-                                                    variant="contained"
-                                                    startIcon={sampleDataLoading ? <CircularProgress size={20} color="inherit" /> : <DatasetIcon />}
-                                                    onClick={handleLoadSampleData}
-                                                    disabled={sampleDataLoading || !selectedOrganization || !selectedOrganizationHead}
-                                                    sx={{ 
-                                                        backgroundColor: '#4caf50',
-                                                        '&:hover': { backgroundColor: '#45a049' },
-                                                        mb: 2
-                                                    }}
-                                                >
-                                                    {sampleDataLoading ? 'Loading...' : 'Load Sample Data'}
-                                                </Button>
-
-                                                {(selectedOrganization || selectedOrganizationHead) && (
-                                                    <Alert severity="info" sx={{ mt: 2 }}>
-                                                        <Typography variant="body2">
-                                                            This will load sample survey data for the selected organization head,
-                                                            allowing you to test report generation and compare responses across different surveys.
-                                                        </Typography>
-                                                    </Alert>
-                                                )}
-                                            </AccordionDetails>
-                                        </Accordion>
-                                        )}
-
-                                        <Accordion>
-                                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                                                <Typography variant="h6">Saved Templates</Typography>
-                                            </AccordionSummary>
-                                            <AccordionDetails>
-                                                {templates.length === 0 ? (
-                                                    <Typography variant="body2" color="textSecondary">
-                                                        No saved templates yet. Create a report configuration and save it as a template.
-                                                    </Typography>
-                                                ) : (
                                                     <List>
-                                                        {templates.map((template) => (
-                                                            <ListItem key={template.id}>
+                                                        {roleTemplates.map((template, index) => (
+                                                            <ListItem key={index}>
                                                                 <ListItemText
                                                                     primary={template.name}
-                                                                    secondary={`Created: ${new Date(template.created_at).toLocaleDateString()}`}
+                                                                    secondary={
+                                                                        <Box>
+                                                                            <Typography variant="body2" color="textSecondary">
+                                                                                {template.description}
+                                                                            </Typography>
+                                                                            <Chip
+                                                                                label={template.role === 'all' ? 'All Roles' :
+                                                                                    userRoles.find(r => r.id === template.role)?.name || template.role}
+                                                                                size="small"
+                                                                                sx={{ mt: 1 }}
+                                                                            />
+                                                                        </Box>
+                                                                    }
                                                                 />
                                                                 <ListItemSecondaryAction>
-                                                                    <IconButton onClick={() => loadTemplate(template)}>
+                                                                    <IconButton onClick={() => loadRoleTemplate(template)}>
                                                                         <PlayArrowIcon />
-                                                                    </IconButton>
-                                                                    <IconButton onClick={() => {/* Delete template */}}>
-                                                                        <DeleteIcon />
                                                                     </IconButton>
                                                                 </ListItemSecondaryAction>
                                                             </ListItem>
                                                         ))}
                                                     </List>
-                                                )}
-                                            </AccordionDetails>
-                                        </Accordion>
-                                    </CardContent>
-                                </Card>
-                            )}
+                                                </AccordionDetails>
+                                            </Accordion>
 
+                                            {testMode && (
+                                                <Accordion>
+                                                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                                        <Typography variant="h6">Sample Data Testing</Typography>
+                                                    </AccordionSummary>
+                                                    <AccordionDetails>
+                                                        <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                                                            Load sample data for specific organization heads to test and compare survey responses.
+                                                        </Typography>
 
-                        </Box>
-                    </Grid>
+                                                        <FormControl fullWidth sx={{ mb: 2 }}>
+                                                            <InputLabel>Select Organization Type</InputLabel>
+                                                            <Select
+                                                                value={selectedOrganization}
+                                                                onChange={(e) => handleOrganizationChange(e.target.value)}
+                                                                label="Select Organization Type"
+                                                            >
+                                                                {organizationTypes.map((org) => (
+                                                                    <MenuItem key={org.id} value={org.id}>
+                                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                            {org.icon}
+                                                                            <Box>
+                                                                                <Typography variant="body2" fontWeight="bold">
+                                                                                    {org.name}
+                                                                                </Typography>
+                                                                                <Typography variant="caption" color="textSecondary">
+                                                                                    {org.description}
+                                                                                </Typography>
+                                                                            </Box>
+                                                                        </Box>
+                                                                    </MenuItem>
+                                                                ))}
+                                                            </Select>
+                                                        </FormControl>
 
-                    {/* Right Panel - Preview and Results */}
-                    <Grid item xs={12} md={roleComparison.enabled ? 6 : 8}>
-                        <Card>
-                            <CardHeader
-                                title="Report Preview"
-                                action={
-                                    <Box>
-                                        <Button
-                                            variant="contained"
-                                            onClick={generateReport}
-                                            disabled={loading || (selectedMetrics.length === 0 && selectedDimensions.length === 0)}
-                                            startIcon={loading ? <CircularProgress size={20} /> : <PlayArrowIcon />}
-                                            sx={{ 
-                                                mr: 1, 
-                                                backgroundColor: testMode ? '#4caf50' : adminColors.primary,
-                                                '&:hover': { backgroundColor: testMode ? '#45a049' : adminColors.secondary },
-                                                px: 3,
-                                                py: 1.5,
-                                                fontSize: '1rem',
-                                                fontWeight: 600
-                                            }}
-                                        >
-                                            {loading ? 'Generating...' : (testMode ? 'Generate Test Report' : 'Generate Report')}
-                                        </Button>
-                                        <Button
-                                            variant="outlined"
-                                            onClick={exportReport}
-                                            disabled={reportData.length === 0}
-                                            startIcon={<DownloadIcon />}
-                                        >
-                                            Export
-                                        </Button>
-                                    </Box>
-                                }
-                            />
-                            <CardContent>
-                                {chartConfig.title && (
-                                    <Typography variant="h6" gutterBottom align="center">
-                                        {chartConfig.title}
-                                    </Typography>
+                                                        <FormControl fullWidth sx={{ mb: 2 }} disabled={!selectedOrganization}>
+                                                            <InputLabel>Select Organization Head</InputLabel>
+                                                            <Select
+                                                                value={selectedOrganizationHead}
+                                                                onChange={(e) => handleOrganizationHeadChange(e.target.value)}
+                                                                label="Select Organization Head"
+                                                            >
+                                                                {organizationHeads.map((head) => (
+                                                                    <MenuItem key={head.id} value={head.id}>
+                                                                        <Box>
+                                                                            <Typography variant="body2" fontWeight="bold">
+                                                                                {head.name}
+                                                                            </Typography>
+                                                                            <Typography variant="caption" color="textSecondary">
+                                                                                {head.role} • {head.organization}
+                                                                            </Typography>
+                                                                        </Box>
+                                                                    </MenuItem>
+                                                                ))}
+                                                            </Select>
+                                                        </FormControl>
+
+                                                        <Button
+                                                            variant="contained"
+                                                            startIcon={sampleDataLoading ? <CircularProgress size={20} color="inherit" /> : <DatasetIcon />}
+                                                            onClick={handleLoadSampleData}
+                                                            disabled={sampleDataLoading || !selectedOrganization || !selectedOrganizationHead}
+                                                            sx={{
+                                                                backgroundColor: '#4caf50',
+                                                                '&:hover': { backgroundColor: '#45a049' },
+                                                                mb: 2
+                                                            }}
+                                                        >
+                                                            {sampleDataLoading ? 'Loading...' : 'Load Sample Data'}
+                                                        </Button>
+
+                                                        {(selectedOrganization || selectedOrganizationHead) && (
+                                                            <Alert severity="info" sx={{ mt: 2 }}>
+                                                                <Typography variant="body2">
+                                                                    This will load sample survey data for the selected organization head,
+                                                                    allowing you to test report generation and compare responses across different surveys.
+                                                                </Typography>
+                                                            </Alert>
+                                                        )}
+                                                    </AccordionDetails>
+                                                </Accordion>
+                                            )}
+
+                                            <Accordion>
+                                                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                                    <Typography variant="h6">Saved Templates</Typography>
+                                                </AccordionSummary>
+                                                <AccordionDetails>
+                                                    {templates.length === 0 ? (
+                                                        <Typography variant="body2" color="textSecondary">
+                                                            No saved templates yet. Create a report configuration and save it as a template.
+                                                        </Typography>
+                                                    ) : (
+                                                        <List>
+                                                            {templates.map((template) => (
+                                                                <ListItem key={template.id}>
+                                                                    <ListItemText
+                                                                        primary={template.name}
+                                                                        secondary={`Created: ${new Date(template.created_at).toLocaleDateString()}`}
+                                                                    />
+                                                                    <ListItemSecondaryAction>
+                                                                        <IconButton onClick={() => loadTemplate(template)}>
+                                                                            <PlayArrowIcon />
+                                                                        </IconButton>
+                                                                        <IconButton onClick={() => {/* Delete template */ }}>
+                                                                            <DeleteIcon />
+                                                                        </IconButton>
+                                                                    </ListItemSecondaryAction>
+                                                                </ListItem>
+                                                            ))}
+                                                        </List>
+                                                    )}
+                                                </AccordionDetails>
+                                            </Accordion>
+                                        </CardContent>
+                                    </Card>
                                 )}
-                                {chartConfig.subtitle && (
-                                    <Typography variant="subtitle2" gutterBottom align="center" color="textSecondary">
-                                        {chartConfig.subtitle}
-                                    </Typography>
-                                )}
-                                
-                                <Box sx={{ mt: 2 }}>
-                                    {renderChart()}
-                                </Box>
 
-                                {reportData.length > 0 && (
-                                    <Box sx={{ mt: 3 }}>
-                                        <Typography variant="h6" gutterBottom>
-                                            Summary Statistics
-                                        </Typography>
-                                        <Grid container spacing={2}>
-                                            <Grid item xs={6} md={3}>
-                                                <Paper sx={{ p: 2, textAlign: 'center' }}>
-                                                    <Typography variant="h4" color="primary">
-                                                        {reportData.length}
-                                                    </Typography>
-                                                    <Typography variant="body2" color="textSecondary">
-                                                        Data Points
-                                                    </Typography>
-                                                </Paper>
-                                            </Grid>
-                                            <Grid item xs={6} md={3}>
-                                                <Paper sx={{ p: 2, textAlign: 'center' }}>
-                                                    <Typography variant="h4" color="primary">
-                                                        {reportData.filter(d => d.value != null).length}
-                                                    </Typography>
-                                                    <Typography variant="body2" color="textSecondary">
-                                                        Valid Responses
-                                                    </Typography>
-                                                </Paper>
-                                            </Grid>
-                                            <Grid item xs={6} md={3}>
-                                                <Paper sx={{ p: 2, textAlign: 'center' }}>
-                                                    <Typography variant="h4" color="primary">
-                                                        {reportData.filter(d => d.value == null).length}
-                                                    </Typography>
-                                                    <Typography variant="body2" color="textSecondary">
-                                                        Missing Data
-                                                    </Typography>
-                                                </Paper>
-                                            </Grid>
-                                            <Grid item xs={6} md={3}>
-                                                <Paper sx={{ p: 2, textAlign: 'center' }}>
-                                                    <Typography variant="h4" color="primary">
-                                                        {Math.round((reportData.filter(d => d.value != null).length / reportData.length) * 100)}%
-                                                    </Typography>
-                                                    <Typography variant="body2" color="textSecondary">
-                                                        Completion Rate
-                                                    </Typography>
-                                                </Paper>
-                                            </Grid>
-                                        </Grid>
-                                    </Box>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </Grid>
 
-                    {/* Role Comparison Insights Panel */}
-                    {roleComparison.enabled && (
-                        <Grid item xs={12} md={2}>
+                            </Box>
+                        </Grid>
+
+                        {/* Right Panel - Preview and Results */}
+                        <Grid item xs={12} md={roleComparison.enabled ? 6 : 8}>
                             <Card>
-                                <CardHeader title="Role Insights" />
+                                <CardHeader
+                                    title="Report Preview"
+                                    action={
+                                        <Box>
+                                            <Button
+                                                variant="contained"
+                                                onClick={generateReport}
+                                                disabled={loading || (selectedMetrics.length === 0 && selectedDimensions.length === 0)}
+                                                startIcon={loading ? <CircularProgress size={20} /> : <PlayArrowIcon />}
+                                                sx={{
+                                                    mr: 1,
+                                                    backgroundColor: testMode ? '#4caf50' : adminColors.primary,
+                                                    '&:hover': { backgroundColor: testMode ? '#45a049' : adminColors.secondary },
+                                                    px: 3,
+                                                    py: 1.5,
+                                                    fontSize: '1rem',
+                                                    fontWeight: 600
+                                                }}
+                                            >
+                                                {loading ? 'Generating...' : (testMode ? 'Generate Test Report' : 'Generate Report')}
+                                            </Button>
+                                            <Button
+                                                variant="outlined"
+                                                onClick={exportReport}
+                                                disabled={reportData.length === 0}
+                                                startIcon={<DownloadIcon />}
+                                            >
+                                                Export
+                                            </Button>
+                                        </Box>
+                                    }
+                                />
                                 <CardContent>
-                                    <Box sx={{ mb: 2 }}>
-                                        <Typography variant="h6" gutterBottom>
-                                            Selected Roles
+                                    {chartConfig.title && (
+                                        <Typography variant="h6" gutterBottom align="center">
+                                            {chartConfig.title}
                                         </Typography>
-                                        {roleComparison.selectedRoles.map(roleId => {
-                                            const role = userRoles.find(r => r.id === roleId);
-                                            return (
-                                                <Chip
-                                                    key={roleId}
-                                                    label={role?.name || roleId}
-                                                    size="small"
-                                                    sx={{ mr: 1, mb: 1 }}
-                                                />
-                                            );
-                                        })}
-                                    </Box>
-
-                                    <Box sx={{ mb: 2 }}>
-                                        <Typography variant="h6" gutterBottom>
-                                            Comparison Mode
+                                    )}
+                                    {chartConfig.subtitle && (
+                                        <Typography variant="subtitle2" gutterBottom align="center" color="textSecondary">
+                                            {chartConfig.subtitle}
                                         </Typography>
-                                        <Typography variant="body2" color="textSecondary">
-                                            {roleComparison.comparisonMode === 'within_role' && 'Comparing within same role'}
-                                            {roleComparison.comparisonMode === 'across_roles' && 'Comparing across different roles'}
-                                            {roleComparison.comparisonMode === 'role_vs_average' && 'Comparing role vs overall average'}
-                                        </Typography>
-                                    </Box>
-
-                                    {roleComparison.showStatistics && previewData.length > 0 && (
-                                        <Box sx={{ mb: 2 }}>
-                                            <Typography variant="h6" gutterBottom>
-                                                Quick Stats
-                                            </Typography>
-                                            <Box sx={{ p: 1, bgcolor: adminColors.background, borderRadius: 1 }}>
-                                                <Typography variant="body2">
-                                                    Total Responses: {previewData.reduce((sum, item) => sum + (item.role_count || 0), 0)}
-                                                </Typography>
-                                                <Typography variant="body2">
-                                                    Average Score: {(previewData.reduce((sum, item) => sum + (item.value || 0), 0) / previewData.length).toFixed(1)}
-                                                </Typography>
-                                                <Typography variant="body2">
-                                                    Top Performer: {previewData.sort((a, b) => (b.value || 0) - (a.value || 0))[0]?.name || 'N/A'}
-                                                </Typography>
-                                            </Box>
-                                        </Box>
                                     )}
 
-                                    <Box sx={{ mb: 2 }}>
-                                        <Typography variant="h6" gutterBottom>
-                                            Demographics
-                                        </Typography>
-                                        {roleComparison.selectedDemographics.map(demoId => {
-                                            const demo = demographicCategories.find(d => d.id === demoId);
-                                            return (
-                                                <Chip
-                                                    key={demoId}
-                                                    label={demo?.name || demoId}
-                                                    size="small"
-                                                    sx={{ mr: 1, mb: 1 }}
-                                                />
-                                            );
-                                        })}
+                                    <Box sx={{ mt: 2 }}>
+                                        {renderChart()}
                                     </Box>
 
-                                    <Divider sx={{ my: 2 }} />
-
-                                    {dataScope.geography.circles && dataScope.geography.circles.length > 0 && (
-                                        <Box sx={{ mb: 2 }}>
+                                    {reportData.length > 0 && (
+                                        <Box sx={{ mt: 3 }}>
                                             <Typography variant="h6" gutterBottom>
-                                                Geographic Regions
+                                                Summary Statistics
                                             </Typography>
-                                            {dataScope.geography.circles.map(circle => (
-                                                <Box key={circle.id} sx={{ mb: 1 }}>
-                                                    <Chip
-                                                        label={circle.name}
-                                                        size="small"
-                                                        sx={{ mr: 1, mb: 0.5 }}
-                                                    />
-                                                    <Typography variant="caption" color="textSecondary" display="block">
-                                                        {circle.radius > 1000 ? 
-                                                            `${(circle.radius / 1000).toFixed(1)} km radius` : 
-                                                            `${circle.radius} m radius`}
-                                                    </Typography>
-                                                </Box>
-                                            ))}
+                                            <Grid container spacing={2}>
+                                                <Grid item xs={6} md={3}>
+                                                    <Paper sx={{ p: 2, textAlign: 'center' }}>
+                                                        <Typography variant="h4" color="primary">
+                                                            {reportData.length}
+                                                        </Typography>
+                                                        <Typography variant="body2" color="textSecondary">
+                                                            Data Points
+                                                        </Typography>
+                                                    </Paper>
+                                                </Grid>
+                                                <Grid item xs={6} md={3}>
+                                                    <Paper sx={{ p: 2, textAlign: 'center' }}>
+                                                        <Typography variant="h4" color="primary">
+                                                            {reportData.filter(d => d.value != null).length}
+                                                        </Typography>
+                                                        <Typography variant="body2" color="textSecondary">
+                                                            Valid Responses
+                                                        </Typography>
+                                                    </Paper>
+                                                </Grid>
+                                                <Grid item xs={6} md={3}>
+                                                    <Paper sx={{ p: 2, textAlign: 'center' }}>
+                                                        <Typography variant="h4" color="primary">
+                                                            {reportData.filter(d => d.value == null).length}
+                                                        </Typography>
+                                                        <Typography variant="body2" color="textSecondary">
+                                                            Missing Data
+                                                        </Typography>
+                                                    </Paper>
+                                                </Grid>
+                                                <Grid item xs={6} md={3}>
+                                                    <Paper sx={{ p: 2, textAlign: 'center' }}>
+                                                        <Typography variant="h4" color="primary">
+                                                            {Math.round((reportData.filter(d => d.value != null).length / reportData.length) * 100)}%
+                                                        </Typography>
+                                                        <Typography variant="body2" color="textSecondary">
+                                                            Completion Rate
+                                                        </Typography>
+                                                    </Paper>
+                                                </Grid>
+                                            </Grid>
                                         </Box>
                                     )}
-
-                                    <Divider sx={{ my: 2 }} />
-
-                                    <Box>
-                                        <Typography variant="h6" gutterBottom>
-                                            Recommendations
-                                        </Typography>
-                                        <Typography variant="body2" color="textSecondary">
-                                            • Focus on roles with lower performance scores
-                                        </Typography>
-                                        <Typography variant="body2" color="textSecondary">
-                                            • Identify training gaps in underperforming areas
-                                        </Typography>
-                                        <Typography variant="body2" color="textSecondary">
-                                            • Compare similar demographic groups for insights
-                                        </Typography>
-                                        {dataScope.geography.circles && dataScope.geography.circles.length > 0 && (
-                                            <Typography variant="body2" color="textSecondary">
-                                                • Analyze geographic patterns within selected regions
-                                            </Typography>
-                                        )}
-                                    </Box>
                                 </CardContent>
                             </Card>
                         </Grid>
-                    )}
-                </Grid>
+
+                        {/* Role Comparison Insights Panel */}
+                        {roleComparison.enabled && (
+                            <Grid item xs={12} md={2}>
+                                <Card>
+                                    <CardHeader title="Role Insights" />
+                                    <CardContent>
+                                        <Box sx={{ mb: 2 }}>
+                                            <Typography variant="h6" gutterBottom>
+                                                Selected Roles
+                                            </Typography>
+                                            {roleComparison.selectedRoles.map(roleId => {
+                                                const role = userRoles.find(r => r.id === roleId);
+                                                return (
+                                                    <Chip
+                                                        key={roleId}
+                                                        label={role?.name || roleId}
+                                                        size="small"
+                                                        sx={{ mr: 1, mb: 1 }}
+                                                    />
+                                                );
+                                            })}
+                                        </Box>
+
+                                        <Box sx={{ mb: 2 }}>
+                                            <Typography variant="h6" gutterBottom>
+                                                Comparison Mode
+                                            </Typography>
+                                            <Typography variant="body2" color="textSecondary">
+                                                {roleComparison.comparisonMode === 'within_role' && 'Comparing within same role'}
+                                                {roleComparison.comparisonMode === 'across_roles' && 'Comparing across different roles'}
+                                                {roleComparison.comparisonMode === 'role_vs_average' && 'Comparing role vs overall average'}
+                                            </Typography>
+                                        </Box>
+
+                                        {roleComparison.showStatistics && previewData.length > 0 && (
+                                            <Box sx={{ mb: 2 }}>
+                                                <Typography variant="h6" gutterBottom>
+                                                    Quick Stats
+                                                </Typography>
+                                                <Box sx={{ p: 1, bgcolor: adminColors.background, borderRadius: 1 }}>
+                                                    <Typography variant="body2">
+                                                        Total Responses: {previewData.reduce((sum, item) => sum + (item.role_count || 0), 0)}
+                                                    </Typography>
+                                                    <Typography variant="body2">
+                                                        Average Score: {(previewData.reduce((sum, item) => sum + (item.value || 0), 0) / previewData.length).toFixed(1)}
+                                                    </Typography>
+                                                    <Typography variant="body2">
+                                                        Top Performer: {previewData.sort((a, b) => (b.value || 0) - (a.value || 0))[0]?.name || 'N/A'}
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+                                        )}
+
+                                        <Box sx={{ mb: 2 }}>
+                                            <Typography variant="h6" gutterBottom>
+                                                Demographics
+                                            </Typography>
+                                            {roleComparison.selectedDemographics.map(demoId => {
+                                                const demo = demographicCategories.find(d => d.id === demoId);
+                                                return (
+                                                    <Chip
+                                                        key={demoId}
+                                                        label={demo?.name || demoId}
+                                                        size="small"
+                                                        sx={{ mr: 1, mb: 1 }}
+                                                    />
+                                                );
+                                            })}
+                                        </Box>
+
+                                        <Divider sx={{ my: 2 }} />
+
+                                        {dataScope.geography.circles && dataScope.geography.circles.length > 0 && (
+                                            <Box sx={{ mb: 2 }}>
+                                                <Typography variant="h6" gutterBottom>
+                                                    Geographic Regions
+                                                </Typography>
+                                                {dataScope.geography.circles.map(circle => (
+                                                    <Box key={circle.id} sx={{ mb: 1 }}>
+                                                        <Chip
+                                                            label={circle.name}
+                                                            size="small"
+                                                            sx={{ mr: 1, mb: 0.5 }}
+                                                        />
+                                                        <Typography variant="caption" color="textSecondary" display="block">
+                                                            {circle.radius > 1000 ?
+                                                                `${(circle.radius / 1000).toFixed(1)} km radius` :
+                                                                `${circle.radius} m radius`}
+                                                        </Typography>
+                                                    </Box>
+                                                ))}
+                                            </Box>
+                                        )}
+
+                                        <Divider sx={{ my: 2 }} />
+
+                                        <Box>
+                                            <Typography variant="h6" gutterBottom>
+                                                Recommendations
+                                            </Typography>
+                                            <Typography variant="body2" color="textSecondary">
+                                                • Focus on roles with lower performance scores
+                                            </Typography>
+                                            <Typography variant="body2" color="textSecondary">
+                                                • Identify training gaps in underperforming areas
+                                            </Typography>
+                                            <Typography variant="body2" color="textSecondary">
+                                                • Compare similar demographic groups for insights
+                                            </Typography>
+                                            {dataScope.geography.circles && dataScope.geography.circles.length > 0 && (
+                                                <Typography variant="body2" color="textSecondary">
+                                                    • Analyze geographic patterns within selected regions
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                    </CardContent>
+                                </Card>
+                            </Grid>
+                        )}
+                    </Grid>
                 )}
 
 
@@ -2972,8 +2968,8 @@ function ReportBuilder({ onLogout }) {
                                                     <Typography variant="body2" sx={{ mb: 1 }}>
                                                         <strong>Role for Filtering:</strong> {
                                                             sampleDataResults.organizationType === 'church' ? 'Pastor' :
-                                                            sampleDataResults.organizationType === 'institution' ? 'President' :
-                                                            sampleDataResults.organizationType === 'non_formal' ? 'Ministry Leader' : 'Unknown'
+                                                                sampleDataResults.organizationType === 'institution' ? 'President' :
+                                                                    sampleDataResults.organizationType === 'non_formal' ? 'Ministry Leader' : 'Unknown'
                                                         }
                                                     </Typography>
                                                     <Typography variant="body2">
@@ -2984,12 +2980,12 @@ function ReportBuilder({ onLogout }) {
                                         </Grid>
                                         <Alert severity="info" sx={{ mt: 2 }}>
                                             <Typography variant="body2">
-                                                <strong>Test Data Ready!</strong> All survey responses are now assigned to {sampleDataResults.selectedHead?.name} 
+                                                <strong>Test Data Ready!</strong> All survey responses are now assigned to {sampleDataResults.selectedHead?.name}
                                                 with role "{
                                                     sampleDataResults.organizationType === 'church' ? 'Pastor' :
-                                                    sampleDataResults.organizationType === 'institution' ? 'President' :
-                                                    sampleDataResults.organizationType === 'non_formal' ? 'Ministry Leader' : 'Unknown'
-                                                }". 
+                                                        sampleDataResults.organizationType === 'institution' ? 'President' :
+                                                            sampleDataResults.organizationType === 'non_formal' ? 'Ministry Leader' : 'Unknown'
+                                                }".
                                                 You can now test role-based filtering in Data Scope → Individual Response Filtering → Filter by Role.
                                             </Typography>
                                         </Alert>

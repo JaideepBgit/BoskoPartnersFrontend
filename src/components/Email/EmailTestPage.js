@@ -65,9 +65,9 @@ const EmailTestPage = () => {
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
             <Typography variant="h4" component="h1" gutterBottom>
-                📧 Email System Test Page
+                Email System Test Page
             </Typography>
-            
+
             <Typography variant="body1" color="text.secondary" paragraph>
                 Test the email functionality including invitation emails, reminder emails, and email templates.
             </Typography>
@@ -78,14 +78,14 @@ const EmailTestPage = () => {
                     <Card>
                         <CardContent>
                             <Typography variant="h6" gutterBottom>
-                                🔧 Email Configuration Test
+                                Email Configuration Test
                             </Typography>
                             <Typography variant="body2" color="text.secondary" paragraph>
                                 Test if your email configuration (SES API and SMTP) is working properly.
                             </Typography>
-                            
-                            <Button 
-                                variant="contained" 
+
+                            <Button
+                                variant="contained"
                                 onClick={handleTestEmailConfig}
                                 disabled={loading}
                                 sx={{ mb: 2 }}
@@ -99,9 +99,9 @@ const EmailTestPage = () => {
                                     <Typography variant="subtitle2" gutterBottom>
                                         Configuration Test Results:
                                     </Typography>
-                                    <pre style={{ 
-                                        backgroundColor: '#f5f5f5', 
-                                        padding: '10px', 
+                                    <pre style={{
+                                        backgroundColor: '#f5f5f5',
+                                        padding: '10px',
                                         borderRadius: '4px',
                                         fontSize: '12px',
                                         overflow: 'auto'
@@ -119,14 +119,14 @@ const EmailTestPage = () => {
                     <Card>
                         <CardContent>
                             <Typography variant="h6" gutterBottom>
-                                📝 Email Templates
+                                Email Templates
                             </Typography>
                             <Typography variant="body2" color="text.secondary" paragraph>
                                 Initialize default email templates for welcome, invitation, and reminder emails.
                             </Typography>
-                            
-                            <Button 
-                                variant="contained" 
+
+                            <Button
+                                variant="contained"
                                 onClick={handleInitializeTemplates}
                                 disabled={loading}
                                 sx={{ mb: 2 }}
@@ -140,9 +140,9 @@ const EmailTestPage = () => {
                                     <Typography variant="subtitle2" gutterBottom>
                                         Template Initialization Results:
                                     </Typography>
-                                    <pre style={{ 
-                                        backgroundColor: '#f5f5f5', 
-                                        padding: '10px', 
+                                    <pre style={{
+                                        backgroundColor: '#f5f5f5',
+                                        padding: '10px',
                                         borderRadius: '4px',
                                         fontSize: '12px',
                                         overflow: 'auto'
@@ -160,14 +160,14 @@ const EmailTestPage = () => {
                     <Card>
                         <CardContent>
                             <Typography variant="h6" gutterBottom>
-                                📧 Invitation Email Test
+                                Invitation Email Test
                             </Typography>
                             <Typography variant="body2" color="text.secondary" paragraph>
                                 Test sending invitation emails to new users. You can send either general platform invitations or survey-specific invitations.
                             </Typography>
-                            
-                            <Button 
-                                variant="contained" 
+
+                            <Button
+                                variant="contained"
                                 onClick={() => setInvitationDialogOpen(true)}
                                 sx={{ mb: 2 }}
                             >
@@ -180,9 +180,9 @@ const EmailTestPage = () => {
                                     <Typography variant="subtitle2" gutterBottom>
                                         Last Invitation Email Result:
                                     </Typography>
-                                    <pre style={{ 
-                                        backgroundColor: '#f5f5f5', 
-                                        padding: '10px', 
+                                    <pre style={{
+                                        backgroundColor: '#f5f5f5',
+                                        padding: '10px',
                                         borderRadius: '4px',
                                         fontSize: '12px',
                                         overflow: 'auto'
@@ -208,7 +208,7 @@ const EmailTestPage = () => {
             {/* Instructions */}
             <Box sx={{ mt: 4, p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
                 <Typography variant="h6" gutterBottom>
-                    📚 How to Use This Page
+                    How to Use This Page
                 </Typography>
                 <Typography variant="body2" paragraph>
                     <strong>1. Test Email Configuration:</strong> First, test if your email system is properly configured. This will check both AWS SES API and SMTP fallback.
