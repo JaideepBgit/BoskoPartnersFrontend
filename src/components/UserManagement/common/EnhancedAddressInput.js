@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-    TextField, Box, Button, FormControl, InputLabel, Select, MenuItem, 
-    Grid, Paper, Typography, Dialog, DialogTitle, DialogContent, 
+import {
+    TextField, Box, Button, FormControl, InputLabel, Select, MenuItem,
+    Grid, Paper, Typography, Dialog, DialogTitle, DialogContent,
     DialogActions, IconButton, Chip, Alert
 } from '@mui/material';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -11,8 +11,8 @@ import MyLocationIcon from '@mui/icons-material/MyLocation';
 import SearchIcon from '@mui/icons-material/Search';
 import GoogleMapsService from '../../../services/GoogleMapsService';
 
-const EnhancedAddressInput = ({ 
-    onPlaceSelect, 
+const EnhancedAddressInput = ({
+    onPlaceSelect,
     label = "Address Information",
     fullWidth = true,
     disabled = false,
@@ -39,20 +39,32 @@ const EnhancedAddressInput = ({
     const [mapLoaded, setMapLoaded] = useState(false);
     const [selectedLocation, setSelectedLocation] = useState(null);
     const [mapError, setMapError] = useState('');
-    
+
     const mapRef = useRef(null);
     const mapInstanceRef = useRef(null);
     const markerRef = useRef(null);
     const searchTimeoutRef = useRef(null);
 
     const continents = [
-        'Africa', 'Antarctica', 'Asia', 'Europe', 
+        'Africa', 'Antarctica', 'Asia', 'Europe',
         'North America', 'Oceania', 'South America'
     ];
 
     useEffect(() => {
         if (initialValue) {
-            setFormData(initialValue);
+            setFormData({
+                continent: initialValue.continent || '',
+                country: initialValue.country || '',
+                province: initialValue.province || '',
+                region: initialValue.region || '',
+                city: initialValue.city || '',
+                town: initialValue.town || '',
+                address_line1: initialValue.address_line1 || '',
+                address_line2: initialValue.address_line2 || '',
+                postal_code: initialValue.postal_code || '',
+                latitude: initialValue.latitude || '',
+                longitude: initialValue.longitude || ''
+            });
             setSearchText(generateFormattedAddress(initialValue));
         }
     }, [initialValue]);
@@ -75,15 +87,15 @@ const EnhancedAddressInput = ({
         script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'AIzaSyAA5PZQdpcY4NXonqUny2sGZzMLbFKE0Iw'}&libraries=places,geometry,marker`;
         script.async = true;
         script.defer = true;
-        
+
         script.onload = () => {
             console.log('Google Maps API loaded for autocomplete');
         };
-        
+
         script.onerror = () => {
             console.error('Failed to load Google Maps API');
         };
-        
+
         document.head.appendChild(script);
     };
 
@@ -100,7 +112,7 @@ const EnhancedAddressInput = ({
         setMapLoaded(false);
         setMapError('');
         mapInstanceRef.current = null;
-        
+
         if (window.google && window.google.maps) {
             initializeMap();
         } else {
@@ -120,17 +132,17 @@ const EnhancedAddressInput = ({
         script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'AIzaSyAA5PZQdpcY4NXonqUny2sGZzMLbFKE0Iw'}&libraries=places,geometry,marker`;
         script.async = true;
         script.defer = true;
-        
+
         script.onload = () => {
             setMapLoaded(true);
             setMapError('');
             initializeMap();
         };
-        
+
         script.onerror = () => {
             setMapError('Failed to load Google Maps. Please check your internet connection.');
         };
-        
+
         document.head.appendChild(script);
     };
 
@@ -151,7 +163,7 @@ const EnhancedAddressInput = ({
             box-shadow: 0 2px 4px rgba(0,0,0,0.3);
             position: relative;
         `;
-        
+
         const marker = new window.google.maps.marker.AdvancedMarkerElement({
             position: location,
             map: map,
@@ -176,14 +188,14 @@ const EnhancedAddressInput = ({
     const initializeMap = () => {
         let attempts = 0;
         const maxAttempts = 10;
-        
+
         const checkAndInitialize = () => {
             attempts++;
             if (mapRef.current && window.google && window.google.maps) {
                 const defaultCenter = { lat: 39.8283, lng: -98.5795 };
-                
-                const center = (formData.latitude && formData.longitude) ? 
-                    { lat: parseFloat(formData.latitude), lng: parseFloat(formData.longitude) } : 
+
+                const center = (formData.latitude && formData.longitude) ?
+                    { lat: parseFloat(formData.latitude), lng: parseFloat(formData.longitude) } :
                     defaultCenter;
 
                 const map = new window.google.maps.Map(mapRef.current, {
@@ -206,7 +218,7 @@ const EnhancedAddressInput = ({
                         lat: event.latLng.lat(),
                         lng: event.latLng.lng()
                     };
-                    
+
                     addMarker(clickedLocation, map);
                     reverseGeocode(clickedLocation);
                 });
@@ -218,7 +230,7 @@ const EnhancedAddressInput = ({
                 setMapError('Map container not found. Please try reloading the map.');
             }
         };
-        
+
         checkAndInitialize();
     };
 
@@ -229,7 +241,7 @@ const EnhancedAddressInput = ({
                 address_components: result.components,
                 geometry: { location: { lat: () => location.lat, lng: () => location.lng } }
             });
-            
+
             setFormData(geoLocationData);
             setSearchText(result.address);
         } catch (error) {
@@ -270,7 +282,7 @@ const EnhancedAddressInput = ({
             }
 
             const service = new window.google.maps.places.AutocompleteService();
-            
+
             service.getPlacePredictions(
                 {
                     input: query,
@@ -308,7 +320,7 @@ const EnhancedAddressInput = ({
 
             const tempDiv = document.createElement('div');
             const placesService = new window.google.maps.places.PlacesService(tempDiv);
-            
+
             placesService.getDetails(
                 {
                     placeId: suggestion.placeId,
@@ -317,7 +329,7 @@ const EnhancedAddressInput = ({
                 (place, status) => {
                     if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
                         const geoLocationData = GoogleMapsService.convertPlaceToGeoLocation(place);
-                        
+
                         setFormData(geoLocationData);
                         setSearchText(place.formatted_address || suggestion.description);
                         setSuggestions([]);
@@ -352,14 +364,14 @@ const EnhancedAddressInput = ({
 
             mapInstanceRef.current.setCenter(location);
             mapInstanceRef.current.setZoom(15);
-            
+
             addMarker(location, mapInstanceRef.current);
-            
+
             const geoLocationData = GoogleMapsService.convertPlaceToGeoLocation({
                 address_components: result.addressComponents,
                 geometry: { location: { lat: () => result.lat, lng: () => result.lng } }
             });
-            
+
             setFormData(geoLocationData);
         } catch (error) {
             setMapError('Location not found. Please try a different search term.');
@@ -431,7 +443,7 @@ const EnhancedAddressInput = ({
                 latitude: selectedLocation.lat.toString(),
                 longitude: selectedLocation.lng.toString()
             };
-            
+
             setFormData(geoLocationData);
             onPlaceSelect({
                 formattedAddress: generateFormattedAddress(geoLocationData),
@@ -472,7 +484,7 @@ const EnhancedAddressInput = ({
             data.postal_code,
             data.country
         ].filter(part => part && part.trim());
-        
+
         return parts.join(', ');
     };
 
@@ -493,23 +505,23 @@ const EnhancedAddressInput = ({
                     InputProps={{
                         endAdornment: (
                             <Box sx={{ display: 'flex', gap: 1 }}>
-                                <Button 
+                                <Button
                                     variant="contained"
                                     onClick={() => setMapOpen(true)}
                                     disabled={disabled}
                                     startIcon={<MapIcon />}
-                                    sx={{ 
+                                    sx={{
                                         backgroundColor: '#633394',
                                         '&:hover': { backgroundColor: '#7c52a5' }
                                     }}
                                 >
                                     Map
                                 </Button>
-                                <Button 
+                                <Button
                                     variant="outlined"
                                     onClick={handleClear}
                                     disabled={disabled}
-                                    sx={{ 
+                                    sx={{
                                         color: '#633394',
                                         borderColor: '#633394'
                                     }}
@@ -520,7 +532,7 @@ const EnhancedAddressInput = ({
                         )
                     }}
                 />
-                
+
                 {isLoading && (
                     <Typography variant="caption" sx={{ color: '#666', mt: 1 }}>
                         Searching...
@@ -530,12 +542,12 @@ const EnhancedAddressInput = ({
 
             {(formData.latitude && formData.longitude) && (
                 <Box sx={{ mb: 2 }}>
-                    <Chip 
+                    <Chip
                         icon={<LocationOnIcon />}
                         label={`📍 ${formData.latitude}, ${formData.longitude}`}
                         color="primary"
                         variant="outlined"
-                        sx={{ 
+                        sx={{
                             backgroundColor: 'rgba(99, 51, 148, 0.1)',
                             borderColor: '#633394',
                             color: '#633394'
@@ -549,7 +561,7 @@ const EnhancedAddressInput = ({
                     <LocationOnIcon sx={{ fontSize: '1rem', mr: 0.5 }} />
                     Detailed Address Information
                 </Typography>
-                
+
                 <Grid container spacing={2}>
                     <Grid item xs={12} sm={6}>
                         <FormControl fullWidth>
@@ -665,8 +677,8 @@ const EnhancedAddressInput = ({
                 </Grid>
             </Paper>
 
-            <Dialog 
-                open={mapOpen} 
+            <Dialog
+                open={mapOpen}
                 onClose={handleMapClose}
                 maxWidth="lg"
                 fullWidth
@@ -674,8 +686,8 @@ const EnhancedAddressInput = ({
                     sx: { height: '80vh' }
                 }}
             >
-                <DialogTitle sx={{ 
-                    backgroundColor: '#633394', 
+                <DialogTitle sx={{
+                    backgroundColor: '#633394',
                     color: 'white',
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -685,14 +697,14 @@ const EnhancedAddressInput = ({
                         <MapIcon />
                         Select Location on Map
                     </Box>
-                    <IconButton 
+                    <IconButton
                         onClick={handleMapClose}
                         sx={{ color: 'white' }}
                     >
                         <CloseIcon />
                     </IconButton>
                 </DialogTitle>
-                
+
                 <DialogContent sx={{ p: 0, display: 'flex', flexDirection: 'column' }}>
                     <Box sx={{ p: 2, borderBottom: '1px solid #e0e0e0' }}>
                         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -709,24 +721,24 @@ const EnhancedAddressInput = ({
                                 }}
                                 sx={{ flex: 1, minWidth: '200px' }}
                             />
-                            <Button 
+                            <Button
                                 variant="contained"
                                 onClick={searchOnMap}
                                 disabled={!searchText.trim() || !mapLoaded}
                                 startIcon={<SearchIcon />}
-                                sx={{ 
+                                sx={{
                                     backgroundColor: '#633394',
                                     minWidth: '100px'
                                 }}
                             >
                                 Search
                             </Button>
-                            <Button 
+                            <Button
                                 variant="outlined"
                                 onClick={getCurrentLocation}
                                 disabled={!mapLoaded}
                                 startIcon={<MyLocationIcon />}
-                                sx={{ 
+                                sx={{
                                     color: '#633394',
                                     borderColor: '#633394',
                                     minWidth: '120px'
@@ -734,12 +746,12 @@ const EnhancedAddressInput = ({
                             >
                                 My Location
                             </Button>
-                            <Button 
+                            <Button
                                 variant="outlined"
                                 onClick={reloadMap}
                                 disabled={!mapLoaded}
                                 startIcon={<MapIcon />}
-                                sx={{ 
+                                sx={{
                                     color: '#633394',
                                     borderColor: '#633394',
                                     minWidth: '100px'
@@ -748,16 +760,16 @@ const EnhancedAddressInput = ({
                                 Reload Map
                             </Button>
                         </Box>
-                        
+
                         {mapError && (
                             <Alert severity="error" sx={{ mt: 1 }}>
                                 {mapError}
                             </Alert>
                         )}
-                        
+
                         {selectedLocation && (
                             <Box sx={{ mt: 1 }}>
-                                <Chip 
+                                <Chip
                                     icon={<LocationOnIcon />}
                                     label={`Selected: ${selectedLocation.lat.toFixed(6)}, ${selectedLocation.lng.toFixed(6)}`}
                                     color="primary"
@@ -769,27 +781,27 @@ const EnhancedAddressInput = ({
 
                     <Box sx={{ flex: 1, position: 'relative', minHeight: '400px' }}>
                         {!mapLoaded && (
-                            <Box sx={{ 
-                                position: 'absolute', 
-                                top: '50%', 
-                                left: '50%', 
+                            <Box sx={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
                                 transform: 'translate(-50%, -50%)',
                                 textAlign: 'center'
                             }}>
                                 <Typography>Loading map...</Typography>
                             </Box>
                         )}
-                        <div 
-                            ref={mapRef} 
-                            style={{ 
-                                width: '100%', 
+                        <div
+                            ref={mapRef}
+                            style={{
+                                width: '100%',
                                 height: '100%',
                                 minHeight: '400px'
-                            }} 
+                            }}
                         />
                     </Box>
                 </DialogContent>
-                
+
                 <DialogActions sx={{ p: 2, borderTop: '1px solid #e0e0e0' }}>
                     <Typography variant="body2" sx={{ flex: 1, color: '#666' }}>
                         Click on the map to select a location, or drag the marker to adjust.
@@ -797,11 +809,11 @@ const EnhancedAddressInput = ({
                     <Button onClick={handleMapClose} color="secondary">
                         Cancel
                     </Button>
-                    <Button 
+                    <Button
                         onClick={handleUseMapLocation}
                         variant="contained"
                         disabled={!selectedLocation}
-                        sx={{ 
+                        sx={{
                             backgroundColor: '#633394',
                             '&:hover': { backgroundColor: '#7c52a5' }
                         }}

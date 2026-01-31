@@ -577,7 +577,7 @@ const TemplatesTab = ({
         <Box
           sx={{
             width: { xs: selectedSection ? 0 : 240, sm: 280 },
-            backgroundColor: '#f5f5f5',
+            backgroundColor: '#FFFFFF',
             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
             minHeight: '100%',
             display: { xs: selectedSection ? 'none' : 'flex', sm: 'flex' },
@@ -750,7 +750,7 @@ const TemplatesTab = ({
             {selectedTemplate && !selectedSection && (
               <Paper sx={{
                 p: 3,
-                backgroundColor: '#f5f5f5',
+                backgroundColor: '#FFFFFF',
                 boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
                 flex: 1,
                 display: 'flex',
@@ -1185,7 +1185,7 @@ const TemplatesTab = ({
           <Paper sx={{
             p: 4,
             textAlign: 'center',
-            backgroundColor: '#f5f5f5',
+            backgroundColor: '#FFFFFF',
             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
             flex: 1,
             display: 'flex',

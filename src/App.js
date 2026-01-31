@@ -7,6 +7,7 @@ import UserLandingPage from './components/LandingPages/UserLandingPage';
 import UserDashboard from './components/Dashboard/UserDashboard';
 import AdminDashboard from './components/Dashboard/AdminDashboard';
 import RootDashboard from './components/Dashboard/RootDashboard';
+import ManagerDashboard from './components/Dashboard/ManagerDashboard';
 import InventoryPage from './components/Admin/Inventory/InventoryPage';
 import UserManagementMain from './components/UserManagement/UserManagementMain';
 import SurveysPage from './components/Surveys/SurveysPage';
@@ -24,6 +25,7 @@ import SettingsPage from './components/Settings/SettingsPage';
 import OrganizationManagementPage from './components/Admin/OrganizationManagement/OrganizationManagementPage';
 import OrganizationDetailPage from './components/Admin/OrganizationManagement/OrganizationDetailPage';
 import AddUserPage from './components/UserManagement/Users/AddUserPage';
+import AddOrganizationPage from './components/UserManagement/Organizations/AddOrganizationPage';
 
 import './App.css';
 import './styles/form.css';
@@ -37,6 +39,10 @@ function RoleBasedDashboard() {
   // This consolidates the redundant routes into a single dashboard experience
   if (userRole === 'root' || userRole === 'admin') {
     return <AdminDashboard />;
+  }
+
+  if (userRole === 'manager') {
+    return <Navigate to="/manager-dashboard" replace />;
   }
 
   // For regular users on /dashboard, redirect to their profile
@@ -121,6 +127,13 @@ function Main({ isAuthenticated, userRole, login, logout }) {
         <Route path="/dashboard" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <RoleBasedDashboard />
+          </ProtectedRoute>
+        } />
+
+        {/* Manager Dashboard Route */}
+        <Route path="/manager-dashboard" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <ManagerDashboard onLogout={logout} />
           </ProtectedRoute>
         } />
 
@@ -232,6 +245,13 @@ function Main({ isAuthenticated, userRole, login, logout }) {
         <Route path="/organizations" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <OrganizationManagementPage onLogout={logout} />
+          </ProtectedRoute>
+        } />
+
+        {/* Add Organization Page Route */}
+        <Route path="/organizations/add" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <AddOrganizationPage />
           </ProtectedRoute>
         } />
 

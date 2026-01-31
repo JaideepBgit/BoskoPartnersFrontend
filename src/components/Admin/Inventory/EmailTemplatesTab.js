@@ -724,7 +724,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
         Email Templates
       </Typography>
 
-      <Paper sx={{ p: isMobile ? 1.5 : 2, mb: 3, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
+      <Paper sx={{ p: isMobile ? 1.5 : 2, mb: 3, backgroundColor: '#FFFFFF', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
           <Button
             variant="contained"
@@ -1061,7 +1061,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
               </FormControl>
 
               {selectedSampleTemplate && (
-                <Box sx={{ mt: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
+                <Box sx={{ mt: 2, p: 2, backgroundColor: '#FFFFFF', borderRadius: 1 }}>
                   <Typography variant="body2" sx={{ mb: 1, fontWeight: 'bold' }}>
                     Preview: {sampleTemplates.find(t => t.id.toString() === selectedSampleTemplate)?.name}
                   </Typography>

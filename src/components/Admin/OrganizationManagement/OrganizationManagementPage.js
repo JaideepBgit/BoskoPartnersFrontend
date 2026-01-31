@@ -2,9 +2,9 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
     Container, Typography, Box, Paper, TextField, InputAdornment,
     Select, MenuItem, FormControl, InputLabel, IconButton, Button,
-    CircularProgress, Tabs, Tab, Dialog, DialogTitle, DialogContent,
+    CircularProgress, Tabs, Tab,
     Chip, Table, TableBody, TableCell, TableContainer, TableHead,
-    TableRow, TablePagination, Avatar, Tooltip
+    TableRow, TablePagination, Avatar, Tooltip, TableSortLabel
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -14,14 +14,15 @@ import BusinessIcon from '@mui/icons-material/Business';
 import PeopleIcon from '@mui/icons-material/People';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import RadarIcon from '@mui/icons-material/Radar';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../shared/Navbar/Navbar';
+import SpiderChartPopup from '../../UserManagement/common/SpiderChartPopup';
 import {
     fetchOrganizations,
     fetchOrganizationTypes,
     fetchUsersByOrganization,
 } from '../../../services/UserManagement/UserManagementService';
-import OrganizationsManagement from '../../UserManagement/Organizations/OrganizationsManagement';
 
 // Color theme
 const colors = {
@@ -50,15 +51,79 @@ function OrganizationManagementPage() {
     const [activeTab, setActiveTab] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState('');
-    const [addDialogOpen, setAddDialogOpen] = useState(false);
 
     // Pagination for main organizations
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
     // Pagination for related organizations
+    // Pagination for related organizations
     const [relatedPage, setRelatedPage] = useState(0);
     const [relatedRowsPerPage, setRelatedRowsPerPage] = useState(10);
+
+    // Sorting state
+    const [order, setOrder] = useState('asc');
+    const [orderBy, setOrderBy] = useState('name');
+    
+    // Spider Chart Popup states
+    const [spiderChartOpen, setSpiderChartOpen] = useState(false);
+    const [selectedOrgForChart, setSelectedOrgForChart] = useState(null);
+    
+    // Handler for opening spider chart popup
+    const handleOpenSpiderChart = (e, org) => {
+        e.stopPropagation(); // Prevent row click navigation
+        setSelectedOrgForChart(org);
+        setSpiderChartOpen(true);
+    };
+    
+    const handleCloseSpiderChart = () => {
+        setSpiderChartOpen(false);
+        setSelectedOrgForChart(null);
+    };
+
+    // Sorting functions
+    const handleRequestSort = (property) => {
+        const isAsc = orderBy === property && order === 'asc';
+        setOrder(isAsc ? 'desc' : 'asc');
+        setOrderBy(property);
+    };
+
+    const descendingComparator = (a, b, orderBy) => {
+        let aValue = a[orderBy];
+        let bValue = b[orderBy];
+
+        if (orderBy === 'organisation') {
+            aValue = (a.name || '').toLowerCase();
+            bValue = (b.name || '').toLowerCase();
+        } else if (orderBy === 'location') {
+            aValue = getLocation(a).toLowerCase();
+            bValue = getLocation(b).toLowerCase();
+        }
+
+        if (bValue < aValue) {
+            return -1;
+        }
+        if (bValue > aValue) {
+            return 1;
+        }
+        return 0;
+    };
+
+    const getComparator = (order, orderBy) => {
+        return order === 'desc'
+            ? (a, b) => descendingComparator(a, b, orderBy)
+            : (a, b) => -descendingComparator(a, b, orderBy);
+    };
+
+    const stableSort = (array, comparator) => {
+        const stabilizedThis = array.map((el, index) => [el, index]);
+        stabilizedThis.sort((a, b) => {
+            const order = comparator(a[0], b[0]);
+            if (order !== 0) return order;
+            return a[1] - b[1];
+        });
+        return stabilizedThis.map((el) => el[0]);
+    };
 
     // Load data
     const loadData = useCallback(async () => {
@@ -126,13 +191,8 @@ function OrganizationManagementPage() {
         navigate(`/organization-management/${org.id}`);
     };
 
-    const handleOpenAddDialog = () => {
-        setAddDialogOpen(true);
-    };
-
-    const handleCloseAddDialog = () => {
-        setAddDialogOpen(false);
-        loadData();
+    const handleOpenAddPage = () => {
+        navigate('/organizations/add');
     };
 
     const getLocation = (org) => {
@@ -178,8 +238,42 @@ function OrganizationManagementPage() {
                         <TableHead>
                             <TableRow sx={{ background: colors.headerGradient }}>
                                 <TableCell sx={{ color: 'white', fontWeight: 'bold', width: 50 }}></TableCell>
-                                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Organization</TableCell>
-                                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Location</TableCell>
+                                <TableCell
+                                    sortDirection={orderBy === 'organisation' ? order : false}
+                                    sx={{ color: 'white', fontWeight: 'bold' }}
+                                >
+                                    <TableSortLabel
+                                        active={orderBy === 'organisation'}
+                                        direction={orderBy === 'organisation' ? order : 'asc'}
+                                        onClick={() => handleRequestSort('organisation')}
+                                        sx={{
+                                            color: 'white !important',
+                                            '& .MuiTableSortLabel-icon': {
+                                                color: 'white !important',
+                                            },
+                                        }}
+                                    >
+                                        Organization
+                                    </TableSortLabel>
+                                </TableCell>
+                                <TableCell
+                                    sortDirection={orderBy === 'location' ? order : false}
+                                    sx={{ color: 'white', fontWeight: 'bold' }}
+                                >
+                                    <TableSortLabel
+                                        active={orderBy === 'location'}
+                                        direction={orderBy === 'location' ? order : 'asc'}
+                                        onClick={() => handleRequestSort('location')}
+                                        sx={{
+                                            color: 'white !important',
+                                            '& .MuiTableSortLabel-icon': {
+                                                color: 'white !important',
+                                            },
+                                        }}
+                                    >
+                                        Location
+                                    </TableSortLabel>
+                                </TableCell>
                                 <TableCell sx={{ color: 'white', fontWeight: 'bold', textAlign: 'center' }}>Users</TableCell>
                                 <TableCell sx={{ color: 'white', fontWeight: 'bold', width: 50 }}></TableCell>
                             </TableRow>
@@ -194,7 +288,7 @@ function OrganizationManagementPage() {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                orgs
+                                stableSort(orgs, getComparator(order, orderBy))
                                     .slice(currentPage * currentRowsPerPage, currentPage * currentRowsPerPage + currentRowsPerPage)
                                     .map((org) => {
                                         const typeColors = getTypeChipColor(org.organization_type?.type);
@@ -260,7 +354,25 @@ function OrganizationManagementPage() {
                                                     </Box>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <ChevronRightIcon sx={{ color: colors.textSecondary }} />
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                        <Tooltip title="View Analytics">
+                                                            <IconButton
+                                                                size="small"
+                                                                onClick={(e) => handleOpenSpiderChart(e, org)}
+                                                                sx={{ 
+                                                                    color: '#633394',
+                                                                    '&:hover': { 
+                                                                        backgroundColor: 'rgba(99, 51, 148, 0.1)',
+                                                                        transform: 'scale(1.1)'
+                                                                    },
+                                                                    transition: 'all 0.2s ease'
+                                                                }}
+                                                            >
+                                                                <RadarIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                        <ChevronRightIcon sx={{ color: colors.textSecondary }} />
+                                                    </Box>
                                                 </TableCell>
                                             </TableRow>
                                         );
@@ -307,7 +419,7 @@ function OrganizationManagementPage() {
                         <Button
                             variant="contained"
                             startIcon={<AddIcon />}
-                            onClick={handleOpenAddDialog}
+                            onClick={handleOpenAddPage}
                             sx={{
                                 backgroundColor: colors.primary,
                                 borderRadius: 2,
@@ -487,23 +599,16 @@ function OrganizationManagementPage() {
                         )}
                     </>
                 )}
-
-                {/* Add Organization Dialog */}
-                <Dialog open={addDialogOpen} onClose={handleCloseAddDialog} maxWidth="md" fullWidth>
-                    <DialogTitle sx={{
-                        background: colors.headerGradient,
-                        color: 'white'
-                    }}>
-                        Add New Organization
-                    </DialogTitle>
-                    <DialogContent sx={{ p: 0 }}>
-                        <OrganizationsManagement
-                            showAddDialogOnly={true}
-                            onClose={handleCloseAddDialog}
-                            onOrganizationAdded={handleCloseAddDialog}
-                        />
-                    </DialogContent>
-                </Dialog>
+                
+                {/* Spider Chart Popup */}
+                <SpiderChartPopup
+                    open={spiderChartOpen}
+                    onClose={handleCloseSpiderChart}
+                    entityType="organization"
+                    entityData={selectedOrgForChart}
+                    entityId={selectedOrgForChart?.id}
+                    entityName={selectedOrgForChart?.name}
+                />
             </Container>
         </>
     );

@@ -70,8 +70,8 @@ const SortableSectionItem = ({ section, index }) => {
       <IconButton
         {...attributes}
         {...listeners}
-        sx={{ 
-          mr: 1, 
+        sx={{
+          mr: 1,
           cursor: 'grab',
           '&:active': { cursor: 'grabbing' }
         }}
@@ -97,10 +97,10 @@ const SortableSectionItem = ({ section, index }) => {
   );
 };
 
-const SectionOrderDialog = ({ 
-  open, 
-  onClose, 
-  onSave, 
+const SectionOrderDialog = ({
+  open,
+  onClose,
+  onSave,
   sections = [],
   templateName = ''
 }) => {
@@ -150,18 +150,18 @@ const SectionOrderDialog = ({
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={handleClose} 
-      maxWidth="sm" 
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="sm"
       fullWidth
       PaperProps={{
         sx: { minHeight: '400px' }
       }}
     >
-      <DialogTitle sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
+      <DialogTitle sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
         alignItems: 'center',
         pb: 1
       }}>
@@ -177,20 +177,20 @@ const SectionOrderDialog = ({
           <CloseIcon />
         </IconButton>
       </DialogTitle>
-      
+
       <DialogContent sx={{ pt: 1 }}>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Drag and drop sections to reorder them. The order will affect how questions are displayed in the survey.
         </Typography>
-        
-        <Paper sx={{ p: 1, backgroundColor: '#f9f9f9' }}>
+
+        <Paper sx={{ p: 1, backgroundColor: '#FFFFFF' }}>
           {orderedSections.length > 0 ? (
-            <DndContext 
+            <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
               onDragEnd={handleDragEnd}
             >
-              <SortableContext 
+              <SortableContext
                 items={orderedSections.map(s => s.name)}
                 strategy={verticalListSortingStrategy}
               >
@@ -214,17 +214,17 @@ const SectionOrderDialog = ({
           )}
         </Paper>
       </DialogContent>
-      
+
       <DialogActions sx={{ p: 2, pt: 1 }}>
         <Button onClick={handleClose} sx={{ color: '#666' }}>
           Cancel
         </Button>
-        <Button 
-          onClick={handleSave} 
+        <Button
+          onClick={handleSave}
           variant="contained"
           disabled={orderedSections.length === 0}
-          sx={{ 
-            backgroundColor: '#633394', 
+          sx={{
+            backgroundColor: '#633394',
             '&:hover': { backgroundColor: '#7c52a5' }
           }}
         >

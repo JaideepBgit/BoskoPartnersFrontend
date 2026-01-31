@@ -27,17 +27,17 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import FolderCopyIcon from '@mui/icons-material/FolderCopy';
 import InventoryService from '../../../services/Admin/Inventory/InventoryService';
 
-const CopyTemplateVersionDialog = ({ 
-  open, 
-  onClose, 
-  templateVersion, 
-  organizations = [], 
+const CopyTemplateVersionDialog = ({
+  open,
+  onClose,
+  templateVersion,
+  organizations = [],
   templates = [],
-  onCopySuccess 
+  onCopySuccess
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  
+
   const [selectedOrganizationId, setSelectedOrganizationId] = useState('');
   const [newVersionName, setNewVersionName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -48,7 +48,7 @@ const CopyTemplateVersionDialog = ({
   const [loadingVersions, setLoadingVersions] = useState(false);
   const [selectedExistingVersionId, setSelectedExistingVersionId] = useState('');
   const [useExistingVersion, setUseExistingVersion] = useState(false);
-  
+
   // Reset state when dialog opens
   useEffect(() => {
     if (open && templateVersion) {
@@ -82,7 +82,7 @@ const CopyTemplateVersionDialog = ({
 
   const loadExistingVersions = async () => {
     if (!selectedOrganizationId) return;
-    
+
     setLoadingVersions(true);
     try {
       const versions = await InventoryService.getTemplateVersions(selectedOrganizationId);
@@ -113,7 +113,7 @@ const CopyTemplateVersionDialog = ({
 
     setLoading(true);
     setError('');
-    
+
     try {
       // Determine the version name to use
       let versionNameToUse = newVersionName;
@@ -129,10 +129,10 @@ const CopyTemplateVersionDialog = ({
         selectedOrganizationId,
         versionNameToUse
       );
-      
+
       setCopyResult(result);
       setSuccess(true);
-      
+
       // Call success callback after a short delay to show success message
       setTimeout(() => {
         if (onCopySuccess) {
@@ -140,7 +140,7 @@ const CopyTemplateVersionDialog = ({
         }
         onClose();
       }, 2000);
-      
+
     } catch (err) {
       console.error('Error copying template version:', err);
       setError(err.response?.data?.error || 'Failed to copy template version. Please try again.');
@@ -158,8 +158,8 @@ const CopyTemplateVersionDialog = ({
   if (!templateVersion) return null;
 
   return (
-    <Dialog 
-      open={open} 
+    <Dialog
+      open={open}
       onClose={handleClose}
       fullWidth
       fullScreen={isMobile}
@@ -171,7 +171,7 @@ const CopyTemplateVersionDialog = ({
         }
       }}
     >
-      <DialogTitle sx={{ 
+      <DialogTitle sx={{
         fontSize: isMobile ? '1.1rem' : '1.25rem',
         pb: 1,
         borderBottom: '1px solid #e0e0e0'
@@ -181,21 +181,21 @@ const CopyTemplateVersionDialog = ({
           Copy Template Version
         </Box>
       </DialogTitle>
-      
+
       <DialogContent sx={{ pt: 3 }}>
         {success ? (
           <Box sx={{ textAlign: 'center', py: 3 }}>
             <CheckCircleIcon sx={{ fontSize: 48, color: '#4caf50', mb: 2 }} />
             <Typography variant="h6" sx={{ color: '#4caf50', mb: 1 }}>
-              {copyResult?.version_action === 'updated' 
-                ? 'Template Version Updated Successfully!' 
+              {copyResult?.version_action === 'updated'
+                ? 'Template Version Updated Successfully!'
                 : 'Template Version Copied Successfully!'}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               {copyResult?.message}
             </Typography>
             {copyResult && (
-              <Box sx={{ textAlign: 'left', p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+              <Box sx={{ textAlign: 'left', p: 2, bgcolor: '#FFFFFF', borderRadius: 1 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
                   {copyResult.version_action === 'updated' ? 'Update Summary:' : 'Copy Summary:'}
                 </Typography>
@@ -226,7 +226,7 @@ const CopyTemplateVersionDialog = ({
               </Alert>
             )}
 
-            <Box sx={{ mb: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+            <Box sx={{ mb: 3, p: 2, bgcolor: '#FFFFFF', borderRadius: 1 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
                 Source Template Version:
               </Typography>
@@ -243,10 +243,10 @@ const CopyTemplateVersionDialog = ({
                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
                   Templates:
                 </Typography>
-                <Chip 
+                <Chip
                   label={`${versionTemplates.length} templates`}
                   size="small"
-                  sx={{ 
+                  sx={{
                     height: '20px',
                     fontSize: '0.7rem',
                     backgroundColor: 'rgba(99, 51, 148, 0.08)',
@@ -264,9 +264,9 @@ const CopyTemplateVersionDialog = ({
               )}
             </Box>
 
-            <FormControl 
-              fullWidth 
-              margin="normal" 
+            <FormControl
+              fullWidth
+              margin="normal"
               size={isMobile ? "small" : "medium"}
               required
             >
@@ -278,7 +278,7 @@ const CopyTemplateVersionDialog = ({
                 value={selectedOrganizationId}
                 label="Target Organization *"
                 onChange={(e) => setSelectedOrganizationId(e.target.value)}
-                sx={{ 
+                sx={{
                   '& .MuiOutlinedInput-notchedOutline': {
                     '&.Mui-focused': {
                       borderColor: '#633394',
@@ -302,11 +302,11 @@ const CopyTemplateVersionDialog = ({
             {selectedOrganizationId && (
               <>
                 <Divider sx={{ my: 2 }} />
-                
+
                 <Typography variant="h6" sx={{ mb: 2, color: '#633394', fontSize: '1rem' }}>
                   Target Version
                 </Typography>
-                
+
                 {loadingVersions ? (
                   <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
                     <CircularProgress size={24} />
@@ -315,33 +315,33 @@ const CopyTemplateVersionDialog = ({
                   <>
                     <Alert severity="info" sx={{ mb: 2 }}>
                       <Typography variant="body2">
-                        Found {existingVersions.length} existing version(s) in this organization. 
+                        Found {existingVersions.length} existing version(s) in this organization.
                         Choose to use an existing version or create a new one.
                       </Typography>
                     </Alert>
-                    
+
                     <FormControl component="fieldset" sx={{ mb: 2, width: '100%' }}>
                       <RadioGroup
                         value={useExistingVersion ? 'existing' : 'new'}
                         onChange={(e) => setUseExistingVersion(e.target.value === 'existing')}
                       >
-                        <FormControlLabel 
-                          value="new" 
-                          control={<Radio sx={{ color: '#633394', '&.Mui-checked': { color: '#633394' } }} />} 
-                          label="Create New Version" 
+                        <FormControlLabel
+                          value="new"
+                          control={<Radio sx={{ color: '#633394', '&.Mui-checked': { color: '#633394' } }} />}
+                          label="Create New Version"
                         />
-                        <FormControlLabel 
-                          value="existing" 
-                          control={<Radio sx={{ color: '#633394', '&.Mui-checked': { color: '#633394' } }} />} 
-                          label="Use Existing Version" 
+                        <FormControlLabel
+                          value="existing"
+                          control={<Radio sx={{ color: '#633394', '&.Mui-checked': { color: '#633394' } }} />}
+                          label="Use Existing Version"
                         />
                       </RadioGroup>
                     </FormControl>
 
                     {useExistingVersion ? (
-                      <FormControl 
-                        fullWidth 
-                        margin="normal" 
+                      <FormControl
+                        fullWidth
+                        margin="normal"
                         size={isMobile ? "small" : "medium"}
                         required
                       >
@@ -353,7 +353,7 @@ const CopyTemplateVersionDialog = ({
                           value={selectedExistingVersionId}
                           label="Select Existing Version *"
                           onChange={(e) => setSelectedExistingVersionId(e.target.value)}
-                          sx={{ 
+                          sx={{
                             '& .MuiOutlinedInput-notchedOutline': {
                               '&.Mui-focused': {
                                 borderColor: '#633394',
@@ -387,7 +387,7 @@ const CopyTemplateVersionDialog = ({
                         onChange={(e) => setNewVersionName(e.target.value)}
                         helperText="Name for the new template version in the target organization"
                         required
-                        sx={{ 
+                        sx={{
                           '& .MuiOutlinedInput-root': {
                             '&.Mui-focused fieldset': {
                               borderColor: '#633394',
@@ -416,7 +416,7 @@ const CopyTemplateVersionDialog = ({
                       onChange={(e) => setNewVersionName(e.target.value)}
                       helperText="Name for the new template version in the target organization"
                       required
-                      sx={{ 
+                      sx={{
                         '& .MuiOutlinedInput-root': {
                           '&.Mui-focused fieldset': {
                             borderColor: '#633394',
@@ -454,28 +454,28 @@ const CopyTemplateVersionDialog = ({
           </>
         )}
       </DialogContent>
-      
+
       {!success && (
         <DialogActions sx={{ p: isMobile ? 2 : 1, borderTop: '1px solid #e0e0e0' }}>
-          <Button 
+          <Button
             onClick={handleClose}
             disabled={loading}
             size={isMobile ? "small" : "medium"}
-            sx={{ 
+            sx={{
               color: '#633394',
               fontSize: isMobile ? '0.75rem' : '0.875rem'
             }}
           >
             Cancel
           </Button>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             onClick={handleCopy}
             disabled={loading || !selectedOrganizationId || !newVersionName.trim() || availableOrganizations.length === 0}
             startIcon={loading ? <CircularProgress size={16} /> : <ContentCopyIcon />}
             size={isMobile ? "small" : "medium"}
-            sx={{ 
-              backgroundColor: '#633394', 
+            sx={{
+              backgroundColor: '#633394',
               '&:hover': { backgroundColor: '#7c52a5' },
               fontSize: isMobile ? '0.75rem' : '0.875rem',
               '&.Mui-disabled': {

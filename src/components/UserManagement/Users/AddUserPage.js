@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
     Container, Box, Typography, Button, Paper, TextField, Select, MenuItem,
     FormControl, InputLabel, Grid, Chip, CircularProgress, Autocomplete
@@ -9,7 +9,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import SaveIcon from '@mui/icons-material/Save';
 import {
     addUser, fetchOrganizations, fetchRoles, addRole,
-    updateUserOrganizationalRoles, fetchTemplatesByOrganization
+    updateUserOrganizationalRoles, fetchTemplatesByOrganization, fetchTitles
 } from '../../../services/UserManagement/UserManagementService';
 import InventoryService from '../../../services/Admin/Inventory/InventoryService';
 import { EmailService } from '../../../services/EmailService';
@@ -17,12 +17,23 @@ import EnhancedAddressInput from '../common/EnhancedAddressInput';
 import EmailPreviewDialog from '../common/EmailPreviewDialog';
 import Navbar from '../../shared/Navbar/Navbar';
 
+const defaultRoles = [
+    { name: 'admin', description: 'Administrator role with full system access' },
+    { name: 'user', description: 'Regular user role with standard access' },
+    { name: 'manager', description: 'Created for organizational role: Manager' },
+    { name: 'primary_contact', description: 'Primary Contact' },
+    { name: 'secondary_contact', description: 'Secondary Contact' }
+];
+
 function AddUserPage() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const { returnUrl, organizationId } = location.state || {};
 
     // State variables
     const [organizations, setOrganizations] = useState([]);
-    const [roles, setRoles] = useState([]);
+    const [rolesList, setRolesList] = useState([]); // Fetch roles from backend
+    const [activeTitles, setActiveTitles] = useState([]); // Fetch titles from backend
     const [templates, setTemplates] = useState([]);
     const [emailTemplates, setEmailTemplates] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -33,15 +44,15 @@ function AddUserPage() {
         username: '',
         email: '',
         password: '',
-        ui_role: 'user',
         firstname: '',
         lastname: '',
         phone: '',
-        title: '',
         organization_id: '',
         template_id: '',
         email_template_id: '',
-        roles: [],
+        roles: ['user'], // System roles
+        titles: [], // System titles
+        organizational_roles: [], // Organization-specific roles
         geo_location: {
             continent: '',
             region: '',
@@ -79,7 +90,64 @@ function AddUserPage() {
     useEffect(() => {
         loadOrganizations();
         loadRoles();
+        loadTitles();
     }, []);
+
+    // Load titles from API
+    const loadTitles = async () => {
+        try {
+            const data = await fetchTitles();
+            if (data && data.length > 0) {
+                setActiveTitles(data.map(t => t.name));
+            } else {
+                setActiveTitles(['Manager', 'Director', 'Coordinator', 'Lead', 'Executive']);
+            }
+        } catch (error) {
+            console.error('Failed to fetch titles', error);
+            setActiveTitles(['Manager', 'Director', 'Coordinator', 'Lead', 'Executive']);
+        }
+    }
+
+    // Load roles from API
+    const loadRoles = async () => {
+        try {
+            const data = await fetchRoles();
+            let availableRoles = data && data.length > 0
+                ? data
+                : defaultRoles.map((r, i) => ({ id: i, name: r.name, description: r.description }));
+
+            // Filter roles based on logged-in user's role
+            const currentUserRole = localStorage.getItem('userRole');
+
+            if (currentUserRole === 'admin') {
+                // Admin cannot assign 'root' role
+                availableRoles = availableRoles.filter(role =>
+                    role.name.toLowerCase() !== 'root'
+                );
+            } else if (currentUserRole === 'manager') {
+                // Manager cannot assign 'admin' or 'root' roles
+                availableRoles = availableRoles.filter(role =>
+                    !['admin', 'root'].includes(role.name.toLowerCase())
+                );
+            }
+            // Root users can assign any role (no filtering needed)
+
+            setRolesList(availableRoles);
+        } catch (error) {
+            console.error('Failed to fetch roles:', error);
+            // Fallback to default with same filtering
+            let fallbackRoles = defaultRoles.map((r, i) => ({ id: i, name: r.name, description: r.description }));
+            const currentUserRole = localStorage.getItem('userRole');
+
+            if (currentUserRole === 'admin') {
+                fallbackRoles = fallbackRoles.filter(role => role.name.toLowerCase() !== 'root');
+            } else if (currentUserRole === 'manager') {
+                fallbackRoles = fallbackRoles.filter(role => !['admin', 'root'].includes(role.name.toLowerCase()));
+            }
+
+            setRolesList(fallbackRoles);
+        }
+    };
 
     // Load organizations from API
     const loadOrganizations = async () => {
@@ -96,15 +164,7 @@ function AddUserPage() {
         }
     };
 
-    // Load roles from API
-    const loadRoles = async () => {
-        try {
-            const data = await fetchRoles();
-            setRoles(data);
-        } catch (error) {
-            console.error('Failed to fetch roles:', error);
-        }
-    };
+
 
     // Load templates by organization
     const loadTemplates = async (organizationId) => {
@@ -141,6 +201,18 @@ function AddUserPage() {
             setEmailTemplates([]);
         }
     };
+
+    // Handle initial organization from navigation state
+    useEffect(() => {
+        if (organizationId) {
+            setFormData(prev => ({
+                ...prev,
+                organization_id: organizationId
+            }));
+            loadTemplates(organizationId);
+            loadEmailTemplates(organizationId);
+        }
+    }, [organizationId]);
 
     // Generate email preview
     const generateWelcomeEmailPreview = async () => {
@@ -270,7 +342,7 @@ function AddUserPage() {
             return;
         }
 
-        const existingRole = formData.roles.find(
+        const existingRole = formData.organizational_roles.find(
             r => r.organization_id === parseInt(selectedOrganizationId) && r.role_type === organizationalRoleToAdd.trim()
         );
 
@@ -296,7 +368,7 @@ function AddUserPage() {
 
             setFormData({
                 ...formData,
-                roles: [...formData.roles, newRole]
+                organizational_roles: [...formData.organizational_roles, newRole]
             });
 
             setSelectedOrganizationId('');
@@ -312,7 +384,7 @@ function AddUserPage() {
 
                 setFormData({
                     ...formData,
-                    roles: [...formData.roles, newRole]
+                    organizational_roles: [...formData.organizational_roles, newRole]
                 });
 
                 setSelectedOrganizationId('');
@@ -330,7 +402,7 @@ function AddUserPage() {
     const handleRemoveOrganizationalRole = (organizationId, roleType) => {
         setFormData({
             ...formData,
-            roles: formData.roles.filter(
+            organizational_roles: formData.organizational_roles.filter(
                 r => !(r.organization_id === organizationId && r.role_type === roleType)
             )
         });
@@ -338,7 +410,7 @@ function AddUserPage() {
 
     // Get roles for specific organization
     const getOrganizationRoles = (organizationId) => {
-        return formData.roles.filter(r => r.organization_id === organizationId);
+        return formData.organizational_roles.filter(r => r.organization_id === organizationId);
     };
 
     // Truncate text helper
@@ -358,13 +430,13 @@ function AddUserPage() {
         try {
             const userData = {
                 ...formData,
-                role: formData.ui_role,
-                geo_location: hasValidGeoData(formData.geo_location) ? formData.geo_location : null
+                geo_location: hasValidGeoData(formData.geo_location) ? formData.geo_location : null,
+                role: formData.roles[0] || 'user', // Backwards compatibility
+                title: formData.titles[0] || '', // Backwards compatibility
             };
 
-            delete userData.ui_role;
-            const organizationalRoles = userData.roles || [];
-            delete userData.roles;
+            const organizationalRoles = userData.organizational_roles || [];
+            delete userData.organizational_roles;
 
             const newUser = await addUser(userData);
 
@@ -417,7 +489,7 @@ function AddUserPage() {
                         <Button
                             variant="outlined"
                             startIcon={<ArrowBackIcon />}
-                            onClick={() => navigate('/users')}
+                            onClick={() => navigate(returnUrl || '/users')}
                             sx={{
                                 color: '#633394',
                                 borderColor: '#633394',
@@ -427,7 +499,7 @@ function AddUserPage() {
                                 }
                             }}
                         >
-                            Back to Users
+                            Back to {returnUrl ? 'Organization' : 'Users'}
                         </Button>
                         <Typography variant="h4" sx={{ color: '#633394', fontWeight: 'bold' }}>
                             Add New User
@@ -502,21 +574,26 @@ function AddUserPage() {
                         </Grid>
                         <Grid item xs={12} md={4}>
                             <Autocomplete
+                                multiple
                                 freeSolo
-                                options={['Manager', 'Director', 'Coordinator', 'Lead', 'Executive']}
-                                value={formData.title || ''}
+                                options={activeTitles}
+                                value={formData.titles || []}
                                 onChange={(event, newValue) => {
-                                    setFormData(prev => ({ ...prev, title: newValue }));
+                                    setFormData(prev => ({ ...prev, titles: newValue }));
                                 }}
+                                renderTags={(value, getTagProps) =>
+                                    value.map((option, index) => (
+                                        <Chip variant="outlined" label={option} {...getTagProps({ index })} />
+                                    ))
+                                }
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
                                         fullWidth
                                         label="Title"
                                         name="title"
-                                        onChange={handleInputChange}
                                         variant="outlined"
-                                        placeholder="e.g., Manager, Director, Coordinator"
+                                        placeholder="e.g., Manager, Director (Select multiple)"
                                     />
                                 )}
                             />
@@ -534,26 +611,35 @@ function AddUserPage() {
                             />
                         </Grid>
                         <Grid item xs={12} md={4}>
-                            <Autocomplete
-                                value={roles.find(role => role.name === formData.ui_role) || null}
-                                onChange={(event, newValue) => {
-                                    setFormData({
-                                        ...formData,
-                                        ui_role: newValue ? newValue.name : ''
-                                    });
-                                }}
-                                options={roles}
-                                getOptionLabel={(option) => option.name.charAt(0).toUpperCase() + option.name.slice(1)}
-                                renderInput={(params) => (
-                                    <TextField
-                                        {...params}
-                                        label="UI Role"
-                                        variant="outlined"
-                                        required
-                                    />
-                                )}
-                                isOptionEqualToValue={(option, value) => option.name === value.name}
-                            />
+                            <FormControl fullWidth>
+                                <InputLabel>Roles</InputLabel>
+                                <Select
+                                    multiple
+                                    name="roles"
+                                    value={formData.roles}
+                                    onChange={(e) => {
+                                        const { value } = e.target;
+                                        setFormData({
+                                            ...formData,
+                                            roles: typeof value === 'string' ? value.split(',') : value
+                                        });
+                                    }}
+                                    label="Roles"
+                                    renderValue={(selected) => (
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                            {selected.map((value) => (
+                                                <Chip key={value} label={value} size="small" />
+                                            ))}
+                                        </Box>
+                                    )}
+                                >
+                                    {rolesList.map((role) => (
+                                        <MenuItem key={role.id || role.name} value={role.name}>
+                                            {role.name}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
                         </Grid>
                         <Grid item xs={12} md={4}>
                             <FormControl fullWidth variant="outlined">
@@ -636,8 +722,8 @@ function AddUserPage() {
                     </Grid>
                 </Paper>
 
-                {/* Organizational Roles Section (shown for all roles except 'other') */}
-                {formData.ui_role !== 'other' && formData.ui_role && (
+                {/* Organizational Roles Section (Hidden as per request) */}
+                {false && !formData.roles.includes('other') && (
                     <Paper sx={{ p: 3, mb: 3, boxShadow: 3 }}>
                         <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold', mb: 3, textAlign: 'center' }}>
                             Organizational Roles
@@ -700,7 +786,7 @@ function AddUserPage() {
                         </Box>
 
                         {/* Display Current Roles */}
-                        {formData.roles.length > 0 && (
+                        {formData.organizational_roles.length > 0 && (
                             <Box sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 1, backgroundColor: '#fafafa' }}>
                                 <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#633394', mb: 2 }}>
                                     Assigned Roles

@@ -15,7 +15,7 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import {
     fetchUsers, addUser, updateUser, deleteUser,
-    fetchOrganizations, fetchRoles, uploadUserFile, addRole,
+    fetchOrganizations, fetchRoles, fetchTitles, uploadUserFile, addRole,
     addUserOrganizationalRole, fetchUserOrganizationalRoles,
     updateUserOrganizationalRoles, fetchTemplatesByOrganization
 } from '../../../services/UserManagement/UserManagementService';
@@ -37,6 +37,7 @@ function UsersManagement() {
     const [users, setUsers] = useState([]);
     const [organizations, setOrganizations] = useState([]);
     const [roles, setRoles] = useState([]);
+    const [titles, setTitles] = useState([]);
     const [templates, setTemplates] = useState([]);
     const [emailTemplates, setEmailTemplates] = useState([]);
     const [page, setPage] = useState(0);
@@ -55,6 +56,7 @@ function UsersManagement() {
     // Form states
     const [formData, setFormData] = useState({
         username: '',
+        title_id: '',
         email: '',
         password: '',
         ui_role: 'user',
@@ -64,7 +66,12 @@ function UsersManagement() {
         organization_id: '',
         template_id: '',
         email_template_id: '',
+        organization_id: '',
+        template_id: '',
+        email_template_id: '',
         roles: [],
+        system_roles: [], // For multi-select system roles (strings)
+        title_ids: [],    // For multi-select titles (IDs)
         geo_location: {
             continent: '',
             region: '',
@@ -203,15 +210,29 @@ function UsersManagement() {
         loadUsers();
         loadOrganizations();
         loadRoles();
+        loadTitles();
     }, []);
 
     // Load users from API
     const loadUsers = async () => {
         try {
             const data = await fetchUsers();
-            console.log(data);
-            setUsers(data);
-            setTotalUsers(data.length);
+
+            // Filter for manager
+            const userRole = localStorage.getItem('userRole');
+            const userStr = localStorage.getItem('user');
+            let filteredData = data;
+
+            if (userRole === 'manager' && userStr) {
+                const currentUser = JSON.parse(userStr);
+                if (currentUser && currentUser.organization_id) {
+                    filteredData = data.filter(u => u.organization_id === currentUser.organization_id);
+                }
+            }
+
+            console.log(filteredData);
+            setUsers(filteredData);
+            setTotalUsers(filteredData.length);
         } catch (error) {
             console.error('Failed to fetch users:', error);
         }
@@ -240,6 +261,16 @@ function UsersManagement() {
             setRoles(data);
         } catch (error) {
             console.error('Failed to fetch roles:', error);
+        }
+    };
+
+    // Load titles from API
+    const loadTitles = async () => {
+        try {
+            const data = await fetchTitles();
+            setTitles(data);
+        } catch (error) {
+            console.error('Failed to fetch titles:', error);
         }
     };
 
@@ -445,6 +476,7 @@ function UsersManagement() {
 
         setFormData({
             username: user.username,
+            title_id: user.title_id || (user.title && titles.find(t => t.name === user.title)?.id) || '',
             email: user.email,
             password: '', // Don't populate password for security
             ui_role: user.ui_role,
@@ -455,6 +487,8 @@ function UsersManagement() {
             template_id: user.template_id || '',
             email_template_id: user.email_template_id || '',
             roles: userRoles,
+            system_roles: user.roles && Array.isArray(user.roles) ? user.roles : (user.ui_role ? [user.ui_role] : ['user']),
+            title_ids: user.titles && Array.isArray(user.titles) ? user.titles.map(t => t.id) : (user.title_id ? [user.title_id] : []),
             geo_location: user.geo_location ? {
                 continent: user.geo_location.continent || '',
                 region: user.geo_location.region || '',
@@ -536,6 +570,8 @@ function UsersManagement() {
             organization_id: '',
             template_id: '',
             roles: [],
+            system_roles: [],
+            title_ids: [],
             geo_location: {
                 continent: '',
                 region: '',
@@ -794,14 +830,27 @@ function UsersManagement() {
             // Transform form data for backend
             const userData = {
                 ...formData,
-                role: formData.ui_role, // Map ui_role to role for backend
+                role: formData.ui_role, // Primary role for legacy support
+                roles: formData.system_roles, // List of system roles (e.g. ['admin', 'user'])
+                titles: formData.title_ids,   // List of title IDs
                 geo_location: hasValidGeoData(formData.geo_location) ? formData.geo_location : null
             };
 
-            // Remove ui_role and roles from the user data as they're handled separately
+            // Remove internal UI fields
             delete userData.ui_role;
-            const organizationalRoles = userData.roles || [];
-            delete userData.roles;
+            delete userData.system_roles;
+            delete userData.title_ids;
+
+            // Handle organizational roles (legacy list of objects) separately
+            const organizationalRoles = formData.roles || [];
+            // We don't delete userData.roles here because we just set it to system_roles above.
+            // The backend distinguishes between list-of-strings (system) and list-of-dicts (org roles).
+            // But UsersManagement stores org roles in formData.roles. 
+            // So we need to be careful. 
+            // In handleUpdateUser, we want to send system roles as 'roles'.
+            // Organizational roles are sent via updateUserOrganizationalRoles separately below.
+            // So userData.roles MUST be formData.system_roles.
+            // We already set that above.
 
             // Debug logging
             console.log('=== UPDATE USER DEBUG ===');
@@ -974,6 +1023,11 @@ function UsersManagement() {
                             >
                                 Last Name {sortBy === 'lastname' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </TableCell>
+                            <TableCell
+                                sx={{ color: 'white', fontWeight: 'bold' }}
+                            >
+                                Roles
+                            </TableCell>
                             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Title</TableCell>
                             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Phone</TableCell>
                             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>User Address</TableCell>
@@ -995,7 +1049,44 @@ function UsersManagement() {
                                     <TableCell>{user.email}</TableCell>
                                     <TableCell>{user.firstname}</TableCell>
                                     <TableCell>{user.lastname}</TableCell>
-                                    <TableCell>{user.title || 'N/A'}</TableCell>
+                                    <TableCell>
+                                        {(user.roles && user.roles.length > 0) ? (
+                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                {user.roles.map((role, idx) => (
+                                                    <Chip
+                                                        key={`role-${idx}`}
+                                                        label={role}
+                                                        size="small"
+                                                        sx={{
+                                                            bgcolor: role === 'admin' ? '#e3f2fd' : '#f5f5f5',
+                                                            color: role === 'admin' ? '#1565c0' : '#616161',
+                                                            fontWeight: 500,
+                                                            textTransform: 'capitalize'
+                                                        }}
+                                                    />
+                                                ))}
+                                            </Box>
+                                        ) : (
+                                            user.ui_role || 'User'
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        {(user.titles && user.titles.length > 0) ? (
+                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                {user.titles.map((title, idx) => (
+                                                    <Chip
+                                                        key={`title-${idx}`}
+                                                        label={title.name}
+                                                        size="small"
+                                                        variant="outlined"
+                                                        sx={{ borderColor: '#ddd' }}
+                                                    />
+                                                ))}
+                                            </Box>
+                                        ) : (
+                                            user.title || 'N/A'
+                                        )}
+                                    </TableCell>
                                     <TableCell>{user.phone || 'N/A'}</TableCell>
                                     <TableCell>
                                         {user.geo_location ? (
@@ -1175,31 +1266,74 @@ function UsersManagement() {
 
                         {/* Column 3 */}
                         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            {/* Title Dropdown - Multi-select */}
                             <Autocomplete
-                                value={roles.find(role => role.name === formData.ui_role) || null}
+                                multiple
+                                value={titles.filter(t => (formData.title_ids || []).includes(t.id))}
                                 onChange={(event, newValue) => {
                                     setFormData({
                                         ...formData,
-                                        ui_role: newValue ? newValue.name : ''
+                                        title_ids: newValue.map(v => v.id),
+                                        title_id: newValue.length > 0 ? newValue[0].id : ''
                                     });
                                 }}
-                                options={roles}
-                                getOptionLabel={(option) => option.name.charAt(0).toUpperCase() + option.name.slice(1)}
+                                options={titles}
+                                getOptionLabel={(option) => option.name}
+                                renderTags={(value, getTagProps) =>
+                                    value.map((option, index) => {
+                                        const { key, ...tagProps } = getTagProps({ index });
+                                        return (
+                                            <Chip
+                                                key={key}
+                                                variant="outlined"
+                                                label={option.name}
+                                                size="small"
+                                                {...tagProps}
+                                            />
+                                        );
+                                    })
+                                }
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
-                                        label="UI Role"
+                                        label="Titles"
                                         variant="outlined"
-                                        required
+                                        placeholder="Select Titles"
                                     />
                                 )}
-                                isOptionEqualToValue={(option, value) => option.name === value.name}
-                                renderOption={(props, option) => (
-                                    <li {...props}>
-                                        {option.name.charAt(0).toUpperCase() + option.name.slice(1)}
-                                    </li>
-                                )}
+                                isOptionEqualToValue={(option, value) => option.id === value.id}
                             />
+
+                            <FormControl fullWidth variant="outlined" required>
+                                <InputLabel>Roles</InputLabel>
+                                <Select
+                                    multiple
+                                    value={formData.system_roles || []}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        const newRoles = typeof value === 'string' ? value.split(',') : value;
+                                        setFormData({
+                                            ...formData,
+                                            system_roles: newRoles,
+                                            ui_role: newRoles[0] || 'user' // Default to first selected or user
+                                        });
+                                    }}
+                                    label="Roles"
+                                    renderValue={(selected) => (
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                            {selected.map((value) => (
+                                                <Chip key={value} label={roles.find(r => r.name === value)?.name || value} size="small" />
+                                            ))}
+                                        </Box>
+                                    )}
+                                >
+                                    {roles.map((role) => (
+                                        <MenuItem key={role.id} value={role.name}>
+                                            {role.name.charAt(0).toUpperCase() + role.name.slice(1)}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
 
                             <FormControl fullWidth variant="outlined">
                                 <InputLabel>Organization</InputLabel>

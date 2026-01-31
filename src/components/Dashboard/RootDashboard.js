@@ -20,8 +20,10 @@ import PeopleIcon from '@mui/icons-material/People';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import RadarIcon from '@mui/icons-material/Radar';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../shared/Navbar/Navbar';
+import SpiderChartPopup from '../UserManagement/common/SpiderChartPopup';
 
 // Color theme for root dashboard - using platform's purple color palette
 const rootColors = {
@@ -31,7 +33,7 @@ const rootColors = {
     success: '#633394',       // Using primary purple for success consistency
     warning: '#967CB2',       // Using secondary purple for warnings
     error: '#633394',         // Using primary purple for destructive actions  
-    background: '#f5f5f5',    // Background from platform
+    background: '#FFFFFF',    // Background from platform
     text: '#212121',          // Text color
     headerBg: '#ede7f6',      // Light purple for table header (from platform)
     cardBg: '#ffffff',        // Card background
@@ -78,6 +80,21 @@ function RootDashboard() {
     const [openEditDialog, setOpenEditDialog] = useState(false);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [openCredentialsDialog, setOpenCredentialsDialog] = useState(false);
+    
+    // Spider Chart Popup states
+    const [spiderChartOpen, setSpiderChartOpen] = useState(false);
+    const [selectedUserForChart, setSelectedUserForChart] = useState(null);
+    
+    // Handler for opening spider chart popup
+    const handleOpenSpiderChart = (user) => {
+        setSelectedUserForChart(user);
+        setSpiderChartOpen(true);
+    };
+    
+    const handleCloseSpiderChart = () => {
+        setSpiderChartOpen(false);
+        setSelectedUserForChart(null);
+    };
 
     // Form data
     const [formData, setFormData] = useState({
@@ -738,7 +755,7 @@ function RootDashboard() {
                                             <TableRow
                                                 key={user.id}
                                                 sx={{
-                                                    '&:hover': { backgroundColor: '#f5f5f5' },
+                                                    '&:hover': { backgroundColor: '#FFFFFF' },
                                                     ...(user.role === 'root' && { backgroundColor: rootColors.highlightBg })
                                                 }}
                                             >
@@ -757,6 +774,22 @@ function RootDashboard() {
                                                         : '-'}
                                                 </TableCell>
                                                 <TableCell sx={{ textAlign: 'center' }}>
+                                                    <Tooltip title="View Analytics">
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => handleOpenSpiderChart(user)}
+                                                            sx={{ 
+                                                                color: '#633394',
+                                                                '&:hover': { 
+                                                                    backgroundColor: 'rgba(99, 51, 148, 0.1)',
+                                                                    transform: 'scale(1.1)'
+                                                                },
+                                                                transition: 'all 0.2s ease'
+                                                            }}
+                                                        >
+                                                            <RadarIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
                                                     <Tooltip title="Edit User">
                                                         <IconButton
                                                             size="small"
@@ -1172,6 +1205,16 @@ function RootDashboard() {
                         {snackbar.message}
                     </Alert>
                 </Snackbar>
+                
+                {/* Spider Chart Popup */}
+                <SpiderChartPopup
+                    open={spiderChartOpen}
+                    onClose={handleCloseSpiderChart}
+                    entityType="user"
+                    entityData={selectedUserForChart}
+                    entityId={selectedUserForChart?.id}
+                    entityName={selectedUserForChart ? `${selectedUserForChart.firstname || ''} ${selectedUserForChart.lastname || selectedUserForChart.username || ''}`.trim() : ''}
+                />
             </Container >
         </>
     );

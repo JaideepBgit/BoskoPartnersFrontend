@@ -21,15 +21,15 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import InventoryService from '../../../services/Admin/Inventory/InventoryService';
 
-const CopyTemplateDialog = ({ 
-  open, 
-  onClose, 
-  template, 
-  organizations = [], 
-  onCopySuccess 
+const CopyTemplateDialog = ({
+  open,
+  onClose,
+  template,
+  organizations = [],
+  onCopySuccess
 }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  
+
   const [selectedOrganizationId, setSelectedOrganizationId] = useState('');
   const [targetVersionName, setTargetVersionName] = useState('Copied Templates');
   const [newSurveyCode, setNewSurveyCode] = useState('');
@@ -37,7 +37,7 @@ const CopyTemplateDialog = ({
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [copyResult, setCopyResult] = useState(null);
-  
+
   // Reset state when dialog opens
   useEffect(() => {
     if (open && template) {
@@ -65,7 +65,7 @@ const CopyTemplateDialog = ({
 
     setLoading(true);
     setError('');
-    
+
     try {
       const result = await InventoryService.copyTemplate(
         template.id,
@@ -73,10 +73,10 @@ const CopyTemplateDialog = ({
         targetVersionName,
         newSurveyCode
       );
-      
+
       setCopyResult(result);
       setSuccess(true);
-      
+
       // Call success callback after a short delay to show success message
       setTimeout(() => {
         if (onCopySuccess) {
@@ -84,7 +84,7 @@ const CopyTemplateDialog = ({
         }
         onClose();
       }, 2000);
-      
+
     } catch (err) {
       console.error('Error copying template:', err);
       setError(err.response?.data?.error || 'Failed to copy template. Please try again.');
@@ -102,8 +102,8 @@ const CopyTemplateDialog = ({
   if (!template) return null;
 
   return (
-    <Dialog 
-      open={open} 
+    <Dialog
+      open={open}
       onClose={handleClose}
       fullWidth
       fullScreen={isMobile}
@@ -115,7 +115,7 @@ const CopyTemplateDialog = ({
         }
       }}
     >
-      <DialogTitle sx={{ 
+      <DialogTitle sx={{
         fontSize: isMobile ? '1.1rem' : '1.25rem',
         pb: 1,
         borderBottom: '1px solid #e0e0e0'
@@ -125,7 +125,7 @@ const CopyTemplateDialog = ({
           Copy Template
         </Box>
       </DialogTitle>
-      
+
       <DialogContent sx={{ pt: 3 }}>
         {success ? (
           <Box sx={{ textAlign: 'center', py: 3 }}>
@@ -134,12 +134,12 @@ const CopyTemplateDialog = ({
               {copyResult?.action === 'updated' ? 'Template Updated Successfully!' : 'Template Copied Successfully!'}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              {copyResult?.action === 'updated' 
+              {copyResult?.action === 'updated'
                 ? 'The existing template has been updated with the new questions and sections.'
                 : 'A new template has been created in the target organization.'}
             </Typography>
             {copyResult?.copied_template && (
-              <Box sx={{ mt: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1, textAlign: 'left' }}>
+              <Box sx={{ mt: 2, p: 2, bgcolor: '#FFFFFF', borderRadius: 1, textAlign: 'left' }}>
                 <Typography variant="body2" sx={{ mb: 0.5 }}>
                   <strong>Survey Code:</strong> {copyResult.copied_template.survey_code}
                 </Typography>
@@ -164,7 +164,7 @@ const CopyTemplateDialog = ({
               </Alert>
             )}
 
-            <Box sx={{ mb: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+            <Box sx={{ mb: 3, p: 2, bgcolor: '#FFFFFF', borderRadius: 1 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
                 Source Template:
               </Typography>
@@ -179,9 +179,9 @@ const CopyTemplateDialog = ({
               </Typography>
             </Box>
 
-            <FormControl 
-              fullWidth 
-              margin="normal" 
+            <FormControl
+              fullWidth
+              margin="normal"
               size={isMobile ? "small" : "medium"}
               required
             >
@@ -193,7 +193,7 @@ const CopyTemplateDialog = ({
                 value={selectedOrganizationId}
                 label="Target Organization *"
                 onChange={(e) => setSelectedOrganizationId(e.target.value)}
-                sx={{ 
+                sx={{
                   '& .MuiOutlinedInput-notchedOutline': {
                     '&.Mui-focused': {
                       borderColor: '#633394',
@@ -222,7 +222,7 @@ const CopyTemplateDialog = ({
               value={targetVersionName}
               onChange={(e) => setTargetVersionName(e.target.value)}
               helperText="Templates will be copied to this version. If it doesn't exist, it will be created."
-              sx={{ 
+              sx={{
                 '& .MuiOutlinedInput-root': {
                   '&.Mui-focused fieldset': {
                     borderColor: '#633394',
@@ -242,7 +242,7 @@ const CopyTemplateDialog = ({
               value={newSurveyCode}
               onChange={(e) => setNewSurveyCode(e.target.value)}
               helperText="If this code exists in the target version, it will be updated. Otherwise, a new template will be created."
-              sx={{ 
+              sx={{
                 '& .MuiOutlinedInput-root': {
                   '&.Mui-focused fieldset': {
                     borderColor: '#633394',
@@ -256,35 +256,35 @@ const CopyTemplateDialog = ({
 
             <Alert severity="info" sx={{ mt: 2 }}>
               <Typography variant="body2">
-                <strong>Smart Copy:</strong> If a template with the same survey code already exists in the target version, 
+                <strong>Smart Copy:</strong> If a template with the same survey code already exists in the target version,
                 it will be <strong>updated</strong> with the new questions. Otherwise, a <strong>new template</strong> will be created.
               </Typography>
             </Alert>
           </>
         )}
       </DialogContent>
-      
+
       {!success && (
         <DialogActions sx={{ p: isMobile ? 2 : 1, borderTop: '1px solid #e0e0e0' }}>
-          <Button 
+          <Button
             onClick={handleClose}
             disabled={loading}
             size={isMobile ? "small" : "medium"}
-            sx={{ 
+            sx={{
               color: '#633394',
               fontSize: isMobile ? '0.75rem' : '0.875rem'
             }}
           >
             Cancel
           </Button>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             onClick={handleCopy}
             disabled={loading || !selectedOrganizationId || availableOrganizations.length === 0}
             startIcon={loading ? <CircularProgress size={16} /> : <ContentCopyIcon />}
             size={isMobile ? "small" : "medium"}
-            sx={{ 
-              backgroundColor: '#633394', 
+            sx={{
+              backgroundColor: '#633394',
               '&:hover': { backgroundColor: '#7c52a5' },
               fontSize: isMobile ? '0.75rem' : '0.875rem',
               '&.Mui-disabled': {

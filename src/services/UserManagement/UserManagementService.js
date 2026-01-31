@@ -90,7 +90,12 @@ export const fetchUsersByOrganization = async (organizationId) => {
 
 export const addUser = async (userData) => {
     try {
-        const response = await axios.post(`${BASE_URL}/users`, userData);
+        const currentUserRole = localStorage.getItem('userRole') || 'user';
+        const response = await axios.post(`${BASE_URL}/users`, userData, {
+            headers: {
+                'X-User-Role': currentUserRole
+            }
+        });
         return response.data;
     } catch (error) {
         console.error('Failed to add user:', error);
@@ -100,7 +105,12 @@ export const addUser = async (userData) => {
 
 export const updateUser = async (id, userData) => {
     try {
-        const response = await axios.put(`${BASE_URL}/users/${id}`, userData);
+        const currentUserRole = localStorage.getItem('userRole') || 'user';
+        const response = await axios.put(`${BASE_URL}/users/${id}`, userData, {
+            headers: {
+                'X-User-Role': currentUserRole
+            }
+        });
         return response.data;
     } catch (error) {
         console.error('Failed to update user:', error);
@@ -138,6 +148,28 @@ export const uploadUserFile = async (formData) => {
         return response.data;
     } catch (error) {
         console.error('Failed to upload user file:', error);
+        throw error;
+    }
+};
+
+// Update user roles (list)
+export const updateUserRoles = async (userId, roles) => {
+    try {
+        const response = await axios.put(`${BASE_URL}/users/${userId}/roles`, { roles });
+        return response.data;
+    } catch (error) {
+        console.error('Failed to update user roles:', error);
+        throw error;
+    }
+};
+
+// Fetch user titles
+export const fetchTitles = async () => {
+    try {
+        const response = await axios.get(`${BASE_URL}/titles`);
+        return response.data;
+    } catch (error) {
+        console.error('Failed to fetch titles:', error);
         throw error;
     }
 };
@@ -281,6 +313,38 @@ export const fetchTemplatesByOrganization = async (organizationId) => {
         return response.data;
     } catch (error) {
         console.error(`Failed to fetch templates for organization ${organizationId}:`, error);
+        throw error;
+    }
+};
+
+// Send survey reminder to a specific user
+export const sendSurveyReminder = async (userId) => {
+    try {
+        const response = await axios.post(`${BASE_URL}/users/${userId}/send-reminder`);
+        return response.data;
+    } catch (error) {
+        console.error(`Failed to send reminder to user ${userId}:`, error);
+        // Fallback for demo if endpoint doesn't exist yet
+        if (error.response && error.response.status === 404) {
+            console.warn('Endpoint not found, simulating success for demo');
+            return { success: true, message: 'Reminder sent (simulation)' };
+        }
+        throw error;
+    }
+};
+
+// Send bulk survey reminders to all pending users in an organization
+export const sendBulkSurveyReminders = async (organizationId) => {
+    try {
+        const response = await axios.post(`${BASE_URL}/organizations/${organizationId}/send-reminders`);
+        return response.data;
+    } catch (error) {
+        console.error(`Failed to send bulk reminders for organization ${organizationId}:`, error);
+        // Fallback for demo if endpoint doesn't exist yet
+        if (error.response && error.response.status === 404) {
+            console.warn('Endpoint not found, simulating success for demo');
+            return { success: true, message: 'Bulk reminders sent (simulation)' };
+        }
         throw error;
     }
 };

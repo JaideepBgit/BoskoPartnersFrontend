@@ -52,10 +52,10 @@ const Navbar = () => {
 
   // sync tab value when route or user changes
   useEffect(() => {
-    if (user?.role === 'admin' || user?.role === 'root') {
+    if (user?.role === 'admin' || user?.role === 'root' || user?.role === 'manager') {
       const p = location.pathname.toLowerCase();
       // Simplified 6-item menu matching
-      if (p.includes('/dashboard')) setTabValue(1);           // 1. Dashboard
+      if (p.includes('/dashboard') || p.includes('/manager-dashboard')) setTabValue(1);           // 1. Dashboard
       else if (p.includes('/inventory')) setTabValue(2);      // 2. Surveys
       else if (p.includes('/organization')) setTabValue(3);   // 3. Organizations
       else if (p.includes('/users')) setTabValue(4);          // 4. Users
@@ -92,12 +92,12 @@ const Navbar = () => {
           style={{ maxWidth: '180px', height: 'auto' }}
         />
       </Box>
-      {(user?.role === 'admin' || user?.role === 'root') ? (
+      {(user?.role === 'admin' || user?.role === 'root' || user?.role === 'manager') ? (
         <List sx={{ pt: 2 }}>
           {/* 1. Dashboard */}
           <ListItem
             button
-            onClick={() => handleNavigation('/dashboard')}
+            onClick={() => handleNavigation(user?.role === 'manager' ? '/manager-dashboard' : '/dashboard')}
             selected={tabValue === 1}
             sx={{
               '&.Mui-selected': {
@@ -150,33 +150,35 @@ const Navbar = () => {
             <ListItemText primary="Surveys" />
           </ListItem>
 
-          {/* 3. Organizations */}
-          <ListItem
-            button
-            onClick={() => handleNavigation('/organization-management')}
-            selected={tabValue === 3}
-            sx={{
-              '&.Mui-selected': {
-                backgroundColor: '#633394',
-                color: 'white',
-                '& .MuiListItemIcon-root': {
+          {/* 3. Organizations - Only for Admin/Root */}
+          {(user?.role === 'admin' || user?.role === 'root') && (
+            <ListItem
+              button
+              onClick={() => handleNavigation('/organization-management')}
+              selected={tabValue === 3}
+              sx={{
+                '&.Mui-selected': {
+                  backgroundColor: '#633394',
                   color: 'white',
+                  '& .MuiListItemIcon-root': {
+                    color: 'white',
+                  },
+                  '&:hover': {
+                    backgroundColor: '#533082',
+                  },
                 },
                 '&:hover': {
-                  backgroundColor: '#533082',
+                  backgroundColor: '#f5f5f5',
                 },
-              },
-              '&:hover': {
-                backgroundColor: '#f5f5f5',
-              },
-              borderRadius: '8px',
-              mx: 1,
-              mb: 0.5,
-            }}
-          >
-            <ListItemIcon><BusinessIcon /></ListItemIcon>
-            <ListItemText primary="Organizations" />
-          </ListItem>
+                borderRadius: '8px',
+                mx: 1,
+                mb: 0.5,
+              }}
+            >
+              <ListItemIcon><BusinessIcon /></ListItemIcon>
+              <ListItemText primary="Organizations" />
+            </ListItem>
+          )}
 
           {/* 4. Users */}
           <ListItem
@@ -347,7 +349,7 @@ const Navbar = () => {
 
   return (
     <>
-      <AppBar position="static" sx={{ backgroundColor: '#f5f5f5', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+      <AppBar position="static" sx={{ backgroundColor: '#ffffff', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
         <Toolbar>
           {/* Hamburger menu button - always visible */}
           <IconButton

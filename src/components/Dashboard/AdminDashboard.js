@@ -2,30 +2,36 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
     Container, Typography, Box, Select, MenuItem, FormControl,
     InputLabel, Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, TablePagination, Card, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, TextField, Grid, Checkbox, Alert, CircularProgress, Chip
+    TableHead, TableRow, TablePagination, Card, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, TextField, Grid, Checkbox, Alert, CircularProgress, Chip, LinearProgress
 } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import SendIcon from '@mui/icons-material/Send';
 import EmailIcon from '@mui/icons-material/Email';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import PreviewIcon from '@mui/icons-material/Preview';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import PeopleIcon from '@mui/icons-material/People';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import BusinessIcon from '@mui/icons-material/Business';
+import RadarIcon from '@mui/icons-material/Radar';
+import SpiderChartPopup from '../UserManagement/common/SpiderChartPopup';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../shared/Navbar/Navbar';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
-import { Pie } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, RadialLinearScale, PointElement, LineElement, Filler, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
+import { Pie, Radar, Bar } from 'react-chartjs-2';
 import { EmailService } from '../../services/EmailService';
 
 // Register Chart.js components
-ChartJS.register(ArcElement, Tooltip, Legend);
+ChartJS.register(ArcElement, Tooltip, Legend, RadialLinearScale, PointElement, LineElement, Filler, CategoryScale, LinearScale, BarElement, Title);
 
 // Update the admin color theme based on the AdminLandingPage colors
 const adminColors = {
     primary: '#633394',         // Primary purple color from AdminLandingPage
     secondary: '#967CB2',       // Secondary color (lighter purple) from AdminLandingPage hover
-    background: '#f5f5f5',      // Background color from AdminLandingPage cards
+    background: '#FFFFFF',      // Background color from AdminLandingPage cards
     text: '#212121',            // Text color
     headerBg: '#ede7f6',        // Light purple for table header
     filledColor: '#633394',     // Primary purple for filled status
@@ -105,6 +111,35 @@ function AdminDashboard({ onLogout }) {
     const [loadingTemplates, setLoadingTemplates] = useState(false);
     const [emailPreviewContent, setEmailPreviewContent] = useState(null);
     const [loadingEmailPreview, setLoadingEmailPreview] = useState(false);
+    
+    // Spider Chart Popup states (for Overall Organization analytics)
+    const [spiderChartOpen, setSpiderChartOpen] = useState(false);
+    const [overallOrgMetrics, setOverallOrgMetrics] = useState(null);
+    
+    // Handler for opening spider chart popup - shows Overall Organization analytics
+    const handleOpenSpiderChart = () => {
+        // Calculate overall metrics from all organizations
+        const totalUsers = data.users?.length || 0;
+        const uniqueOrgs = [...new Set(data.users?.map(u => u.company_name).filter(Boolean))];
+        const filledCount = data.users?.filter(u => u.status === 'Filled').length || 0;
+        const completionRate = totalUsers > 0 ? (filledCount / totalUsers) * 100 : 0;
+        
+        const overallData = {
+            id: 'overall',
+            name: 'All Organizations Overview',
+            total_organizations: uniqueOrgs.length,
+            total_users: totalUsers,
+            completion_rate: completionRate,
+            filled_count: filledCount,
+        };
+        setOverallOrgMetrics(overallData);
+        setSpiderChartOpen(true);
+    };
+    
+    const handleCloseSpiderChart = () => {
+        setSpiderChartOpen(false);
+        setOverallOrgMetrics(null);
+    };
 
     // Add states for survey response dates
     const [surveyResponses, setSurveyResponses] = useState([]);
@@ -195,8 +230,21 @@ function AdminDashboard({ onLogout }) {
 
                 // Fetch users
                 const usersResponse = await fetch('/api/users/role/user');
-                const users = await usersResponse.json();
+                let users = await usersResponse.json();
                 console.log('Fetched Users:', users);
+
+                // For managers, filter users by their organization
+                const userString = localStorage.getItem('user');
+                const userRole = localStorage.getItem('userRole');
+                if (userRole === 'manager' && userString) {
+                    const currentUser = JSON.parse(userString);
+                    if (currentUser && currentUser.organization_id) {
+                        users = users.filter(u => u.organization_id === currentUser.organization_id);
+
+                        // Also pre-set the organization filter
+                        setFilters(prev => ({ ...prev, organization: currentUser.organization?.name || currentUser.company_name }));
+                    }
+                }
 
                 // Process users data with status based on survey_responses.status
                 const processedUsers = users.map(user => {
@@ -256,8 +304,8 @@ function AdminDashboard({ onLogout }) {
         };
 
         const userRole = localStorage.getItem('userRole');
-        // Allow both admin and root users to access this dashboard
-        if (userRole && userRole !== 'admin' && userRole !== 'root') {
+        // Allow admin, root, and manager users to access this dashboard
+        if (userRole && userRole !== 'admin' && userRole !== 'root' && userRole !== 'manager') {
             navigate('/home');
         } else {
             loadData();
@@ -1250,169 +1298,92 @@ function AdminDashboard({ onLogout }) {
         <>
             <Navbar />
             <Container maxWidth="xl" sx={{ mt: 4, flexGrow: 1, overflow: 'auto' }}>
-                <Typography variant="h4" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
-                    Admin Dashboard
-                </Typography>
-
-                {/* Statistics Cards */}
-                <Grid container spacing={3} sx={{ mb: 4 }}>
-                    <Grid item xs={12} sm={6} md={3}>
-                        <Card sx={{
-                            height: '100%',
-                            backgroundColor: adminColors.background,
-                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                            '&:hover': { boxShadow: '0 6px 12px rgba(0, 0, 0, 0.15)' }
-                        }}>
-                            <Box sx={{ p: 3 }}>
-                                <Typography variant="h6" sx={{ fontWeight: 'bold', color: adminColors.primary, mb: 2 }}>
-                                    Total Users
-                                </Typography>
-                                <Typography variant="h3" sx={{ fontWeight: 'bold', color: adminColors.text }}>
-                                    {dashboardStats.total_users}
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: adminColors.text, mt: 1 }}>
-                                    Registered users in the system
-                                </Typography>
-                            </Box>
-                        </Card>
-                    </Grid>
-
-                    <Grid item xs={12} sm={6} md={3}>
-                        <Card sx={{
-                            height: '100%',
-                            backgroundColor: adminColors.background,
-                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                            '&:hover': { boxShadow: '0 6px 12px rgba(0, 0, 0, 0.15)' }
-                        }}>
-                            <Box sx={{ p: 3 }}>
-                                <Typography variant="h6" sx={{ fontWeight: 'bold', color: adminColors.primary, mb: 2 }}>
-                                    Active Users
-                                </Typography>
-                                <Typography variant="h3" sx={{ fontWeight: 'bold', color: adminColors.text }}>
-                                    {dashboardStats.active_users}
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: adminColors.text, mt: 1 }}>
-                                    Users with survey codes
-                                </Typography>
-                            </Box>
-                        </Card>
-                    </Grid>
-
-                    <Grid item xs={12} sm={6} md={3}>
-                        <Card sx={{
-                            height: '100%',
-                            backgroundColor: adminColors.background,
-                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                            '&:hover': { boxShadow: '0 6px 12px rgba(0, 0, 0, 0.15)' }
-                        }}>
-                            <Box sx={{ p: 3 }}>
-                                <Typography variant="h6" sx={{ fontWeight: 'bold', color: adminColors.primary, mb: 2 }}>
-                                    Completed Surveys
-                                </Typography>
-                                <Typography variant="h3" sx={{ fontWeight: 'bold', color: adminColors.text }}>
-                                    {dashboardStats.completed_surveys}
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: adminColors.text, mt: 1 }}>
-                                    {dashboardStats.completion_rate}% completion rate
-                                </Typography>
-                            </Box>
-                        </Card>
-                    </Grid>
-
-                    <Grid item xs={12} sm={6} md={3}>
-                        <Card sx={{
-                            height: '100%',
-                            backgroundColor: adminColors.background,
-                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                            '&:hover': { boxShadow: '0 6px 12px rgba(0, 0, 0, 0.15)' }
-                        }}>
-                            <Box sx={{ p: 3 }}>
-                                <Typography variant="h6" sx={{ fontWeight: 'bold', color: adminColors.primary, mb: 2 }}>
-                                    Organizations
-                                </Typography>
-                                <Typography variant="h3" sx={{ fontWeight: 'bold', color: adminColors.text }}>
-                                    {dashboardStats.total_organizations}
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: adminColors.text, mt: 1 }}>
-                                    Total organizations registered
-                                </Typography>
-                            </Box>
-                        </Card>
-                    </Grid>
-                </Grid>
-
-                {/* Quick Actions */}
-                <Card sx={{
-                    mb: 4,
-                    backgroundColor: adminColors.background,
-                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
-                }}>
-                    <Box sx={{ p: 3 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: adminColors.primary, mb: 3 }}>
-                            Quick Actions
+                {/* Header with Integrated Metrics */}
+                <Box sx={{ mb: 4, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, gap: 3 }}>
+                    <Box>
+                        <Typography variant="h4" component="h1" sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
+                            Admin Dashboard
                         </Typography>
-                        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                            <Button
-                                variant="contained"
-                                sx={{
-                                    backgroundColor: adminColors.primary,
-                                    '&:hover': { backgroundColor: adminColors.secondary },
-                                    px: 3,
-                                    py: 1.5
-                                }}
-                                onClick={() => navigate('/organizations')}
-                            >
-                                Manage Organizations
-                            </Button>
-                            <Button
-                                variant="contained"
-                                sx={{
-                                    backgroundColor: adminColors.primary,
-                                    '&:hover': { backgroundColor: adminColors.secondary },
-                                    px: 3,
-                                    py: 1.5
-                                }}
-                                onClick={() => navigate('/users')}
-                            >
-                                Manage Users
-                            </Button>
-                            <Button
-                                variant="contained"
-                                sx={{
-                                    backgroundColor: adminColors.primary,
-                                    '&:hover': { backgroundColor: adminColors.secondary },
-                                    px: 3,
-                                    py: 1.5
-                                }}
-                                onClick={() => navigate('/inventory')}
-                            >
-                                Survey Inventory
-                            </Button>
-                            <Button
-                                variant="contained"
-                                startIcon={<SendIcon />}
-                                sx={{
-                                    backgroundColor: '#f57c00',
-                                    '&:hover': { backgroundColor: '#e65100' },
-                                    px: 3,
-                                    py: 1.5
-                                }}
-                                onClick={() => setBulkReminderDialog(true)}
-                                disabled={selectedUsers.length === 0}
-                            >
-                                Send Bulk Reminders ({selectedUsers.length})
-                            </Button>
+                        <Typography variant="body1" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                            System Overview & Management
+                        </Typography>
+                    </Box>
+
+                    {/* Integrated Metrics Display using Chips/Boxes */}
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                        <Box sx={{ px: 2, py: 1, bgcolor: '#ffffff', borderRadius: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.05)', border: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <Box sx={{ p: 1, borderRadius: '50%', bgcolor: 'rgba(99, 51, 148, 0.1)', color: adminColors.primary, display: 'flex' }}>
+                                <PeopleIcon fontSize="small" />
+                            </Box>
+                            <Box>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', lineHeight: 1 }}>Total Users</Typography>
+                                <Typography variant="h6" sx={{ fontWeight: 'bold', color: adminColors.text, lineHeight: 1.2 }}>{dashboardStats.total_users}</Typography>
+                            </Box>
+                        </Box>
+
+                        <Box sx={{ px: 2, py: 1, bgcolor: '#ffffff', borderRadius: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.05)', border: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <Box sx={{ p: 1, borderRadius: '50%', bgcolor: 'rgba(46, 125, 50, 0.1)', color: 'success.main', display: 'flex' }}>
+                                <AssessmentIcon fontSize="small" />
+                            </Box>
+                            <Box>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', lineHeight: 1 }}>Avg. Completion</Typography>
+                                <Typography variant="h6" sx={{ fontWeight: 'bold', color: adminColors.text, lineHeight: 1.2 }}>{dashboardStats.completion_rate}%</Typography>
+                            </Box>
+                        </Box>
+
+                        <Box sx={{ px: 2, py: 1, bgcolor: '#ffffff', borderRadius: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.05)', border: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <Box sx={{ p: 1, borderRadius: '50%', bgcolor: 'rgba(150, 124, 178, 0.1)', color: adminColors.secondary, display: 'flex' }}>
+                                <BusinessIcon fontSize="small" />
+                            </Box>
+                            <Box>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', lineHeight: 1 }}>Organizations</Typography>
+                                <Typography variant="h6" sx={{ fontWeight: 'bold', color: adminColors.text, lineHeight: 1.2 }}>{dashboardStats.total_organizations}</Typography>
+                            </Box>
                         </Box>
                     </Box>
-                </Card>
+                </Box>
 
-                <Box sx={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 2 }}>
+
+
+                <Box>
                     {/* Table Section */}
                     <Box>
                         <Card sx={{ boxShadow: 3, padding: 2, bgcolor: adminColors.background }}>
-                            <Typography variant="h6" gutterBottom sx={{ color: adminColors.text }}>
-                                Organizations and Users
-                            </Typography>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="h6" sx={{ color: adminColors.text }}>
+                                        Organizations and Users
+                                    </Typography>
+                                    <IconButton
+                                        title="View Overall Analytics"
+                                        onClick={handleOpenSpiderChart}
+                                        sx={{ 
+                                            color: '#633394',
+                                            '&:hover': { 
+                                                backgroundColor: 'rgba(99, 51, 148, 0.1)',
+                                                transform: 'scale(1.1)'
+                                            },
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                    >
+                                        <RadarIcon />
+                                    </IconButton>
+                                </Box>
+                                <Button
+                                    variant="contained"
+                                    startIcon={<SendIcon />}
+                                    sx={{
+                                        backgroundColor: '#f57c00',
+                                        '&:hover': { backgroundColor: '#e65100' },
+                                        px: 2,
+                                        py: 1
+                                    }}
+                                    onClick={() => setBulkReminderDialog(true)}
+                                    disabled={selectedUsers.length === 0}
+                                >
+                                    Send Bulk Reminders ({selectedUsers.length})
+                                </Button>
+                            </Box>
                             <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
                                 <FormControl variant="outlined" size="small" sx={{ minWidth: 120 }}>
                                     <InputLabel>Organization</InputLabel>
@@ -1603,7 +1574,7 @@ function AdminDashboard({ onLogout }) {
                                                                     onClick={() => handleOpenReminderDialog(user.id)}
                                                                     disabled={user.status === 'Filled'}
                                                                 >
-                                                                    <EmailIcon />
+                                                                    <NotificationsActiveIcon />
                                                                 </IconButton>
                                                                 <IconButton
                                                                     title="Preview Welcome Email"
@@ -1637,43 +1608,7 @@ function AdminDashboard({ onLogout }) {
                         </Card>
                     </Box>
 
-                    {/* Chart Section */}
-                    <Box>
-                        <Card sx={{ boxShadow: 3, padding: 2, bgcolor: adminColors.background, height: 'fit-content' }}>
-                            <Typography variant="h6" gutterBottom sx={{ color: adminColors.text, mb: 2 }}>
-                                Organization Statistics
-                            </Typography>
-                            <Box sx={{ height: 300, position: 'relative' }}>
-                                <Pie data={chartData} options={chartOptions} />
-                            </Box>
-                            <Box sx={{ mt: 2, p: 2, bgcolor: adminColors.highlightBg, borderRadius: 1 }}>
-                                <Typography variant="body2" sx={{ color: adminColors.text, fontWeight: 'bold', mb: 1 }}>
-                                    Summary:
-                                </Typography>
-                                {Object.entries(chartData.labels.reduce((acc, org, index) => {
-                                    const filled = chartData.datasets[0].data[index];
-                                    const notFilled = chartData.datasets[1].data[index];
-                                    const total = filled + notFilled;
-                                    if (total > 0) {
-                                        acc[org] = {
-                                            filled,
-                                            notFilled,
-                                            total,
-                                            filledPercentage: ((filled / total) * 100).toFixed(1),
-                                            notFilledPercentage: ((notFilled / total) * 100).toFixed(1)
-                                        };
-                                    }
-                                    return acc;
-                                }, {})).map(([org, stats]) => (
-                                    <Typography key={org} variant="body2" sx={{ color: adminColors.text, mb: 0.5 }}>
-                                        <strong>{org}:</strong> {stats.filled} filled ({stats.filledPercentage}%), {stats.notFilled} not filled ({stats.notFilledPercentage}%)
-                                    </Typography>
-                                ))}
-                            </Box>
-                        </Card>
-                    </Box>
                 </Box>
-
 
             </Container>
 
@@ -1822,7 +1757,7 @@ function AdminDashboard({ onLogout }) {
                                     ) : emailPreviewContent ? (
                                         <Box>
                                             {/* Subject Line */}
-                                            <Box sx={{ mb: 2, p: 1, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+                                            <Box sx={{ mb: 2, p: 1, bgcolor: '#FFFFFF', borderRadius: 1 }}>
                                                 <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
                                                     Subject: {emailPreviewContent.subject}
                                                 </Typography>
@@ -1989,7 +1924,7 @@ function AdminDashboard({ onLogout }) {
                                         </Box>
                                     ) : emailPreviewContent ? (
                                         <Box>
-                                            <Box sx={{ mb: 2, p: 1, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+                                            <Box sx={{ mb: 2, p: 1, bgcolor: '#FFFFFF', borderRadius: 1 }}>
                                                 <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
                                                     Subject: {emailPreviewContent.subject}
                                                 </Typography>
@@ -2359,7 +2294,7 @@ function AdminDashboard({ onLogout }) {
                             ) : welcomeEmailPreviewContent ? (
                                 <Box>
                                     {/* Subject Line */}
-                                    <Box sx={{ mb: 2, p: 1, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+                                    <Box sx={{ mb: 2, p: 1, bgcolor: '#FFFFFF', borderRadius: 1 }}>
                                         <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
                                             Subject: {welcomeEmailPreviewContent.subject}
                                         </Typography>
@@ -2428,6 +2363,16 @@ function AdminDashboard({ onLogout }) {
                     </Button>
                 </DialogActions>
             </Dialog>
+            
+            {/* Spider Chart Popup - Overall Organization Analytics */}
+            <SpiderChartPopup
+                open={spiderChartOpen}
+                onClose={handleCloseSpiderChart}
+                entityType="organization"
+                entityData={overallOrgMetrics}
+                entityId={overallOrgMetrics?.id}
+                entityName={overallOrgMetrics?.name || 'All Organizations Overview'}
+            />
         </>
     );
 }

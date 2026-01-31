@@ -541,10 +541,52 @@ const UserReports = () => {
         institution: data.institution?.length || 0,
         nonFormal: data.nonFormal?.length || 0
       });
+
+      // Filter for manager
+      const userRole = localStorage.getItem('userRole');
+      const userStr = localStorage.getItem('user');
+
+      if (userRole === 'manager' && userStr) {
+        const currentUser = JSON.parse(userStr);
+        if (currentUser && currentUser.organization_id) {
+          const orgId = currentUser.organization_id;
+          console.log('🔄 Filtering for Manager Org ID:', orgId);
+
+          // Filter each category in data
+          Object.keys(data).forEach(key => {
+            if (Array.isArray(data[key])) {
+              // Assume response has organization_id. If not, this might filter everything out.
+              // We check loose equality just in case of string vs int
+              data[key] = data[key].filter(r => r.organization_id == orgId);
+            }
+          });
+        }
+      }
+
       setSurveyData(data);
 
-      // Set default selected response
-      if (selectedSurveyType === 'all') {
+      setSurveyData(data);
+
+      let effectiveSurveyType = selectedSurveyType;
+
+      // For managers, if the current type has no data, try to find one that does
+      if (userRole === 'manager') {
+        const types = ['institution', 'church', 'nonFormal', 'non_formal', 'other'];
+        // If current type is empty in the filtered data
+        if (!data[effectiveSurveyType] || data[effectiveSurveyType].length === 0) {
+          for (const t of types) {
+            if (data[t] && data[t].length > 0) {
+              effectiveSurveyType = t;
+              console.log('🔄 Auto-switching manager to survey type:', t);
+              setSelectedSurveyType(t);
+              break;
+            }
+          }
+        }
+      }
+
+      // Set default selected response based on effective type
+      if (effectiveSurveyType === 'all') {
         // For "all" types, find the first available response from any survey type
         const allResponses = Object.values(data).flat();
         if (allResponses.length > 0) {
@@ -555,12 +597,12 @@ const UserReports = () => {
           console.log('🔄 No responses found for all types');
           setSelectedResponseId(null);
         }
-      } else if (data[selectedSurveyType] && data[selectedSurveyType].length > 0) {
-        const newSelectedId = String(data[selectedSurveyType][0].id);
+      } else if (data[effectiveSurveyType] && data[effectiveSurveyType].length > 0) {
+        const newSelectedId = String(data[effectiveSurveyType][0].id);
         console.log('🔄 Setting selected response ID:', newSelectedId);
         setSelectedResponseId(newSelectedId);
       } else {
-        console.log('🔄 No responses found for survey type:', selectedSurveyType);
+        console.log('🔄 No responses found for survey type:', effectiveSurveyType);
         setSelectedResponseId(null);
       }
 

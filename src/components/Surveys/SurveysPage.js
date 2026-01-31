@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Container, 
-  Typography, 
-  Box, 
-  Card, 
-  CardContent, 
-  Button, 
+import {
+  Container,
+  Typography,
+  Box,
+  Card,
+  CardContent,
+  Button,
   CircularProgress,
   Alert,
   Chip,
@@ -24,7 +24,7 @@ const SurveysPage = () => {
   const [assignments, setAssignments] = useState([]);
   const [progressMap, setProgressMap] = useState({}); // { [assignmentId]: number }
   const navigate = useNavigate();
-  
+
   // Get user data from localStorage
   const userId = parseInt(localStorage.getItem('userId') || '0', 10);
   const surveyCode = localStorage.getItem('surveyCode');
@@ -115,14 +115,14 @@ const SurveysPage = () => {
     try {
       setLoading(true);
       setError('');
-      
+
       const response = await axios.post('/api/initialize-survey-data');
-      
+
       if (response.status === 200 || response.status === 201) {
         // Refresh assignments after initialization
         await fetchAssignments();
       }
-      
+
       setLoading(false);
     } catch (error) {
       console.error('Error initializing survey data:', error);
@@ -153,7 +153,7 @@ const SurveysPage = () => {
 
   // Format the survey name and organization type from backend data
   const getAssignmentTitle = (a) => {
-    const name = a.survey_code ; //a.template_name || 'Survey';
+    const name = a.survey_code; //a.template_name || 'Survey';
     const code = a.survey_code ? ` - ${a.survey_code}` : '';
     return `${name}`;
   };
@@ -180,12 +180,12 @@ const SurveysPage = () => {
       </style>
       <Navbar />
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Typography 
-          variant="h4" 
-          component="h1" 
-          gutterBottom 
-          sx={{ 
-            color: '#633394', 
+        <Typography
+          variant="h4"
+          component="h1"
+          gutterBottom
+          sx={{
+            color: '#633394',
             fontWeight: 'bold',
             mb: 3
           }}
@@ -202,9 +202,9 @@ const SurveysPage = () => {
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           {assignments && assignments.length > 0 ? (
             assignments.map((a) => (
-              <Card 
+              <Card
                 key={a.id}
-                sx={{ 
+                sx={{
                   boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
                   borderRadius: 2,
                   border: isCompleted(a.id) ? '2px solid #4caf50' : '1px solid #e0e0e0',
@@ -251,19 +251,19 @@ const SurveysPage = () => {
 
                 <CardContent sx={{ p: 4 }}>
                   <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap' }}>
-                    <Box sx={{ 
-                      color: isCompleted(a.id) ? '#4caf50' : '#633394', 
+                    <Box sx={{
+                      color: isCompleted(a.id) ? '#4caf50' : '#633394',
                       fontSize: '2.0rem',
                       mt: 0.5
                     }}>
-                      {isCompleted(a.id) ? '✅' : '📋'}
+                      {isCompleted(a.id) ? '✅' : ''}
                     </Box>
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography 
-                        variant="h6" 
-                        component="h2" 
+                      <Typography
+                        variant="h6"
+                        component="h2"
                         gutterBottom
-                        sx={{ 
+                        sx={{
                           color: '#333',
                           fontWeight: 600,
                           mb: 1,
@@ -275,62 +275,62 @@ const SurveysPage = () => {
                       >
                         {getAssignmentTitle(a)}
                       </Typography>
-                      
+
                       <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
-                        <Chip 
+                        <Chip
                           label={`Status: ${a.status || 'pending'}`}
-                          size="small" 
-                          sx={{ 
+                          size="small"
+                          sx={{
                             backgroundColor: '#f3e5f5',
                             color: '#633394',
                             fontWeight: 500
-                          }} 
+                          }}
                         />
-                        <Chip 
+                        <Chip
                           label={`Progress: ${progressMap[a.id] ?? 0}%`}
-                          size="small" 
+                          size="small"
                           variant="outlined"
-                          sx={{ 
+                          sx={{
                             borderColor: isCompleted(a.id) ? '#4caf50' : '#633394',
                             color: isCompleted(a.id) ? '#4caf50' : '#633394',
                             backgroundColor: isCompleted(a.id) ? '#e8f5e8' : 'transparent'
-                          }} 
+                          }}
                         />
-                        <Chip 
+                        <Chip
                           label={`Assigned: ${a.created_at ? new Date(a.created_at).toLocaleDateString() : 'N/A'}`}
-                          size="small" 
+                          size="small"
                           variant="outlined"
-                          sx={{ 
+                          sx={{
                             borderColor: '#633394',
                             color: '#633394'
-                          }} 
+                          }}
                         />
                         {isCompleted(a.id) && (
-                          <Chip 
+                          <Chip
                             icon={<CheckCircleIcon />}
                             label="Survey Complete!"
-                            size="small" 
-                            sx={{ 
+                            size="small"
+                            sx={{
                               backgroundColor: '#4caf50',
                               color: 'white',
                               fontWeight: 600,
                               animation: 'pulse 2s infinite'
-                            }} 
+                            }}
                           />
                         )}
                       </Box>
 
                       {/* Completion Message for 100% surveys */}
                       {isCompleted(a.id) && (
-                        <Box sx={{ 
-                          mb: 2, 
-                          p: 2, 
-                          backgroundColor: '#e8f5e8', 
+                        <Box sx={{
+                          mb: 2,
+                          p: 2,
+                          backgroundColor: '#e8f5e8',
                           borderRadius: 2,
                           border: '1px solid #4caf50'
                         }}>
-                          <Typography variant="body2" sx={{ 
-                            color: '#2e7d32', 
+                          <Typography variant="body2" sx={{
+                            color: '#2e7d32',
                             fontWeight: 600,
                             mb: 1,
                             display: 'flex',
@@ -356,8 +356,8 @@ const SurveysPage = () => {
                             {progressMap[a.id] ?? 0}%
                           </Typography>
                         </Box>
-                        <LinearProgress 
-                          variant="determinate" 
+                        <LinearProgress
+                          variant="determinate"
                           value={progressMap[a.id] ?? 0}
                           sx={{
                             height: 6,
@@ -387,7 +387,7 @@ const SurveysPage = () => {
                         >
                           {a.status === 'in_progress' ? 'Resume Survey' : a.status === 'completed' ? 'View Survey' : 'Start Survey'}
                         </Button>
-                        
+
                         {/* View Reports Button for Completed Surveys 
                         {isCompleted(a.id) && (
                           <Button
@@ -413,7 +413,7 @@ const SurveysPage = () => {
                             View Reports
                           </Button>
                         )}*/}
-                        
+
                         {/*<Box sx={{ ml: { xs: 0, sm: 2 } }}>
                           <Typography variant="caption" color="text.secondary" sx={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                             Survey Code: {a.survey_code || surveyCode || 'N/A'}
@@ -428,7 +428,7 @@ const SurveysPage = () => {
           ) : (
             <Card sx={{ textAlign: 'center', p: 4 }}>
               <CardContent>
-                <Box sx={{ fontSize: '4rem', mb: 2 }}>📋</Box>
+                <Box sx={{ fontSize: '4rem', mb: 2 }}></Box>
                 <Typography variant="h6" gutterBottom>
                   No Surveys Assigned
                 </Typography>
@@ -442,7 +442,7 @@ const SurveysPage = () => {
                   sx={{
                     borderColor: '#633394',
                     color: '#633394',
-                    '&:hover': { 
+                    '&:hover': {
                       borderColor: '#7c52a5',
                       backgroundColor: '#f3e5f5'
                     }

@@ -253,7 +253,7 @@ const TemplateChip = ({
         mb: 1,
         p: 1,
         borderRadius: 1,
-        backgroundColor: isSelected ? 'rgba(99, 51, 148, 0.15)' : '#f5f5f5',
+        backgroundColor: isSelected ? 'rgba(99, 51, 148, 0.15)' : '#FFFFFF',
         border: '1px solid',
         borderColor: isSelected ? '#633394' : '#e0e0e0',
         cursor: isEditing ? 'default' : 'pointer',
@@ -831,7 +831,7 @@ const QuestionsTab = ({
         <Box
           sx={{
             width: 240,
-            backgroundColor: '#f5f5f5',
+            backgroundColor: '#FFFFFF',
             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
             display: 'flex',
             flexDirection: 'column'
@@ -884,7 +884,7 @@ const QuestionsTab = ({
               sx={{
                 p: 2,
                 mb: 2,
-                backgroundColor: '#f5f5f5',
+                backgroundColor: '#FFFFFF',
                 boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
               }}
             >
@@ -1054,7 +1054,7 @@ const QuestionsTab = ({
               <Paper
                 sx={{
                   p: 2,
-                  backgroundColor: '#f5f5f5',
+                  backgroundColor: '#FFFFFF',
                   boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
                 }}
               >
@@ -1193,7 +1193,7 @@ const QuestionsTab = ({
             )}
           </>
         ) : (
-          <Paper sx={{ p: 4, textAlign: 'center', backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
+          <Paper sx={{ p: 4, textAlign: 'center', backgroundColor: '#FFFFFF', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
             <Typography variant="h6" color="text.secondary">
               Select a template version from the left panel to manage templates and questions
             </Typography>

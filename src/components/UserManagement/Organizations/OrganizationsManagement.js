@@ -10,6 +10,8 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import RadarIcon from '@mui/icons-material/Radar';
+import SpiderChartPopup from '../common/SpiderChartPopup';
 import {
     fetchOrganizations, addOrganization, updateOrganization, deleteOrganization,
     fetchDenominations, fetchAccreditationBodies, fetchUmbrellaAssociations,
@@ -56,6 +58,21 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
     const [openUploadDialog, setOpenUploadDialog] = useState(false);
     const [openAddUserDialog, setOpenAddUserDialog] = useState(false);
     const [openAddRelatedOrgDialog, setOpenAddRelatedOrgDialog] = useState(false);
+    
+    // Spider Chart Popup states
+    const [spiderChartOpen, setSpiderChartOpen] = useState(false);
+    const [selectedOrgForChart, setSelectedOrgForChart] = useState(null);
+    
+    // Handler for opening spider chart popup
+    const handleOpenSpiderChart = (org) => {
+        setSelectedOrgForChart(org);
+        setSpiderChartOpen(true);
+    };
+    
+    const handleCloseSpiderChart = () => {
+        setSpiderChartOpen(false);
+        setSelectedOrgForChart(null);
+    };
 
     // Form states
     const [formData, setFormData] = useState({
@@ -1297,6 +1314,21 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
                 </Box>
             </TableCell>
             <TableCell>
+                <Tooltip title="View Analytics" arrow>
+                    <IconButton 
+                        onClick={() => handleOpenSpiderChart(org)} 
+                        sx={{ 
+                            color: '#633394',
+                            '&:hover': { 
+                                backgroundColor: 'rgba(99, 51, 148, 0.1)',
+                                transform: 'scale(1.1)'
+                            },
+                            transition: 'all 0.2s ease'
+                        }}
+                    >
+                        <RadarIcon />
+                    </IconButton>
+                </Tooltip>
                 <IconButton onClick={() => handleOpenEditDialog(org)} color="primary">
                     <EditIcon />
                 </IconButton>
@@ -2978,6 +3010,16 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
                     </Button>
                 </DialogActions>
             </Dialog>
+            
+            {/* Spider Chart Popup */}
+            <SpiderChartPopup
+                open={spiderChartOpen}
+                onClose={handleCloseSpiderChart}
+                entityType="organization"
+                entityData={selectedOrgForChart}
+                entityId={selectedOrgForChart?.id}
+                entityName={selectedOrgForChart?.name}
+            />
         </Box>
     );
 }

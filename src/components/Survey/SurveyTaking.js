@@ -776,7 +776,7 @@ const SurveyTaking = () => {
 
             <Box sx={{ mb: 4 }}>
               <Typography variant="body1" sx={{ mb: 2, color: '#333', lineHeight: 1.7, fontWeight: 500 }}>
-                🌟 Welcome to Your Survey Experience!
+                Welcome to Your Survey Experience!
               </Typography>
 
               <Typography variant="body1" sx={{ mb: 2, color: '#555', lineHeight: 1.6 }}>
@@ -791,7 +791,7 @@ const SurveyTaking = () => {
               </Typography>
 
               <Typography variant="body1" sx={{ color: '#633394', lineHeight: 1.6, fontWeight: 500 }}>
-                📋 <strong>How to proceed:</strong> Review the survey overview below, then click on any section to begin.
+                <strong>How to proceed:</strong> Review the survey overview below, then click on any section to begin.
                 You can complete sections in any order and save your progress at any time.
               </Typography>
             </Box>

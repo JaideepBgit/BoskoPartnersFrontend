@@ -436,12 +436,36 @@ const InventoryPage = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Filter template versions based on search term
-  const filteredVersions = templateVersions.filter(v =>
-    v.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (v.description && v.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (v.organization_name && v.organization_name.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Get user role and organization
+  const [userRole, setUserRole] = useState(null);
+  const [userOrgId, setUserOrgId] = useState(null);
+
+  useEffect(() => {
+    const role = localStorage.getItem('userRole');
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      setUserRole(role);
+      setUserOrgId(user.organization_id);
+    }
+  }, []);
+
+  // Filter template versions based on search term and role
+  const filteredVersions = templateVersions.filter(v => {
+    // For managers, strictly filter by organization_id
+    if (userRole === 'manager') {
+      if (v.organization_id !== userOrgId) return false;
+    }
+
+    // Then apply search term
+    if (!searchTerm) return true;
+
+    return (
+      v.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (v.description && v.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (v.organization_name && v.organization_name.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  });
 
   return (
     <>
@@ -570,13 +594,10 @@ const InventoryPage = () => {
               Organization Survey Groups
             </Typography>
 
-            <Paper sx={{ p: isMobile ? 1.5 : 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
+            <Box sx={{ p: isMobile ? 1.5 : 2 }}>
               <Box
                 sx={{
-                  bgcolor: 'white',
-                  borderRadius: 1,
                   p: isMobile ? 0.5 : 1,
-                  boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.1)',
                   maxHeight: 'calc(100vh - 300px)',
                   overflowY: 'auto'
                 }}
@@ -735,7 +756,7 @@ const InventoryPage = () => {
                   )}
                 </List>
               </Box>
-            </Paper>
+            </Box>
           </Box>
 
           {/* Actions Menu */}

@@ -482,7 +482,7 @@ const CreateQuestionnaireWizard = ({ open, onClose, onComplete, initialFile }) =
 
                                     {questions.length === 0 && <Typography variant="body2" color="text.secondary">No questions yet.</Typography>}
                                     {questions.map((q, idx) => (
-                                        <Box key={idx} sx={{ mb: 2, p: 1, bgcolor: '#f9f9f9', borderRadius: 1 }}>
+                                        <Box key={idx} sx={{ mb: 2, p: 1, bgcolor: '#FFFFFF', borderRadius: 1 }}>
                                             <Typography variant="subtitle2">{idx + 1}. {q.question_text}</Typography>
                                             <Typography variant="caption" display="block">Type: {q.question_text_type_id || q.question_type_id || 'Unknown'}</Typography>
                                             <Typography variant="caption" display="block">Section: {q.section}</Typography>
