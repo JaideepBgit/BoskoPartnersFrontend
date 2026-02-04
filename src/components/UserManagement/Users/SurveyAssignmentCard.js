@@ -32,17 +32,17 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
     const [showResultDialog, setShowResultDialog] = useState(false);
     const [alerts, setAlerts] = useState([]);
     const [expanded, setExpanded] = useState(false);
-    
+
     // Filter states
     const [organizationFilter, setOrganizationFilter] = useState('');
     const [roleFilter, setRoleFilter] = useState('');
     const [organizations, setOrganizations] = useState([]);
-    
+
     // Single user selection for viewing assignments
     const [selectedUserForView, setSelectedUserForView] = useState(null);
     const [userAssignments, setUserAssignments] = useState([]);
     const [loadingAssignments, setLoadingAssignments] = useState(false);
-    
+
     // Assignment removal states
     const [showRemoveDialog, setShowRemoveDialog] = useState(false);
     const [assignmentToRemove, setAssignmentToRemove] = useState(null);
@@ -142,7 +142,7 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
 
     const assignSurvey = async (userIds = null) => {
         const usersToAssign = userIds || selectedUsers;
-        
+
         if (usersToAssign.length === 0) {
             showAlert('Please select at least one user', 'warning');
             return;
@@ -160,18 +160,18 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
                 selectedTemplate,
                 adminId
             );
-            
+
             setAssignmentResults(result);
             setShowResultDialog(true);
             setSelectedUsers([]);
             setSelectedTemplate('');
             showAlert(result.message, 'success');
-            
+
             // If single user assignment, refresh their assignments
             if (selectedUserForView && userIds) {
                 loadUserAssignments(selectedUserForView.id);
             }
-            
+
             // Refresh users list if callback provided
             if (onRefreshUsers) {
                 onRefreshUsers();
@@ -203,7 +203,7 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
 
     const getAvailableTemplatesForUser = () => {
         if (!selectedUserForView || !userAssignments) return templates;
-        
+
         const assignedTemplateIds = userAssignments.map(assignment => assignment.template_id);
         return templates.filter(template => !assignedTemplateIds.includes(template.id));
     };
@@ -234,12 +234,12 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
                 selectedUserForView.id,
                 assignmentToRemove.id
             );
-            
+
             showAlert(result.message, 'success');
-            
+
             // Refresh the user's assignments
             loadUserAssignments(selectedUserForView.id);
-            
+
             // Refresh users list if callback provided
             if (onRefreshUsers) {
                 onRefreshUsers();
@@ -265,404 +265,404 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
     return (
         <>
             <Card sx={{ mt: 3, boxShadow: 3 }}>
-            <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', color: '#633394' }}>
-                        <QuizIcon sx={{ mr: 1 }} />
-                        Survey Assignment
-                    </Typography>
-                    <Button
-                        onClick={() => setExpanded(!expanded)}
-                        endIcon={expanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-                        sx={{ color: '#633394' }}
-                    >
-                        {expanded ? 'Collapse' : 'Expand'}
-                    </Button>
-                </Box>
+                <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', color: '#633394' }}>
+                            <QuizIcon sx={{ mr: 1 }} />
+                            Survey Assignment
+                        </Typography>
+                        <Button
+                            onClick={() => setExpanded(!expanded)}
+                            endIcon={expanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                            sx={{ color: '#633394' }}
+                        >
+                            {expanded ? 'Collapse' : 'Expand'}
+                        </Button>
+                    </Box>
 
-                {/* Alerts */}
-                {alerts.map((alert) => (
-                    <Alert key={alert.id} severity={alert.severity} sx={{ mb: 2 }}>
-                        {alert.message}
-                    </Alert>
-                ))}
+                    {/* Alerts */}
+                    {alerts.map((alert) => (
+                        <Alert key={alert.id} severity={alert.severity} sx={{ mb: 2 }}>
+                            {alert.message}
+                        </Alert>
+                    ))}
 
-                <Collapse in={expanded}>
-                    <Grid container spacing={3}>
-                        {/* Left Panel - User Selection */}
-                        <Grid item xs={12} md={8}>
-                            <Typography variant="subtitle1" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-                                <PeopleIcon sx={{ mr: 1 }} />
-                                Select Users ({selectedUsers.length} selected)
-                            </Typography>
+                    <Collapse in={expanded}>
+                        <Grid container spacing={3}>
+                            {/* Left Panel - User Selection */}
+                            <Grid item xs={12} md={8}>
+                                <Typography variant="subtitle1" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+                                    <PeopleIcon sx={{ mr: 1 }} />
+                                    Select Users ({selectedUsers.length} selected)
+                                </Typography>
 
-                            {/* Filters */}
-                            <Grid container spacing={2} sx={{ mb: 2 }}>
-                                <Grid item xs={12} sm={6}>
-                                    <FormControl fullWidth size="small">
-                                        <InputLabel>Filter by Organization</InputLabel>
-                                        <Select
-                                            value={organizationFilter}
-                                            onChange={(e) => setOrganizationFilter(e.target.value)}
-                                            label="Filter by Organization"
-                                        >
-                                            <MenuItem value="">All Organizations</MenuItem>
-                                            {organizations.map((org) => (
-                                                <MenuItem key={org.id} value={org.id}>
-                                                    {org.name}
-                                                </MenuItem>
-                                            ))}
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-                                <Grid item xs={12} sm={6}>
-                                    <FormControl fullWidth size="small">
-                                        <InputLabel>Filter by Role</InputLabel>
-                                        <Select
-                                            value={roleFilter}
-                                            onChange={(e) => setRoleFilter(e.target.value)}
-                                            label="Filter by Role"
-                                        >
-                                            <MenuItem value="">All Roles</MenuItem>
-                                            <MenuItem value="user">User</MenuItem>
-                                            <MenuItem value="manager">Manager</MenuItem>
-                                            <MenuItem value="primary_contact">Primary Contact</MenuItem>
-                                            <MenuItem value="secondary_contact">Secondary Contact</MenuItem>
-                                            <MenuItem value="head">Head</MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-                            </Grid>
-
-                            {/* Compact Users Table */}
-                            <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 300 }}>
-                                <Table size="small" stickyHeader>
-                                    <TableHead>
-                                        <TableRow sx={{ backgroundColor: '#ede7f6' }}>
-                                            <TableCell padding="checkbox">
-                                                <Checkbox
-                                                    indeterminate={selectedUsers.length > 0 && selectedUsers.length < filteredUsers.length}
-                                                    checked={filteredUsers.length > 0 && selectedUsers.length === filteredUsers.length}
-                                                    onChange={handleSelectAll}
-                                                />
-                                            </TableCell>
-                                            <TableCell><strong>Name</strong></TableCell>
-                                            <TableCell><strong>Email</strong></TableCell>
-                                            <TableCell><strong>Role</strong></TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {filteredUsers.slice(0, 10).map((user) => ( // Limit to 10 for compact view
-                                            <TableRow 
-                                                key={user.id}
-                                                hover
-                                                sx={{ 
-                                                    cursor: 'pointer',
-                                                    backgroundColor: selectedUserForView && selectedUserForView.id === user.id
-                                                       ? '#f3e5f5'
-                                                       : selectedUsers.includes(user.id)
-                                                           ? '#e3f2fd'
-                                                           : 'inherit'
-                                                }}
-                                                onClick={() => handleUserSelectionForView(user)}
+                                {/* Filters */}
+                                <Grid container spacing={2} sx={{ mb: 2 }}>
+                                    <Grid item xs={12} sm={6}>
+                                        <FormControl fullWidth size="small">
+                                            <InputLabel>Filter by Organization</InputLabel>
+                                            <Select
+                                                value={organizationFilter}
+                                                onChange={(e) => setOrganizationFilter(e.target.value)}
+                                                label="Filter by Organization"
                                             >
+                                                <MenuItem value="">All Organizations</MenuItem>
+                                                {organizations.map((org) => (
+                                                    <MenuItem key={org.id} value={org.id}>
+                                                        {org.name}
+                                                    </MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <FormControl fullWidth size="small">
+                                            <InputLabel>Filter by Role</InputLabel>
+                                            <Select
+                                                value={roleFilter}
+                                                onChange={(e) => setRoleFilter(e.target.value)}
+                                                label="Filter by Role"
+                                            >
+                                                <MenuItem value="">All Roles</MenuItem>
+                                                <MenuItem value="user">User</MenuItem>
+                                                <MenuItem value="manager">Manager</MenuItem>
+                                                <MenuItem value="primary_contact">Primary Contact</MenuItem>
+                                                <MenuItem value="secondary_contact">Secondary Contact</MenuItem>
+                                                <MenuItem value="head">Head</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </Grid>
+                                </Grid>
+
+                                {/* Compact Users Table */}
+                                <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 300 }}>
+                                    <Table size="small" stickyHeader>
+                                        <TableHead>
+                                            <TableRow sx={{ backgroundColor: '#ede7f6' }}>
                                                 <TableCell padding="checkbox">
                                                     <Checkbox
-                                                        checked={selectedUsers.includes(user.id)}
-                                                        onChange={() => handleUserSelection(user.id)}
-                                                        onClick={(e) => e.stopPropagation()}
+                                                        indeterminate={selectedUsers.length > 0 && selectedUsers.length < filteredUsers.length}
+                                                        checked={filteredUsers.length > 0 && selectedUsers.length === filteredUsers.length}
+                                                        onChange={handleSelectAll}
                                                     />
                                                 </TableCell>
-                                                <TableCell>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                        {user.firstname && user.lastname 
-                                                            ? `${user.firstname} ${user.lastname}` 
-                                                            : user.username}
-                                                        {selectedUserForView && selectedUserForView.id === user.id && (
-                                                            <Chip 
-                                                                label="Viewing" 
-                                                                size="small" 
-                                                                color="primary" 
-                                                                sx={{ ml: 1 }} 
+                                                <TableCell><strong>Name</strong></TableCell>
+                                                <TableCell><strong>Email</strong></TableCell>
+                                                <TableCell><strong>Role</strong></TableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {filteredUsers.slice(0, 10).map((user) => ( // Limit to 10 for compact view
+                                                <TableRow
+                                                    key={user.id}
+                                                    hover
+                                                    sx={{
+                                                        cursor: 'pointer',
+                                                        backgroundColor: selectedUserForView && selectedUserForView.id === user.id
+                                                            ? '#f3e5f5'
+                                                            : selectedUsers.includes(user.id)
+                                                                ? '#e3f2fd'
+                                                                : 'inherit'
+                                                    }}
+                                                    onClick={() => handleUserSelectionForView(user)}
+                                                >
+                                                    <TableCell padding="checkbox">
+                                                        <Checkbox
+                                                            checked={selectedUsers.includes(user.id)}
+                                                            onChange={() => handleUserSelection(user.id)}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                            {user.firstname && user.lastname
+                                                                ? `${user.firstname} ${user.lastname}`
+                                                                : user.username}
+                                                            {selectedUserForView && selectedUserForView.id === user.id && (
+                                                                <Chip
+                                                                    label="Viewing"
+                                                                    size="small"
+                                                                    color="primary"
+                                                                    sx={{ ml: 1 }}
+                                                                />
+                                                            )}
+                                                        </Box>
+                                                    </TableCell>
+                                                    <TableCell>{user.email}</TableCell>
+                                                    <TableCell>
+                                                        <Chip
+                                                            label={user.ui_role}
+                                                            size="small"
+                                                            color={user.ui_role === 'manager' ? 'primary' : 'default'}
+                                                        />
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+
+                                {filteredUsers.length > 10 && (
+                                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                        Showing first 10 of {filteredUsers.length} users. Use filters to narrow selection.
+                                    </Typography>
+                                )}
+
+                                {filteredUsers.length === 0 && (
+                                    <Box sx={{ textAlign: 'center', py: 2 }}>
+                                        <Typography color="text.secondary">
+                                            No users found matching the current filters
+                                        </Typography>
+                                    </Box>
+                                )}
+
+                                <Box sx={{ mt: 2, p: 1, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
+                                    <Typography variant="body2" color="text.secondary">
+                                        <strong>How to use:</strong> Click checkbox to select users for bulk assignment.
+                                        Double-click a user's row to view their existing assignments and assign new templates.
+                                    </Typography>
+                                    <Button
+                                        size="small"
+                                        onClick={testDatabaseConnection}
+                                        sx={{ mt: 1, color: '#633394' }}
+                                    >
+                                        Test Database Connection
+                                    </Button>
+                                </Box>
+                            </Grid>
+
+                            {/* Right Panel - Survey Selection & Assignment */}
+                            <Grid item xs={12} md={4}>
+                                <Box sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+                                    {selectedUserForView ? (
+                                        // Single User View - Show existing assignments and available templates
+                                        <>
+                                            <Typography variant="subtitle1" sx={{ mb: 2 }}>
+                                                {selectedUserForView.firstname && selectedUserForView.lastname
+                                                    ? `${selectedUserForView.firstname} ${selectedUserForView.lastname}`
+                                                    : selectedUserForView.username} - Survey Assignments
+                                            </Typography>
+
+                                            {/* User Info */}
+                                            <Box sx={{ mb: 2, p: 1, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
+                                                <Typography variant="body2">
+                                                    <strong>Email:</strong> {selectedUserForView.email}
+                                                </Typography>
+                                                <Typography variant="body2">
+                                                    <strong>Role:</strong> {selectedUserForView.ui_role}
+                                                </Typography>
+                                                <Typography variant="body2">
+                                                    <strong>Organization:</strong> {getOrganizationName(selectedUserForView.organization_id)}
+                                                </Typography>
+                                            </Box>
+
+                                            {/* Existing Assignments */}
+                                            <Typography variant="body1" sx={{ mb: 1, fontWeight: 'bold' }}>
+                                                Existing Assignments:
+                                            </Typography>
+                                            {loadingAssignments ? (
+                                                <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+                                                    <CircularProgress size={20} />
+                                                </Box>
+                                            ) : userAssignments.length > 0 ? (
+                                                <Box sx={{ mb: 2, maxHeight: 150, overflow: 'auto' }}>
+                                                    {userAssignments.map((assignment) => (
+                                                        <Box key={assignment.id} sx={{ mb: 1, p: 1, border: '1px solid #e0e0e0', borderRadius: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                            <Box sx={{ flex: 1 }}>
+                                                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                                                    {`${assignment.template_name}${assignment.survey_code ? ` - ${assignment.survey_code}` : ''}`}
+                                                                </Typography>
+                                                                <Typography variant="caption" color="text.secondary">
+                                                                    Status: {assignment.status} | Assigned: {new Date(assignment.created_at).toLocaleDateString()}
+                                                                </Typography>
+                                                            </Box>
+                                                            <Tooltip title="Remove Assignment">
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={() => handleRemoveAssignment(assignment)}
+                                                                    sx={{
+                                                                        color: '#d32f2f',
+                                                                        '&:hover': { backgroundColor: '#ffebee' }
+                                                                    }}
+                                                                >
+                                                                    <DeleteIcon fontSize="small" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        </Box>
+                                                    ))}
+                                                </Box>
+                                            ) : (
+                                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                                    No existing assignments
+                                                </Typography>
+                                            )}
+
+                                            {/* Available Templates for Assignment */}
+                                            <Typography variant="body1" sx={{ mb: 1, fontWeight: 'bold' }}>
+                                                Available Templates:
+                                            </Typography>
+                                            <FormControl fullWidth sx={{ mb: 2 }}>
+                                                <InputLabel>Select Survey Template</InputLabel>
+                                                <Select
+                                                    value={selectedTemplate}
+                                                    onChange={(e) => setSelectedTemplate(e.target.value)}
+                                                    label="Select Survey Template"
+                                                    size="small"
+                                                >
+                                                    {getAvailableTemplatesForUser().map((template) => (
+                                                        <MenuItem key={template.id} value={template.id}>
+                                                            {`${template.version_name || 'Survey'}${template.survey_code ? ` - ${template.survey_code}` : ''}`}
+                                                        </MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </FormControl>
+
+                                            {getAvailableTemplatesForUser().length === 0 && (
+                                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                                    All available templates have been assigned to this user.
+                                                </Typography>
+                                            )}
+
+                                            {/* Assignment Button for Single User */}
+                                            <Button
+                                                variant="contained"
+                                                fullWidth
+                                                onClick={() => assignSurvey([selectedUserForView.id])}
+                                                disabled={loading || !selectedTemplate || getAvailableTemplatesForUser().length === 0}
+                                                startIcon={loading ? <CircularProgress size={16} /> : <SendIcon />}
+                                                sx={{
+                                                    backgroundColor: '#633394',
+                                                    '&:hover': { backgroundColor: '#7c52a5' },
+                                                    mb: 1
+                                                }}
+                                            >
+                                                {loading ? 'Assigning...' : 'Assign Selected Template'}
+                                            </Button>
+
+                                            <Button
+                                                variant="outlined"
+                                                fullWidth
+                                                onClick={() => setSelectedUserForView(null)}
+                                                sx={{ color: '#633394', borderColor: '#633394' }}
+                                            >
+                                                Back to Bulk Assignment
+                                            </Button>
+                                        </>
+                                    ) : (
+                                        // Bulk Assignment View
+                                        <>
+                                            <Typography variant="subtitle1" sx={{ mb: 2 }}>
+                                                Bulk Assignment Details
+                                            </Typography>
+
+                                            {/* Survey Template Selection */}
+                                            <FormControl fullWidth sx={{ mb: 2 }}>
+                                                <InputLabel>Select Survey Template</InputLabel>
+                                                <Select
+                                                    value={selectedTemplate}
+                                                    onChange={(e) => setSelectedTemplate(e.target.value)}
+                                                    label="Select Survey Template"
+                                                    size="small"
+                                                >
+                                                    {templates.map((template) => (
+                                                        <MenuItem key={template.id} value={template.id}>
+                                                            {`${template.version_name || 'Survey'}${template.survey_code ? ` - ${template.survey_code}` : ''}`}
+                                                        </MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </FormControl>
+
+                                            {/* Selected Users Summary */}
+                                            {selectedUsersInfo.length > 0 && (
+                                                <Box sx={{ mb: 2 }}>
+                                                    <Typography variant="body2" sx={{ mb: 1 }}>
+                                                        Selected Users ({selectedUsersInfo.length}):
+                                                    </Typography>
+                                                    <Box sx={{ maxHeight: 100, overflow: 'auto' }}>
+                                                        {selectedUsersInfo.slice(0, 5).map((user) => (
+                                                            <Chip
+                                                                key={user.id}
+                                                                label={user.firstname && user.lastname
+                                                                    ? `${user.firstname} ${user.lastname}`
+                                                                    : user.username}
+                                                                size="small"
+                                                                sx={{ m: 0.25 }}
+                                                                onDelete={() => handleUserSelection(user.id)}
+                                                            />
+                                                        ))}
+                                                        {selectedUsersInfo.length > 5 && (
+                                                            <Chip
+                                                                label={`+${selectedUsersInfo.length - 5} more`}
+                                                                size="small"
+                                                                sx={{ m: 0.25 }}
                                                             />
                                                         )}
                                                     </Box>
-                                                </TableCell>
-                                                <TableCell>{user.email}</TableCell>
-                                                <TableCell>
-                                                    <Chip 
-                                                        label={user.ui_role} 
-                                                        size="small" 
-                                                        color={user.ui_role === 'manager' ? 'primary' : 'default'}
-                                                    />
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-
-                            {filteredUsers.length > 10 && (
-                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                                    Showing first 10 of {filteredUsers.length} users. Use filters to narrow selection.
-                                </Typography>
-                            )}
-
-                            {filteredUsers.length === 0 && (
-                                <Box sx={{ textAlign: 'center', py: 2 }}>
-                                    <Typography color="text.secondary">
-                                        No users found matching the current filters
-                                    </Typography>
-                                </Box>
-                            )}
-
-                            <Box sx={{ mt: 2, p: 1, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
-                                <Typography variant="body2" color="text.secondary">
-                                    <strong>How to use:</strong> Click checkbox to select users for bulk assignment. 
-                                    Double-click a user's row to view their existing assignments and assign new templates.
-                                </Typography>
-                                <Button 
-                                    size="small" 
-                                    onClick={testDatabaseConnection}
-                                    sx={{ mt: 1, color: '#633394' }}
-                                >
-                                    Test Database Connection
-                                </Button>
-                            </Box>
-                        </Grid>
-
-                        {/* Right Panel - Survey Selection & Assignment */}
-                        <Grid item xs={12} md={4}>
-                            <Box sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-                                {selectedUserForView ? (
-                                    // Single User View - Show existing assignments and available templates
-                                    <>
-                                        <Typography variant="subtitle1" sx={{ mb: 2 }}>
-                                            {selectedUserForView.firstname && selectedUserForView.lastname 
-                                                ? `${selectedUserForView.firstname} ${selectedUserForView.lastname}` 
-                                                : selectedUserForView.username} - Survey Assignments
-                                        </Typography>
-
-                                        {/* User Info */}
-                                        <Box sx={{ mb: 2, p: 1, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
-                                            <Typography variant="body2">
-                                                <strong>Email:</strong> {selectedUserForView.email}
-                                            </Typography>
-                                            <Typography variant="body2">
-                                                <strong>Role:</strong> {selectedUserForView.ui_role}
-                                            </Typography>
-                                            <Typography variant="body2">
-                                                <strong>Organization:</strong> {getOrganizationName(selectedUserForView.organization_id)}
-                                            </Typography>
-                                        </Box>
-
-                                        {/* Existing Assignments */}
-                                        <Typography variant="body1" sx={{ mb: 1, fontWeight: 'bold' }}>
-                                            Existing Assignments:
-                                        </Typography>
-                                        {loadingAssignments ? (
-                                            <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-                                                <CircularProgress size={20} />
-                                            </Box>
-                                        ) : userAssignments.length > 0 ? (
-                                            <Box sx={{ mb: 2, maxHeight: 150, overflow: 'auto' }}>
-                                                {userAssignments.map((assignment) => (
-                                                    <Box key={assignment.id} sx={{ mb: 1, p: 1, border: '1px solid #e0e0e0', borderRadius: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                                        <Box sx={{ flex: 1 }}>
-                                                            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                                                {`${assignment.template_name}${assignment.survey_code ? ` - ${assignment.survey_code}` : ''}`}
-                                                            </Typography>
-                                                            <Typography variant="caption" color="text.secondary">
-                                                                Status: {assignment.status} | Assigned: {new Date(assignment.created_at).toLocaleDateString()}
-                                                            </Typography>
-                                                        </Box>
-                                                        <Tooltip title="Remove Assignment">
-                                                            <IconButton
-                                                                size="small"
-                                                                onClick={() => handleRemoveAssignment(assignment)}
-                                                                sx={{ 
-                                                                    color: '#d32f2f',
-                                                                    '&:hover': { backgroundColor: '#ffebee' }
-                                                                }}
-                                                            >
-                                                                <DeleteIcon fontSize="small" />
-                                                            </IconButton>
-                                                        </Tooltip>
-                                                    </Box>
-                                                ))}
-                                            </Box>
-                                        ) : (
-                                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                                No existing assignments
-                                            </Typography>
-                                        )}
-
-                                        {/* Available Templates for Assignment */}
-                                        <Typography variant="body1" sx={{ mb: 1, fontWeight: 'bold' }}>
-                                            Available Templates:
-                                        </Typography>
-                                        <FormControl fullWidth sx={{ mb: 2 }}>
-                                            <InputLabel>Select Survey Template</InputLabel>
-                                            <Select
-                                                value={selectedTemplate}
-                                                onChange={(e) => setSelectedTemplate(e.target.value)}
-                                                label="Select Survey Template"
-                                                size="small"
-                                            >
-                                                {getAvailableTemplatesForUser().map((template) => (
-                                                    <MenuItem key={template.id} value={template.id}>
-                                                        {`${template.version_name || 'Survey'}${template.survey_code ? ` - ${template.survey_code}` : ''}`}
-                                                    </MenuItem>
-                                                ))}
-                                            </Select>
-                                        </FormControl>
-
-                                        {getAvailableTemplatesForUser().length === 0 && (
-                                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                                All available templates have been assigned to this user.
-                                            </Typography>
-                                        )}
-
-                                        {/* Assignment Button for Single User */}
-                                        <Button
-                                            variant="contained"
-                                            fullWidth
-                                            onClick={() => assignSurvey([selectedUserForView.id])}
-                                            disabled={loading || !selectedTemplate || getAvailableTemplatesForUser().length === 0}
-                                            startIcon={loading ? <CircularProgress size={16} /> : <SendIcon />}
-                                            sx={{ 
-                                                backgroundColor: '#633394',
-                                                '&:hover': { backgroundColor: '#7c52a5' },
-                                                mb: 1
-                                            }}
-                                        >
-                                            {loading ? 'Assigning...' : 'Assign Selected Template'}
-                                        </Button>
-
-                                        <Button
-                                            variant="outlined"
-                                            fullWidth
-                                            onClick={() => setSelectedUserForView(null)}
-                                            sx={{ color: '#633394', borderColor: '#633394' }}
-                                        >
-                                            Back to Bulk Assignment
-                                        </Button>
-                                    </>
-                                ) : (
-                                    // Bulk Assignment View
-                                    <>
-                                        <Typography variant="subtitle1" sx={{ mb: 2 }}>
-                                            Bulk Assignment Details
-                                        </Typography>
-
-                                        {/* Survey Template Selection */}
-                                        <FormControl fullWidth sx={{ mb: 2 }}>
-                                            <InputLabel>Select Survey Template</InputLabel>
-                                            <Select
-                                                value={selectedTemplate}
-                                                onChange={(e) => setSelectedTemplate(e.target.value)}
-                                                label="Select Survey Template"
-                                                size="small"
-                                            >
-                                                {templates.map((template) => (
-                                                    <MenuItem key={template.id} value={template.id}>
-                                                        {`${template.version_name || 'Survey'}${template.survey_code ? ` - ${template.survey_code}` : ''}`}
-                                                    </MenuItem>
-                                                ))}
-                                            </Select>
-                                        </FormControl>
-
-                                        {/* Selected Users Summary */}
-                                        {selectedUsersInfo.length > 0 && (
-                                            <Box sx={{ mb: 2 }}>
-                                                <Typography variant="body2" sx={{ mb: 1 }}>
-                                                    Selected Users ({selectedUsersInfo.length}):
-                                                </Typography>
-                                                <Box sx={{ maxHeight: 100, overflow: 'auto' }}>
-                                                    {selectedUsersInfo.slice(0, 5).map((user) => (
-                                                        <Chip
-                                                            key={user.id}
-                                                            label={user.firstname && user.lastname 
-                                                                ? `${user.firstname} ${user.lastname}` 
-                                                                : user.username}
-                                                            size="small"
-                                                            sx={{ m: 0.25 }}
-                                                            onDelete={() => handleUserSelection(user.id)}
-                                                        />
-                                                    ))}
-                                                    {selectedUsersInfo.length > 5 && (
-                                                        <Chip
-                                                            label={`+${selectedUsersInfo.length - 5} more`}
-                                                            size="small"
-                                                            sx={{ m: 0.25 }}
-                                                        />
-                                                    )}
                                                 </Box>
-                                            </Box>
-                                        )}
+                                            )}
 
-                                        {/* Assignment Button */}
-                                        <Button
-                                            variant="contained"
-                                            fullWidth
-                                            onClick={assignSurvey}
-                                            disabled={loading || selectedUsers.length === 0 || !selectedTemplate}
-                                            startIcon={loading ? <CircularProgress size={16} /> : <SendIcon />}
-                                            sx={{ 
-                                                backgroundColor: '#633394',
-                                                '&:hover': { backgroundColor: '#7c52a5' }
-                                            }}
-                                        >
-                                            {loading ? 'Assigning...' : `Assign to ${selectedUsers.length} User${selectedUsers.length !== 1 ? 's' : ''}`}
-                                        </Button>
+                                            {/* Assignment Button */}
+                                            <Button
+                                                variant="contained"
+                                                fullWidth
+                                                onClick={assignSurvey}
+                                                disabled={loading || selectedUsers.length === 0 || !selectedTemplate}
+                                                startIcon={loading ? <CircularProgress size={16} /> : <SendIcon />}
+                                                sx={{
+                                                    backgroundColor: '#633394',
+                                                    '&:hover': { backgroundColor: '#7c52a5' }
+                                                }}
+                                            >
+                                                {loading ? 'Assigning...' : `Assign to ${selectedUsers.length} User${selectedUsers.length !== 1 ? 's' : ''}`}
+                                            </Button>
 
-                                        {selectedTemplate && (
-                                            <Box sx={{ mt: 2, p: 1, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    <strong>Survey:</strong> {getTemplateName(selectedTemplate)}
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Email notifications will be sent
-                                                </Typography>
-                                            </Box>
-                                        )}
-                                    </>
-                                )}
-                            </Box>
+                                            {selectedTemplate && (
+                                                <Box sx={{ mt: 2, p: 1, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        <strong>Survey:</strong> {getTemplateName(selectedTemplate)}
+                                                    </Typography>
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        Email notifications will be sent
+                                                    </Typography>
+                                                </Box>
+                                            )}
+                                        </>
+                                    )}
+                                </Box>
+                            </Grid>
                         </Grid>
-                    </Grid>
-                </Collapse>
+                    </Collapse>
 
-                {/* Compact view when collapsed */}
-                {!expanded && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <Typography variant="body2" color="text.secondary">
-                            Assign surveys to users and send email notifications
-                        </Typography>
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                            {selectedUserForView && (
-                                <Chip 
-                                    label={`Viewing: ${selectedUserForView.firstname && selectedUserForView.lastname 
-                                        ? `${selectedUserForView.firstname} ${selectedUserForView.lastname}` 
-                                        : selectedUserForView.username}`} 
-                                    size="small" 
-                                    color="primary"
+                    {/* Compact view when collapsed */}
+                    {!expanded && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Typography variant="body2" color="text.secondary">
+                                Assign surveys to users and send email notifications
+                            </Typography>
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                                {selectedUserForView && (
+                                    <Chip
+                                        label={`Viewing: ${selectedUserForView.firstname && selectedUserForView.lastname
+                                            ? `${selectedUserForView.firstname} ${selectedUserForView.lastname}`
+                                            : selectedUserForView.username}`}
+                                        size="small"
+                                        color="primary"
+                                    />
+                                )}
+                                <Chip
+                                    label={`${selectedUsers.length} selected`}
+                                    size="small"
+                                    color={selectedUsers.length > 0 ? 'primary' : 'default'}
                                 />
-                            )}
-                            <Chip 
-                                label={`${selectedUsers.length} selected`} 
-                                size="small" 
-                                color={selectedUsers.length > 0 ? 'primary' : 'default'}
-                            />
+                            </Box>
                         </Box>
-                    </Box>
-                )}
-            </CardContent>
-        </Card>
+                    )}
+                </CardContent>
+            </Card>
 
-        {/* Assignment Results Dialog */}
-        <Dialog 
-                open={showResultDialog} 
+            {/* Assignment Results Dialog */}
+            <Dialog
+                open={showResultDialog}
                 onClose={() => setShowResultDialog(false)}
                 maxWidth="md"
                 fullWidth
@@ -770,8 +770,8 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
             </Dialog>
 
             {/* Remove Assignment Confirmation Dialog */}
-        <Dialog 
-                open={showRemoveDialog} 
+            <Dialog
+                open={showRemoveDialog}
                 onClose={cancelRemoveAssignment}
                 maxWidth="sm"
                 fullWidth
@@ -802,7 +802,7 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
                             </Box>
                             <Alert severity="warning" sx={{ mb: 2 }}>
                                 <Typography variant="body2">
-                                    <strong>Warning:</strong> This action will permanently delete the survey assignment 
+                                    <strong>Warning:</strong> This action will permanently delete the survey assignment
                                     and all associated survey response data. This cannot be undone.
                                 </Typography>
                             </Alert>
@@ -810,17 +810,17 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
                     )}
                 </DialogContent>
                 <DialogActions>
-                    <Button 
+                    <Button
                         onClick={cancelRemoveAssignment}
                         sx={{ color: '#666' }}
                     >
                         Cancel
                     </Button>
-                    <Button 
+                    <Button
                         onClick={confirmRemoveAssignment}
                         disabled={removingAssignment}
                         startIcon={removingAssignment ? <CircularProgress size={16} /> : <DeleteIcon />}
-                        sx={{ 
+                        sx={{
                             color: '#d32f2f',
                             '&:hover': { backgroundColor: '#ffebee' }
                         }}
@@ -828,7 +828,7 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
                         {removingAssignment ? 'Removing...' : 'Remove Assignment'}
                     </Button>
                 </DialogActions>
-        </Dialog>
+            </Dialog>
         </>
     );
 };

@@ -126,12 +126,12 @@ class SampleDataService {
         ];
 
         const averages = {};
-        
+
         scoreFields.forEach(field => {
             const scores = responses
                 .map(response => response.ministry_training_scores?.[field])
                 .filter(score => score !== undefined && score !== null);
-            
+
             if (scores.length > 0) {
                 averages[field] = scores.reduce((sum, score) => sum + score, 0) / scores.length;
             }
@@ -145,13 +145,13 @@ class SampleDataService {
         const gaps = Object.entries(averages)
             .map(([field, average]) => ({ field, average, gap: 5 - average }))
             .sort((a, b) => b.gap - a.gap);
-        
+
         return gaps;
     }
 
     static getGeographicDistribution(responses) {
         const distribution = {};
-        
+
         responses.forEach(response => {
             const country = response.country;
             if (!distribution[country]) {
@@ -161,7 +161,7 @@ class SampleDataService {
                     denominations: new Set()
                 };
             }
-            
+
             distribution[country].count++;
             distribution[country].cities.add(response.city);
             if (response.church_name) {
@@ -207,14 +207,14 @@ class SampleDataService {
 
         // Default behavior for backward compatibility
         const averages = this.calculateAverageTrainingScores(responses);
-        
+
         switch (chartType) {
             case 'bar':
                 return Object.entries(averages).map(([field, average]) => ({
                     name: field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
                     value: Number(average.toFixed(2))
                 }));
-                
+
             case 'pie':
                 const educationDist = {};
                 responses.forEach(r => {
@@ -222,7 +222,7 @@ class SampleDataService {
                     educationDist[level] = (educationDist[level] || 0) + 1;
                 });
                 return Object.entries(educationDist).map(([name, value]) => ({ name, value }));
-                
+
             case 'line':
                 const yearlyData = {};
                 responses.forEach(r => {
@@ -232,7 +232,7 @@ class SampleDataService {
                 return Object.entries(yearlyData)
                     .sort(([a], [b]) => a.localeCompare(b))
                     .map(([year, count]) => ({ year, count }));
-                
+
             default:
                 return [];
         }
@@ -243,17 +243,17 @@ class SampleDataService {
      */
     static generateCustomReportData(responses, metrics, dimensions, chartType, individualFilters = null) {
         if (!responses || responses.length === 0) return [];
-        
+
         const result = [];
         const primaryDimension = dimensions[0] || 'organization';
         const primaryMetric = metrics[0] || 'response_count';
-        
+
         // Group data by primary dimension
         const groupedData = {};
-        
+
         responses.forEach(response => {
             let groupKey = 'Unknown';
-            
+
             switch (primaryDimension) {
                 case 'question':
                     groupKey = 'Sample Question';
@@ -273,7 +273,7 @@ class SampleDataService {
                 default:
                     groupKey = response.organization_name || 'Unknown';
             }
-            
+
             if (!groupedData[groupKey]) {
                 groupedData[groupKey] = {
                     responses: [],
@@ -282,26 +282,26 @@ class SampleDataService {
                     education_levels: []
                 };
             }
-            
+
             groupedData[groupKey].responses.push(response);
             groupedData[groupKey].count++;
-            
+
             // Collect effectiveness scores
             if (response.training_effectiveness) {
                 const score = this.mapEffectivenessToScore(response.training_effectiveness);
                 groupedData[groupKey].effectiveness_scores.push(score);
             }
-            
+
             // Collect education levels
             if (response.highest_education_level) {
                 groupedData[groupKey].education_levels.push(response.highest_education_level);
             }
         });
-        
+
         // Calculate metric values for each group
         Object.entries(groupedData).forEach(([groupName, data]) => {
             let value = 0;
-            
+
             switch (primaryMetric) {
                 case 'response_count':
                     value = data.count;
@@ -326,7 +326,7 @@ class SampleDataService {
                 default:
                     value = data.count;
             }
-            
+
             result.push({
                 name: groupName,
                 value: value,
@@ -339,7 +339,7 @@ class SampleDataService {
                 }
             });
         });
-        
+
         // Sort by value descending
         return result.sort((a, b) => (b.value || 0) - (a.value || 0));
     }
@@ -393,7 +393,7 @@ class SampleDataService {
     static async loadOrganizationData(organizationType, organizationHeadId) {
         try {
             const questions = await this.loadSurveyQuestions();
-            
+
             // Define organization heads (matching ReportBuilder definition)
             const organizationHeads = {
                 'church': [
@@ -416,14 +416,14 @@ class SampleDataService {
             // Get the specific organization head
             const orgHeads = organizationHeads[organizationType];
             const selectedHead = orgHeads.find(head => head.id === organizationHeadId);
-            
+
             if (!selectedHead) {
                 throw new Error(`Invalid organization head ID: ${organizationHeadId}`);
             }
 
             let responses = [];
             let organizationName = '';
-            
+
             switch (organizationType) {
                 case 'church':
                     responses = await this.loadChurchResponses();
@@ -450,16 +450,16 @@ class SampleDataService {
                 head_role: selectedHead.role,
                 organization_name: selectedHead.organization,
                 organization_type: organizationType,
-                
+
                 // Role mapping for filtering
                 role: this.mapOrganizationTypeToRole(organizationType),
                 role_title: selectedHead.role,
-                
+
                 // Survey metadata
                 survey_id: `${organizationType}_survey`,
                 survey_respondent: selectedHead.name,
                 response_date: new Date().toISOString().split('T')[0],
-                
+
                 // Additional metadata for role-based analysis
                 is_organization_head: true,
                 head_id: organizationHeadId,
@@ -496,7 +496,7 @@ class SampleDataService {
     static mapOrganizationTypeToRole(organizationType) {
         const roleMap = {
             'church': 'pastor',
-            'institution': 'president', 
+            'institution': 'president',
             'non_formal': 'ministry_leader'
         };
         return roleMap[organizationType] || 'unknown';
@@ -509,7 +509,7 @@ class SampleDataService {
         const seniorRoles = ['Senior Pastor', 'President', 'Executive Director', 'Rector'];
         const midRoles = ['Associate Pastor', 'Academic Dean', 'Program Director'];
         const coordRoles = ['Training Coordinator'];
-        
+
         if (seniorRoles.some(role => roleTitle.includes(role))) return 'senior';
         if (midRoles.some(role => roleTitle.includes(role))) return 'mid';
         if (coordRoles.some(role => roleTitle.includes(role))) return 'coordinator';
@@ -522,7 +522,7 @@ class SampleDataService {
     static getRoleFromOrganizationType(organizationType) {
         const roleMap = {
             'church': 'Pastor',
-            'institution': 'President', 
+            'institution': 'President',
             'non_formal': 'Ministry Leader'
         };
         return roleMap[organizationType] || 'Unknown';
@@ -533,7 +533,7 @@ class SampleDataService {
      */
     static generateRoleBasedReportData(responses, chartType, metrics, dimensions, roleComparison) {
         console.log('🎭 Generating role-based comparison data...', roleComparison);
-        
+
         // Add role information to responses (use existing role or map from organization type)
         const responsesWithRoles = responses.map(response => ({
             ...response,
@@ -564,15 +564,15 @@ class SampleDataService {
      */
     static compareWithinRole(responses, roleComparison, chartType) {
         const { selectedRoles, regionFilter, selectedRegions } = roleComparison;
-        
+
         // Filter by selected roles
-        let filteredResponses = responses.filter(r => 
+        let filteredResponses = responses.filter(r =>
             selectedRoles.length === 0 || selectedRoles.includes(r.role.toLowerCase())
         );
 
         // Apply region filter
         if (regionFilter === 'specific_regions' && selectedRegions.length > 0) {
-            filteredResponses = filteredResponses.filter(r => 
+            filteredResponses = filteredResponses.filter(r =>
                 selectedRegions.includes(r.region)
             );
         }
@@ -591,7 +591,7 @@ class SampleDataService {
         const result = Object.entries(roleGroups).map(([role, roleResponses]) => {
             const avgScore = this.calculateAverageTrainingScores(roleResponses);
             const overallAvg = Object.values(avgScore).reduce((sum, val) => sum + val, 0) / Object.values(avgScore).length;
-            
+
             return {
                 name: role,
                 value: Number(overallAvg.toFixed(2)),
@@ -609,7 +609,7 @@ class SampleDataService {
      */
     static compareAcrossRoles(responses, roleComparison, chartType) {
         const roleMetrics = {};
-        
+
         // Group responses by role
         responses.forEach(response => {
             const role = response.role;
@@ -623,7 +623,7 @@ class SampleDataService {
         const result = Object.entries(roleMetrics).map(([role, roleResponses]) => {
             const avgScore = this.calculateAverageTrainingScores(roleResponses);
             const overallAvg = Object.values(avgScore).reduce((sum, val) => sum + val, 0) / Object.values(avgScore).length;
-            
+
             return {
                 name: role,
                 value: Number(overallAvg.toFixed(2)),
@@ -641,16 +641,16 @@ class SampleDataService {
      */
     static compareRoleVsAverage(responses, roleComparison, chartType) {
         const { benchmarkRole } = roleComparison;
-        
+
         // Calculate overall average
         const overallAvg = this.calculateAverageTrainingScores(responses);
         const overallScore = Object.values(overallAvg).reduce((sum, val) => sum + val, 0) / Object.values(overallAvg).length;
-        
+
         // Calculate benchmark role average
         const benchmarkResponses = responses.filter(r => r.role.toLowerCase() === benchmarkRole.toLowerCase());
         const benchmarkAvg = this.calculateAverageTrainingScores(benchmarkResponses);
         const benchmarkScore = Object.values(benchmarkAvg).reduce((sum, val) => sum + val, 0) / Object.values(benchmarkAvg).length;
-        
+
         return [
             {
                 name: 'Overall Average',
@@ -673,9 +673,9 @@ class SampleDataService {
      */
     static compareCrossRegional(responses, roleComparison, chartType) {
         const { selectedRoles } = roleComparison;
-        
+
         // Filter by selected roles
-        let filteredResponses = responses.filter(r => 
+        let filteredResponses = responses.filter(r =>
             selectedRoles.length === 0 || selectedRoles.includes(r.role.toLowerCase())
         );
 
@@ -685,7 +685,7 @@ class SampleDataService {
             const region = response.region;
             const role = response.role;
             const key = `${region}_${role}`;
-            
+
             if (!regionRoleGroups[key]) {
                 regionRoleGroups[key] = {
                     region,
@@ -700,7 +700,7 @@ class SampleDataService {
         const result = Object.values(regionRoleGroups).map(group => {
             const avgScore = this.calculateAverageTrainingScores(group.responses);
             const overallAvg = Object.values(avgScore).reduce((sum, val) => sum + val, 0) / Object.values(avgScore).length;
-            
+
             return {
                 name: `${group.role} (${group.region})`,
                 value: Number(overallAvg.toFixed(2)),
@@ -718,13 +718,13 @@ class SampleDataService {
      */
     static calculateSatisfactionScore(responses) {
         if (!responses || responses.length === 0) return 0;
-        
+
         // Mock satisfaction calculation - in real implementation, this would use actual satisfaction metrics
         const scores = responses.map(r => {
             const effectiveness = r.training_effectiveness || 'Average';
             return this.mapEffectivenessToScore(effectiveness);
         });
-        
+
         return Number((scores.reduce((sum, score) => sum + score, 0) / scores.length).toFixed(2));
     }
 
@@ -733,12 +733,12 @@ class SampleDataService {
      */
     static calculateTrainingEffectiveness(responses) {
         if (!responses || responses.length === 0) return 0;
-        
+
         const effectivenessScores = responses.map(r => {
             const effectiveness = r.training_effectiveness || 'Average';
             return this.mapEffectivenessToScore(effectiveness);
         });
-        
+
         return Number((effectivenessScores.reduce((sum, score) => sum + score, 0) / effectivenessScores.length).toFixed(2));
     }
 
@@ -770,7 +770,7 @@ class SampleDataService {
             'Algeria': 'North Africa',
             'Tunisia': 'North Africa'
         };
-        
+
         return regionMap[country] || 'Unknown Region';
     }
 
@@ -779,9 +779,9 @@ class SampleDataService {
      */
     static analyzeDemographicsWithinRoles(responses, roleComparison) {
         const { selectedRoles, showRoleDemographics, compareExperienceLevels } = roleComparison;
-        
+
         // Filter by selected roles
-        let filteredResponses = responses.filter(r => 
+        let filteredResponses = responses.filter(r =>
             selectedRoles.length === 0 || selectedRoles.includes(r.role?.toLowerCase())
         );
 
@@ -790,7 +790,7 @@ class SampleDataService {
         // Group by role and analyze demographics
         filteredResponses.forEach(response => {
             const role = response.role || 'Unknown';
-            
+
             if (!demographicAnalysis[role]) {
                 demographicAnalysis[role] = {
                     total: 0,
@@ -850,10 +850,10 @@ class SampleDataService {
      */
     static getAgeGroup(age) {
         if (!age || age === 'Unknown') return 'Unknown';
-        
+
         const ageNum = parseInt(age);
         if (isNaN(ageNum)) return 'Unknown';
-        
+
         if (ageNum < 30) return 'Under 30';
         if (ageNum < 40) return '30-39';
         if (ageNum < 50) return '40-49';
@@ -866,10 +866,10 @@ class SampleDataService {
      */
     static getExperienceLevel(years) {
         if (!years || years === 'Unknown') return 'Unknown';
-        
+
         const yearsNum = parseInt(years);
         if (isNaN(yearsNum)) return 'Unknown';
-        
+
         if (yearsNum < 2) return 'Novice (0-2 years)';
         if (yearsNum < 5) return 'Developing (2-5 years)';
         if (yearsNum < 10) return 'Experienced (5-10 years)';
@@ -882,9 +882,9 @@ class SampleDataService {
      */
     static compareRolesByDemographics(responses, roleComparison) {
         const { selectedRoles, comparisonMode } = roleComparison;
-        
+
         const demographicAnalysis = this.analyzeDemographicsWithinRoles(responses, roleComparison);
-        
+
         // Create comparison data structure
         const comparisonData = {
             ageGroups: {},
@@ -896,7 +896,7 @@ class SampleDataService {
         // Aggregate data across roles for comparison
         Object.keys(demographicAnalysis).forEach(role => {
             const roleData = demographicAnalysis[role];
-            
+
             // Age group comparison
             Object.keys(roleData.ageGroupsPercentage).forEach(ageGroup => {
                 if (!comparisonData.ageGroups[ageGroup]) {
@@ -945,7 +945,7 @@ class SampleDataService {
      */
     static generateRoleSpecificKPIs(responses, role) {
         const roleResponses = responses.filter(r => r.role?.toLowerCase() === role.toLowerCase());
-        
+
         if (roleResponses.length === 0) {
             return {
                 role: role,
@@ -974,7 +974,7 @@ class SampleDataService {
         // Benchmarks (compare against all responses)
         const allAvgScores = this.calculateAverageTrainingScores(responses);
         const allOverallAvg = Object.values(allAvgScores).reduce((sum, val) => sum + val, 0) / Object.values(allAvgScores).length;
-        
+
         benchmarks.overallPerformance = Number(allOverallAvg.toFixed(2));
         benchmarks.performanceVariance = Number((kpis.overallPerformance - benchmarks.overallPerformance).toFixed(2));
 
@@ -1021,8 +1021,8 @@ class SampleDataService {
      * Apply individual response filtering
      */
     static applyIndividualFilters(responses, filters) {
-        console.log('🔍 Applying individual response filters:', filters);
-        
+        console.log(' Applying individual response filters:', filters);
+
         let filteredResponses = [...responses];
 
         // Add individual response metadata
@@ -1057,10 +1057,10 @@ class SampleDataService {
                 filteredResponses = filteredResponses.filter(response => {
                     const age = parseInt(response.age);
                     if (isNaN(age)) return false;
-                    
+
                     const minAge = parseInt(filters.ageRange.min) || 0;
                     const maxAge = parseInt(filters.ageRange.max) || 999;
-                    
+
                     return age >= minAge && age <= maxAge;
                 });
             }
@@ -1070,10 +1070,10 @@ class SampleDataService {
                 filteredResponses = filteredResponses.filter(response => {
                     const experience = parseInt(response.years_of_experience);
                     if (isNaN(experience)) return false;
-                    
+
                     const minExp = parseInt(filters.experienceRange.min) || 0;
                     const maxExp = parseInt(filters.experienceRange.max) || 999;
-                    
+
                     return experience >= minExp && experience <= maxExp;
                 });
             }
@@ -1095,7 +1095,7 @@ class SampleDataService {
             });
         }
 
-        console.log('🔍 Filtered responses:', filteredResponses.length, 'from', responses.length, 'total');
+        console.log(' Filtered responses:', filteredResponses.length, 'from', responses.length, 'total');
 
         // If individual comparison is enabled, return individual comparison data
         if (filters.compareAcrossIndividuals) {
@@ -1110,16 +1110,16 @@ class SampleDataService {
      */
     static generateIndividualComparisonData(responses, filters) {
         console.log('👥 Generating individual comparison data for', responses.length, 'responses');
-        
+
         // Group responses by survey question or section
         const individualComparisons = {};
-        
+
         responses.forEach(response => {
             const respondentId = response.respondent_id;
-            const respondentName = response.respondent_name || 
-                                 response.name || 
-                                 `${response.organization_type} ${respondentId.substr(-4)}`;
-            
+            const respondentName = response.respondent_name ||
+                response.name ||
+                `${response.organization_type} ${respondentId.substr(-4)}`;
+
             if (!individualComparisons[respondentId]) {
                 individualComparisons[respondentId] = {
                     respondent_id: respondentId,
@@ -1141,7 +1141,7 @@ class SampleDataService {
         const comparisonData = Object.values(individualComparisons).map(individual => {
             const avgScores = individual.averageScores;
             const overallScore = Object.values(avgScores).reduce((sum, val) => sum + val, 0) / Object.values(avgScores).length;
-            
+
             return {
                 name: individual.respondent_name,
                 value: Number(overallScore.toFixed(2)),
@@ -1170,14 +1170,14 @@ class SampleDataService {
      */
     static getIndividualResponseDetails(responses, respondentId) {
         const respondentResponses = responses.filter(r => r.respondent_id === respondentId);
-        
+
         if (respondentResponses.length === 0) {
             return null;
         }
 
         const respondent = respondentResponses[0];
         const avgScores = this.calculateAverageTrainingScores(respondentResponses);
-        
+
         return {
             respondent_id: respondentId,
             respondent_name: respondent.respondent_name || respondent.name || 'Unknown',
@@ -1203,15 +1203,15 @@ class SampleDataService {
      * Compare specific individuals
      */
     static compareSpecificIndividuals(responses, respondentIds) {
-        const individualDetails = respondentIds.map(id => 
+        const individualDetails = respondentIds.map(id =>
             this.getIndividualResponseDetails(responses, id)
         ).filter(detail => detail !== null);
 
         // Calculate comparative metrics
         const comparisonData = individualDetails.map(individual => {
-            const overallAverage = individualDetails.reduce((sum, ind) => 
+            const overallAverage = individualDetails.reduce((sum, ind) =>
                 sum + ind.performance.overallScore, 0) / individualDetails.length;
-            
+
             return {
                 name: individual.respondent_name,
                 value: individual.performance.overallScore,
@@ -1232,37 +1232,37 @@ class SampleDataService {
      */
     static async getUsersByRole(role) {
         console.log('🎭 Getting users by role:', role);
-        
+
         // Sample users data with multiple users per role
         const sampleUsers = {
             'pastor': [
-                { 
-                    id: 'pastor_john_w', 
-                    name: 'Pastor John Williams', 
+                {
+                    id: 'pastor_john_w',
+                    name: 'Pastor John Williams',
                     organization: 'Grace Community Church',
                     location: 'Nairobi, Kenya',
                     experience: '15 years',
                     education: 'Master of Divinity'
                 },
-                { 
-                    id: 'pastor_mary_j', 
-                    name: 'Pastor Mary Johnson', 
+                {
+                    id: 'pastor_mary_j',
+                    name: 'Pastor Mary Johnson',
                     organization: 'Unity Fellowship Church',
                     location: 'Lagos, Nigeria',
                     experience: '8 years',
                     education: 'Bachelor of Theology'
                 },
-                { 
-                    id: 'pastor_david_b', 
-                    name: 'Pastor David Brown', 
+                {
+                    id: 'pastor_david_b',
+                    name: 'Pastor David Brown',
                     organization: 'First Baptist Church',
                     location: 'Accra, Ghana',
                     experience: '12 years',
                     education: 'Master of Theology'
                 },
-                { 
-                    id: 'pastor_grace_m', 
-                    name: 'Pastor Grace Mwangi', 
+                {
+                    id: 'pastor_grace_m',
+                    name: 'Pastor Grace Mwangi',
                     organization: 'New Hope Church',
                     location: 'Kampala, Uganda',
                     experience: '6 years',
@@ -1270,25 +1270,25 @@ class SampleDataService {
                 }
             ],
             'president': [
-                { 
-                    id: 'president_sarah_t', 
-                    name: 'Dr. Sarah Thompson', 
+                {
+                    id: 'president_sarah_t',
+                    name: 'Dr. Sarah Thompson',
                     organization: 'Theological Seminary of Excellence',
                     location: 'Cape Town, South Africa',
                     experience: '20 years',
                     education: 'PhD in Theology'
                 },
-                { 
-                    id: 'president_michael_d', 
-                    name: 'Dr. Michael Davis', 
+                {
+                    id: 'president_michael_d',
+                    name: 'Dr. Michael Davis',
                     organization: 'Institute of Biblical Studies',
                     location: 'Addis Ababa, Ethiopia',
                     experience: '18 years',
                     education: 'PhD in Biblical Studies'
                 },
-                { 
-                    id: 'president_james_w', 
-                    name: 'Dr. James Wilson', 
+                {
+                    id: 'president_james_w',
+                    name: 'Dr. James Wilson',
                     organization: 'Christian University College',
                     location: 'Harare, Zimbabwe',
                     experience: '22 years',
@@ -1296,25 +1296,25 @@ class SampleDataService {
                 }
             ],
             'ministry_leader': [
-                { 
-                    id: 'leader_anna_r', 
-                    name: 'Anna Rodriguez', 
+                {
+                    id: 'leader_anna_r',
+                    name: 'Anna Rodriguez',
                     organization: 'Community Bible Training Center',
                     location: 'Dar es Salaam, Tanzania',
                     experience: '10 years',
                     education: 'Master of Arts in Ministry'
                 },
-                { 
-                    id: 'leader_paul_m', 
-                    name: 'Paul Martinez', 
+                {
+                    id: 'leader_paul_m',
+                    name: 'Paul Martinez',
                     organization: 'Outreach Ministry Institute',
                     location: 'Kigali, Rwanda',
                     experience: '7 years',
                     education: 'Bachelor of Ministry'
                 },
-                { 
-                    id: 'leader_rachel_c', 
-                    name: 'Rachel Chen', 
+                {
+                    id: 'leader_rachel_c',
+                    name: 'Rachel Chen',
                     organization: 'Rural Ministry Training Program',
                     location: 'Lusaka, Zambia',
                     experience: '9 years',
@@ -1322,17 +1322,17 @@ class SampleDataService {
                 }
             ],
             'faculty': [
-                { 
-                    id: 'faculty_peter_k', 
-                    name: 'Dr. Peter Kamau', 
+                {
+                    id: 'faculty_peter_k',
+                    name: 'Dr. Peter Kamau',
                     organization: 'Africa Theological Seminary',
                     location: 'Nairobi, Kenya',
                     experience: '14 years',
                     education: 'PhD in New Testament Studies'
                 },
-                { 
-                    id: 'faculty_rebecca_o', 
-                    name: 'Dr. Rebecca Okafor', 
+                {
+                    id: 'faculty_rebecca_o',
+                    name: 'Dr. Rebecca Okafor',
                     organization: 'West Africa Bible College',
                     location: 'Abuja, Nigeria',
                     experience: '11 years',
@@ -1340,9 +1340,9 @@ class SampleDataService {
                 }
             ],
             'administrator': [
-                { 
-                    id: 'admin_joseph_n', 
-                    name: 'Joseph Nkomo', 
+                {
+                    id: 'admin_joseph_n',
+                    name: 'Joseph Nkomo',
                     organization: 'Southern Africa Theological Institute',
                     location: 'Gaborone, Botswana',
                     experience: '5 years',
@@ -1350,7 +1350,7 @@ class SampleDataService {
                 }
             ]
         };
-        
+
         return sampleUsers[role] || [];
     }
 
@@ -1359,19 +1359,19 @@ class SampleDataService {
      */
     static async getSurveysByUser(userId) {
         console.log('📋 Getting surveys by user:', userId);
-        
+
         // Sample surveys data - each user has taken different surveys
         const userSurveys = {
             'pastor_john_w': [
-                { 
-                    id: 'church_leadership_2024', 
+                {
+                    id: 'church_leadership_2024',
                     title: 'Church Leadership Effectiveness Survey 2024',
                     responses: 150,
                     completion_rate: 95,
                     date_taken: '2024-03-15'
                 },
-                { 
-                    id: 'theological_education_eval', 
+                {
+                    id: 'theological_education_eval',
                     title: 'Theological Education Evaluation',
                     responses: 89,
                     completion_rate: 87,
@@ -1379,15 +1379,15 @@ class SampleDataService {
                 }
             ],
             'pastor_mary_j': [
-                { 
-                    id: 'church_leadership_2024', 
+                {
+                    id: 'church_leadership_2024',
                     title: 'Church Leadership Effectiveness Survey 2024',
                     responses: 132,
                     completion_rate: 92,
                     date_taken: '2024-03-20'
                 },
-                { 
-                    id: 'ministry_impact_assessment', 
+                {
+                    id: 'ministry_impact_assessment',
                     title: 'Ministry Impact Assessment',
                     responses: 76,
                     completion_rate: 84,
@@ -1395,8 +1395,8 @@ class SampleDataService {
                 }
             ],
             'pastor_david_b': [
-                { 
-                    id: 'church_leadership_2024', 
+                {
+                    id: 'church_leadership_2024',
                     title: 'Church Leadership Effectiveness Survey 2024',
                     responses: 201,
                     completion_rate: 98,
@@ -1404,8 +1404,8 @@ class SampleDataService {
                 }
             ],
             'pastor_grace_m': [
-                { 
-                    id: 'church_leadership_2024', 
+                {
+                    id: 'church_leadership_2024',
                     title: 'Church Leadership Effectiveness Survey 2024',
                     responses: 98,
                     completion_rate: 89,
@@ -1413,15 +1413,15 @@ class SampleDataService {
                 }
             ],
             'president_sarah_t': [
-                { 
-                    id: 'institutional_effectiveness_2024', 
+                {
+                    id: 'institutional_effectiveness_2024',
                     title: 'Institutional Effectiveness Survey 2024',
                     responses: 245,
                     completion_rate: 96,
                     date_taken: '2024-02-28'
                 },
-                { 
-                    id: 'academic_leadership_eval', 
+                {
+                    id: 'academic_leadership_eval',
                     title: 'Academic Leadership Evaluation',
                     responses: 187,
                     completion_rate: 91,
@@ -1429,8 +1429,8 @@ class SampleDataService {
                 }
             ],
             'president_michael_d': [
-                { 
-                    id: 'institutional_effectiveness_2024', 
+                {
+                    id: 'institutional_effectiveness_2024',
                     title: 'Institutional Effectiveness Survey 2024',
                     responses: 198,
                     completion_rate: 94,
@@ -1438,8 +1438,8 @@ class SampleDataService {
                 }
             ],
             'president_james_w': [
-                { 
-                    id: 'institutional_effectiveness_2024', 
+                {
+                    id: 'institutional_effectiveness_2024',
                     title: 'Institutional Effectiveness Survey 2024',
                     responses: 267,
                     completion_rate: 97,
@@ -1447,8 +1447,8 @@ class SampleDataService {
                 }
             ],
             'leader_anna_r': [
-                { 
-                    id: 'nonformal_education_impact', 
+                {
+                    id: 'nonformal_education_impact',
                     title: 'Non-Formal Education Impact Study',
                     responses: 143,
                     completion_rate: 88,
@@ -1456,8 +1456,8 @@ class SampleDataService {
                 }
             ],
             'leader_paul_m': [
-                { 
-                    id: 'nonformal_education_impact', 
+                {
+                    id: 'nonformal_education_impact',
                     title: 'Non-Formal Education Impact Study',
                     responses: 167,
                     completion_rate: 93,
@@ -1465,8 +1465,8 @@ class SampleDataService {
                 }
             ],
             'leader_rachel_c': [
-                { 
-                    id: 'nonformal_education_impact', 
+                {
+                    id: 'nonformal_education_impact',
                     title: 'Non-Formal Education Impact Study',
                     responses: 134,
                     completion_rate: 85,
@@ -1474,7 +1474,7 @@ class SampleDataService {
                 }
             ]
         };
-        
+
         return userSurveys[userId] || [];
     }
 
@@ -1483,11 +1483,11 @@ class SampleDataService {
      */
     static async getUserSurveyData(userId, surveyId) {
         console.log('📊 Getting user survey data for:', userId, surveyId);
-        
+
         try {
             // Load appropriate base responses based on survey type
             let baseResponses = [];
-            
+
             if (surveyId.includes('church') || surveyId.includes('leadership')) {
                 baseResponses = await this.loadChurchResponses();
             } else if (surveyId.includes('institutional') || surveyId.includes('academic')) {
@@ -1498,10 +1498,10 @@ class SampleDataService {
                 // Default to church responses
                 baseResponses = await this.loadChurchResponses();
             }
-            
+
             // Get user info
             const userInfo = await this.getUserInfo(userId);
-            
+
             // Customize responses for this specific user
             const userResponses = baseResponses.slice(0, 5).map((response, index) => ({
                 ...response,
@@ -1519,7 +1519,7 @@ class SampleDataService {
                 // Add slight variations to make responses unique to this user
                 ...this.addUserVariations(response, userId)
             }));
-            
+
             return {
                 success: true,
                 userId,
@@ -1544,7 +1544,7 @@ class SampleDataService {
      */
     static async getOtherUsersInRole(role, currentUserId) {
         console.log('👥 Getting other users in role:', role, 'excluding:', currentUserId);
-        
+
         const allUsers = await this.getUsersByRole(role);
         return allUsers.filter(user => user.id !== currentUserId);
     }
@@ -1554,25 +1554,25 @@ class SampleDataService {
      */
     static async getComparisonDataForRole(role, currentUserId, compareUsers) {
         console.log('🔄 Getting comparison data for role:', role);
-        
+
         try {
             let allComparisonResponses = [];
-            
+
             // Load responses for each comparison user
             for (const user of compareUsers) {
                 // Get the user's surveys
                 const userSurveys = await this.getSurveysByUser(user.id);
-                
+
                 if (userSurveys.length > 0) {
                     // Use the first survey for comparison
                     const userData = await this.getUserSurveyData(user.id, userSurveys[0].id);
-                    
+
                     if (userData.success) {
                         allComparisonResponses = [...allComparisonResponses, ...userData.data.responses];
                     }
                 }
             }
-            
+
             return {
                 success: true,
                 role,
@@ -1597,7 +1597,7 @@ class SampleDataService {
      */
     static async getUserInfo(userId) {
         const allRoles = ['pastor', 'president', 'ministry_leader', 'faculty', 'administrator'];
-        
+
         for (const role of allRoles) {
             const users = await this.getUsersByRole(role);
             const user = users.find(u => u.id === userId);
@@ -1609,7 +1609,7 @@ class SampleDataService {
                 };
             }
         }
-        
+
         return {
             name: 'Unknown User',
             organization: 'Unknown Organization',
@@ -1651,7 +1651,7 @@ class SampleDataService {
             'faculty_rebecca_o': 'Associate Professor',
             'admin_joseph_n': 'Administrative Manager'
         };
-        
+
         return titleMap[userId] || 'Leadership Position';
     }
 
@@ -1661,18 +1661,18 @@ class SampleDataService {
     static addUserVariations(response, userId) {
         // Add slight variations based on user characteristics
         const variations = {};
-        
+
         // Vary training effectiveness based on user experience
         if (response.training_effectiveness) {
-            const experienceBoost = userId.includes('president') ? 0.1 : 
-                                  userId.includes('pastor') ? 0.05 : 0;
+            const experienceBoost = userId.includes('president') ? 0.1 :
+                userId.includes('pastor') ? 0.05 : 0;
             variations.training_effectiveness = response.training_effectiveness;
         }
-        
+
         // Add user-specific metadata
         variations.user_experience_level = this.getUserExperienceLevel(userId);
         variations.institutional_type = this.getInstitutionalType(userId);
-        
+
         return variations;
     }
 

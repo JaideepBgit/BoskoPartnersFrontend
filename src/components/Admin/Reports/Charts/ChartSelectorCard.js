@@ -217,10 +217,10 @@ const ChartSelectorCard = ({
     const responses = [];
     const surveyResponses = surveyData[surveyType] || [];
 
-    console.log('🔍 Extracting responses for question:', question.text);
-    console.log('🔍 Question ID:', question.id);
-    console.log('🔍 Survey type:', surveyType);
-    console.log('🔍 Total survey responses:', surveyResponses.length);
+    console.log(' Extracting responses for question:', question.text);
+    console.log(' Question ID:', question.id);
+    console.log(' Survey type:', surveyType);
+    console.log(' Total survey responses:', surveyResponses.length);
 
     surveyResponses.forEach((response, index) => {
       // Try to find the answer for this question in the response

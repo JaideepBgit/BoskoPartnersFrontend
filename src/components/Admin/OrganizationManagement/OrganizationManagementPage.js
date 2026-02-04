@@ -64,18 +64,18 @@ function OrganizationManagementPage() {
     // Sorting state
     const [order, setOrder] = useState('asc');
     const [orderBy, setOrderBy] = useState('name');
-    
+
     // Spider Chart Popup states
     const [spiderChartOpen, setSpiderChartOpen] = useState(false);
     const [selectedOrgForChart, setSelectedOrgForChart] = useState(null);
-    
+
     // Handler for opening spider chart popup
     const handleOpenSpiderChart = (e, org) => {
         e.stopPropagation(); // Prevent row click navigation
         setSelectedOrgForChart(org);
         setSpiderChartOpen(true);
     };
-    
+
     const handleCloseSpiderChart = () => {
         setSpiderChartOpen(false);
         setSelectedOrgForChart(null);
@@ -359,9 +359,9 @@ function OrganizationManagementPage() {
                                                             <IconButton
                                                                 size="small"
                                                                 onClick={(e) => handleOpenSpiderChart(e, org)}
-                                                                sx={{ 
+                                                                sx={{
                                                                     color: '#633394',
-                                                                    '&:hover': { 
+                                                                    '&:hover': {
                                                                         backgroundColor: 'rgba(99, 51, 148, 0.1)',
                                                                         transform: 'scale(1.1)'
                                                                     },
@@ -471,7 +471,7 @@ function OrganizationManagementPage() {
                     p: 2,
                     mb: 3,
                     borderRadius: 3,
-                    backgroundColor: colors.accentBg,
+                    //backgroundColor: colors.accentBg,
                     boxShadow: 'none',
                     display: 'flex',
                     alignItems: 'center',
@@ -599,7 +599,7 @@ function OrganizationManagementPage() {
                         )}
                     </>
                 )}
-                
+
                 {/* Spider Chart Popup */}
                 <SpiderChartPopup
                     open={spiderChartOpen}

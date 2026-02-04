@@ -511,8 +511,8 @@ const EnhancedAddressInput = ({
                                     disabled={disabled}
                                     startIcon={<MapIcon />}
                                     sx={{
-                                        backgroundColor: '#633394',
-                                        '&:hover': { backgroundColor: '#7c52a5' }
+                                        backgroundColor: '#967CB2',
+                                        '&:hover': { backgroundColor: '#967CB2' }
                                     }}
                                 >
                                     Map
@@ -556,7 +556,7 @@ const EnhancedAddressInput = ({
                 </Box>
             )}
 
-            <Paper sx={{ p: 2, backgroundColor: '#fafafa' }}>
+            <Box sx={{ mt: 2 }}>
                 <Typography variant="subtitle2" sx={{ mb: 2, color: '#633394' }}>
                     <LocationOnIcon sx={{ fontSize: '1rem', mr: 0.5 }} />
                     Detailed Address Information
@@ -675,7 +675,7 @@ const EnhancedAddressInput = ({
                         />
                     </Grid>
                 </Grid>
-            </Paper>
+            </Box>
 
             <Dialog
                 open={mapOpen}

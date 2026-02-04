@@ -859,8 +859,8 @@ function AddUserPage() {
                             }}
                             disabled={emailPreviewLoading}
                             sx={{
-                                backgroundColor: '#633394',
-                                '&:hover': { backgroundColor: '#7c52a5' },
+                                backgroundColor: '#967CB2',
+                                '&:hover': { backgroundColor: '#8a6fa6' },
                                 minWidth: '200px'
                             }}
                         >

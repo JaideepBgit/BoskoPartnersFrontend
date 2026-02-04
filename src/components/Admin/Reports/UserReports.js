@@ -1046,11 +1046,11 @@ const UserReports = () => {
   };
 
   const handleMapSurveySelection = (surveys) => {
-    console.log('🔍 Survey selection received:', surveys);
-    console.log('🔍 Number of surveys:', surveys.length);
+    console.log(' Survey selection received:', surveys);
+    console.log(' Number of surveys:', surveys.length);
     if (surveys.length > 0) {
-      console.log('🔍 First survey structure:', surveys[0]);
-      console.log('🔍 Survey types found:', surveys.map(s => s.survey_type || s.surveyType));
+      console.log(' First survey structure:', surveys[0]);
+      console.log(' Survey types found:', surveys.map(s => s.survey_type || s.surveyType));
     }
     setSelectedMapSurveys(surveys);
   };

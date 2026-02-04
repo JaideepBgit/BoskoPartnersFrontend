@@ -541,7 +541,7 @@ const InventoryPage = () => {
                 <ListItemIcon>
                   <AddIcon fontSize="small" sx={{ color: '#633394' }} />
                 </ListItemIcon>
-                <ListItemText>+ Add New Survey Group</ListItemText>
+                <ListItemText>Add New Survey Group</ListItemText>
               </MenuItem>
 
               <MenuItem onClick={() => {
@@ -551,14 +551,14 @@ const InventoryPage = () => {
                 <ListItemIcon>
                   <NoteAddIcon fontSize="small" sx={{ color: '#633394' }} />
                 </ListItemIcon>
-                <ListItemText>+ Create Surveys</ListItemText>
+                <ListItemText>Create Surveys</ListItemText>
               </MenuItem>
 
               <MenuItem component="label" sx={{ py: 1.5 }}>
                 <ListItemIcon>
                   <UploadFileIcon fontSize="small" sx={{ color: '#633394' }} />
                 </ListItemIcon>
-                <ListItemText>+ Upload Document</ListItemText>
+                <ListItemText>Upload Document</ListItemText>
                 <input type="file" hidden onChange={(e) => {
                   handleAddSurveyClose();
                   if (e.target.files[0]) {

@@ -29,12 +29,12 @@ const AddressDemo = () => {
                     Features
                 </Typography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                    <Chip label="🔍 Google Places Autocomplete" color="primary" />
-                    <Chip label="🗺️ Interactive Map Selection" color="primary" />
-                    <Chip label="📍 Current Location Detection" color="primary" />
-                    <Chip label="🌍 Automatic Continent Detection" color="primary" />
-                    <Chip label="📝 Detailed Address Form" color="primary" />
-                    <Chip label="⚡ Real-time Suggestions" color="primary" />
+                    <Chip label="Google Places Autocomplete" color="primary" />
+                    <Chip label="Interactive Map Selection" color="primary" />
+                    <Chip label="Current Location Detection" color="primary" />
+                    <Chip label="Automatic Continent Detection" color="primary" />
+                    <Chip label="Detailed Address Form" color="primary" />
+                    <Chip label="Real-time Suggestions" color="primary" />
                 </Box>
                 
                 <Typography variant="body2" sx={{ color: '#666' }}>
@@ -144,7 +144,7 @@ const AddressDemo = () => {
                     
                     <EnhancedAddressInput
                         onPlaceSelect={handlePlaceSelect}
-                        label="🔍 Demo Address Input"
+                        label="Demo Address Input"
                         fullWidth
                     />
                 </DialogContent>

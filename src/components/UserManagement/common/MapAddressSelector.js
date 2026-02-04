@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-    TextField, Box, Button, FormControl, InputLabel, Select, MenuItem, 
-    Grid, Paper, Typography, Dialog, DialogTitle, DialogContent, 
+import {
+    TextField, Box, Button, FormControl, InputLabel, Select, MenuItem,
+    Grid, Paper, Typography, Dialog, DialogTitle, DialogContent,
     DialogActions, IconButton, Chip, Alert
 } from '@mui/material';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -9,11 +9,11 @@ import MapIcon from '@mui/icons-material/Map';
 import CloseIcon from '@mui/icons-material/Close';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 
-const MapAddressSelector = ({ 
-    onPlaceSelect, 
+const MapAddressSelector = ({
+    onPlaceSelect,
     label = "Address Information",
     fullWidth = true,
-    disabled = false 
+    disabled = false
 }) => {
     const [formData, setFormData] = useState({
         continent: '',
@@ -34,14 +34,14 @@ const MapAddressSelector = ({
     const [mapLoaded, setMapLoaded] = useState(false);
     const [selectedLocation, setSelectedLocation] = useState(null);
     const [mapError, setMapError] = useState('');
-    
+
     const mapRef = useRef(null);
     const mapInstanceRef = useRef(null);
     const markerRef = useRef(null);
     const geocoderRef = useRef(null);
 
     const continents = [
-        'Africa', 'Antarctica', 'Asia', 'Europe', 
+        'Africa', 'Antarctica', 'Asia', 'Europe',
         'North America', 'Oceania', 'South America'
     ];
 
@@ -62,16 +62,16 @@ const MapAddressSelector = ({
         script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'AIzaSyAA5PZQdpcY4NXonqUny2sGZzMLbFKE0Iw'}&libraries=places,geometry`;
         script.async = true;
         script.defer = true;
-        
+
         script.onload = () => {
             setMapLoaded(true);
             setMapError('');
         };
-        
+
         script.onerror = () => {
             setMapError('Failed to load Google Maps. Please check your internet connection.');
         };
-        
+
         document.head.appendChild(script);
     };
 
@@ -86,10 +86,10 @@ const MapAddressSelector = ({
         try {
             // Default to a central location (Kansas, USA)
             const defaultCenter = { lat: 39.8283, lng: -98.5795 };
-            
+
             // Use existing coordinates if available
-            const center = (formData.latitude && formData.longitude) ? 
-                { lat: parseFloat(formData.latitude), lng: parseFloat(formData.longitude) } : 
+            const center = (formData.latitude && formData.longitude) ?
+                { lat: parseFloat(formData.latitude), lng: parseFloat(formData.longitude) } :
                 defaultCenter;
 
             const map = new window.google.maps.Map(mapRef.current, {
@@ -114,7 +114,7 @@ const MapAddressSelector = ({
                     lat: event.latLng.lat(),
                     lng: event.latLng.lng()
                 };
-                
+
                 addMarker(clickedLocation, map);
                 reverseGeocode(clickedLocation);
             });
@@ -163,7 +163,7 @@ const MapAddressSelector = ({
                 if (status === 'OK' && results[0]) {
                     const result = results[0];
                     const addressComponents = result.address_components;
-                    
+
                     const addressData = {
                         continent: '',
                         country: '',
@@ -181,7 +181,7 @@ const MapAddressSelector = ({
                     // Parse address components
                     addressComponents.forEach(component => {
                         const types = component.types;
-                        
+
                         if (types.includes('street_number')) {
                             addressData.address_line1 = component.long_name + ' ' + (addressData.address_line1 || '');
                         } else if (types.includes('route')) {
@@ -230,7 +230,7 @@ const MapAddressSelector = ({
 
                     mapInstanceRef.current.setCenter(latLng);
                     mapInstanceRef.current.setZoom(15);
-                    
+
                     addMarker(latLng, mapInstanceRef.current);
                     reverseGeocode(latLng);
                 } else {
@@ -301,7 +301,7 @@ const MapAddressSelector = ({
             'Mexico': 'North America', 'Guatemala': 'North America', 'Belize': 'North America',
             'Costa Rica': 'North America', 'El Salvador': 'North America', 'Honduras': 'North America',
             'Nicaragua': 'North America', 'Panama': 'North America',
-            
+
             // Europe
             'United Kingdom': 'Europe', 'UK': 'Europe', 'England': 'Europe', 'Scotland': 'Europe',
             'Wales': 'Europe', 'Ireland': 'Europe', 'Germany': 'Europe', 'France': 'Europe',
@@ -311,7 +311,7 @@ const MapAddressSelector = ({
             'Austria': 'Europe', 'Czech Republic': 'Europe', 'Hungary': 'Europe', 'Romania': 'Europe',
             'Bulgaria': 'Europe', 'Croatia': 'Europe', 'Serbia': 'Europe', 'Ukraine': 'Europe',
             'Russia': 'Europe',
-            
+
             // Asia
             'China': 'Asia', 'Japan': 'Asia', 'India': 'Asia', 'South Korea': 'Asia',
             'Singapore': 'Asia', 'Thailand': 'Asia', 'Philippines': 'Asia', 'Indonesia': 'Asia',
@@ -322,19 +322,19 @@ const MapAddressSelector = ({
             'UAE': 'Asia', 'Kuwait': 'Asia', 'Qatar': 'Asia', 'Bahrain': 'Asia', 'Oman': 'Asia',
             'Yemen': 'Asia', 'Jordan': 'Asia', 'Lebanon': 'Asia', 'Syria': 'Asia', 'Turkey': 'Asia',
             'Israel': 'Asia', 'Palestine': 'Asia',
-            
+
             // Oceania
             'Australia': 'Oceania', 'New Zealand': 'Oceania', 'Fiji': 'Oceania',
             'Papua New Guinea': 'Oceania', 'Solomon Islands': 'Oceania', 'Vanuatu': 'Oceania',
             'Samoa': 'Oceania', 'Tonga': 'Oceania',
-            
+
             // South America
             'Brazil': 'South America', 'Argentina': 'South America', 'Chile': 'South America',
             'Colombia': 'South America', 'Peru': 'South America', 'Venezuela': 'South America',
             'Ecuador': 'South America', 'Bolivia': 'South America', 'Paraguay': 'South America',
             'Uruguay': 'South America', 'Guyana': 'South America', 'Suriname': 'South America',
             'French Guiana': 'South America',
-            
+
             // Africa
             'South Africa': 'Africa', 'Nigeria': 'Africa', 'Kenya': 'Africa', 'Egypt': 'Africa',
             'Morocco': 'Africa', 'Ghana': 'Africa', 'Ethiopia': 'Africa', 'Tanzania': 'Africa',
@@ -372,7 +372,7 @@ const MapAddressSelector = ({
             data.country,
             data.postal_code
         ].filter(part => part && part.trim() !== '');
-        
+
         return parts.join(', ');
     };
 
@@ -405,12 +405,12 @@ const MapAddressSelector = ({
             // Parse simple search text
             const parts = searchText.split(',').map(p => p.trim());
             const updatedData = { ...formData };
-            
+
             if (parts.length >= 1) updatedData.address_line1 = parts[0];
             if (parts.length >= 2) updatedData.city = parts[1];
             if (parts.length >= 3) updatedData.province = parts[2];
             if (parts.length >= 4) updatedData.country = parts[3];
-            
+
             // Auto-detect continent
             if (updatedData.country) {
                 const continent = getContinent(updatedData.country);
@@ -464,7 +464,7 @@ const MapAddressSelector = ({
             <Box sx={{ mb: 2, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
                 <TextField
                     fullWidth
-                    label="🔍 Quick Address Search"
+                    label="Quick Address Search"
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
                     placeholder="e.g., 123 Main St, New York, NY, USA"
@@ -476,11 +476,11 @@ const MapAddressSelector = ({
                     }}
                     sx={{ flex: 3, minWidth: 220 }}
                 />
-                <Button 
+                <Button
                     variant="outlined"
                     onClick={handleQuickSearch}
                     disabled={!searchText.trim()}
-                    sx={{ 
+                    sx={{
                         minWidth: '80px',
                         maxWidth: '100px',
                         height: '56px',
@@ -491,25 +491,25 @@ const MapAddressSelector = ({
                 >
                     Parse
                 </Button>
-                <Button 
+                <Button
                     variant="contained"
                     onClick={() => setMapOpen(true)}
                     startIcon={<MapIcon />}
-                    sx={{ 
+                    sx={{
                         minWidth: '50px',
                         maxWidth: '100px',
                         height: '56px',
-                        backgroundColor: '#633394',
-                        '&:hover': { backgroundColor: '#7c52a5' },
+                        backgroundColor: '#967CB2',
+                        '&:hover': { backgroundColor: '#967CB2' },
                         flex: 1
                     }}
                 >
                     Map Search
                 </Button>
-                <Button 
+                <Button
                     variant="outlined"
                     onClick={handleClear}
-                    sx={{ 
+                    sx={{
                         minWidth: '60px',
                         maxWidth: '100px',
                         height: '56px',
@@ -525,12 +525,12 @@ const MapAddressSelector = ({
             {/* Current Location Display */}
             {(formData.latitude && formData.longitude) && (
                 <Box sx={{ mb: 2 }}>
-                    <Chip 
+                    <Chip
                         icon={<LocationOnIcon />}
                         label={`📍 ${formData.latitude}, ${formData.longitude}`}
                         color="primary"
                         variant="outlined"
-                        sx={{ 
+                        sx={{
                             backgroundColor: 'rgba(99, 51, 148, 0.1)',
                             borderColor: '#633394',
                             color: '#633394'
@@ -540,12 +540,12 @@ const MapAddressSelector = ({
             )}
 
             {/* Detailed Address Form */}
-            <Paper sx={{ p: 2, backgroundColor: '#fafafa' }}>
+            <Box sx={{ mt: 2 }}>
                 <Typography variant="subtitle2" sx={{ mb: 2, color: '#633394' }}>
                     <LocationOnIcon sx={{ fontSize: '1rem', mr: 0.5 }} />
                     Detailed Address Information
                 </Typography>
-                
+
                 <Grid container spacing={2}>
                     {/* Row 1 */}
                     <Grid item xs={12} sm={6} sx={{ minWidth: 220 }}>
@@ -670,11 +670,11 @@ const MapAddressSelector = ({
                         />
                     </Grid>
                 </Grid>
-            </Paper>
+            </Box>
 
             {/* Map Dialog */}
-            <Dialog 
-                open={mapOpen} 
+            <Dialog
+                open={mapOpen}
                 onClose={handleMapClose}
                 maxWidth="lg"
                 fullWidth
@@ -682,8 +682,8 @@ const MapAddressSelector = ({
                     sx: { height: '80vh' }
                 }}
             >
-                <DialogTitle sx={{ 
-                    backgroundColor: '#633394', 
+                <DialogTitle sx={{
+                    backgroundColor: '#633394',
                     color: 'white',
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -693,14 +693,14 @@ const MapAddressSelector = ({
                         <MapIcon />
                         Select Location on Map
                     </Box>
-                    <IconButton 
+                    <IconButton
                         onClick={handleMapClose}
                         sx={{ color: 'white' }}
                     >
                         <CloseIcon />
                     </IconButton>
                 </DialogTitle>
-                
+
                 <DialogContent sx={{ p: 0, display: 'flex', flexDirection: 'column' }}>
                     {/* Map Search Bar */}
                     <Box sx={{ p: 2, borderBottom: '1px solid #e0e0e0' }}>
@@ -717,41 +717,41 @@ const MapAddressSelector = ({
                                     }
                                 }}
                             />
-                            <Button 
+                            <Button
                                 variant="contained"
                                 onClick={searchOnMap}
                                 disabled={!searchText.trim() || !mapLoaded}
-                                sx={{ 
+                                sx={{
                                     backgroundColor: '#633394',
                                     minWidth: '100px'
                                 }}
                             >
                                 Search
                             </Button>
-                            <Button 
+                            <Button
                                 variant="outlined"
                                 onClick={getCurrentLocation}
                                 disabled={!mapLoaded}
                                 startIcon={<MyLocationIcon />}
-                                sx={{ 
-                                    color: '#633394',
-                                    borderColor: '#633394',
+                                sx={{
+                                    color: '#967CB2',
+                                    borderColor: '#967CB2',
                                     minWidth: '120px'
                                 }}
                             >
                                 My Location
                             </Button>
                         </Box>
-                        
+
                         {mapError && (
                             <Alert severity="error" sx={{ mt: 1 }}>
                                 {mapError}
                             </Alert>
                         )}
-                        
+
                         {selectedLocation && (
                             <Box sx={{ mt: 1 }}>
-                                <Chip 
+                                <Chip
                                     icon={<LocationOnIcon />}
                                     label={`Selected: ${selectedLocation.lat.toFixed(6)}, ${selectedLocation.lng.toFixed(6)}`}
                                     color="primary"
@@ -764,27 +764,27 @@ const MapAddressSelector = ({
                     {/* Map Container */}
                     <Box sx={{ flex: 1, position: 'relative', minHeight: '400px' }}>
                         {!mapLoaded && (
-                            <Box sx={{ 
-                                position: 'absolute', 
-                                top: '50%', 
-                                left: '50%', 
+                            <Box sx={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
                                 transform: 'translate(-50%, -50%)',
                                 textAlign: 'center'
                             }}>
                                 <Typography>Loading map...</Typography>
                             </Box>
                         )}
-                        <div 
-                            ref={mapRef} 
-                            style={{ 
-                                width: '100%', 
+                        <div
+                            ref={mapRef}
+                            style={{
+                                width: '100%',
                                 height: '100%',
                                 minHeight: '400px'
-                            }} 
+                            }}
                         />
                     </Box>
                 </DialogContent>
-                
+
                 <DialogActions sx={{ p: 2, borderTop: '1px solid #e0e0e0' }}>
                     <Typography variant="body2" sx={{ flex: 1, color: '#666' }}>
                         Click on the map to select a location, or drag the marker to adjust.
@@ -792,11 +792,11 @@ const MapAddressSelector = ({
                     <Button onClick={handleMapClose} color="secondary">
                         Cancel
                     </Button>
-                    <Button 
+                    <Button
                         onClick={handleUseMapLocation}
                         variant="contained"
                         disabled={!selectedLocation}
-                        sx={{ 
+                        sx={{
                             backgroundColor: '#633394',
                             '&:hover': { backgroundColor: '#7c52a5' }
                         }}

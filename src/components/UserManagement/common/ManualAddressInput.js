@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { TextField, Box, Button, FormControl, InputLabel, Select, MenuItem, Grid, Paper, Typography } from '@mui/material';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 
-const ManualAddressInput = ({ 
-    onPlaceSelect, 
-    label = "Address Information",
+const ManualAddressInput = ({
+    onPlaceSelect,
+    label = "Address Information",  
     fullWidth = true,
-    disabled = false 
+    disabled = false
 }) => {
     const [formData, setFormData] = useState({
         continent: '',
@@ -26,7 +26,7 @@ const ManualAddressInput = ({
 
     const continents = [
         'Africa',
-        'Antarctica', 
+        'Antarctica',
         'Asia',
         'Europe',
         'North America',
@@ -75,7 +75,7 @@ const ManualAddressInput = ({
             'Honduras': 'North America',
             'Nicaragua': 'North America',
             'Panama': 'North America',
-            
+
             // Europe
             'United Kingdom': 'Europe',
             'UK': 'Europe',
@@ -106,7 +106,7 @@ const ManualAddressInput = ({
             'Serbia': 'Europe',
             'Ukraine': 'Europe',
             'Russia': 'Europe',
-            
+
             // Asia
             'China': 'Asia',
             'Japan': 'Asia',
@@ -144,7 +144,7 @@ const ManualAddressInput = ({
             'Turkey': 'Asia',
             'Israel': 'Asia',
             'Palestine': 'Asia',
-            
+
             // Oceania
             'Australia': 'Oceania',
             'New Zealand': 'Oceania',
@@ -154,7 +154,7 @@ const ManualAddressInput = ({
             'Vanuatu': 'Oceania',
             'Samoa': 'Oceania',
             'Tonga': 'Oceania',
-            
+
             // South America
             'Brazil': 'South America',
             'Argentina': 'South America',
@@ -169,7 +169,7 @@ const ManualAddressInput = ({
             'Guyana': 'South America',
             'Suriname': 'South America',
             'French Guiana': 'South America',
-            
+
             // Africa
             'South Africa': 'Africa',
             'Nigeria': 'Africa',
@@ -231,7 +231,7 @@ const ManualAddressInput = ({
             data.country,
             data.postal_code
         ].filter(part => part && part.trim() !== '');
-        
+
         return parts.join(', ');
     };
 
@@ -266,12 +266,12 @@ const ManualAddressInput = ({
             // Parse simple search text
             const parts = searchText.split(',').map(p => p.trim());
             const updatedData = { ...formData };
-            
+
             if (parts.length >= 1) updatedData.address_line1 = parts[0];
             if (parts.length >= 2) updatedData.city = parts[1];
             if (parts.length >= 3) updatedData.province = parts[2];
             if (parts.length >= 4) updatedData.country = parts[3];
-            
+
             // Auto-detect continent
             if (updatedData.country) {
                 const continent = getContinent(updatedData.country);
@@ -299,7 +299,7 @@ const ManualAddressInput = ({
             <Box sx={{ mb: 2, display: 'flex', gap: 1, alignItems: 'flex-end' }}>
                 <TextField
                     fullWidth
-                    label="🔍 Quick Address Search"
+                    label="Quick Address Search"
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
                     placeholder="e.g., 123 Main St, New York, NY, USA"
@@ -310,11 +310,11 @@ const ManualAddressInput = ({
                         }
                     }}
                 />
-                <Button 
+                <Button
                     variant="outlined"
                     onClick={handleQuickSearch}
                     disabled={!searchText.trim()}
-                    sx={{ 
+                    sx={{
                         minWidth: '100px',
                         height: '56px',
                         color: '#633394',
@@ -323,10 +323,10 @@ const ManualAddressInput = ({
                 >
                     Parse
                 </Button>
-                <Button 
+                <Button
                     variant="outlined"
                     onClick={handleClear}
-                    sx={{ 
+                    sx={{
                         minWidth: '80px',
                         height: '56px',
                         color: '#633394',
@@ -338,12 +338,12 @@ const ManualAddressInput = ({
             </Box>
 
             {/* Detailed Address Form */}
-            <Paper sx={{ p: 2, backgroundColor: '#fafafa' }}>
+            <Box sx={{ mt: 2 }}>
                 <Typography variant="subtitle2" sx={{ mb: 2, color: '#633394' }}>
                     <LocationOnIcon sx={{ fontSize: '1rem', mr: 0.5 }} />
                     Detailed Address Information
                 </Typography>
-                
+
                 <Grid container spacing={2}>
                     {/* Row 1 */}
                     <Grid item xs={12} sm={6} sx={{ minWidth: 220 }}>
@@ -466,7 +466,7 @@ const ManualAddressInput = ({
                         />
                     </Grid>
                 </Grid>
-            </Paper>
+            </Box>
         </Box>
     );
 };

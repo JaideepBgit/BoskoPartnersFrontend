@@ -111,11 +111,11 @@ function AdminDashboard({ onLogout }) {
     const [loadingTemplates, setLoadingTemplates] = useState(false);
     const [emailPreviewContent, setEmailPreviewContent] = useState(null);
     const [loadingEmailPreview, setLoadingEmailPreview] = useState(false);
-    
+
     // Spider Chart Popup states (for Overall Organization analytics)
     const [spiderChartOpen, setSpiderChartOpen] = useState(false);
     const [overallOrgMetrics, setOverallOrgMetrics] = useState(null);
-    
+
     // Handler for opening spider chart popup - shows Overall Organization analytics
     const handleOpenSpiderChart = () => {
         // Calculate overall metrics from all organizations
@@ -123,7 +123,7 @@ function AdminDashboard({ onLogout }) {
         const uniqueOrgs = [...new Set(data.users?.map(u => u.company_name).filter(Boolean))];
         const filledCount = data.users?.filter(u => u.status === 'Filled').length || 0;
         const completionRate = totalUsers > 0 ? (filledCount / totalUsers) * 100 : 0;
-        
+
         const overallData = {
             id: 'overall',
             name: 'All Organizations Overview',
@@ -135,7 +135,7 @@ function AdminDashboard({ onLogout }) {
         setOverallOrgMetrics(overallData);
         setSpiderChartOpen(true);
     };
-    
+
     const handleCloseSpiderChart = () => {
         setSpiderChartOpen(false);
         setOverallOrgMetrics(null);
@@ -954,7 +954,14 @@ function AdminDashboard({ onLogout }) {
         const filteredUserIds = data.users
             .filter(user => {
                 const organizationMatch = !filters.organization || user.company_name === filters.organization;
-                const userMatch = !filters.users || user.name.toLowerCase().includes(filters.users.toLowerCase());
+
+                // Enhanced user search matching (Name, Email, Username)
+                const searchTerm = filters.users.toLowerCase();
+                const userMatch = !filters.users ||
+                    user.name.toLowerCase().includes(searchTerm) ||
+                    (user.email && user.email.toLowerCase().includes(searchTerm)) ||
+                    (user.username && user.username.toLowerCase().includes(searchTerm));
+
                 const statusMatch = !filters.status || user.status === filters.status;
                 return organizationMatch && userMatch && statusMatch && user.status === 'Not-Filled'; // Only select users who haven't filled
             })
@@ -981,9 +988,14 @@ function AdminDashboard({ onLogout }) {
         const { status } = getStatusAndUrgency(assessment);
 
         // Check if user matches filter (could be leader or observer)
+        const searchLower = filters.users.toLowerCase();
         const userMatch = !filters.users ||
-            (leader && leader.name.includes(filters.users)) ||
-            (observer && observer.name.includes(filters.users));
+            (leader && (
+                leader.name.toLowerCase().includes(searchLower) ||
+                (leader.email && leader.email.toLowerCase().includes(searchLower)) ||
+                (leader.username && leader.username.toLowerCase().includes(searchLower))
+            )) ||
+            (observer && observer.name.toLowerCase().includes(searchLower));
 
         return isCompanyMatch &&
             userMatch &&
@@ -1032,7 +1044,14 @@ function AdminDashboard({ onLogout }) {
     const getChartData = () => {
         const filteredUsers = data.users.filter(user => {
             const organizationMatch = !filters.organization || user.company_name === filters.organization;
-            const userMatch = !filters.users || user.name.toLowerCase().includes(filters.users.toLowerCase());
+
+            // Enhanced user search matching (Name, Email, Username)
+            const searchTerm = filters.users.toLowerCase();
+            const userMatch = !filters.users ||
+                user.name.toLowerCase().includes(searchTerm) ||
+                (user.email && user.email.toLowerCase().includes(searchTerm)) ||
+                (user.username && user.username.toLowerCase().includes(searchTerm));
+
             const statusMatch = !filters.status || user.status === filters.status;
             return organizationMatch && userMatch && statusMatch;
         });
@@ -1302,7 +1321,7 @@ function AdminDashboard({ onLogout }) {
                 <Box sx={{ mb: 4, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, gap: 3 }}>
                     <Box>
                         <Typography variant="h4" component="h1" sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
-                            Admin Dashboard
+                            Dashboard
                         </Typography>
                         <Typography variant="body1" sx={{ color: 'text.secondary', mt: 0.5 }}>
                             System Overview & Management
@@ -1357,9 +1376,9 @@ function AdminDashboard({ onLogout }) {
                                     <IconButton
                                         title="View Overall Analytics"
                                         onClick={handleOpenSpiderChart}
-                                        sx={{ 
+                                        sx={{
                                             color: '#633394',
-                                            '&:hover': { 
+                                            '&:hover': {
                                                 backgroundColor: 'rgba(99, 51, 148, 0.1)',
                                                 transform: 'scale(1.1)'
                                             },
@@ -1385,21 +1404,24 @@ function AdminDashboard({ onLogout }) {
                                 </Button>
                             </Box>
                             <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                                <FormControl variant="outlined" size="small" sx={{ minWidth: 200 }}>
+                                    <TextField
+                                        size="small"
+                                        label="Search Users"
+                                        name="users"
+                                        value={filters.users}
+                                        onChange={handleFilterChange}
+                                        placeholder="Name, Email, Username..."
+                                        variant="outlined"
+                                        InputLabelProps={{ shrink: true }}
+                                    />
+                                </FormControl>
                                 <FormControl variant="outlined" size="small" sx={{ minWidth: 120 }}>
                                     <InputLabel>Organization</InputLabel>
                                     <Select name="organization" value={filters.organization} onChange={handleFilterChange} label="Organization">
                                         <MenuItem value=""><em>None</em></MenuItem>
                                         {uniqueCompanies.map((company, index) => (
                                             <MenuItem key={index} value={company}>{company}</MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                                <FormControl variant="outlined" size="small" sx={{ minWidth: 120 }}>
-                                    <InputLabel>Users</InputLabel>
-                                    <Select name="users" value={filters.users} onChange={handleFilterChange} label="Users">
-                                        <MenuItem value=""><em>None</em></MenuItem>
-                                        {availableUsers.map(user => (
-                                            <MenuItem key={user.id} value={user.name}>{user.name}</MenuItem>
                                         ))}
                                     </Select>
                                 </FormControl>
@@ -1421,7 +1443,14 @@ function AdminDashboard({ onLogout }) {
                                                     checked={selectedUsers.length > 0}
                                                     indeterminate={selectedUsers.length > 0 && selectedUsers.length < data.users.filter(user => {
                                                         const organizationMatch = !filters.organization || user.company_name === filters.organization;
-                                                        const userMatch = !filters.users || user.name.toLowerCase().includes(filters.users.toLowerCase());
+
+                                                        // Enhanced user search matching (Name, Email, Username)
+                                                        const searchTerm = filters.users.toLowerCase();
+                                                        const userMatch = !filters.users ||
+                                                            user.name.toLowerCase().includes(searchTerm) ||
+                                                            (user.email && user.email.toLowerCase().includes(searchTerm)) ||
+                                                            (user.username && user.username.toLowerCase().includes(searchTerm));
+
                                                         const statusMatch = !filters.status || user.status === filters.status;
                                                         return organizationMatch && userMatch && statusMatch && user.status === 'Not-Filled';
                                                     }).length}
@@ -1445,7 +1474,13 @@ function AdminDashboard({ onLogout }) {
                                             .filter(user => {
                                                 // Apply all filters
                                                 const organizationMatch = !filters.organization || user.company_name === filters.organization;
-                                                const userMatch = !filters.users || user.name.toLowerCase().includes(filters.users.toLowerCase());
+
+                                                // Enhanced user search matching (Name, Email, Username)
+                                                const searchTerm = filters.users.toLowerCase();
+                                                const userMatch = !filters.users ||
+                                                    user.name.toLowerCase().includes(searchTerm) ||
+                                                    (user.email && user.email.toLowerCase().includes(searchTerm)) ||
+                                                    (user.username && user.username.toLowerCase().includes(searchTerm));
                                                 const statusMatch = !filters.status || user.status === filters.status;
 
                                                 return organizationMatch && userMatch && statusMatch;
@@ -1594,7 +1629,14 @@ function AdminDashboard({ onLogout }) {
                                     component="div"
                                     count={data.users.filter(user => {
                                         const organizationMatch = !filters.organization || user.company_name === filters.organization;
-                                        const userMatch = !filters.users || user.name.toLowerCase().includes(filters.users.toLowerCase());
+
+                                        // Enhanced user search matching (Name, Email, Username)
+                                        const searchTerm = filters.users.toLowerCase();
+                                        const userMatch = !filters.users ||
+                                            user.name.toLowerCase().includes(searchTerm) ||
+                                            (user.email && user.email.toLowerCase().includes(searchTerm)) ||
+                                            (user.username && user.username.toLowerCase().includes(searchTerm));
+
                                         const statusMatch = !filters.status || user.status === filters.status;
                                         return organizationMatch && userMatch && statusMatch;
                                     }).length}
@@ -2363,7 +2405,7 @@ function AdminDashboard({ onLogout }) {
                     </Button>
                 </DialogActions>
             </Dialog>
-            
+
             {/* Spider Chart Popup - Overall Organization Analytics */}
             <SpiderChartPopup
                 open={spiderChartOpen}

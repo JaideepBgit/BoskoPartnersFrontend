@@ -58,17 +58,17 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
     const [openUploadDialog, setOpenUploadDialog] = useState(false);
     const [openAddUserDialog, setOpenAddUserDialog] = useState(false);
     const [openAddRelatedOrgDialog, setOpenAddRelatedOrgDialog] = useState(false);
-    
+
     // Spider Chart Popup states
     const [spiderChartOpen, setSpiderChartOpen] = useState(false);
     const [selectedOrgForChart, setSelectedOrgForChart] = useState(null);
-    
+
     // Handler for opening spider chart popup
     const handleOpenSpiderChart = (org) => {
         setSelectedOrgForChart(org);
         setSpiderChartOpen(true);
     };
-    
+
     const handleCloseSpiderChart = () => {
         setSpiderChartOpen(false);
         setSelectedOrgForChart(null);
@@ -1260,7 +1260,18 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
 
     // Reusable table row component
     const renderOrganizationRow = (org) => (
-        <TableRow key={org.id} sx={{ '&:nth-of-type(odd)': { backgroundColor: theme.palette.action.hover } }}>
+        <TableRow
+            key={org.id}
+            sx={{
+                '&:nth-of-type(odd)': { backgroundColor: theme.palette.action.hover },
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                    backgroundColor: 'rgba(99, 51, 148, 0.2) !important',
+                    boxShadow: '0 2px 8px rgba(99, 51, 148, 0.15)',
+                    transform: 'translateX(2px)',
+                }
+            }}
+        >
             <TableCell>{org.name}</TableCell>
             <TableCell>
                 <Chip
@@ -1315,11 +1326,11 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
             </TableCell>
             <TableCell>
                 <Tooltip title="View Analytics" arrow>
-                    <IconButton 
-                        onClick={() => handleOpenSpiderChart(org)} 
-                        sx={{ 
+                    <IconButton
+                        onClick={() => handleOpenSpiderChart(org)}
+                        sx={{
                             color: '#633394',
-                            '&:hover': { 
+                            '&:hover': {
                                 backgroundColor: 'rgba(99, 51, 148, 0.1)',
                                 transform: 'scale(1.1)'
                             },
@@ -1568,7 +1579,7 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
                                 {/* Enhanced Address Input */}
                                 <EnhancedAddressInput
                                     onPlaceSelect={handlePlaceSelect}
-                                    label="🔍 Organization Address Information"
+                                    label="Organization Address Information"
                                     fullWidth
                                     initialValue={formData.geo_location}
                                 />
@@ -2247,6 +2258,7 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 size="small"
+                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0 } }}
                             />
                         </Grid>
                         <Grid item xs={12} md={3}>
@@ -2256,6 +2268,7 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
                                     value={filterType}
                                     onChange={(e) => setFilterType(e.target.value)}
                                     label="Filter by Type"
+                                    sx={{ borderRadius: 0 }}
                                 >
                                     <MenuItem value="">All Types</MenuItem>
                                     <MenuItem value="church">Churches</MenuItem>
@@ -2273,6 +2286,7 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
                                 value={filterLocation}
                                 onChange={(e) => setFilterLocation(e.target.value)}
                                 size="small"
+                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0 } }}
                             />
                         </Grid>
                         <Grid item xs={12} md={2}>
@@ -3010,7 +3024,7 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
                     </Button>
                 </DialogActions>
             </Dialog>
-            
+
             {/* Spider Chart Popup */}
             <SpiderChartPopup
                 open={spiderChartOpen}

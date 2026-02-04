@@ -317,7 +317,7 @@ const SurveyMapCard = ({
     };
 
     const checkAndInitializeMap = () => {
-        console.log('🔍 Checking Google Maps libraries...');
+        console.log(' Checking Google Maps libraries...');
 
         let attempts = 0;
         const maxAttempts = 50; // 5 seconds max - give more time

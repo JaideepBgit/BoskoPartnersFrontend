@@ -12,7 +12,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
-import AssessmentIcon from '@mui/icons-material/Assessment';
+
 import {
     fetchUsers, addUser, updateUser, deleteUser,
     fetchOrganizations, fetchRoles, fetchTitles, uploadUserFile, addRole,
@@ -42,7 +42,7 @@ function UsersManagement() {
     const [emailTemplates, setEmailTemplates] = useState([]);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [totalUsers, setTotalUsers] = useState(0);
+
 
     // Dialog states
     const [openAddDialog, setOpenAddDialog] = useState(false);
@@ -51,7 +51,7 @@ function UsersManagement() {
     const [openUploadDialog, setOpenUploadDialog] = useState(false);
     const [openEmailDialog, setOpenEmailDialog] = useState(false);
     const [openEmailPreviewDialog, setOpenEmailPreviewDialog] = useState(false);
-    const [showStats, setShowStats] = useState(false);
+
 
     // Form states
     const [formData, setFormData] = useState({
@@ -232,7 +232,7 @@ function UsersManagement() {
 
             console.log(filteredData);
             setUsers(filteredData);
-            setTotalUsers(filteredData.length);
+
         } catch (error) {
             console.error('Failed to fetch users:', error);
         }
@@ -919,7 +919,7 @@ function UsersManagement() {
     };
 
     // Helper function to truncate long text
-    const truncateText = (text, maxLength = 40) => {
+    const truncateText = (text, maxLength = 30) => {
         if (!text) return '';
         return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
     };
@@ -1047,8 +1047,16 @@ function UsersManagement() {
                                 <TableRow key={user.id}>
                                     <TableCell>{user.username}</TableCell>
                                     <TableCell>{user.email}</TableCell>
-                                    <TableCell>{user.firstname}</TableCell>
-                                    <TableCell>{user.lastname}</TableCell>
+                                    <TableCell>
+                                        <Typography variant="body2" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                                            {user.firstname}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Typography variant="body2" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                                            {user.lastname}
+                                        </Typography>
+                                    </TableCell>
                                     <TableCell>
                                         {(user.roles && user.roles.length > 0) ? (
                                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
@@ -1087,21 +1095,20 @@ function UsersManagement() {
                                             user.title || 'N/A'
                                         )}
                                     </TableCell>
-                                    <TableCell>{user.phone || 'N/A'}</TableCell>
+                                    <TableCell>
+                                        <Typography variant="body2" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                                            {user.phone || 'N/A'}
+                                        </Typography>
+                                    </TableCell>
                                     <TableCell>
                                         {user.geo_location ? (
-                                            <Box>
+                                            <Box sx={{ maxWidth: 250, whiteSpace: 'normal', wordBreak: 'break-word' }}>
                                                 {user.geo_location.address_line1 && (
                                                     <Typography variant="body2">
                                                         {user.geo_location.address_line1}
                                                     </Typography>
                                                 )}
-                                                {user.geo_location.address_line2 && (
-                                                    <Typography variant="body2">
-                                                        {user.geo_location.address_line2}
-                                                    </Typography>
-                                                )}
-                                                <Typography variant="body2">
+                                                <Typography variant="caption" color="textSecondary" display="block">
                                                     {[
                                                         user.geo_location.city,
                                                         user.geo_location.province,
@@ -1115,7 +1122,7 @@ function UsersManagement() {
                                     <TableCell>
                                         {user.organization ? (
                                             <Box>
-                                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                                <Typography variant="body2" sx={{ fontWeight: 'bold', maxWidth: 200, whiteSpace: 'normal', wordBreak: 'break-word' }}>
                                                     {user.organization.name}
                                                 </Typography>
                                                 {user.organization.organization_type && (
@@ -1130,7 +1137,9 @@ function UsersManagement() {
                                                 )}
                                             </Box>
                                         ) : (
-                                            getOrganizationName(user.organization_id)
+                                            <Typography variant="body2" sx={{ maxWidth: 200, whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                                                {getOrganizationName(user.organization_id)}
+                                            </Typography>
                                         )}
                                     </TableCell>
                                     <TableCell>
@@ -1160,7 +1169,7 @@ function UsersManagement() {
                     onPageChange={handleChangePage}
                     onRowsPerPageChange={handleChangeRowsPerPage}
                 />
-            </TableContainer>
+            </TableContainer >
         );
     };
 
@@ -1581,7 +1590,7 @@ function UsersManagement() {
                         <Box sx={{ mb: 3 }}>
                             <EnhancedAddressInput
                                 onPlaceSelect={handlePlaceSelect}
-                                label="🔍 Address Information"
+                                label="Address Information"
                                 fullWidth
                                 initialValue={formData.geo_location}
                             />
@@ -1606,8 +1615,8 @@ function UsersManagement() {
                                     setShowEmailPreview(!showEmailPreview);
                                 }}
                                 sx={{
-                                    backgroundColor: '#633394',
-                                    '&:hover': { backgroundColor: '#7c52a5' },
+                                    backgroundColor: '#967CB2',
+                                    '&:hover': { backgroundColor: '#8a6fa6' },
                                     minWidth: '200px'
                                 }}
                             >
@@ -1758,31 +1767,7 @@ function UsersManagement() {
                 </Box>
             </Box>
 
-            {/* User Statistics */}
-            <Box sx={{ mb: 3 }}>
-                <Button
-                    startIcon={<AssessmentIcon />}
-                    onClick={() => setShowStats(!showStats)}
-                    sx={{ color: '#633394', mb: 2 }}
-                >
-                    {showStats ? 'Hide Statistics' : 'Show Statistics'}
-                </Button>
-                <Collapse in={showStats}>
-                    <Grid container spacing={3}>
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Card sx={{ bgcolor: '#f3e5f5' }}>
-                                <CardContent>
-                                    <Typography color="textSecondary" gutterBottom>Total Users</Typography>
-                                    <Typography variant="h5" sx={{ color: '#633394', fontWeight: 'bold' }}>
-                                        {totalUsers}
-                                    </Typography>
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                        {/* Add more stats cards here as needed */}
-                    </Grid>
-                </Collapse>
-            </Box>
+
 
             {/* Search and Filter Bar */}
             <Card sx={{ mb: 3, boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>

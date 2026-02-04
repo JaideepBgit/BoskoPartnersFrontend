@@ -1202,38 +1202,7 @@ function OrganizationDetailPage() {
                     </Tabs>
                 </Box>
 
-                {/* Search & Sorting */}
-                <Paper sx={{
-                    p: 2,
-                    mb: 3,
-                    borderRadius: 3,
-                    backgroundColor: colors.accentBg,
-                    border: 'none',
-                    boxShadow: 'none'
-                }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                        <TextField
-                            placeholder="Search..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            size="small"
-                            sx={{
-                                width: 300,
-                                '& .MuiOutlinedInput-root': {
-                                    backgroundColor: 'white',
-                                    borderRadius: 2
-                                }
-                            }}
-                            InputProps={{
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <SearchIcon color="action" />
-                                    </InputAdornment>
-                                ),
-                            }}
-                        />
-                    </Box>
-                </Paper>
+
 
                 {/* Tab Content */}
                 <Paper sx={{
@@ -1241,47 +1210,69 @@ function OrganizationDetailPage() {
                     overflow: 'hidden',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                     minHeight: 300,
-                    backgroundColor: colors.accentBg
+                    //backgroundColor: colors.accentBg
                 }}>
                     {activeTab === 0 && (
                         <Box sx={{ p: 3 }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-                                <Button
-                                    variant="contained"
-                                    startIcon={<AddIcon />}
-                                    onClick={() => navigate('/users/add', {
-                                        state: {
-                                            returnUrl: `/organization-management/${id}`,
-                                            organizationId: parseInt(id)
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                <TextField
+                                    placeholder="Search users..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    size="small"
+                                    sx={{
+                                        width: 300,
+                                        '& .MuiOutlinedInput-root': {
+                                            backgroundColor: 'white',
+                                            borderRadius: 0
                                         }
-                                    })}
-                                    sx={{
-                                        backgroundColor: colors.primary,
-                                        '&:hover': { backgroundColor: colors.secondary },
-                                        textTransform: 'none',
-                                        borderRadius: 2
                                     }}
-                                >
-                                    Add User
-                                </Button>
-                                <Button
-                                    variant="outlined"
-                                    startIcon={<NotificationsActiveIcon />}
-                                    onClick={handleBulkReminders}
-                                    sx={{
-                                        ml: 2,
-                                        color: colors.primary,
-                                        borderColor: colors.primary,
-                                        '&:hover': {
-                                            borderColor: colors.secondary,
-                                            backgroundColor: 'rgba(99, 51, 148, 0.04)'
-                                        },
-                                        textTransform: 'none',
-                                        borderRadius: 2
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <SearchIcon color="action" />
+                                            </InputAdornment>
+                                        ),
                                     }}
-                                >
-                                    Send Reminders ({selectedUsers.length})
-                                </Button>
+                                />
+                                <Box>
+                                    <Button
+                                        variant="contained"
+                                        startIcon={<AddIcon />}
+                                        onClick={() => navigate('/users/add', {
+                                            state: {
+                                                returnUrl: `/organization-management/${id}`,
+                                                organizationId: parseInt(id)
+                                            }
+                                        })}
+                                        sx={{
+                                            backgroundColor: colors.primary,
+                                            '&:hover': { backgroundColor: colors.secondary },
+                                            textTransform: 'none',
+                                            borderRadius: 2
+                                        }}
+                                    >
+                                        Add User
+                                    </Button>
+                                    <Button
+                                        variant="outlined"
+                                        startIcon={<NotificationsActiveIcon />}
+                                        onClick={handleBulkReminders}
+                                        sx={{
+                                            ml: 2,
+                                            color: colors.primary,
+                                            borderColor: colors.primary,
+                                            '&:hover': {
+                                                borderColor: colors.secondary,
+                                                backgroundColor: 'rgba(99, 51, 148, 0.04)'
+                                            },
+                                            textTransform: 'none',
+                                            borderRadius: 2
+                                        }}
+                                    >
+                                        Send Reminders ({selectedUsers.length})
+                                    </Button>
+                                </Box>
                             </Box>
 
                             {filteredUsers.length === 0 ? (
@@ -1416,7 +1407,7 @@ function OrganizationDetailPage() {
                                                                         </Avatar>
                                                                         <Box>
                                                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                                                <Typography variant="body2" fontWeight="bold">
+                                                                                <Typography variant="body2" fontWeight="bold" sx={{ maxWidth: 150, whiteSpace: 'normal', wordBreak: 'break-word' }}>
                                                                                     {user.firstname} {user.lastname}
                                                                                 </Typography>
                                                                                 {user.role === 'manager' && (
@@ -1489,7 +1480,7 @@ function OrganizationDetailPage() {
                                                                     </Stack>
                                                                 </TableCell>
                                                                 <TableCell>
-                                                                    <Typography variant="body2" color="text.secondary">
+                                                                    <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 200, whiteSpace: 'normal', wordBreak: 'break-word' }}>
                                                                         {formatAddress(user.geo_location)}
                                                                     </Typography>
                                                                 </TableCell>
@@ -1609,6 +1600,28 @@ function OrganizationDetailPage() {
                                 </Box>
                             ) : (
                                 <Box sx={{ p: 3 }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 2 }}>
+                                        <TextField
+                                            placeholder="Search surveys..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            size="small"
+                                            sx={{
+                                                width: 300,
+                                                '& .MuiOutlinedInput-root': {
+                                                    backgroundColor: 'white',
+                                                    borderRadius: 0
+                                                }
+                                            }}
+                                            InputProps={{
+                                                startAdornment: (
+                                                    <InputAdornment position="start">
+                                                        <SearchIcon color="action" />
+                                                    </InputAdornment>
+                                                ),
+                                            }}
+                                        />
+                                    </Box>
                                     {filteredSurveys.length === 0 ? (
                                         <Box sx={{ textAlign: 'center', py: 4 }}>
                                             <Typography color="text.secondary">
@@ -2319,11 +2332,15 @@ function OrganizationDetailPage() {
                         {/* Email Preview Section */}
                         <Box sx={{ mt: 3 }}>
                             <Button
-                                variant="outlined"
+                                variant="contained"
                                 startIcon={<PreviewIcon />}
                                 endIcon={showEmailPreview ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                                 onClick={() => setShowEmailPreview(!showEmailPreview)}
-                                sx={{ mb: 2 }}
+                                sx={{
+                                    mb: 2,
+                                    backgroundColor: '#967CB2',
+                                    '&:hover': { backgroundColor: '#8a6fa6' }
+                                }}
                             >
                                 {showEmailPreview ? 'Hide Email Preview' : 'Preview Email Content'}
                             </Button>
@@ -2431,7 +2448,8 @@ function OrganizationDetailPage() {
                 </Dialog>
             </Container >
             {/* Account Manager Selection Dialog */}
-            <Dialog open={openAccountManagerDialog} onClose={handleCloseAccountManagerDialog} maxWidth="sm" fullWidth>
+            {/* Account Manager Selection Dialog */}
+            <Dialog open={openAccountManagerDialog} onClose={handleCloseAccountManagerDialog} maxWidth="md" fullWidth>
                 <DialogTitle>Assign Account Managers</DialogTitle>
                 <DialogContent dividers>
                     <DialogContentText sx={{ mb: 2 }}>
@@ -2493,8 +2511,18 @@ function OrganizationDetailPage() {
                     )}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCloseAccountManagerDialog}>Cancel</Button>
-                    <Button onClick={handleSaveAccountManagers} variant="contained" disabled={saving}>
+                    <Button onClick={handleCloseAccountManagerDialog} sx={{ color: 'text.secondary' }}>Cancel</Button>
+                    <Button
+                        onClick={handleSaveAccountManagers}
+                        variant="contained"
+                        disabled={saving}
+                        sx={{
+                            backgroundColor: colors.primary,
+                            '&:hover': {
+                                backgroundColor: colors.secondary
+                            }
+                        }}
+                    >
                         {saving ? 'Saving...' : 'Save Changes'}
                     </Button>
                 </DialogActions>
