@@ -552,15 +552,17 @@ function AddOrganizationPage() {
                             startIcon={<ArrowBackIcon />}
                             onClick={() => navigate('/organizations')}
                             sx={{
-                                color: '#633394',
                                 borderColor: '#633394',
+                                color: '#633394',
+                                textTransform: 'none',
+                                borderRadius: 2,
                                 '&:hover': {
-                                    borderColor: '#7c52a5',
-                                    backgroundColor: 'rgba(99, 51, 148, 0.04)'
+                                    borderColor: '#967CB2',
+                                    backgroundColor: '#f3e5f5'
                                 }
                             }}
                         >
-                            Back to Organizations
+                            Organizations
                         </Button>
                         <Typography variant="h4" sx={{ color: '#633394', fontWeight: 'bold' }}>
                             Add New Organization

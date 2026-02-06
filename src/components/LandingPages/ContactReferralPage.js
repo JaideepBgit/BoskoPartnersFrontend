@@ -15,7 +15,10 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  Autocomplete,
+  Chip,
+  CircularProgress
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -23,6 +26,7 @@ import WarningIcon from '@mui/icons-material/Warning';
 import EditIcon from '@mui/icons-material/Edit';
 import axios from 'axios';
 import { checkEmailExists, formatPhoneNumber, updateContactReferral } from '../../services/UserManagement/ContactReferralService';
+import { fetchTitles } from '../../services/UserManagement/UserManagementService';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -48,6 +52,7 @@ const ContactReferralPage = () => {
   const [institutionTypes, setInstitutionTypes] = useState([]);
   const [emailCheckDialog, setEmailCheckDialog] = useState({ open: false, data: null, isReferral: false, referralId: null });
   const [countryCode, setCountryCode] = useState('+254'); // Default to Kenya
+  const [activeTitles, setActiveTitles] = useState([]);
 
   // Track if data is from existing record
   const [existingRecordId, setExistingRecordId] = useState(null);
@@ -88,7 +93,22 @@ const ContactReferralPage = () => {
       }
     };
 
+    const loadTitles = async () => {
+      try {
+        const data = await fetchTitles();
+        if (data && data.length > 0) {
+          setActiveTitles(data.map(t => t.name));
+        } else {
+          setActiveTitles(['Manager', 'Director', 'Coordinator', 'Lead', 'Executive']);
+        }
+      } catch (error) {
+        console.error('Failed to fetch titles', error);
+        setActiveTitles(['Manager', 'Director', 'Coordinator', 'Lead', 'Executive']);
+      }
+    };
+
     fetchOrganizationTypes();
+    loadTitles();
   }, []);
 
   const contactMethods = ['Email', 'Phone', 'WhatsApp'];
@@ -523,12 +543,29 @@ const ContactReferralPage = () => {
           />
         </Grid>
         <Grid item xs={12} sm={6} md={2}>
-          <TextField
-            fullWidth
-            label="Title"
-            value={contact.title}
-            onChange={(e) => onChange(isReferral ? referralId : 'title', isReferral ? 'title' : e.target.value, isReferral ? e.target.value : null)}
-            size="small"
+          <Autocomplete
+            multiple
+            freeSolo
+            options={activeTitles}
+            value={contact.title ? contact.title.split(', ').filter(Boolean) : []}
+            onChange={(event, newValue) => {
+              const stringValue = newValue.join(', ');
+              onChange(isReferral ? referralId : 'title', isReferral ? 'title' : stringValue, isReferral ? stringValue : null);
+            }}
+            renderTags={(value, getTagProps) =>
+              value.map((option, index) => (
+                <Chip variant="outlined" label={option} {...getTagProps({ index })} />
+              ))
+            }
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                fullWidth
+                label="Title"
+                size="small"
+                placeholder={(!contact.title || contact.title.length === 0) ? "Select or type..." : ""}
+              />
+            )}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -571,48 +608,50 @@ const ContactReferralPage = () => {
       py: 4
     }}>
       <Container maxWidth="xl">
-        {/* Header */}
-        <Paper elevation={3} sx={{ p: 3, mb: 3, backgroundColor: 'white' }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        {/* Main Content Card */}
+        <Paper elevation={3} sx={{ p: 4, mb: 3 }}>
+          {/* Header Section */}
+          <Box sx={{ mb: 4 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <img
+                  src="/assets/actea-logo.png"
+                  alt="ACTEA Logo"
+                  style={{ height: '80px' }}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+                <Box>
+                  <Typography variant="h4" sx={{ color: '#633394', fontWeight: 'bold' }}>
+                    Welcome and thank you for collaborating with us.
+                  </Typography>
+                  <Typography variant="h6" sx={{ color: '#633394', mt: 1 }}>
+                    Kindly share your contact information and then the contact information
+                    for others you recommend we collaborate with.
+                  </Typography>
+                </Box>
+              </Box>
               <img
-                src="/assets/actea-logo.png"
-                alt="ACTEA Logo"
-                style={{ height: '80px' }}
+                src="/assets/saurara-high-resolution-logo-transparent.png"
+                alt="Saurara Logo"
+                style={{ height: '60px' }}
                 onError={(e) => {
                   e.target.style.display = 'none';
                 }}
               />
-              <Box>
-                <Typography variant="h4" sx={{ color: '#633394', fontWeight: 'bold' }}>
-                  Welcome and thank you for collaborating with us.
-                </Typography>
-                <Typography variant="h6" sx={{ color: '#633394', mt: 1 }}>
-                  Kindly share your contact information and then the contact information
-                  for others you recommend we collaborate with.
-                </Typography>
-              </Box>
             </Box>
-            <img
-              src="/assets/saurara-high-resolution-logo-transparent.png"
-              alt="Saurara Logo"
-              style={{ height: '60px' }}
-              onError={(e) => {
-                e.target.style.display = 'none';
-              }}
-            />
+            <Divider />
           </Box>
-        </Paper>
 
-        {/* Primary Contact Form */}
-        <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
+          {/* Primary Contact Form Section */}
           <Typography variant="h6" sx={{ mb: 2, color: '#633394', fontWeight: 'bold' }}>
             Your Contact Information
           </Typography>
 
           {renderContactForm(primaryContact, handlePrimaryContactChange)}
 
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2, mb: 4 }}>
             {existingRecordId ? (
               // Show UPDATE button after save or when editing existing record
               <Button
@@ -643,119 +682,114 @@ const ContactReferralPage = () => {
                 Save
               </Button>
             )}
-            <Button
-              variant="contained"
-              onClick={() => {
-                setShowReferralForm(true);
-                addReferral();
-              }}
-              startIcon={<AddIcon />}
-              sx={{
-                backgroundColor: '#633394',
-                '&:hover': { backgroundColor: '#4a2570' },
-                px: 4
-              }}
-            >
-              Refer a Contact
-            </Button>
-          </Box>
-        </Paper>
-
-        {/* Referrals Section */}
-        {showReferralForm && referrals.length > 0 && (
-          <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-            <Typography variant="h6" sx={{ mb: 3, color: '#633394', fontWeight: 'bold' }}>
-              Referred Contacts
-            </Typography>
-            {referrals.map((referral, index) => {
-              const isExisting = existingSubReferralIds.has(referral.id);
-              const hasReferralChanges = referralChanges.get(referral.id) || false;
-
-              return (
-                <Box key={referral.id} sx={{ mb: 3 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="subtitle1" sx={{ color: '#633394' }}>
-                      Referral {index + 1} {isExisting && <span style={{ fontSize: '0.8em', color: '#ff9800' }}>(Existing)</span>}
-                    </Typography>
-                    {isExisting && (
-                      <Button
-                        variant="contained"
-                        size="small"
-                        onClick={() => handleUpdateReferral(referral.id)}
-                        disabled={loading || !hasReferralChanges}
-                        startIcon={<EditIcon />}
-                        sx={{
-                          backgroundColor: hasReferralChanges ? '#ff9800' : '#9e9e9e',
-                          '&:hover': { backgroundColor: hasReferralChanges ? '#f57c00' : '#757575' },
-                          px: 2
-                        }}
-                      >
-                        {hasReferralChanges ? 'Update' : 'No Changes'}
-                      </Button>
-                    )}
-                  </Box>
-                  {renderContactForm(
-                    referral,
-                    (id, field, value) => handleReferralChange(id, field, value),
-                    true,
-                    referral.id
-                  )}
-                  {index < referrals.length - 1 && <Divider sx={{ my: 3 }} />}
-                </Box>
-              );
-            })}
-
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3, alignItems: 'center' }}>
+            {existingRecordId && (
               <Button
-                variant="outlined"
-                onClick={addReferral}
+                variant="contained"
+                onClick={() => {
+                  setShowReferralForm(true);
+                  addReferral();
+                }}
                 startIcon={<AddIcon />}
                 sx={{
-                  borderColor: '#633394',
-                  color: '#633394',
-                  '&:hover': {
-                    borderColor: '#4a2570',
-                    backgroundColor: 'rgba(99, 51, 148, 0.04)'
-                  }
+                  backgroundColor: '#633394',
+                  '&:hover': { backgroundColor: '#4a2570' },
+                  px: 4
                 }}
               >
-                Add Another
+                Refer a Contact
               </Button>
+            )}
+          </Box>
 
-              {existingRecordId ? (
-                <Alert severity="info" sx={{ flex: 1, mx: 2 }}>
-                  Viewing existing records. Modify fields and click UPDATE to save changes. You can add new sub-referrals using "Add Another".
-                </Alert>
-              ) : (
+          {/* Referrals Section - Now inline */}
+          {showReferralForm && referrals.length > 0 && (
+            <Box>
+              <Divider sx={{ mb: 4 }} />
+              <Typography variant="h6" sx={{ mb: 3, color: '#633394', fontWeight: 'bold' }}>
+                Referred Contacts
+              </Typography>
+              {referrals.map((referral, index) => {
+                const isExisting = existingSubReferralIds.has(referral.id);
+                const hasReferralChanges = referralChanges.get(referral.id) || false;
+
+                return (
+                  <Box key={referral.id} sx={{ mb: 3 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Typography variant="subtitle1" sx={{ color: '#633394' }}>
+                        Referral {index + 1} {isExisting && <span style={{ fontSize: '0.8em', color: '#ff9800' }}>(Existing)</span>}
+                      </Typography>
+                      {isExisting && (
+                        <Button
+                          variant="contained"
+                          size="small"
+                          onClick={() => handleUpdateReferral(referral.id)}
+                          disabled={loading || !hasReferralChanges}
+                          startIcon={<EditIcon />}
+                          sx={{
+                            backgroundColor: hasReferralChanges ? '#ff9800' : '#9e9e9e',
+                            '&:hover': { backgroundColor: hasReferralChanges ? '#f57c00' : '#757575' },
+                            px: 2
+                          }}
+                        >
+                          {hasReferralChanges ? 'Update' : 'No Changes'}
+                        </Button>
+                      )}
+                    </Box>
+                    {renderContactForm(
+                      referral,
+                      (id, field, value) => handleReferralChange(id, field, value),
+                      true,
+                      referral.id
+                    )}
+                    {index < referrals.length - 1 && <Divider sx={{ my: 3 }} />}
+                  </Box>
+                );
+              })}
+
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3, alignItems: 'center' }}>
                 <Button
-                  variant="contained"
-                  onClick={handleSubmitAll}
-                  disabled={loading}
+                  variant="outlined"
+                  onClick={addReferral}
+                  startIcon={<AddIcon />}
                   sx={{
-                    backgroundColor: '#633394',
-                    '&:hover': { backgroundColor: '#4a2570' },
-                    px: 4
+                    borderColor: '#633394',
+                    color: '#633394',
+                    '&:hover': {
+                      borderColor: '#4a2570',
+                      backgroundColor: 'rgba(99, 51, 148, 0.04)'
+                    }
                   }}
                 >
-                  Submit All
+                  Add Another
                 </Button>
-              )}
-            </Box>
-          </Paper>
-        )}
 
-        {/* Information Box */}
-        <Paper elevation={3} sx={{ p: 3, backgroundColor: '#f9f9f9' }}>
-          <Typography variant="body1" sx={{ color: '#333', lineHeight: 1.8 }}>
-            <strong>Note:</strong> Once a person shares their contact information and saves it,
-            the button to <strong>Refer a Contact</strong> will appear. Then a new blank record
-            will appear below to add the same information they entered about themselves for the
-            contact they are (recommending/referring). The form will capture date, time and device
-            level information from the user including their location and country. Each new referred
-            contact will be added to the database and include the (lead source or person who made
-            the referral).
-          </Typography>
+                {existingRecordId ? (
+                  <Alert severity="info" sx={{ flex: 1, mx: 2 }}>
+                    Viewing existing records. Modify fields and click UPDATE to save changes. You can add new sub-referrals using "Add Another".
+                  </Alert>
+                ) : (
+                  <Button
+                    variant="contained"
+                    onClick={handleSubmitAll}
+                    disabled={loading}
+                    sx={{
+                      backgroundColor: '#633394',
+                      '&:hover': { backgroundColor: '#4a2570' },
+                      px: 4
+                    }}
+                  >
+                    Submit All
+                  </Button>
+                )}
+              </Box>
+            </Box>
+          )}
+
         </Paper>
+
+
+
+
 
         {/* Email Duplicate Check Dialog */}
         <Dialog

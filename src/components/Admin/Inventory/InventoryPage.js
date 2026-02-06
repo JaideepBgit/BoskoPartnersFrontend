@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import InventoryService from '../../../services/Admin/Inventory/InventoryService';
 import {
   Box,
@@ -45,6 +45,7 @@ import CreateQuestionnaireWizard from './CreateQuestionnaireWizard';
 
 const InventoryPage = () => {
   const { templateId } = useParams();
+  const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -222,6 +223,26 @@ const InventoryPage = () => {
       fetchTemplate(templateId);
     }
   }, [templateId]);
+
+  // Handle navigation from OrganizationDetailPage with selected template
+  useEffect(() => {
+    if (location.state?.selectedTemplate && templateVersions.length > 0) {
+      const template = location.state.selectedTemplate;
+      console.log('Received template from navigation:', template);
+
+      // If the template has a version_id, select that version (survey group)
+      if (template.version_id) {
+        const version = templateVersions.find(v => v.id === template.version_id);
+        if (version) {
+          console.log('Selecting version/survey group:', version);
+          setSelectedVersion(version);
+        }
+      }
+
+      // Clear the state to prevent re-triggering
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, templateVersions]);
 
   // Template version handlers
   const handleAddTemplateVersion = async () => {
@@ -480,7 +501,7 @@ const InventoryPage = () => {
               fontSize: isMobile ? '1.5rem' : '2.125rem'
             }}
           >
-            Survey Manager
+            Surveys
           </Typography>
 
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
@@ -581,182 +602,185 @@ const InventoryPage = () => {
               flexShrink: 0
             }}
           >
-            <Typography
-              variant={isMobile ? "subtitle1" : "h6"}
-              gutterBottom
-              sx={{
-                color: '#633394',
-                fontWeight: 'bold',
-                fontSize: isMobile ? '1.1rem' : '1.25rem',
-                display: (selectedVersion || previewInfo) && !isMobile ? 'none' : 'block'
-              }}
-            >
-              Organization Survey Groups
-            </Typography>
-
-            <Box sx={{ p: isMobile ? 1.5 : 2 }}>
-              <Box
-                sx={{
-                  p: isMobile ? 0.5 : 1,
-                  maxHeight: 'calc(100vh - 300px)',
-                  overflowY: 'auto'
-                }}
-              >
-                <List dense={isMobile || !!selectedVersion || !!previewInfo}>
-                  {filteredVersions
-                    .map(v => (
-                      <ListItem
-                        key={v.id}
-                        button
-                        selected={selectedVersion?.id === v.id || previewInfo?.data?.id === v.id || previewInfo?.data?.version_id === v.id}
-                        onClick={() => {
-                          // If in preview mode, maybe update preview? Or just switch to edit mode?
-                          // For now, switch to edit mode for the selected version
-                          setPreviewInfo(null);
-                          setSelectedVersion(v);
-                        }}
-                        sx={{
-                          borderRadius: 1,
-                          mb: 0.5,
-                          py: isMobile || selectedVersion || previewInfo ? 1 : 1.5,
-                          transition: 'all 0.2s ease-in-out',
-                          borderLeft: selectedVersion?.id === v.id ? '4px solid #633394' : '4px solid transparent',
-                          '&.Mui-selected': {
-                            backgroundColor: 'rgba(99, 51, 148, 0.15)',
-                            '&:hover': {
-                              backgroundColor: 'rgba(99, 51, 148, 0.2)',
-                            }
-                          },
-                          '&:hover': {
-                            backgroundColor: selectedVersion?.id === v.id ? 'rgba(99, 51, 148, 0.2)' : 'rgba(99, 51, 148, 0.05)',
-                            boxShadow: '0 2px 8px rgba(99, 51, 148, 0.15)',
-                            transform: 'translateX(2px)',
-                          }
-                        }}
-                      >
-                        <ListItemText
-                          primary={v.name}
-                          secondary={
-                            <Box>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                noWrap={!!selectedVersion || !!previewInfo}
-                                sx={{
-                                  fontSize: isMobile ? '0.75rem' : '0.875rem'
-                                }}
-                              >
-                                {v.description || 'No description'}
-                              </Typography>
-                              {!selectedVersion && !previewInfo && (
-                                <Typography variant="caption" color="primary" sx={{ fontWeight: 500, fontSize: isMobile ? '0.7rem' : '0.75rem' }}>
-                                  Organization: {v.organization_name || 'N/A'}
-                                </Typography>
-                              )}
-                            </Box>
-                          }
-                          primaryTypographyProps={{
-                            fontWeight: selectedVersion?.id === v.id ? 600 : 400,
-                            color: selectedVersion?.id === v.id ? '#633394' : '#333',
-                            transition: 'color 0.2s ease-in-out',
-                            fontSize: isMobile ? '0.9rem' : '1rem',
-                            wordBreak: 'break-word',
-                            whiteSpace: 'normal'
-                          }}
-                        />
-                        <ListItemSecondaryAction>
-                          {(selectedVersion || previewInfo) ? (
-                            <IconButton
-                              edge="end"
-                              size="small"
-                              onClick={(e) => handleOpenActionMenu(e, v)}
-                              sx={{ color: '#633394' }}
-                            >
-                              <MoreVertIcon fontSize="small" />
-                            </IconButton>
-                          ) : (
-                            <Box sx={{ display: 'flex' }}>
-                              <IconButton
-                                edge="end"
-                                color="primary"
-                                size={isMobile || selectedVersion ? "small" : "medium"}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handlePreviewVersion(v);
-                                }}
-                                sx={{
-                                  mr: 0.5,
-                                  color: '#633394',
-                                }}
-                                title="Preview"
-                              >
-                                <VisibilityIcon fontSize="small" />
-                              </IconButton>
-                              <IconButton
-                                edge="end"
-                                color="primary"
-                                size={isMobile || selectedVersion ? "small" : "medium"}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCopyTemplateVersion(v);
-                                }}
-                                sx={{
-                                  mr: 0.5,
-                                  color: '#633394',
-                                }}
-                                title="Copy"
-                              >
-                                <ContentCopyIcon fontSize="small" />
-                              </IconButton>
-                              <IconButton
-                                edge="end"
-                                color="primary"
-                                size={isMobile || selectedVersion ? "small" : "medium"}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditTemplateVersion(v);
-                                }}
-                                sx={{
-                                  mr: 0.5,
-                                  color: '#633394',
-                                }}
-                              >
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                              <IconButton
-                                edge="end"
-                                color="error"
-                                size={isMobile || selectedVersion ? "small" : "medium"}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (window.confirm(`Delete version "${v.name}"?`)) {
-                                    handleDeleteTemplateVersion(v.id);
-                                  }
-                                }}
-                              >
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Box>
-                          )}
-                        </ListItemSecondaryAction>
-                      </ListItem>
-                    ))}
-                  {filteredVersions.length === 0 && (
-                    <Box sx={{ p: 2, textAlign: 'center' }}>
-                      <Typography
-                        color="text.secondary"
-                        sx={{
-                          py: 2,
-                          fontSize: isMobile ? '0.875rem' : '1rem'
-                        }}
-                      >
-                        {'No template versions available'}
-                      </Typography>
-                    </Box>
-                  )}
-                </List>
+            <Paper elevation={3} sx={{ borderRadius: 2, overflow: 'hidden', bgcolor: 'white' }}>
+              <Box sx={{ p: 2, pb: 0, display: (selectedVersion || previewInfo) && !isMobile ? 'none' : 'block' }}>
+                <Typography
+                  variant={isMobile ? "subtitle1" : "h6"}
+                  gutterBottom
+                  sx={{
+                    color: '#633394',
+                    fontWeight: 'bold',
+                    fontSize: isMobile ? '1.1rem' : '1.25rem'
+                  }}
+                >
+                  Organization Groups
+                </Typography>
               </Box>
-            </Box>
+
+              <Box sx={{ p: isMobile ? 1.5 : 2 }}>
+                <Box
+                  sx={{
+                    p: isMobile ? 0.5 : 1,
+                    maxHeight: 'calc(100vh - 300px)',
+                    overflowY: 'auto'
+                  }}
+                >
+                  <List dense={isMobile || !!selectedVersion || !!previewInfo}>
+                    {filteredVersions
+                      .map(v => (
+                        <ListItem
+                          key={v.id}
+                          button
+                          selected={selectedVersion?.id === v.id || previewInfo?.data?.id === v.id || previewInfo?.data?.version_id === v.id}
+                          onClick={() => {
+                            // If in preview mode, maybe update preview? Or just switch to edit mode?
+                            // For now, switch to edit mode for the selected version
+                            setPreviewInfo(null);
+                            setSelectedVersion(v);
+                          }}
+                          sx={{
+                            borderRadius: 1,
+                            mb: 0.5,
+                            py: isMobile || selectedVersion || previewInfo ? 1 : 1.5,
+                            transition: 'all 0.2s ease-in-out',
+                            borderLeft: selectedVersion?.id === v.id ? '4px solid #633394' : '4px solid transparent',
+                            '&.Mui-selected': {
+                              backgroundColor: 'rgba(99, 51, 148, 0.15)',
+                              '&:hover': {
+                                backgroundColor: 'rgba(99, 51, 148, 0.2)',
+                              }
+                            },
+                            '&:hover': {
+                              backgroundColor: selectedVersion?.id === v.id ? 'rgba(99, 51, 148, 0.2)' : 'rgba(99, 51, 148, 0.05)',
+                              boxShadow: '0 2px 8px rgba(99, 51, 148, 0.15)',
+                              transform: 'translateX(2px)',
+                            }
+                          }}
+                        >
+                          <ListItemText
+                            primary={v.name}
+                            secondary={
+                              <Box>
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                  noWrap={!!selectedVersion || !!previewInfo}
+                                  sx={{
+                                    fontSize: isMobile ? '0.75rem' : '0.875rem'
+                                  }}
+                                >
+                                  {v.description || 'No description'}
+                                </Typography>
+                                {!selectedVersion && !previewInfo && (
+                                  <Typography variant="caption" color="primary" sx={{ fontWeight: 500, fontSize: isMobile ? '0.7rem' : '0.75rem' }}>
+                                    Organization: {v.organization_name || 'N/A'}
+                                  </Typography>
+                                )}
+                              </Box>
+                            }
+                            primaryTypographyProps={{
+                              fontWeight: selectedVersion?.id === v.id ? 600 : 400,
+                              color: selectedVersion?.id === v.id ? '#633394' : '#333',
+                              transition: 'color 0.2s ease-in-out',
+                              fontSize: isMobile ? '0.9rem' : '1rem',
+                              wordBreak: 'break-word',
+                              whiteSpace: 'normal'
+                            }}
+                          />
+                          <ListItemSecondaryAction>
+                            {(selectedVersion || previewInfo) ? (
+                              <IconButton
+                                edge="end"
+                                size="small"
+                                onClick={(e) => handleOpenActionMenu(e, v)}
+                                sx={{ color: '#633394' }}
+                              >
+                                <MoreVertIcon fontSize="small" />
+                              </IconButton>
+                            ) : (
+                              <Box sx={{ display: 'flex' }}>
+                                <IconButton
+                                  edge="end"
+                                  color="primary"
+                                  size={isMobile || selectedVersion ? "small" : "medium"}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handlePreviewVersion(v);
+                                  }}
+                                  sx={{
+                                    mr: 0.5,
+                                    color: '#633394',
+                                  }}
+                                  title="Preview"
+                                >
+                                  <VisibilityIcon fontSize="small" />
+                                </IconButton>
+                                <IconButton
+                                  edge="end"
+                                  color="primary"
+                                  size={isMobile || selectedVersion ? "small" : "medium"}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCopyTemplateVersion(v);
+                                  }}
+                                  sx={{
+                                    mr: 0.5,
+                                    color: '#633394',
+                                  }}
+                                  title="Copy"
+                                >
+                                  <ContentCopyIcon fontSize="small" />
+                                </IconButton>
+                                <IconButton
+                                  edge="end"
+                                  color="primary"
+                                  size={isMobile || selectedVersion ? "small" : "medium"}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEditTemplateVersion(v);
+                                  }}
+                                  sx={{
+                                    mr: 0.5,
+                                    color: '#633394',
+                                  }}
+                                >
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                                <IconButton
+                                  edge="end"
+                                  color="error"
+                                  size={isMobile || selectedVersion ? "small" : "medium"}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (window.confirm(`Delete version "${v.name}"?`)) {
+                                      handleDeleteTemplateVersion(v.id);
+                                    }
+                                  }}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </Box>
+                            )}
+                          </ListItemSecondaryAction>
+                        </ListItem>
+                      ))}
+                    {filteredVersions.length === 0 && (
+                      <Box sx={{ p: 2, textAlign: 'center' }}>
+                        <Typography
+                          color="text.secondary"
+                          sx={{
+                            py: 2,
+                            fontSize: isMobile ? '0.875rem' : '1rem'
+                          }}
+                        >
+                          {'No template versions available'}
+                        </Typography>
+                      </Box>
+                    )}
+                  </List>
+                </Box>
+              </Box>
+            </Paper>
           </Box>
 
           {/* Actions Menu */}

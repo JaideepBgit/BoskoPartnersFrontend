@@ -23,9 +23,11 @@ import ForgotPassword from './components/Login/ForgotPassword';
 import ResetPassword from './components/Login/ResetPassword';
 import SettingsPage from './components/Settings/SettingsPage';
 import OrganizationManagementPage from './components/Admin/OrganizationManagement/OrganizationManagementPage';
+import AssociationsPage from './components/Admin/OrganizationManagement/AssociationsPage';
 import OrganizationDetailPage from './components/Admin/OrganizationManagement/OrganizationDetailPage';
 import AddUserPage from './components/UserManagement/Users/AddUserPage';
 import AddOrganizationPage from './components/UserManagement/Organizations/AddOrganizationPage';
+import AddAssociationPage from './components/Admin/OrganizationManagement/AddAssociationPage';
 
 import './App.css';
 import './styles/form.css';
@@ -237,6 +239,12 @@ function Main({ isAuthenticated, userRole, login, logout }) {
             <OrganizationManagementPage onLogout={logout} />
           </ProtectedRoute>
         } />
+        {/* Associations Management Page */}
+        <Route path="/associations" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <AssociationsPage />
+          </ProtectedRoute>
+        } />
         <Route path="/organization-management/:id" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <OrganizationDetailPage onLogout={logout} />
@@ -252,6 +260,13 @@ function Main({ isAuthenticated, userRole, login, logout }) {
         <Route path="/organizations/add" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <AddOrganizationPage />
+          </ProtectedRoute>
+        } />
+
+        {/* Add Association Page Route */}
+        <Route path="/associations/add" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <AddAssociationPage />
           </ProtectedRoute>
         } />
 

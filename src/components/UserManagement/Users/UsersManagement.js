@@ -997,47 +997,47 @@ function UsersManagement() {
         return (
             <TableContainer component={Paper}>
                 <Table>
-                    <TableHead sx={{ backgroundColor: '#633394' }}>
+                    <TableHead sx={{ backgroundColor: '#b39ddb' }}>
                         <TableRow>
                             <TableCell
-                                sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+                                sx={{ color: '#633394', fontWeight: 'bold', cursor: 'pointer' }}
                                 onClick={() => handleSort('username')}
                             >
                                 Username {sortBy === 'username' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </TableCell>
                             <TableCell
-                                sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+                                sx={{ color: '#633394', fontWeight: 'bold', cursor: 'pointer' }}
                                 onClick={() => handleSort('email')}
                             >
                                 Email {sortBy === 'email' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </TableCell>
                             <TableCell
-                                sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+                                sx={{ color: '#633394', fontWeight: 'bold', cursor: 'pointer' }}
                                 onClick={() => handleSort('firstname')}
                             >
                                 First Name {sortBy === 'firstname' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </TableCell>
                             <TableCell
-                                sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+                                sx={{ color: '#633394', fontWeight: 'bold', cursor: 'pointer' }}
                                 onClick={() => handleSort('lastname')}
                             >
                                 Last Name {sortBy === 'lastname' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </TableCell>
                             <TableCell
-                                sx={{ color: 'white', fontWeight: 'bold' }}
+                                sx={{ color: '#633394', fontWeight: 'bold' }}
                             >
                                 Roles
                             </TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Title</TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Phone</TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>User Address</TableCell>
+                            <TableCell sx={{ color: '#633394', fontWeight: 'bold' }}>Title</TableCell>
+                            <TableCell sx={{ color: '#633394', fontWeight: 'bold' }}>Phone</TableCell>
+                            <TableCell sx={{ color: '#633394', fontWeight: 'bold' }}>User Address</TableCell>
                             <TableCell
-                                sx={{ color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+                                sx={{ color: '#633394', fontWeight: 'bold', cursor: 'pointer' }}
                                 onClick={() => handleSort('organization')}
                             >
                                 Organization {sortBy === 'organization' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Actions</TableCell>
+                            <TableCell sx={{ color: '#633394', fontWeight: 'bold' }}>Actions</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>

@@ -489,17 +489,25 @@ function AddUserPage() {
                         <Button
                             variant="outlined"
                             startIcon={<ArrowBackIcon />}
-                            onClick={() => navigate(returnUrl || '/users')}
+                            onClick={() => {
+                                if (returnUrl) {
+                                    navigate(returnUrl);
+                                } else {
+                                    navigate('/users');
+                                }
+                            }}
                             sx={{
-                                color: '#633394',
                                 borderColor: '#633394',
+                                color: '#633394',
+                                textTransform: 'none',
+                                borderRadius: 2,
                                 '&:hover': {
-                                    borderColor: '#7c52a5',
-                                    backgroundColor: 'rgba(99, 51, 148, 0.04)'
+                                    borderColor: '#967CB2',
+                                    backgroundColor: '#f3e5f5'
                                 }
                             }}
                         >
-                            Back to {returnUrl ? 'Organization' : 'Users'}
+                            {returnUrl ? 'Organization' : 'Users'}
                         </Button>
                         <Typography variant="h4" sx={{ color: '#633394', fontWeight: 'bold' }}>
                             Add New User

@@ -27,6 +27,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import MenuIcon from '@mui/icons-material/Menu';
 import BusinessIcon from '@mui/icons-material/Business';
 import SecurityIcon from '@mui/icons-material/Security';
+import GroupWorkIcon from '@mui/icons-material/GroupWork';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -58,6 +59,7 @@ const Navbar = () => {
       if (p.includes('/dashboard') || p.includes('/manager-dashboard')) setTabValue(1);           // 1. Dashboard
       else if (p.includes('/inventory')) setTabValue(2);      // 2. Surveys
       else if (p.includes('/organization')) setTabValue(3);   // 3. Organizations
+      else if (p.includes('/associations')) setTabValue(7);   // 7. Associations
       else if (p.includes('/users')) setTabValue(4);          // 4. Users
       else if (p.includes('/reports') || p.includes('/user-reports')) setTabValue(5); // 5. Reports
       else if (p.includes('/settings')) setTabValue(6);       // 6. Settings
@@ -177,6 +179,36 @@ const Navbar = () => {
             >
               <ListItemIcon><BusinessIcon /></ListItemIcon>
               <ListItemText primary="Organizations" />
+            </ListItem>
+          )}
+
+          {/* 7. Associations - Only for Admin/Root */}
+          {(user?.role === 'admin' || user?.role === 'root') && (
+            <ListItem
+              button
+              onClick={() => handleNavigation('/associations')}
+              selected={tabValue === 7}
+              sx={{
+                '&.Mui-selected': {
+                  backgroundColor: '#633394',
+                  color: 'white',
+                  '& .MuiListItemIcon-root': {
+                    color: 'white',
+                  },
+                  '&:hover': {
+                    backgroundColor: '#533082',
+                  },
+                },
+                '&:hover': {
+                  backgroundColor: '#f5f5f5',
+                },
+                borderRadius: '8px',
+                mx: 1,
+                mb: 0.5,
+              }}
+            >
+              <ListItemIcon><GroupWorkIcon /></ListItemIcon>
+              <ListItemText primary="Associations" />
             </ListItem>
           )}
 

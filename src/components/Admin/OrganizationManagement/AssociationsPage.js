@@ -10,11 +10,11 @@ import SearchIcon from '@mui/icons-material/Search';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import AddIcon from '@mui/icons-material/Add';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import BusinessIcon from '@mui/icons-material/Business';
+import PeopleIcon from '@mui/icons-material/People';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import RadarIcon from '@mui/icons-material/Radar';
-import PeopleIcon from '@mui/icons-material/People';
+import BusinessIcon from '@mui/icons-material/Business';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../shared/Navbar/Navbar';
 import SpiderChartPopup from '../../UserManagement/common/SpiderChartPopup';
@@ -37,10 +37,10 @@ const colors = {
     headerGradient: '#b39ddb',
 };
 
-// Define main organization types
+// Define main organization types (to exclude)
 const mainOrganizationTypes = ['church', 'Institution', 'Non_formal_organizations'];
 
-function OrganizationManagementPage() {
+function AssociationsPage() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [organizations, setOrganizations] = useState([]);
@@ -51,7 +51,7 @@ function OrganizationManagementPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState('');
 
-    // Pagination for main organizations
+    // Pagination
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -155,13 +155,13 @@ function OrganizationManagementPage() {
         loadData();
     }, [loadData]);
 
-    // Filtered organizations (Only Main)
+    // Filtered organizations (Only Associations/Related)
     const filteredOrganizations = useMemo(() => {
         return organizations.filter(org => {
-            // Must be a main organization type
-            const isMain = mainOrganizationTypes.includes(org.organization_type?.type);
+            // Must NOT be a main organization type
+            const isAssociation = !mainOrganizationTypes.includes(org.organization_type?.type);
 
-            if (!isMain) return false;
+            if (!isAssociation) return false;
 
             const matchesSearch = !searchQuery ||
                 org.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -178,7 +178,7 @@ function OrganizationManagementPage() {
     };
 
     const handleOpenAddPage = () => {
-        navigate('/organizations/add');
+        navigate('/associations/add');
     };
 
     const getLocation = (org) => {
@@ -263,7 +263,7 @@ function OrganizationManagementPage() {
                                 <TableRow>
                                     <TableCell colSpan={5} sx={{ textAlign: 'center', py: 4 }}>
                                         <Typography color="text.secondary">
-                                            No organizations found
+                                            No associations found
                                         </Typography>
                                     </TableCell>
                                 </TableRow>
@@ -384,7 +384,7 @@ function OrganizationManagementPage() {
                     gap: 2
                 }}>
                     <Typography variant="h4" fontWeight="bold" sx={{ color: colors.textPrimary }}>
-                        Organizations
+                        Associations
                     </Typography>
                     <Box sx={{ display: 'flex', gap: 1 }}>
                         <Button
@@ -399,7 +399,7 @@ function OrganizationManagementPage() {
                                 '&:hover': { backgroundColor: colors.secondary }
                             }}
                         >
-                            Add Organization
+                            Add Association
                         </Button>
                         <Tooltip title="Refresh">
                             <IconButton
@@ -421,7 +421,6 @@ function OrganizationManagementPage() {
                     p: 2,
                     mb: 3,
                     borderRadius: 3,
-                    //backgroundColor: colors.accentBg,
                     boxShadow: 'none',
                     display: 'flex',
                     alignItems: 'center',
@@ -463,16 +462,19 @@ function OrganizationManagementPage() {
                                 }}
                                 startAdornment={<FilterListIcon sx={{ mr: 1, color: colors.textSecondary }} />}
                             >
-                                <MenuItem value="">All main organization Types</MenuItem>
-                                {mainOrganizationTypes.map(type => (
-                                    <MenuItem key={type} value={type}>
-                                        {type === 'non_formal_organizations' ? 'Non-formal Org' : type.charAt(0).toUpperCase() + type.slice(1)}
-                                    </MenuItem>
-                                ))}
+                                <MenuItem value="">All Association Types</MenuItem>
+                                {organizationTypes
+                                    .filter(type => !mainOrganizationTypes.includes(type.type))
+                                    .map(type => (
+                                        <MenuItem key={type.id} value={type.type}>
+                                            {type.type.charAt(0).toUpperCase() + type.type.slice(1)}
+                                        </MenuItem>
+                                    ))
+                                }
                             </Select>
                         </FormControl>
                         <Chip
-                            label={`Showing ${filteredOrganizations.length} items`}
+                            label={`Showing ${filteredOrganizations.length} associations`}
                             variant="outlined"
                             sx={{
                                 borderColor: colors.primary,
@@ -487,12 +489,9 @@ function OrganizationManagementPage() {
                         <CircularProgress sx={{ color: colors.primary }} />
                     </Box>
                 ) : (
-                    <>
-                        {/* Main Organizations Section */}
-                        <Box sx={{ mb: 2 }}>
-                            {renderOrganizationTable(filteredOrganizations)}
-                        </Box>
-                    </>
+                    <Box>
+                        {renderOrganizationTable(filteredOrganizations)}
+                    </Box>
                 )}
 
                 {/* Spider Chart Popup */}
@@ -509,4 +508,4 @@ function OrganizationManagementPage() {
     );
 }
 
-export default OrganizationManagementPage;
+export default AssociationsPage;

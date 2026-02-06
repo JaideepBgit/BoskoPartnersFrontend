@@ -55,7 +55,7 @@ import { EmailService } from '../../../services/EmailService';
 const colors = {
     primary: '#633394',
     secondary: '#967CB2',
-    background: '#f8f9fa',
+    background: '#f5f5f5',
     cardBg: '#ffffff',
     accentBg: '#f3e5f5',
     borderColor: '#e0e0e0',
@@ -1053,14 +1053,26 @@ function OrganizationDetailPage() {
                     justifyContent: 'space-between',
                     mb: 3
                 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <IconButton onClick={handleBack} sx={{ color: colors.primary }}>
-                            <ArrowBackIcon />
-                        </IconButton>
-                        <Typography variant="h6" color="text.secondary">
-                            {organization.name}
-                        </Typography>
-                    </Box>
+                    <Button
+                        variant="outlined"
+                        startIcon={<ArrowBackIcon />}
+                        onClick={handleBack}
+                        sx={{
+                            borderColor: colors.primary,
+                            color: colors.primary,
+                            textTransform: 'none',
+                            borderRadius: 2,
+                            '&:hover': {
+                                borderColor: colors.secondary,
+                                backgroundColor: colors.accentBg
+                            }
+                        }}
+                    >
+                        Organizations
+                    </Button>
+                    <Typography variant="h5" fontWeight="bold" color="text.primary">
+                        {organization.name}
+                    </Typography>
                     <Button
                         variant="outlined"
                         startIcon={<ArchiveIcon />}
@@ -1075,10 +1087,7 @@ function OrganizationDetailPage() {
                     </Button>
                 </Box>
 
-                {/* Organization Title */}
-                <Typography variant="h4" fontWeight="bold" sx={{ mb: 3, color: colors.textPrimary }}>
-                    {organization.name}
-                </Typography>
+
 
                 {/* Info Cards */}
                 <Grid container spacing={3} sx={{ mb: 3 }}>
@@ -1285,12 +1294,12 @@ function OrganizationDetailPage() {
                                 <>
                                     <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 'none', border: `1px solid ${colors.borderColor}` }}>
                                         <Table>
-                                            <TableHead sx={{ backgroundColor: colors.primary }}>
+                                            <TableHead sx={{ backgroundColor: '#b39ddb' }}>
                                                 <TableRow>
                                                     <TableCell padding="checkbox">
                                                         <Checkbox
                                                             color="default"
-                                                            sx={{ color: 'white' }}
+                                                            sx={{ color: colors.primary }}
                                                             indeterminate={selectedUsers.length > 0 && selectedUsers.length < filteredUsers.filter(u => !u.has_completed_survey).length}
                                                             checked={filteredUsers.length > 0 && selectedUsers.length === filteredUsers.filter(u => !u.has_completed_survey).length}
                                                             onChange={handleSelectAllClick}
@@ -1299,69 +1308,69 @@ function OrganizationDetailPage() {
                                                             }}
                                                         />
                                                     </TableCell>
-                                                    <TableCell sortDirection={orderBy === 'name' ? order : false} sx={{ color: 'white', fontWeight: 'bold' }}>
+                                                    <TableCell sortDirection={orderBy === 'name' ? order : false} sx={{ color: colors.primary, fontWeight: 'bold' }}>
                                                         <TableSortLabel
                                                             active={orderBy === 'name'}
                                                             direction={orderBy === 'name' ? order : 'asc'}
                                                             onClick={() => handleRequestSort('name')}
                                                             sx={{
-                                                                color: 'white !important',
+                                                                color: `${colors.primary} !important`,
                                                                 '& .MuiTableSortLabel-icon': {
-                                                                    color: 'white !important',
+                                                                    color: `${colors.primary} !important`,
                                                                 },
                                                             }}
                                                         >
                                                             Name
                                                         </TableSortLabel>
                                                     </TableCell>
-                                                    <TableCell sortDirection={orderBy === 'email' ? order : false} sx={{ color: 'white', fontWeight: 'bold' }}>
+                                                    <TableCell sortDirection={orderBy === 'email' ? order : false} sx={{ color: colors.primary, fontWeight: 'bold' }}>
                                                         <TableSortLabel
                                                             active={orderBy === 'email'}
                                                             direction={orderBy === 'email' ? order : 'asc'}
                                                             onClick={() => handleRequestSort('email')}
                                                             sx={{
-                                                                color: 'white !important',
+                                                                color: `${colors.primary} !important`,
                                                                 '& .MuiTableSortLabel-icon': {
-                                                                    color: 'white !important',
+                                                                    color: `${colors.primary} !important`,
                                                                 },
                                                             }}
                                                         >
                                                             Email
                                                         </TableSortLabel>
                                                     </TableCell>
-                                                    <TableCell sortDirection={orderBy === 'role' ? order : false} sx={{ color: 'white', fontWeight: 'bold' }}>
+                                                    <TableCell sortDirection={orderBy === 'role' ? order : false} sx={{ color: colors.primary, fontWeight: 'bold' }}>
                                                         <TableSortLabel
                                                             active={orderBy === 'role'}
                                                             direction={orderBy === 'role' ? order : 'asc'}
                                                             onClick={() => handleRequestSort('role')}
                                                             sx={{
-                                                                color: 'white !important',
+                                                                color: `${colors.primary} !important`,
                                                                 '& .MuiTableSortLabel-icon': {
-                                                                    color: 'white !important',
+                                                                    color: `${colors.primary} !important`,
                                                                 },
                                                             }}
                                                         >
                                                             Role
                                                         </TableSortLabel>
                                                     </TableCell>
-                                                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Address</TableCell>
-                                                    <TableCell sortDirection={orderBy === 'is_active' ? order : false} sx={{ color: 'white', fontWeight: 'bold' }}>
+                                                    <TableCell sx={{ color: colors.primary, fontWeight: 'bold' }}>Address</TableCell>
+                                                    <TableCell sortDirection={orderBy === 'is_active' ? order : false} sx={{ color: colors.primary, fontWeight: 'bold' }}>
                                                         <TableSortLabel
                                                             active={orderBy === 'is_active'}
                                                             direction={orderBy === 'is_active' ? order : 'asc'}
                                                             onClick={() => handleRequestSort('is_active')}
                                                             sx={{
-                                                                color: 'white !important',
+                                                                color: `${colors.primary} !important`,
                                                                 '& .MuiTableSortLabel-icon': {
-                                                                    color: 'white !important',
+                                                                    color: `${colors.primary} !important`,
                                                                 },
                                                             }}
                                                         >
                                                             Status
                                                         </TableSortLabel>
                                                     </TableCell>
-                                                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Survey Status</TableCell>
-                                                    <TableCell sx={{ color: 'white', fontWeight: 'bold', textAlign: 'right' }}>Actions</TableCell>
+                                                    <TableCell sx={{ color: colors.primary, fontWeight: 'bold' }}>Survey Status</TableCell>
+                                                    <TableCell sx={{ color: colors.primary, fontWeight: 'bold', textAlign: 'right' }}>Actions</TableCell>
                                                 </TableRow>
                                             </TableHead>
                                             <TableBody>
@@ -1629,91 +1638,84 @@ function OrganizationDetailPage() {
                                             </Typography>
                                         </Box>
                                     ) : (
-                                        <Grid container spacing={3}>
-                                            {filteredSurveys.map((survey) => (
-                                                <Grid item xs={12} sm={6} md={4} lg={3} key={survey.id}>
-                                                    <Card
-                                                        onClick={() => setSelectedSurvey(survey)}
-                                                        sx={{
-                                                            backgroundColor: '#fff',
-                                                            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-                                                            cursor: 'pointer',
-                                                            transition: 'all 0.2s ease-in-out',
-                                                            '&:hover': {
-                                                                boxShadow: '0 4px 12px rgba(99, 51, 148, 0.15)',
-                                                                transform: 'translateY(-2px)'
-                                                            },
-                                                            overflow: 'hidden',
-                                                            height: '100%'
-                                                        }}
-                                                    >
-                                                        <CardContent sx={{ p: 2 }}>
-                                                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5, gap: 1 }}>
-                                                                <Avatar
-                                                                    sx={{
-                                                                        bgcolor: 'rgba(99, 51, 148, 0.08)',
-                                                                        color: '#633394',
-                                                                        width: 32,
-                                                                        height: 32
-                                                                    }}
-                                                                >
-                                                                    <AssignmentIcon sx={{ fontSize: '1.2rem' }} />
-                                                                </Avatar>
+                                        <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 'none', border: `1px solid ${colors.borderColor}` }}>
+                                            <Table>
+                                                <TableHead sx={{ backgroundColor: '#b39ddb' }}>
+                                                    <TableRow>
+                                                        <TableCell sx={{ color: colors.primary, fontWeight: 'bold' }}>Survey</TableCell>
+                                                        <TableCell sx={{ color: colors.primary, fontWeight: 'bold' }}>Description</TableCell>
+                                                        <TableCell sx={{ color: colors.primary, fontWeight: 'bold' }}>Organization Group</TableCell>
+                                                        <TableCell sx={{ color: colors.primary, fontWeight: 'bold' }}>Created</TableCell>
+                                                    </TableRow>
+                                                </TableHead>
+                                                <TableBody>
+                                                    {filteredSurveys.map((survey) => (
+                                                        <TableRow
+                                                            key={survey.id}
+                                                            onClick={() => navigate('/inventory', {
+                                                                state: {
+                                                                    selectedTemplate: survey,
+                                                                    organizationId: id
+                                                                }
+                                                            })}
+                                                            sx={{
+                                                                cursor: 'pointer',
+                                                                transition: 'background-color 0.2s',
+                                                                '&:hover': { backgroundColor: colors.accentBg }
+                                                            }}
+                                                        >
+                                                            <TableCell>
+                                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                    <Avatar
+                                                                        sx={{
+                                                                            bgcolor: colors.accentBg,
+                                                                            color: colors.primary,
+                                                                            width: 32,
+                                                                            height: 32
+                                                                        }}
+                                                                    >
+                                                                        <AssignmentIcon sx={{ fontSize: '1.1rem' }} />
+                                                                    </Avatar>
+                                                                    <Typography variant="body1" fontWeight="600">
+                                                                        {survey.survey_code}
+                                                                    </Typography>
+                                                                </Box>
+                                                            </TableCell>
+                                                            <TableCell>
                                                                 <Typography
-                                                                    variant="subtitle1"
-                                                                    noWrap
-                                                                    title={survey.survey_code}
+                                                                    variant="body2"
+                                                                    color="text.secondary"
                                                                     sx={{
-                                                                        color: '#333',
-                                                                        fontWeight: 600,
-                                                                        fontSize: '0.95rem',
-                                                                        flex: 1
+                                                                        maxWidth: 300,
+                                                                        overflow: 'hidden',
+                                                                        textOverflow: 'ellipsis',
+                                                                        whiteSpace: 'nowrap'
                                                                     }}
                                                                 >
-                                                                    {survey.survey_code}
+                                                                    {survey.description || 'No description available'}
                                                                 </Typography>
-                                                            </Box>
-
-                                                            <Typography
-                                                                variant="body2"
-                                                                color="text.secondary"
-                                                                sx={{
-                                                                    mb: 2,
-                                                                    height: 40,
-                                                                    overflow: 'hidden',
-                                                                    textOverflow: 'ellipsis',
-                                                                    display: '-webkit-box',
-                                                                    WebkitLineClamp: 2,
-                                                                    WebkitBoxOrient: 'vertical'
-                                                                }}
-                                                            >
-                                                                {survey.description || 'No description available'}
-                                                            </Typography>
-
-                                                            <Divider sx={{ my: 1.5 }} />
-
-                                                            <Box display="flex" justifyContent="space-between" alignItems="center">
+                                                            </TableCell>
+                                                            <TableCell>
                                                                 <Chip
-                                                                    label={survey.version_name || (survey.questions ? `${survey.questions.length} Questions` : 'Template')}
+                                                                    label={survey.version_name || 'Template'}
                                                                     size="small"
                                                                     sx={{
-                                                                        height: '24px',
-                                                                        fontSize: '0.75rem',
-                                                                        borderRadius: '6px',
-                                                                        backgroundColor: '#f3e5f5',
-                                                                        color: '#633394',
+                                                                        backgroundColor: colors.accentBg,
+                                                                        color: colors.primary,
                                                                         fontWeight: 500
                                                                     }}
                                                                 />
-                                                                <Typography variant="caption" sx={{ color: '#888', fontSize: '0.75rem' }}>
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <Typography variant="body2" color="text.secondary">
                                                                     {new Date(survey.created_at).toLocaleDateString()}
                                                                 </Typography>
-                                                            </Box>
-                                                        </CardContent>
-                                                    </Card>
-                                                </Grid>
-                                            ))}
-                                        </Grid>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        </TableContainer>
                                     )}
                                 </Box>
                             )}

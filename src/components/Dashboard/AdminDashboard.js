@@ -33,7 +33,7 @@ const adminColors = {
     secondary: '#967CB2',       // Secondary color (lighter purple) from AdminLandingPage hover
     background: '#FFFFFF',      // Background color from AdminLandingPage cards
     text: '#212121',            // Text color
-    headerBg: '#ede7f6',        // Light purple for table header
+    headerBg: '#b39ddb',        // Mauve/lavender for table header
     filledColor: '#633394',     // Primary purple for filled status
     notFilledColor: '#967CB2',  // Secondary purple for not filled status
     borderColor: '#e0e0e0',     // Border color
