@@ -344,11 +344,12 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
                                                         indeterminate={selectedUsers.length > 0 && selectedUsers.length < filteredUsers.length}
                                                         checked={filteredUsers.length > 0 && selectedUsers.length === filteredUsers.length}
                                                         onChange={handleSelectAll}
+                                                        sx={{ color: '#212121' }}
                                                     />
                                                 </TableCell>
-                                                <TableCell><strong>Name</strong></TableCell>
-                                                <TableCell><strong>Email</strong></TableCell>
-                                                <TableCell><strong>Role</strong></TableCell>
+                                                <TableCell sx={{ color: '#212121' }}><strong>Name</strong></TableCell>
+                                                <TableCell sx={{ color: '#212121' }}><strong>Email</strong></TableCell>
+                                                <TableCell sx={{ color: '#212121' }}><strong>Role</strong></TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>

@@ -28,6 +28,8 @@ import MenuIcon from '@mui/icons-material/Menu';
 import BusinessIcon from '@mui/icons-material/Business';
 import SecurityIcon from '@mui/icons-material/Security';
 import GroupWorkIcon from '@mui/icons-material/GroupWork';
+import ContactMailIcon from '@mui/icons-material/ContactMail';
+import EmailIcon from '@mui/icons-material/Email';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -55,12 +57,14 @@ const Navbar = () => {
   useEffect(() => {
     if (user?.role === 'admin' || user?.role === 'root' || user?.role === 'manager') {
       const p = location.pathname.toLowerCase();
-      // Simplified 6-item menu matching
+      // Simplified menu matching
       if (p.includes('/dashboard') || p.includes('/manager-dashboard')) setTabValue(1);           // 1. Dashboard
       else if (p.includes('/inventory')) setTabValue(2);      // 2. Surveys
       else if (p.includes('/organization')) setTabValue(3);   // 3. Organizations
       else if (p.includes('/associations')) setTabValue(7);   // 7. Associations
       else if (p.includes('/users')) setTabValue(4);          // 4. Users
+      else if (p.includes('/contact-referrals')) setTabValue(8); // 8. Contact Referrals
+      else if (p.includes('/email-templates')) setTabValue(9);   // 9. Email Templates
       else if (p.includes('/reports') || p.includes('/user-reports')) setTabValue(5); // 5. Reports
       else if (p.includes('/settings')) setTabValue(6);       // 6. Settings
       else setTabValue(1); // Default to Dashboard
@@ -238,6 +242,62 @@ const Navbar = () => {
           >
             <ListItemIcon><PeopleIcon /></ListItemIcon>
             <ListItemText primary="Users" />
+          </ListItem>
+
+          {/* 8. Contact Referrals */}
+          <ListItem
+            button
+            onClick={() => handleNavigation('/contact-referrals')}
+            selected={tabValue === 8}
+            sx={{
+              '&.Mui-selected': {
+                backgroundColor: '#633394',
+                color: 'white',
+                '& .MuiListItemIcon-root': {
+                  color: 'white',
+                },
+                '&:hover': {
+                  backgroundColor: '#533082',
+                },
+              },
+              '&:hover': {
+                backgroundColor: '#f5f5f5',
+              },
+              borderRadius: '8px',
+              mx: 1,
+              mb: 0.5,
+            }}
+          >
+            <ListItemIcon><ContactMailIcon /></ListItemIcon>
+            <ListItemText primary="Contact Referrals" />
+          </ListItem>
+
+          {/* 9. Email Templates */}
+          <ListItem
+            button
+            onClick={() => handleNavigation('/email-templates')}
+            selected={tabValue === 9}
+            sx={{
+              '&.Mui-selected': {
+                backgroundColor: '#633394',
+                color: 'white',
+                '& .MuiListItemIcon-root': {
+                  color: 'white',
+                },
+                '&:hover': {
+                  backgroundColor: '#533082',
+                },
+              },
+              '&:hover': {
+                backgroundColor: '#f5f5f5',
+              },
+              borderRadius: '8px',
+              mx: 1,
+              mb: 0.5,
+            }}
+          >
+            <ListItemIcon><EmailIcon /></ListItemIcon>
+            <ListItemText primary="Email Templates" />
           </ListItem>
 
           {/* 5. Reports */}

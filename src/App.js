@@ -26,8 +26,10 @@ import OrganizationManagementPage from './components/Admin/OrganizationManagemen
 import AssociationsPage from './components/Admin/OrganizationManagement/AssociationsPage';
 import OrganizationDetailPage from './components/Admin/OrganizationManagement/OrganizationDetailPage';
 import AddUserPage from './components/UserManagement/Users/AddUserPage';
+import ContactReferralsPage from './components/UserManagement/Users/ContactReferralsPage';
 import AddOrganizationPage from './components/UserManagement/Organizations/AddOrganizationPage';
 import AddAssociationPage from './components/Admin/OrganizationManagement/AddAssociationPage';
+import EmailTemplatesPage from './components/Admin/Inventory/EmailTemplatesPage';
 
 import './App.css';
 import './styles/form.css';
@@ -183,6 +185,21 @@ function Main({ isAuthenticated, userRole, login, logout }) {
             <AddUserPage />
           </ProtectedRoute>
         } />
+
+        {/* Contact Referrals Page Route */}
+        <Route path="/contact-referrals" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <ContactReferralsPage />
+          </ProtectedRoute>
+        } />
+
+        {/* Email Templates Page Route */}
+        <Route path="/email-templates" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <EmailTemplatesPage />
+          </ProtectedRoute>
+        } />
+
 
         {/* Surveys Route */}
         <Route path="/surveys" element={

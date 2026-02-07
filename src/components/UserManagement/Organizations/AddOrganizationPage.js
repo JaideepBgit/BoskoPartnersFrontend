@@ -539,35 +539,38 @@ function AddOrganizationPage() {
         <>
             <Navbar />
             <Container maxWidth="lg" sx={{ py: 4 }}>
-                {/* Header with Back Button */}
+                {/* Header with Back Button and Save Button */}
                 <Box sx={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     mb: 4
                 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Button
-                            variant="outlined"
-                            startIcon={<ArrowBackIcon />}
-                            onClick={() => navigate('/organizations')}
-                            sx={{
-                                borderColor: '#633394',
-                                color: '#633394',
-                                textTransform: 'none',
-                                borderRadius: 2,
-                                '&:hover': {
-                                    borderColor: '#967CB2',
-                                    backgroundColor: '#f3e5f5'
-                                }
-                            }}
-                        >
-                            Organizations
-                        </Button>
-                        <Typography variant="h4" sx={{ color: '#633394', fontWeight: 'bold' }}>
-                            Add New Organization
-                        </Typography>
-                    </Box>
+                    {/* Left: Back Button */}
+                    <Button
+                        variant="outlined"
+                        startIcon={<ArrowBackIcon />}
+                        onClick={() => navigate('/organizations')}
+                        sx={{
+                            borderColor: '#633394',
+                            color: '#633394',
+                            textTransform: 'none',
+                            borderRadius: 2,
+                            '&:hover': {
+                                borderColor: '#967CB2',
+                                backgroundColor: '#f3e5f5'
+                            }
+                        }}
+                    >
+                        Organizations
+                    </Button>
+
+                    {/* Center: Title */}
+                    <Typography variant="h4" sx={{ color: '#633394', fontWeight: 'bold' }}>
+                        Add New Organization
+                    </Typography>
+
+                    {/* Right: Save Button */}
                     <Button
                         variant="contained"
                         startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
@@ -575,7 +578,8 @@ function AddOrganizationPage() {
                         disabled={saving}
                         sx={{
                             backgroundColor: '#633394',
-                            '&:hover': { backgroundColor: '#7c52a5' }
+                            '&:hover': { backgroundColor: '#7c52a5' },
+                            minWidth: '180px'
                         }}
                     >
                         {saving ? 'Saving...' : 'Save Organization'}

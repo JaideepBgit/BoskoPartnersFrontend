@@ -1,97 +1,59 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Typography, Box, Tabs, Tab, Paper, Button } from '@mui/material';
+import React, { useState } from 'react';
+import { Container, Typography, Box, Paper, Button } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import { useNavigate } from 'react-router-dom';
 import UsersManagement from './Users/UsersManagement';
-import OrganizationsManagement from './Organizations/OrganizationsManagement';
-import ContactReferrals from './Users/ContactReferrals';
-import EmailTemplatesTab from '../Admin/Inventory/EmailTemplatesTab';
 import Navbar from '../shared/Navbar/Navbar';
-import InventoryService from '../../services/Admin/Inventory/InventoryService';
-import { fetchOrganizations } from '../../services/UserManagement/UserManagementService';
 
 function UserManagementMain() {
-    const [activeTab, setActiveTab] = useState(0);
-    const [allEmailTemplates, setAllEmailTemplates] = useState([]);
-    const [organizations, setOrganizations] = useState([]);
+    const navigate = useNavigate();
+    const [openUploadDialog, setOpenUploadDialog] = useState(false);
 
-    const handleTabChange = (event, newValue) => {
-        setActiveTab(newValue);
+    const handleOpenAddDialog = () => {
+        navigate('/users/add');
     };
 
-    const fetchAllEmailTemplates = async (filterOrgId = null) => {
-        try {
-            let data;
-            if (filterOrgId) {
-                data = await InventoryService.getEmailTemplates(null, filterOrgId);
-            } else {
-                data = await InventoryService.getAllEmailTemplates();
-            }
-            setAllEmailTemplates(Array.isArray(data) ? data : []);
-        } catch (err) {
-            console.error('Error fetching email templates:', err);
-            setAllEmailTemplates([]);
-        }
+    const handleOpenUploadDialog = () => {
+        setOpenUploadDialog(true);
     };
-
-    const loadOrganizations = async () => {
-        try {
-            const data = await fetchOrganizations();
-            setOrganizations(data);
-        } catch (error) {
-            console.error('Failed to fetch organizations:', error);
-        }
-    };
-
-    useEffect(() => {
-        if (activeTab === 2) {
-            fetchAllEmailTemplates();
-            loadOrganizations();
-        }
-    }, [activeTab]);
 
     return (
         <>
             <Navbar />
             <Container maxWidth="xl">
                 <Box sx={{ my: 4 }}>
-                    <Typography variant="h4" component="h1" gutterBottom sx={{ color: '#633394', fontWeight: 'bold' }}>
-                        Users Management
-                    </Typography>
+                    {/* Header with Users Management and Buttons */}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                        <Typography variant="h4" component="h1" sx={{ color: '#633394', fontWeight: 'bold' }}>
+                            Users Management
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 2 }}>
+                            <Button
+                                variant="contained"
+                                startIcon={<UploadFileIcon />}
+                                onClick={handleOpenUploadDialog}
+                                sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
+                            >
+                                Upload Users
+                            </Button>
+                            <Button
+                                variant="contained"
+                                startIcon={<AddIcon />}
+                                onClick={handleOpenAddDialog}
+                                sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
+                            >
+                                Add User
+                            </Button>
+                        </Box>
+                    </Box>
 
                     <Paper sx={{ width: '100%', mb: 2, boxShadow: 3, overflow: 'hidden' }}>
-                        <Tabs
-                            value={activeTab}
-                            onChange={handleTabChange}
-                            sx={{
-                                mb: 3,
-                                '& .MuiTab-root': {
-                                    color: '#633394',
-                                    fontWeight: 500,
-                                    '&.Mui-selected': { fontWeight: 700 },
-                                },
-                                '& .MuiTabs-indicator': {
-                                    backgroundColor: '#633394',
-                                },
-                            }}
-                            variant="fullWidth"
-                        >
-                            <Tab label="Users" />
-                            {/* <Tab label="Organizations" /> */}
-                            <Tab label="Contact Referrals" />
-                            <Tab label="Email Templates" />
-                        </Tabs>
-
                         <Box sx={{ p: 3 }}>
-                            {activeTab === 0 && <UsersManagement />}
-                            {/* {activeTab === 1 && <OrganizationsManagement />} */}
-                            {activeTab === 1 && <ContactReferrals />}
-                            {activeTab === 2 && (
-                                <EmailTemplatesTab
-                                    emailTemplates={allEmailTemplates}
-                                    onRefreshData={(filterOrgId = null) => fetchAllEmailTemplates(filterOrgId)}
-                                    organizationId={null}
-                                    organizations={organizations}
-                                />
-                            )}
+                            <UsersManagement
+                                openUploadDialog={openUploadDialog}
+                                setOpenUploadDialog={setOpenUploadDialog}
+                            />
                         </Box>
                     </Paper>
                 </Box>
@@ -101,3 +63,4 @@ function UserManagementMain() {
 }
 
 export default UserManagementMain;
+

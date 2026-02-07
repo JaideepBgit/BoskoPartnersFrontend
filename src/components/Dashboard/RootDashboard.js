@@ -80,17 +80,17 @@ function RootDashboard() {
     const [openEditDialog, setOpenEditDialog] = useState(false);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [openCredentialsDialog, setOpenCredentialsDialog] = useState(false);
-    
+
     // Spider Chart Popup states
     const [spiderChartOpen, setSpiderChartOpen] = useState(false);
     const [selectedUserForChart, setSelectedUserForChart] = useState(null);
-    
+
     // Handler for opening spider chart popup
     const handleOpenSpiderChart = (user) => {
         setSelectedUserForChart(user);
         setSpiderChartOpen(true);
     };
-    
+
     const handleCloseSpiderChart = () => {
         setSpiderChartOpen(false);
         setSelectedUserForChart(null);
@@ -739,13 +739,13 @@ function RootDashboard() {
                             <Table>
                                 <TableHead>
                                     <TableRow sx={{ backgroundColor: rootColors.headerBg }}>
-                                        <TableCell sx={{ fontWeight: 700 }}>Username</TableCell>
-                                        <TableCell sx={{ fontWeight: 700 }}>Name</TableCell>
-                                        <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
-                                        <TableCell sx={{ fontWeight: 700 }}>Role</TableCell>
-                                        <TableCell sx={{ fontWeight: 700 }}>Organization</TableCell>
-                                        <TableCell sx={{ fontWeight: 700 }}>Created</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, textAlign: 'center' }}>Actions</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: '#212121' }}>Username</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: '#212121' }}>Name</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: '#212121' }}>Email</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: '#212121' }}>Role</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: '#212121' }}>Organization</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: '#212121' }}>Created</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, textAlign: 'center', color: '#212121' }}>Actions</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -778,9 +778,9 @@ function RootDashboard() {
                                                         <IconButton
                                                             size="small"
                                                             onClick={() => handleOpenSpiderChart(user)}
-                                                            sx={{ 
+                                                            sx={{
                                                                 color: '#633394',
-                                                                '&:hover': { 
+                                                                '&:hover': {
                                                                     backgroundColor: 'rgba(99, 51, 148, 0.1)',
                                                                     transform: 'scale(1.1)'
                                                                 },
@@ -1149,11 +1149,11 @@ function RootDashboard() {
                                 <Table size="small">
                                     <TableHead>
                                         <TableRow sx={{ backgroundColor: rootColors.headerBg }}>
-                                            <TableCell sx={{ fontWeight: 600 }}>Username</TableCell>
-                                            <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
-                                            <TableCell sx={{ fontWeight: 600 }}>Password</TableCell>
-                                            <TableCell sx={{ fontWeight: 600 }}>Role</TableCell>
-                                            <TableCell sx={{ fontWeight: 600 }}>Created</TableCell>
+                                            <TableCell sx={{ fontWeight: 600, color: '#212121' }}>Username</TableCell>
+                                            <TableCell sx={{ fontWeight: 600, color: '#212121' }}>Email</TableCell>
+                                            <TableCell sx={{ fontWeight: 600, color: '#212121' }}>Password</TableCell>
+                                            <TableCell sx={{ fontWeight: 600, color: '#212121' }}>Role</TableCell>
+                                            <TableCell sx={{ fontWeight: 600, color: '#212121' }}>Created</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
@@ -1205,7 +1205,7 @@ function RootDashboard() {
                         {snackbar.message}
                     </Alert>
                 </Snackbar>
-                
+
                 {/* Spider Chart Popup */}
                 <SpiderChartPopup
                     open={spiderChartOpen}

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Container, Typography, Box, Paper, TextField, Button,
-    FormControl, InputLabel, Select, MenuItem, Grid, Alert
+    FormControl, InputLabel, Select, MenuItem, Grid, Alert, CircularProgress
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
@@ -132,8 +132,14 @@ function AddAssociationPage() {
         <>
             <Navbar />
             <Container maxWidth="lg" sx={{ py: 4, backgroundColor: colors.background, minHeight: '100vh' }}>
-                {/* Header */}
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2 }}>
+                {/* Header with Back Button, Title, and Action Buttons */}
+                <Box sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    mb: 4
+                }}>
+                    {/* Left: Back Button */}
                     <Button
                         variant="outlined"
                         startIcon={<ArrowBackIcon />}
@@ -151,11 +157,50 @@ function AddAssociationPage() {
                     >
                         Associations
                     </Button>
-                </Box>
 
-                <Typography variant="h4" fontWeight="bold" sx={{ mb: 3, color: colors.textPrimary }}>
-                    Add New Association
-                </Typography>
+                    {/* Center: Title */}
+                    <Typography variant="h4" sx={{ color: colors.textPrimary, fontWeight: 'bold' }}>
+                        Add New Association
+                    </Typography>
+
+                    {/* Right: Action Buttons */}
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                        <Button
+                            variant="outlined"
+                            onClick={handleBack}
+                            disabled={loading}
+                            sx={{
+                                borderColor: colors.primary,
+                                color: colors.primary,
+                                textTransform: 'none',
+                                px: 3,
+                                borderRadius: 2,
+                                '&:hover': {
+                                    borderColor: colors.secondary,
+                                    backgroundColor: colors.accentBg
+                                }
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleSubmit}
+                            variant="contained"
+                            disabled={loading}
+                            startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+                            sx={{
+                                backgroundColor: colors.primary,
+                                textTransform: 'none',
+                                px: 3,
+                                borderRadius: 2,
+                                minWidth: '180px',
+                                '&:hover': { backgroundColor: colors.secondary }
+                            }}
+                        >
+                            {loading ? 'Saving...' : 'Save Association'}
+                        </Button>
+                    </Box>
+                </Box>
 
                 {error && (
                     <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
@@ -169,7 +214,7 @@ function AddAssociationPage() {
                     </Alert>
                 )}
 
-                <form onSubmit={handleSubmit}>
+                <Box component="form" onSubmit={handleSubmit}>
                     {/* Basic Information */}
                     <Paper sx={{ p: 3, mb: 3, borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
                         <Typography variant="h6" fontWeight="bold" sx={{ mb: 3, color: colors.textPrimary }}>
@@ -249,41 +294,7 @@ function AddAssociationPage() {
                         />
                     </Paper>
 
-                    {/* Action Buttons */}
-                    <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                        <Button
-                            variant="outlined"
-                            onClick={handleBack}
-                            disabled={loading}
-                            sx={{
-                                borderColor: colors.primary,
-                                color: colors.primary,
-                                textTransform: 'none',
-                                px: 4,
-                                '&:hover': {
-                                    borderColor: colors.secondary,
-                                    backgroundColor: colors.accentBg
-                                }
-                            }}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="submit"
-                            variant="contained"
-                            disabled={loading}
-                            startIcon={<SaveIcon />}
-                            sx={{
-                                backgroundColor: colors.primary,
-                                textTransform: 'none',
-                                px: 4,
-                                '&:hover': { backgroundColor: colors.secondary }
-                            }}
-                        >
-                            {loading ? 'Saving...' : 'Save Association'}
-                        </Button>
-                    </Box>
-                </form>
+                </Box>
             </Container>
         </>
     );

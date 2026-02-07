@@ -478,40 +478,72 @@ function AddUserPage() {
         <>
             <Navbar />
             <Container maxWidth="lg" sx={{ py: 4 }}>
-                {/* Header with Back Button */}
+                {/* Header with Back Button and Action Buttons */}
                 <Box sx={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     mb: 4
                 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    {/* Left: Back Button */}
+                    <Button
+                        variant="outlined"
+                        startIcon={<ArrowBackIcon />}
+                        onClick={() => {
+                            if (returnUrl) {
+                                navigate(returnUrl);
+                            } else {
+                                navigate('/users');
+                            }
+                        }}
+                        sx={{
+                            borderColor: '#633394',
+                            color: '#633394',
+                            textTransform: 'none',
+                            borderRadius: 2,
+                            '&:hover': {
+                                borderColor: '#967CB2',
+                                backgroundColor: '#f3e5f5'
+                            }
+                        }}
+                    >
+                        {returnUrl ? 'Organization' : 'Users'}
+                    </Button>
+
+                    {/* Center: Title */}
+                    <Typography variant="h4" sx={{ color: '#633394', fontWeight: 'bold' }}>
+                        Add New User
+                    </Typography>
+
+                    {/* Right: Action Buttons */}
+                    <Box sx={{ display: 'flex', gap: 2 }}>
                         <Button
                             variant="outlined"
-                            startIcon={<ArrowBackIcon />}
-                            onClick={() => {
-                                if (returnUrl) {
-                                    navigate(returnUrl);
-                                } else {
-                                    navigate('/users');
-                                }
-                            }}
+                            onClick={() => navigate('/users')}
                             sx={{
-                                borderColor: '#633394',
                                 color: '#633394',
-                                textTransform: 'none',
-                                borderRadius: 2,
+                                borderColor: '#633394',
                                 '&:hover': {
-                                    borderColor: '#967CB2',
-                                    backgroundColor: '#f3e5f5'
+                                    borderColor: '#7c52a5',
+                                    backgroundColor: 'rgba(99, 51, 148, 0.04)'
                                 }
                             }}
                         >
-                            {returnUrl ? 'Organization' : 'Users'}
+                            Cancel
                         </Button>
-                        <Typography variant="h4" sx={{ color: '#633394', fontWeight: 'bold' }}>
-                            Add New User
-                        </Typography>
+                        <Button
+                            variant="contained"
+                            onClick={handleAddUser}
+                            disabled={saving || !formData.username || !formData.email}
+                            startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+                            sx={{
+                                backgroundColor: '#633394',
+                                '&:hover': { backgroundColor: '#7c52a5' },
+                                minWidth: '150px'
+                            }}
+                        >
+                            {saving ? 'Creating User...' : 'Save User'}
+                        </Button>
                     </Box>
                 </Box>
 
@@ -851,126 +883,6 @@ function AddUserPage() {
                     </Box>
                 </Paper>
 
-                {/* Email Preview Section */}
-                <Paper sx={{ p: 3, mb: 3, boxShadow: 3 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                        <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold' }}>
-                            Welcome Email Preview
-                        </Typography>
-                        <Button
-                            variant="contained"
-                            onClick={async () => {
-                                if (!showEmailPreview) {
-                                    await generateWelcomeEmailPreview();
-                                }
-                                setShowEmailPreview(!showEmailPreview);
-                            }}
-                            disabled={emailPreviewLoading}
-                            sx={{
-                                backgroundColor: '#967CB2',
-                                '&:hover': { backgroundColor: '#8a6fa6' },
-                                minWidth: '200px'
-                            }}
-                        >
-                            {emailPreviewLoading ? <CircularProgress size={24} color="inherit" /> :
-                                showEmailPreview ? 'Hide Email Preview' : 'Preview Email Content'}
-                        </Button>
-                    </Box>
-
-                    {showEmailPreview && (
-                        <Box sx={{ mt: 2 }}>
-                            <Paper sx={{ p: 2, mb: 2, backgroundColor: '#fafafa', border: '1px solid #ddd' }}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#633394', mb: 1 }}>
-                                    Email Details
-                                </Typography>
-                                <Typography variant="body2" sx={{ mb: 1 }}>
-                                    <strong>To:</strong> {emailPreviewData.to}
-                                </Typography>
-                                <Typography variant="body2">
-                                    <strong>Subject:</strong> {emailPreviewData.subject}
-                                </Typography>
-                            </Paper>
-
-                            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                                <Button
-                                    variant={emailPreviewType === 'text' ? 'contained' : 'outlined'}
-                                    onClick={() => setEmailPreviewType('text')}
-                                    sx={{
-                                        backgroundColor: emailPreviewType === 'text' ? '#633394' : 'transparent',
-                                        color: emailPreviewType === 'text' ? 'white' : '#633394',
-                                        borderColor: '#633394',
-                                        '&:hover': {
-                                            backgroundColor: emailPreviewType === 'text' ? '#7c52a5' : '#f5f5f5'
-                                        }
-                                    }}
-                                >
-                                    Text Version
-                                </Button>
-                                <Button
-                                    variant={emailPreviewType === 'html' ? 'contained' : 'outlined'}
-                                    onClick={() => setEmailPreviewType('html')}
-                                    sx={{
-                                        backgroundColor: emailPreviewType === 'html' ? '#633394' : 'transparent',
-                                        color: emailPreviewType === 'html' ? 'white' : '#633394',
-                                        borderColor: '#633394',
-                                        '&:hover': {
-                                            backgroundColor: emailPreviewType === 'html' ? '#7c52a5' : '#f5f5f5'
-                                        }
-                                    }}
-                                >
-                                    HTML Version
-                                </Button>
-                            </Box>
-
-                            {emailPreviewType === 'text' ? (
-                                <Paper sx={{ p: 2, backgroundColor: 'white', border: '1px solid #ddd', maxHeight: '400px', overflow: 'auto' }}>
-                                    <Typography variant="body2" sx={{ whiteSpace: 'pre-line', fontFamily: 'monospace', fontSize: '0.85rem' }}>
-                                        {emailPreviewData.textVersion}
-                                    </Typography>
-                                </Paper>
-                            ) : (
-                                <Paper sx={{ p: 1, backgroundColor: 'white', border: '1px solid #ddd', maxHeight: '400px', overflow: 'auto' }}>
-                                    <iframe
-                                        title="Email HTML Preview"
-                                        srcDoc={emailPreviewData.htmlVersion}
-                                        style={{ width: '100%', height: '380px', border: 'none', backgroundColor: 'white' }}
-                                    />
-                                </Paper>
-                            )}
-                        </Box>
-                    )}
-                </Paper>
-
-                {/* Action Buttons */}
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3 }}>
-                    <Button
-                        variant="outlined"
-                        onClick={() => navigate('/users')}
-                        sx={{
-                            color: '#633394',
-                            borderColor: '#633394',
-                            '&:hover': {
-                                borderColor: '#7c52a5',
-                                backgroundColor: 'rgba(99, 51, 148, 0.04)'
-                            }
-                        }}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        onClick={handleAddUser}
-                        disabled={saving || !formData.username || !formData.email}
-                        startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-                        sx={{
-                            backgroundColor: '#633394',
-                            '&:hover': { backgroundColor: '#7c52a5' },
-                            minWidth: '150px'
-                        }}
-                    >
-                        {saving ? 'Creating User...' : 'Add User'}
-                    </Button>
-                </Box>
 
                 {/* Email Preview Dialog */}
                 <EmailPreviewDialog

@@ -4,24 +4,20 @@ import {
     Select, MenuItem, FormControl, InputLabel, IconButton, Button,
     CircularProgress,
     Chip, Table, TableBody, TableCell, TableContainer, TableHead,
-    TableRow, TablePagination, Avatar, Tooltip, TableSortLabel
+    TableRow, TablePagination, Avatar, TableSortLabel, Tooltip
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import AddIcon from '@mui/icons-material/Add';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import PeopleIcon from '@mui/icons-material/People';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import FilterListIcon from '@mui/icons-material/FilterList';
-import RadarIcon from '@mui/icons-material/Radar';
 import BusinessIcon from '@mui/icons-material/Business';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../shared/Navbar/Navbar';
-import SpiderChartPopup from '../../UserManagement/common/SpiderChartPopup';
 import {
     fetchOrganizations,
     fetchOrganizationTypes,
-    fetchUsersByOrganization,
 } from '../../../services/UserManagement/UserManagementService';
 
 // Color theme
@@ -45,7 +41,6 @@ function AssociationsPage() {
     const [loading, setLoading] = useState(true);
     const [organizations, setOrganizations] = useState([]);
     const [organizationTypes, setOrganizationTypes] = useState([]);
-    const [usersByOrg, setUsersByOrg] = useState({});
 
     // UI State
     const [searchQuery, setSearchQuery] = useState('');
@@ -59,21 +54,7 @@ function AssociationsPage() {
     const [order, setOrder] = useState('asc');
     const [orderBy, setOrderBy] = useState('name');
 
-    // Spider Chart Popup states
-    const [spiderChartOpen, setSpiderChartOpen] = useState(false);
-    const [selectedOrgForChart, setSelectedOrgForChart] = useState(null);
 
-    // Handler for opening spider chart popup
-    const handleOpenSpiderChart = (e, org) => {
-        e.stopPropagation(); // Prevent row click navigation
-        setSelectedOrgForChart(org);
-        setSpiderChartOpen(true);
-    };
-
-    const handleCloseSpiderChart = () => {
-        setSpiderChartOpen(false);
-        setSelectedOrgForChart(null);
-    };
 
     // Sorting functions
     const handleRequestSort = (property) => {
@@ -132,18 +113,6 @@ function AssociationsPage() {
             } catch (e) {
                 console.error('Failed to fetch organization types:', e);
             }
-
-            // Fetch users for each organization
-            const usersMap = {};
-            for (const org of (orgsData || [])) {
-                try {
-                    const users = await fetchUsersByOrganization(org.id);
-                    usersMap[org.id] = users || [];
-                } catch (e) {
-                    usersMap[org.id] = [];
-                }
-            }
-            setUsersByOrg(usersMap);
         } catch (error) {
             console.error('Failed to load data:', error);
         } finally {
@@ -220,16 +189,16 @@ function AssociationsPage() {
                             <TableRow sx={{ background: colors.headerGradient }}>
                                 <TableCell
                                     sortDirection={orderBy === 'organisation' ? order : false}
-                                    sx={{ color: colors.primary, fontWeight: 'bold' }}
+                                    sx={{ color: '#212121', fontWeight: 'bold' }}
                                 >
                                     <TableSortLabel
                                         active={orderBy === 'organisation'}
                                         direction={orderBy === 'organisation' ? order : 'asc'}
                                         onClick={() => handleRequestSort('organisation')}
                                         sx={{
-                                            color: `${colors.primary} !important`,
+                                            color: '#212121 !important',
                                             '& .MuiTableSortLabel-icon': {
-                                                color: `${colors.primary} !important`,
+                                                color: '#212121 !important',
                                             },
                                         }}
                                     >
@@ -238,30 +207,29 @@ function AssociationsPage() {
                                 </TableCell>
                                 <TableCell
                                     sortDirection={orderBy === 'location' ? order : false}
-                                    sx={{ color: colors.primary, fontWeight: 'bold' }}
+                                    sx={{ color: '#212121', fontWeight: 'bold' }}
                                 >
                                     <TableSortLabel
                                         active={orderBy === 'location'}
                                         direction={orderBy === 'location' ? order : 'asc'}
                                         onClick={() => handleRequestSort('location')}
                                         sx={{
-                                            color: `${colors.primary} !important`,
+                                            color: '#212121 !important',
                                             '& .MuiTableSortLabel-icon': {
-                                                color: `${colors.primary} !important`,
+                                                color: '#212121 !important',
                                             },
                                         }}
                                     >
                                         Location
                                     </TableSortLabel>
                                 </TableCell>
-                                <TableCell sx={{ color: colors.primary, fontWeight: 'bold', textAlign: 'center' }}>Users</TableCell>
-                                <TableCell sx={{ color: colors.primary, fontWeight: 'bold', width: 50 }}></TableCell>
+                                <TableCell sx={{ color: '#212121', fontWeight: 'bold', width: 50 }}></TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {orgs.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} sx={{ textAlign: 'center', py: 4 }}>
+                                    <TableCell colSpan={3} sx={{ textAlign: 'center', py: 4 }}>
                                         <Typography color="text.secondary">
                                             No associations found
                                         </Typography>
@@ -272,7 +240,6 @@ function AssociationsPage() {
                                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                                     .map((org) => {
                                         const typeColors = getTypeChipColor(org.organization_type?.type);
-                                        const userCount = usersByOrg[org.id]?.length || 0;
 
                                         return (
                                             <TableRow
@@ -311,37 +278,8 @@ function AssociationsPage() {
                                                         </Typography>
                                                     </Box>
                                                 </TableCell>
-                                                <TableCell sx={{ textAlign: 'center' }}>
-                                                    <Box sx={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        gap: 0.5
-                                                    }}>
-                                                        <PeopleIcon sx={{ color: colors.primary, fontSize: 18 }} />
-                                                        <Typography variant="body1" fontWeight="600" sx={{ color: colors.primary }}>
-                                                            {userCount}
-                                                        </Typography>
-                                                    </Box>
-                                                </TableCell>
                                                 <TableCell>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                        <Tooltip title="View Analytics">
-                                                            <IconButton
-                                                                size="small"
-                                                                onClick={(e) => handleOpenSpiderChart(e, org)}
-                                                                sx={{
-                                                                    color: '#633394',
-                                                                    '&:hover': {
-                                                                        backgroundColor: 'rgba(99, 51, 148, 0.1)',
-                                                                        transform: 'scale(1.1)'
-                                                                    },
-                                                                    transition: 'all 0.2s ease'
-                                                                }}
-                                                            >
-                                                                <RadarIcon fontSize="small" />
-                                                            </IconButton>
-                                                        </Tooltip>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
                                                         <ChevronRightIcon sx={{ color: colors.textSecondary }} />
                                                     </Box>
                                                 </TableCell>
@@ -494,15 +432,6 @@ function AssociationsPage() {
                     </Box>
                 )}
 
-                {/* Spider Chart Popup */}
-                <SpiderChartPopup
-                    open={spiderChartOpen}
-                    onClose={handleCloseSpiderChart}
-                    entityType="organization"
-                    entityData={selectedOrgForChart}
-                    entityId={selectedOrgForChart?.id}
-                    entityName={selectedOrgForChart?.name}
-                />
             </Container>
         </>
     );

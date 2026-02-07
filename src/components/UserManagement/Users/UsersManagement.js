@@ -29,7 +29,7 @@ import EnhancedAddressInput from '../common/EnhancedAddressInput';
 import EmailPreviewDialog from '../common/EmailPreviewDialog';
 import SurveyAssignmentCard from './SurveyAssignmentCard';
 
-function UsersManagement() {
+function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUploadDialog: setOpenUploadDialogProp }) {
     const theme = useTheme();
     const navigate = useNavigate();
 
@@ -48,7 +48,6 @@ function UsersManagement() {
     const [openAddDialog, setOpenAddDialog] = useState(false);
     const [openEditDialog, setOpenEditDialog] = useState(false);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-    const [openUploadDialog, setOpenUploadDialog] = useState(false);
     const [openEmailDialog, setOpenEmailDialog] = useState(false);
     const [openEmailPreviewDialog, setOpenEmailPreviewDialog] = useState(false);
 
@@ -445,7 +444,7 @@ function UsersManagement() {
 
             // Close the dialog after a delay
             setTimeout(() => {
-                setOpenUploadDialog(false);
+                setOpenUploadDialogProp(false);
                 setSelectedFile(null);
                 setUploadStatus('');
             }, 2000);
@@ -535,7 +534,7 @@ function UsersManagement() {
     const handleOpenUploadDialog = () => {
         setSelectedFile(null);
         setUploadStatus('');
-        setOpenUploadDialog(true);
+        setOpenUploadDialogProp(true);
     };
 
     // Close all dialogs
@@ -543,7 +542,7 @@ function UsersManagement() {
         setOpenAddDialog(false);
         setOpenEditDialog(false);
         setOpenDeleteDialog(false);
-        setOpenUploadDialog(false);
+        setOpenUploadDialogProp(false);
         setOpenEmailDialog(false);
         setSelectedUser(null);
         // Reset new organizational role fields
@@ -1000,44 +999,44 @@ function UsersManagement() {
                     <TableHead sx={{ backgroundColor: '#b39ddb' }}>
                         <TableRow>
                             <TableCell
-                                sx={{ color: '#633394', fontWeight: 'bold', cursor: 'pointer' }}
+                                sx={{ color: '#212121', fontWeight: 'bold', cursor: 'pointer' }}
                                 onClick={() => handleSort('username')}
                             >
                                 Username {sortBy === 'username' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </TableCell>
                             <TableCell
-                                sx={{ color: '#633394', fontWeight: 'bold', cursor: 'pointer' }}
+                                sx={{ color: '#212121', fontWeight: 'bold', cursor: 'pointer' }}
                                 onClick={() => handleSort('email')}
                             >
                                 Email {sortBy === 'email' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </TableCell>
                             <TableCell
-                                sx={{ color: '#633394', fontWeight: 'bold', cursor: 'pointer' }}
+                                sx={{ color: '#212121', fontWeight: 'bold', cursor: 'pointer' }}
                                 onClick={() => handleSort('firstname')}
                             >
                                 First Name {sortBy === 'firstname' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </TableCell>
                             <TableCell
-                                sx={{ color: '#633394', fontWeight: 'bold', cursor: 'pointer' }}
+                                sx={{ color: '#212121', fontWeight: 'bold', cursor: 'pointer' }}
                                 onClick={() => handleSort('lastname')}
                             >
                                 Last Name {sortBy === 'lastname' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </TableCell>
                             <TableCell
-                                sx={{ color: '#633394', fontWeight: 'bold' }}
+                                sx={{ color: '#212121', fontWeight: 'bold' }}
                             >
                                 Roles
                             </TableCell>
-                            <TableCell sx={{ color: '#633394', fontWeight: 'bold' }}>Title</TableCell>
-                            <TableCell sx={{ color: '#633394', fontWeight: 'bold' }}>Phone</TableCell>
-                            <TableCell sx={{ color: '#633394', fontWeight: 'bold' }}>User Address</TableCell>
+                            <TableCell sx={{ color: '#212121', fontWeight: 'bold' }}>Title</TableCell>
+                            <TableCell sx={{ color: '#212121', fontWeight: 'bold' }}>Phone</TableCell>
+                            <TableCell sx={{ color: '#212121', fontWeight: 'bold' }}>User Address</TableCell>
                             <TableCell
-                                sx={{ color: '#633394', fontWeight: 'bold', cursor: 'pointer' }}
+                                sx={{ color: '#212121', fontWeight: 'bold', cursor: 'pointer' }}
                                 onClick={() => handleSort('organization')}
                             >
                                 Organization {sortBy === 'organization' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </TableCell>
-                            <TableCell sx={{ color: '#633394', fontWeight: 'bold' }}>Actions</TableCell>
+                            <TableCell sx={{ color: '#212121', fontWeight: 'bold' }}>Actions</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -1742,32 +1741,6 @@ function UsersManagement() {
 
     return (
         <Box sx={{ p: { xs: 1, md: 3 } }}>
-            {/* Header with Title and Buttons */}
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
-                <Typography variant="h4" sx={{ color: '#633394', fontWeight: 'bold' }}>
-                    User Management
-                </Typography>
-                <Box>
-                    <Button
-                        variant="contained"
-                        startIcon={<UploadFileIcon />}
-                        onClick={handleOpenUploadDialog}
-                        sx={{ mr: 2, backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
-                    >
-                        Upload Users
-                    </Button>
-                    <Button
-                        variant="contained"
-                        startIcon={<AddIcon />}
-                        onClick={handleOpenAddDialog}
-                        sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
-                    >
-                        Add User
-                    </Button>
-                </Box>
-            </Box>
-
-
 
             {/* Search and Filter Bar */}
             <Card sx={{ mb: 3, boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
@@ -1888,7 +1861,7 @@ function UsersManagement() {
             </Dialog>
 
             {/* Upload File Dialog */}
-            <Dialog open={openUploadDialog} onClose={handleCloseDialogs}>
+            <Dialog open={openUploadDialogProp} onClose={handleCloseDialogs}>
                 <DialogTitle sx={{ backgroundColor: '#633394', color: 'white' }}>
                     Upload Users File
                 </DialogTitle>

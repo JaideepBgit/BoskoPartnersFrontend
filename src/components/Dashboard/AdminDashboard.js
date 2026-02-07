@@ -1438,7 +1438,7 @@ function AdminDashboard({ onLogout }) {
                                 <Table sx={{ borderCollapse: 'collapse' }}>
                                     <TableHead>
                                         <TableRow sx={{ backgroundColor: adminColors.headerBg }}>
-                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, width: '50px' }}>
+                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, width: '50px', color: '#212121' }}>
                                                 <Checkbox
                                                     checked={selectedUsers.length > 0}
                                                     indeterminate={selectedUsers.length > 0 && selectedUsers.length < data.users.filter(user => {
@@ -1455,18 +1455,18 @@ function AdminDashboard({ onLogout }) {
                                                         return organizationMatch && userMatch && statusMatch && user.status === 'Not-Filled';
                                                     }).length}
                                                     onChange={handleSelectAllUsers}
-                                                    sx={{ color: adminColors.primary }}
+                                                    sx={{ color: '#212121' }}
                                                 />
                                             </TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}` }}>Organization</TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}` }}>Users</TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}` }}>Status</TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}` }}>Days Since Created</TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}` }}>Survey Progress</TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}` }}>Reminders Sent</TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}` }}>Start Date</TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}` }}>End Date</TableCell>
-                                            <TableCell>Actions</TableCell>
+                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, color: '#212121' }}>Organization</TableCell>
+                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, color: '#212121' }}>Users</TableCell>
+                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, color: '#212121' }}>Status</TableCell>
+                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, color: '#212121' }}>Days Since Created</TableCell>
+                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, color: '#212121' }}>Survey Progress</TableCell>
+                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, color: '#212121' }}>Reminders Sent</TableCell>
+                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, color: '#212121' }}>Start Date</TableCell>
+                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, color: '#212121' }}>End Date</TableCell>
+                                            <TableCell sx={{ color: '#212121' }}>Actions</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>

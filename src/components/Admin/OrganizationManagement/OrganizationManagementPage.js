@@ -220,16 +220,16 @@ function OrganizationManagementPage() {
                             <TableRow sx={{ background: colors.headerGradient }}>
                                 <TableCell
                                     sortDirection={orderBy === 'organisation' ? order : false}
-                                    sx={{ color: colors.primary, fontWeight: 'bold' }}
+                                    sx={{ color: '#212121', fontWeight: 'bold' }}
                                 >
                                     <TableSortLabel
                                         active={orderBy === 'organisation'}
                                         direction={orderBy === 'organisation' ? order : 'asc'}
                                         onClick={() => handleRequestSort('organisation')}
                                         sx={{
-                                            color: `${colors.primary} !important`,
+                                            color: '#212121 !important',
                                             '& .MuiTableSortLabel-icon': {
-                                                color: `${colors.primary} !important`,
+                                                color: '#212121 !important',
                                             },
                                         }}
                                     >
@@ -238,24 +238,24 @@ function OrganizationManagementPage() {
                                 </TableCell>
                                 <TableCell
                                     sortDirection={orderBy === 'location' ? order : false}
-                                    sx={{ color: colors.primary, fontWeight: 'bold' }}
+                                    sx={{ color: '#212121', fontWeight: 'bold' }}
                                 >
                                     <TableSortLabel
                                         active={orderBy === 'location'}
                                         direction={orderBy === 'location' ? order : 'asc'}
                                         onClick={() => handleRequestSort('location')}
                                         sx={{
-                                            color: `${colors.primary} !important`,
+                                            color: '#212121 !important',
                                             '& .MuiTableSortLabel-icon': {
-                                                color: `${colors.primary} !important`,
+                                                color: '#212121 !important',
                                             },
                                         }}
                                     >
                                         Location
                                     </TableSortLabel>
                                 </TableCell>
-                                <TableCell sx={{ color: colors.primary, fontWeight: 'bold', textAlign: 'center' }}>Users</TableCell>
-                                <TableCell sx={{ color: colors.primary, fontWeight: 'bold', width: 50 }}></TableCell>
+                                <TableCell sx={{ color: '#212121', fontWeight: 'bold', textAlign: 'center' }}>Users</TableCell>
+                                <TableCell sx={{ color: '#212121', fontWeight: 'bold', width: 50 }}></TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>

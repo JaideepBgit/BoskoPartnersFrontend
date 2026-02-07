@@ -579,16 +579,17 @@ function ManagerDashboard({ onLogout }) {
                                                     indeterminate={selectedUsers.length > 0 && selectedUsers.length < users.filter(u => u.status === 'Not-Filled').length}
                                                     checked={users.length > 0 && selectedUsers.length === users.filter(u => u.status === 'Not-Filled').length}
                                                     onChange={handleSelectAllUsers}
+                                                    sx={{ color: '#212121' }}
                                                 />
                                             </TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold' }}>User</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold' }}>Created Days Ago</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold' }}>Progress</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold' }}>Reminders</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold' }}>Start Date</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold' }}>End Date</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: '#212121' }}>User</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: '#212121' }}>Status</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: '#212121' }}>Created Days Ago</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: '#212121' }}>Progress</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: '#212121' }}>Reminders</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: '#212121' }}>Start Date</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: '#212121' }}>End Date</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: '#212121' }}>Actions</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>

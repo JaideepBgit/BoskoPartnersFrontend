@@ -1308,69 +1308,69 @@ function OrganizationDetailPage() {
                                                             }}
                                                         />
                                                     </TableCell>
-                                                    <TableCell sortDirection={orderBy === 'name' ? order : false} sx={{ color: colors.primary, fontWeight: 'bold' }}>
+                                                    <TableCell sortDirection={orderBy === 'name' ? order : false} sx={{ color: '#212121', fontWeight: 'bold' }}>
                                                         <TableSortLabel
                                                             active={orderBy === 'name'}
                                                             direction={orderBy === 'name' ? order : 'asc'}
                                                             onClick={() => handleRequestSort('name')}
                                                             sx={{
-                                                                color: `${colors.primary} !important`,
+                                                                color: '#212121 !important',
                                                                 '& .MuiTableSortLabel-icon': {
-                                                                    color: `${colors.primary} !important`,
+                                                                    color: '#212121 !important',
                                                                 },
                                                             }}
                                                         >
                                                             Name
                                                         </TableSortLabel>
                                                     </TableCell>
-                                                    <TableCell sortDirection={orderBy === 'email' ? order : false} sx={{ color: colors.primary, fontWeight: 'bold' }}>
+                                                    <TableCell sortDirection={orderBy === 'email' ? order : false} sx={{ color: '#212121', fontWeight: 'bold' }}>
                                                         <TableSortLabel
                                                             active={orderBy === 'email'}
                                                             direction={orderBy === 'email' ? order : 'asc'}
                                                             onClick={() => handleRequestSort('email')}
                                                             sx={{
-                                                                color: `${colors.primary} !important`,
+                                                                color: '#212121 !important',
                                                                 '& .MuiTableSortLabel-icon': {
-                                                                    color: `${colors.primary} !important`,
+                                                                    color: '#212121 !important',
                                                                 },
                                                             }}
                                                         >
                                                             Email
                                                         </TableSortLabel>
                                                     </TableCell>
-                                                    <TableCell sortDirection={orderBy === 'role' ? order : false} sx={{ color: colors.primary, fontWeight: 'bold' }}>
+                                                    <TableCell sortDirection={orderBy === 'role' ? order : false} sx={{ color: '#212121', fontWeight: 'bold' }}>
                                                         <TableSortLabel
                                                             active={orderBy === 'role'}
                                                             direction={orderBy === 'role' ? order : 'asc'}
                                                             onClick={() => handleRequestSort('role')}
                                                             sx={{
-                                                                color: `${colors.primary} !important`,
+                                                                color: '#212121 !important',
                                                                 '& .MuiTableSortLabel-icon': {
-                                                                    color: `${colors.primary} !important`,
+                                                                    color: '#212121 !important',
                                                                 },
                                                             }}
                                                         >
                                                             Role
                                                         </TableSortLabel>
                                                     </TableCell>
-                                                    <TableCell sx={{ color: colors.primary, fontWeight: 'bold' }}>Address</TableCell>
-                                                    <TableCell sortDirection={orderBy === 'is_active' ? order : false} sx={{ color: colors.primary, fontWeight: 'bold' }}>
+                                                    <TableCell sx={{ color: '#212121', fontWeight: 'bold' }}>Address</TableCell>
+                                                    <TableCell sortDirection={orderBy === 'is_active' ? order : false} sx={{ color: '#212121', fontWeight: 'bold' }}>
                                                         <TableSortLabel
                                                             active={orderBy === 'is_active'}
                                                             direction={orderBy === 'is_active' ? order : 'asc'}
                                                             onClick={() => handleRequestSort('is_active')}
                                                             sx={{
-                                                                color: `${colors.primary} !important`,
+                                                                color: '#212121 !important',
                                                                 '& .MuiTableSortLabel-icon': {
-                                                                    color: `${colors.primary} !important`,
+                                                                    color: '#212121 !important',
                                                                 },
                                                             }}
                                                         >
                                                             Status
                                                         </TableSortLabel>
                                                     </TableCell>
-                                                    <TableCell sx={{ color: colors.primary, fontWeight: 'bold' }}>Survey Status</TableCell>
-                                                    <TableCell sx={{ color: colors.primary, fontWeight: 'bold', textAlign: 'right' }}>Actions</TableCell>
+                                                    <TableCell sx={{ color: '#212121', fontWeight: 'bold' }}>Survey Status</TableCell>
+                                                    <TableCell sx={{ color: '#212121', fontWeight: 'bold', textAlign: 'right' }}>Actions</TableCell>
                                                 </TableRow>
                                             </TableHead>
                                             <TableBody>
@@ -1642,10 +1642,10 @@ function OrganizationDetailPage() {
                                             <Table>
                                                 <TableHead sx={{ backgroundColor: '#b39ddb' }}>
                                                     <TableRow>
-                                                        <TableCell sx={{ color: colors.primary, fontWeight: 'bold' }}>Survey</TableCell>
-                                                        <TableCell sx={{ color: colors.primary, fontWeight: 'bold' }}>Description</TableCell>
-                                                        <TableCell sx={{ color: colors.primary, fontWeight: 'bold' }}>Organization Group</TableCell>
-                                                        <TableCell sx={{ color: colors.primary, fontWeight: 'bold' }}>Created</TableCell>
+                                                        <TableCell sx={{ color: '#212121', fontWeight: 'bold' }}>Survey</TableCell>
+                                                        <TableCell sx={{ color: '#212121', fontWeight: 'bold' }}>Description</TableCell>
+                                                        <TableCell sx={{ color: '#212121', fontWeight: 'bold' }}>Organization Group</TableCell>
+                                                        <TableCell sx={{ color: '#212121', fontWeight: 'bold' }}>Created</TableCell>
                                                     </TableRow>
                                                 </TableHead>
                                                 <TableBody>
