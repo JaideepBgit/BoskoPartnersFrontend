@@ -154,19 +154,19 @@ const HomeComponent = () => {
           </Typography>
 
           <Typography
-            variant="body1"
-            sx={{ mb: 2, color: 'text.secondary', lineHeight: 1.6 }}
+            variant={isMobile ? "h7" : "h6"}
+            sx={{ mb: 3, color: '#633394', fontWeight: 'bold', lineHeight: 1.4 }}
+          >
+            Complete your profile details below, then navigate to the Surveys tab to begin your research participation.
+          </Typography>
+
+          <Typography
+            variant="caption"
+            sx={{ mb: 2, color: 'text.secondary', lineHeight: 1.6, display: 'block' }}
           >
             Thank you for participating in our important research initiative. This dashboard helps you manage your
             profile information and access your assigned surveys. Your contributions make a meaningful difference
             in our community research efforts.
-          </Typography>
-
-          <Typography
-            variant="body2"
-            sx={{ color: '#633394', fontWeight: 500 }}
-          >
-            Complete your profile details below, then navigate to the Surveys tab to begin your research participation.
           </Typography>
         </Box>
 

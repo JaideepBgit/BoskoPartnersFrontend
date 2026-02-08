@@ -11,6 +11,8 @@ import ManagerDashboard from './components/Dashboard/ManagerDashboard';
 import InventoryPage from './components/Admin/Inventory/InventoryPage';
 import UserManagementMain from './components/UserManagement/UserManagementMain';
 import SurveysPage from './components/Surveys/SurveysPage';
+import SurveyIntro from './components/Survey/SurveyIntro';
+import SurveyOverview from './components/Survey/SurveyOverview';
 import SurveyTaking from './components/Survey/SurveyTaking';
 import ReportBuilder from './components/Admin/Reports/ReportBuilder';
 import ReportsPage from './components/Admin/Reports/ReportsPage';
@@ -208,10 +210,31 @@ function Main({ isAuthenticated, userRole, login, logout }) {
           </ProtectedRoute>
         } />
 
-        {/* Survey Taking Route */}
-        <Route path="/survey" element={
+        {/* Survey Intro Route - First Screen */}
+        <Route path="/survey/intro" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <SurveyIntro onLogout={logout} />
+          </ProtectedRoute>
+        } />
+
+        {/* Survey Overview Route - Second Screen */}
+        <Route path="/survey/overview" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <SurveyOverview onLogout={logout} />
+          </ProtectedRoute>
+        } />
+
+        {/* Survey Taking Route - Third Screen (Actual Survey) */}
+        <Route path="/survey/taking" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <SurveyTaking onLogout={logout} />
+          </ProtectedRoute>
+        } />
+
+        {/* Legacy Survey Route - Redirect to intro */}
+        <Route path="/survey" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <SurveyIntro onLogout={logout} />
           </ProtectedRoute>
         } />
 

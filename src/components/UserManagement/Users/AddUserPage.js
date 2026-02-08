@@ -483,7 +483,12 @@ function AddUserPage() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    mb: 4
+                    mb: 4,
+                    position: 'sticky',
+                    top: 0,
+                    backgroundColor: '#f5f5f5',
+                    zIndex: 1000,
+                    py: 2
                 }}>
                     {/* Left: Back Button */}
                     <Button

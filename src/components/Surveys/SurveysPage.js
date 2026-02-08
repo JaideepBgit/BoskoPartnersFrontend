@@ -88,8 +88,8 @@ const SurveysPage = () => {
 
   const handleOpenSurvey = async (assignment) => {
     try {
-      // Navigate to survey taking page; the page will fetch template and existing response
-      navigate('/survey', {
+      // Navigate to survey intro page (first screen)
+      navigate('/survey/intro', {
         state: {
           survey: {
             id: assignment.id,

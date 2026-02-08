@@ -34,7 +34,7 @@ const colors = {
     borderColor: '#e0e0e0',
     textPrimary: '#212121',
     textSecondary: '#757575',
-    headerGradient: '#b39ddb',
+    headerGradient: '#E0E0E0',
 };
 
 // Define main organization types
@@ -220,16 +220,16 @@ function OrganizationManagementPage() {
                             <TableRow sx={{ background: colors.headerGradient }}>
                                 <TableCell
                                     sortDirection={orderBy === 'organisation' ? order : false}
-                                    sx={{ color: '#212121', fontWeight: 'bold' }}
+                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}
                                 >
                                     <TableSortLabel
                                         active={orderBy === 'organisation'}
                                         direction={orderBy === 'organisation' ? order : 'asc'}
                                         onClick={() => handleRequestSort('organisation')}
                                         sx={{
-                                            color: '#212121 !important',
+                                            color: '#000000 !important',
                                             '& .MuiTableSortLabel-icon': {
-                                                color: '#212121 !important',
+                                                color: '#000000 !important',
                                             },
                                         }}
                                     >
@@ -238,24 +238,24 @@ function OrganizationManagementPage() {
                                 </TableCell>
                                 <TableCell
                                     sortDirection={orderBy === 'location' ? order : false}
-                                    sx={{ color: '#212121', fontWeight: 'bold' }}
+                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}
                                 >
                                     <TableSortLabel
                                         active={orderBy === 'location'}
                                         direction={orderBy === 'location' ? order : 'asc'}
                                         onClick={() => handleRequestSort('location')}
                                         sx={{
-                                            color: '#212121 !important',
+                                            color: '#000000 !important',
                                             '& .MuiTableSortLabel-icon': {
-                                                color: '#212121 !important',
+                                                color: '#000000 !important',
                                             },
                                         }}
                                     >
                                         Location
                                     </TableSortLabel>
                                 </TableCell>
-                                <TableCell sx={{ color: '#212121', fontWeight: 'bold', textAlign: 'center' }}>Users</TableCell>
-                                <TableCell sx={{ color: '#212121', fontWeight: 'bold', width: 50 }}></TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '1px' }}>Users</TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', width: 50, textTransform: 'uppercase', letterSpacing: '1px' }}></TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>

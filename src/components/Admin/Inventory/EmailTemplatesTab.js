@@ -785,7 +785,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
       </Paper>
 
       {/* Search and Filter Controls */}
-      <Paper sx={{ p: isMobile ? 1.5 : 2, mb: 2 }}>
+      <Box sx={{ mb: 2 }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} sm={6} md={4}>
             <TextField
@@ -851,7 +851,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
             </Button>
           </Grid>
         </Grid>
-      </Paper>
+      </Box>
 
       <Paper sx={{ p: isMobile ? 1.5 : 2 }}>
         {filteredTemplates.length === 0 ? (

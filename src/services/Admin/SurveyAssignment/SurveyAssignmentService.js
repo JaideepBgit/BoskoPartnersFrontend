@@ -149,6 +149,28 @@ class SurveyAssignmentService {
     }
 
     /**
+     * Get survey templates available for a specific organization
+     * This checks survey_template_versions to find which versions are assigned to the organization
+     * @param {number} organizationId - ID of the organization
+     * @returns {Promise<Array>} List of survey templates available for the organization
+     */
+    static async getTemplatesForOrganization(organizationId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/organizations/${organizationId}/survey-templates`);
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch survey templates for organization');
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error getting survey templates for organization:', error);
+            throw error;
+        }
+    }
+
+
+    /**
      * Send a reminder email for a specific user's survey assignment
      * @param {number} userId - ID of the user
      * @returns {Promise<Object>} Result of the reminder email
@@ -232,7 +254,7 @@ class SurveyAssignmentService {
     static async removeSurveyAssignment(userId, assignmentId) {
         try {
             console.log(`Removing assignment ${assignmentId} for user ${userId}`);
-            
+
             const response = await fetch(`${API_BASE_URL}/api/users/${userId}/survey-assignments/${assignmentId}`, {
                 method: 'DELETE',
                 headers: {

@@ -12,6 +12,9 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 
 import {
     fetchUsers, addUser, updateUser, deleteUser,
@@ -135,6 +138,13 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
     const [sortBy, setSortBy] = useState('username');
     const [sortOrder, setSortOrder] = useState('asc');
 
+    // Selected user for viewing survey assignments
+    const [selectedUserForView, setSelectedUserForView] = useState(null);
+    const [userAssignments, setUserAssignments] = useState([]);
+    const [loadingAssignments, setLoadingAssignments] = useState(false);
+    const [surveyTemplates, setSurveyTemplates] = useState([]);
+    const [selectedSurveyTemplate, setSelectedSurveyTemplate] = useState('');
+
     // Generate email preview content using backend EmailService
     const generateWelcomeEmailPreview = async () => {
         try {
@@ -211,6 +221,60 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
         loadRoles();
         loadTitles();
     }, []);
+
+    // Load survey templates for a specific organization
+    const loadSurveyTemplates = async (organizationId) => {
+        try {
+            const SurveyAssignmentService = (await import('../../../services/Admin/SurveyAssignment/SurveyAssignmentService')).default;
+            const templateData = await SurveyAssignmentService.getTemplatesForOrganization(organizationId);
+            setSurveyTemplates(templateData);
+        } catch (error) {
+            console.error('Error loading survey templates:', error);
+            setSurveyTemplates([]);
+        }
+    };
+
+    // Load user survey assignments
+    const loadUserAssignments = async (userId) => {
+        setLoadingAssignments(true);
+        try {
+            const SurveyAssignmentService = (await import('../../../services/Admin/SurveyAssignment/SurveyAssignmentService')).default;
+            const assignments = await SurveyAssignmentService.getUserSurveyAssignments(userId);
+            setUserAssignments(assignments.assignments || []);
+        } catch (error) {
+            console.error('Error loading user assignments:', error);
+            setUserAssignments([]);
+        } finally {
+            setLoadingAssignments(false);
+        }
+    };
+
+    // Assign survey to user
+    const handleAssignSurvey = async () => {
+        if (!selectedUserForView || !selectedSurveyTemplate) return;
+
+        try {
+            const SurveyAssignmentService = (await import('../../../services/Admin/SurveyAssignment/SurveyAssignmentService')).default;
+            const adminId = localStorage.getItem('userId');
+
+            await SurveyAssignmentService.assignSurvey(
+                [selectedUserForView.id],
+                selectedSurveyTemplate,
+                adminId
+            );
+
+            // Refresh assignments
+            loadUserAssignments(selectedUserForView.id);
+            setSelectedSurveyTemplate('');
+
+            // Show success message (you can add a snackbar here)
+            console.log('Survey assigned successfully');
+        } catch (error) {
+            console.error('Error assigning survey:', error);
+            alert('Failed to assign survey: ' + error.message);
+        }
+    };
+
 
     // Load users from API
     const loadUsers = async () => {
@@ -991,171 +1055,325 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
         }
     };
 
+    // Handle row click to view user details and survey assignments
+    const handleRowClick = (user) => {
+        if (selectedUserForView && selectedUserForView.id === user.id) {
+            // Deselect if clicking the same user
+            setSelectedUserForView(null);
+            setUserAssignments([]);
+            setSurveyTemplates([]);
+        } else {
+            // Select new user and load assignments
+            setSelectedUserForView(user);
+            loadUserAssignments(user.id);
+            // Load templates for user's organization
+            loadSurveyTemplates(user.organization_id);
+        }
+    };
+
     // Render the users table
     const renderUsersTable = () => {
         return (
-            <TableContainer component={Paper}>
+            <TableContainer>
                 <Table>
-                    <TableHead sx={{ backgroundColor: '#b39ddb' }}>
+                    <TableHead sx={{ backgroundColor: '#E0E0E0' }}>
                         <TableRow>
                             <TableCell
-                                sx={{ color: '#212121', fontWeight: 'bold', cursor: 'pointer' }}
+                                sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer' }}
                                 onClick={() => handleSort('username')}
                             >
                                 Username {sortBy === 'username' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </TableCell>
                             <TableCell
-                                sx={{ color: '#212121', fontWeight: 'bold', cursor: 'pointer' }}
+                                sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer' }}
                                 onClick={() => handleSort('email')}
                             >
                                 Email {sortBy === 'email' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </TableCell>
                             <TableCell
-                                sx={{ color: '#212121', fontWeight: 'bold', cursor: 'pointer' }}
+                                sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer' }}
                                 onClick={() => handleSort('firstname')}
                             >
                                 First Name {sortBy === 'firstname' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </TableCell>
                             <TableCell
-                                sx={{ color: '#212121', fontWeight: 'bold', cursor: 'pointer' }}
+                                sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer' }}
                                 onClick={() => handleSort('lastname')}
                             >
                                 Last Name {sortBy === 'lastname' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </TableCell>
                             <TableCell
-                                sx={{ color: '#212121', fontWeight: 'bold' }}
+                                sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}
                             >
                                 Roles
                             </TableCell>
-                            <TableCell sx={{ color: '#212121', fontWeight: 'bold' }}>Title</TableCell>
-                            <TableCell sx={{ color: '#212121', fontWeight: 'bold' }}>Phone</TableCell>
-                            <TableCell sx={{ color: '#212121', fontWeight: 'bold' }}>User Address</TableCell>
+                            <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Title</TableCell>
+                            <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Phone</TableCell>
+                            <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>User Address</TableCell>
                             <TableCell
-                                sx={{ color: '#212121', fontWeight: 'bold', cursor: 'pointer' }}
+                                sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer' }}
                                 onClick={() => handleSort('organization')}
                             >
                                 Organization {sortBy === 'organization' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </TableCell>
-                            <TableCell sx={{ color: '#212121', fontWeight: 'bold' }}>Actions</TableCell>
+                            <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Actions</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {filteredUsers
                             .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                             .map((user) => (
-                                <TableRow key={user.id}>
-                                    <TableCell>{user.username}</TableCell>
-                                    <TableCell>{user.email}</TableCell>
-                                    <TableCell>
-                                        <Typography variant="body2" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                                            {user.firstname}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="body2" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                                            {user.lastname}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        {(user.roles && user.roles.length > 0) ? (
-                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                {user.roles.map((role, idx) => (
-                                                    <Chip
-                                                        key={`role-${idx}`}
-                                                        label={role}
-                                                        size="small"
-                                                        sx={{
-                                                            bgcolor: role === 'admin' ? '#e3f2fd' : '#f5f5f5',
-                                                            color: role === 'admin' ? '#1565c0' : '#616161',
-                                                            fontWeight: 500,
-                                                            textTransform: 'capitalize'
-                                                        }}
-                                                    />
-                                                ))}
-                                            </Box>
-                                        ) : (
-                                            user.ui_role || 'User'
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        {(user.titles && user.titles.length > 0) ? (
-                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                {user.titles.map((title, idx) => (
-                                                    <Chip
-                                                        key={`title-${idx}`}
-                                                        label={title.name}
-                                                        size="small"
-                                                        variant="outlined"
-                                                        sx={{ borderColor: '#ddd' }}
-                                                    />
-                                                ))}
-                                            </Box>
-                                        ) : (
-                                            user.title || 'N/A'
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="body2" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                                            {user.phone || 'N/A'}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        {user.geo_location ? (
-                                            <Box sx={{ maxWidth: 250, whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                                                {user.geo_location.address_line1 && (
-                                                    <Typography variant="body2">
-                                                        {user.geo_location.address_line1}
-                                                    </Typography>
-                                                )}
-                                                <Typography variant="caption" color="textSecondary" display="block">
-                                                    {[
-                                                        user.geo_location.city,
-                                                        user.geo_location.province,
-                                                        user.geo_location.country,
-                                                        user.geo_location.postal_code
-                                                    ].filter(Boolean).join(', ')}
+                                <React.Fragment key={user.id}>
+                                    <TableRow
+                                        onClick={() => handleRowClick(user)}
+                                        sx={{
+                                            cursor: 'pointer',
+                                            backgroundColor: selectedUserForView && selectedUserForView.id === user.id
+                                                ? '#f3e5f5'
+                                                : 'inherit',
+                                            '&:hover': {
+                                                backgroundColor: selectedUserForView && selectedUserForView.id === user.id
+                                                    ? '#d8b5e8'
+                                                    : '#e8d5f3'
+                                            }
+                                        }}
+                                    >
+                                        <TableCell>
+                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                <IconButton size="small" sx={{ mr: 1 }}>
+                                                    {selectedUserForView && selectedUserForView.id === user.id ?
+                                                        <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                                                </IconButton>
+                                                <Typography variant="body2" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                                                    {user.username}
+                                                    {selectedUserForView && selectedUserForView.id === user.id && (
+                                                        <Chip
+                                                            label="Viewing Surveys"
+                                                            size="small"
+                                                            color="primary"
+                                                            sx={{ ml: 1 }}
+                                                        />
+                                                    )}
                                                 </Typography>
                                             </Box>
-                                        ) : 'N/A'}
-                                    </TableCell>
-                                    <TableCell>
-                                        {user.organization ? (
-                                            <Box>
-                                                <Typography variant="body2" sx={{ fontWeight: 'bold', maxWidth: 200, whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                                                    {user.organization.name}
-                                                </Typography>
-                                                {user.organization.organization_type && (
-                                                    <Typography variant="body2" color="textSecondary">
-                                                        Type: {user.organization.organization_type.type}
-                                                    </Typography>
-                                                )}
-                                                {user.organization.website && (
-                                                    <Typography variant="body2" color="textSecondary">
-                                                        Website: {user.organization.website}
-                                                    </Typography>
-                                                )}
-                                            </Box>
-                                        ) : (
-                                            <Typography variant="body2" sx={{ maxWidth: 200, whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                                                {getOrganizationName(user.organization_id)}
+                                        </TableCell>
+                                        <TableCell>{user.email}</TableCell>
+                                        <TableCell>
+                                            <Typography variant="body2" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                                                {user.firstname}
                                             </Typography>
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        <IconButton
-                                            onClick={() => handleOpenEditDialog(user)}
-                                            color="primary"
-                                        >
-                                            <EditIcon />
-                                        </IconButton>
-                                        <IconButton
-                                            onClick={() => handleOpenDeleteDialog(user)}
-                                            color="error"
-                                        >
-                                            <DeleteIcon />
-                                        </IconButton>
-                                    </TableCell>
-                                </TableRow>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Typography variant="body2" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                                                {user.lastname}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell>
+                                            {(user.roles && user.roles.length > 0) ? (
+                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                    {user.roles.map((role, idx) => (
+                                                        <Chip
+                                                            key={`role-${idx}`}
+                                                            label={role}
+                                                            size="small"
+                                                            sx={{
+                                                                bgcolor: role === 'admin' ? '#e3f2fd' : '#f5f5f5',
+                                                                color: role === 'admin' ? '#1565c0' : '#616161',
+                                                                fontWeight: 500,
+                                                                textTransform: 'capitalize'
+                                                            }}
+                                                        />
+                                                    ))}
+                                                </Box>
+                                            ) : (
+                                                user.ui_role || 'User'
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            {(user.titles && user.titles.length > 0) ? (
+                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                    {user.titles.map((title, idx) => (
+                                                        <Chip
+                                                            key={`title-${idx}`}
+                                                            label={title.name}
+                                                            size="small"
+                                                            variant="outlined"
+                                                            sx={{ borderColor: '#ddd' }}
+                                                        />
+                                                    ))}
+                                                </Box>
+                                            ) : (
+                                                user.title || 'N/A'
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Typography variant="body2" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                                                {user.phone || 'N/A'}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell>
+                                            {user.geo_location ? (
+                                                <Box sx={{ maxWidth: 250, whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                                                    {user.geo_location.address_line1 && (
+                                                        <Typography variant="body2">
+                                                            {user.geo_location.address_line1}
+                                                        </Typography>
+                                                    )}
+                                                    <Typography variant="caption" color="textSecondary" display="block">
+                                                        {[
+                                                            user.geo_location.city,
+                                                            user.geo_location.province,
+                                                            user.geo_location.country,
+                                                            user.geo_location.postal_code
+                                                        ].filter(Boolean).join(', ')}
+                                                    </Typography>
+                                                </Box>
+                                            ) : 'N/A'}
+                                        </TableCell>
+                                        <TableCell>
+                                            {user.organization ? (
+                                                <Box>
+                                                    <Typography variant="body2" sx={{ fontWeight: 'bold', maxWidth: 200, whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                                                        {user.organization.name}
+                                                    </Typography>
+                                                    {user.organization.organization_type && (
+                                                        <Typography variant="body2" color="textSecondary">
+                                                            Type: {user.organization.organization_type.type}
+                                                        </Typography>
+                                                    )}
+                                                    {user.organization.website && (
+                                                        <Typography variant="body2" color="textSecondary">
+                                                            Website: {user.organization.website}
+                                                        </Typography>
+                                                    )}
+                                                </Box>
+                                            ) : (
+                                                <Typography variant="body2" sx={{ maxWidth: 200, whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                                                    {getOrganizationName(user.organization_id)}
+                                                </Typography>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            <IconButton
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleOpenEditDialog(user);
+                                                }}
+                                                color="primary"
+                                            >
+                                                <EditIcon />
+                                            </IconButton>
+                                            <IconButton
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleOpenDeleteDialog(user);
+                                                }}
+                                                color="error"
+                                            >
+                                                <DeleteIcon />
+                                            </IconButton>
+                                        </TableCell>
+                                    </TableRow>
+
+                                    {/* Collapsible Survey Assignment Row */}
+                                    <TableRow>
+                                        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={10}>
+                                            <Collapse in={selectedUserForView && selectedUserForView.id === user.id} timeout="auto" unmountOnExit>
+                                                <Box sx={{ margin: 2, p: 3, backgroundColor: '#fafafa', borderRadius: 1 }}>
+                                                    <Typography variant="h6" gutterBottom sx={{ color: '#633394', display: 'flex', alignItems: 'center' }}>
+                                                        <AssignmentIcon sx={{ mr: 1 }} />
+                                                        Survey Assignments for {user.firstname} {user.lastname}
+                                                    </Typography>
+
+                                                    {loadingAssignments ? (
+                                                        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                                                            <CircularProgress />
+                                                        </Box>
+                                                    ) : (
+                                                        <Grid container spacing={3}>
+                                                            {/* Existing Assignments */}
+                                                            <Grid item xs={12} md={7}>
+                                                                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold' }}>
+                                                                    Existing Assignments ({userAssignments.length})
+                                                                </Typography>
+                                                                {userAssignments.length > 0 ? (
+                                                                    <Box sx={{ maxHeight: 300, overflow: 'auto' }}>
+                                                                        {userAssignments.map((assignment) => (
+                                                                            <Paper key={assignment.id} sx={{ p: 2, mb: 1.5, border: '1px solid #e0e0e0' }}>
+                                                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                                                    <Box sx={{ flex: 1 }}>
+                                                                                        <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                                                                                            {assignment.template_name}
+                                                                                            {assignment.survey_code && ` - ${assignment.survey_code}`}
+                                                                                        </Typography>
+                                                                                        <Typography variant="caption" color="text.secondary">
+                                                                                            Status: <Chip label={assignment.status} size="small" sx={{ ml: 0.5 }} />
+                                                                                        </Typography>
+                                                                                        <Typography variant="caption" color="text.secondary" display="block">
+                                                                                            Assigned: {new Date(assignment.created_at).toLocaleDateString()}
+                                                                                        </Typography>
+                                                                                    </Box>
+                                                                                </Box>
+                                                                            </Paper>
+                                                                        ))}
+                                                                    </Box>
+                                                                ) : (
+                                                                    <Typography variant="body2" color="text.secondary">
+                                                                        No survey assignments yet
+                                                                    </Typography>
+                                                                )}
+                                                            </Grid>
+
+                                                            {/* Assign New Survey */}
+                                                            <Grid item xs={12} md={5}>
+                                                                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold' }}>
+                                                                    Assign New Survey
+                                                                </Typography>
+                                                                <Autocomplete
+                                                                    fullWidth
+                                                                    options={surveyTemplates
+                                                                        .filter(template => {
+                                                                            // Backend already filtered by organization via survey_template_versions
+                                                                            // Just filter out already assigned templates
+                                                                            return !userAssignments.some(a => a.template_id === template.id);
+                                                                        })
+                                                                    }
+                                                                    value={surveyTemplates.find(t => t.id === selectedSurveyTemplate) || null}
+                                                                    onChange={(event, newValue) => {
+                                                                        setSelectedSurveyTemplate(newValue ? newValue.id : '');
+                                                                    }}
+                                                                    getOptionLabel={(option) =>
+                                                                        `${option.version_name || 'Survey'}${option.survey_code ? ` - ${option.survey_code}` : ''}`
+                                                                    }
+                                                                    renderInput={(params) => (
+                                                                        <TextField
+                                                                            {...params}
+                                                                            label="Select Survey Template"
+                                                                            placeholder="Search templates..."
+                                                                        />
+                                                                    )}
+                                                                    sx={{ mb: 2 }}
+                                                                />
+                                                                <Button
+                                                                    variant="contained"
+                                                                    fullWidth
+                                                                    disabled={!selectedSurveyTemplate}
+                                                                    onClick={handleAssignSurvey}
+                                                                    sx={{
+                                                                        backgroundColor: '#633394',
+                                                                        '&:hover': { backgroundColor: '#7c52a5' }
+                                                                    }}
+                                                                >
+                                                                    Assign Survey
+                                                                </Button>
+                                                            </Grid>
+                                                        </Grid>
+                                                    )}
+                                                </Box>
+                                            </Collapse>
+                                        </TableCell>
+                                    </TableRow>
+                                </React.Fragment>
                             ))}
                     </TableBody>
                 </Table>
@@ -1743,79 +1961,87 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
         <Box sx={{ p: { xs: 1, md: 3 } }}>
 
             {/* Search and Filter Bar */}
-            <Card sx={{ mb: 3, boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                <CardContent>
-                    <Grid container spacing={2} alignItems="center">
-                        <Grid item xs={12} md={4}>
-                            <TextField
-                                fullWidth
-                                size="small"
-                                label="Search Users"
-                                variant="outlined"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder="Name, email, organization..."
-                            />
-                        </Grid>
-                        <Grid item xs={12} md={3}>
-                            <FormControl fullWidth size="small">
-                                <InputLabel>Filter by Organization</InputLabel>
-                                <Select
-                                    value={filterOrganization}
-                                    onChange={(e) => setFilterOrganization(e.target.value)}
-                                    label="Filter by Organization"
-                                >
-                                    <MenuItem value="">All Organizations</MenuItem>
-                                    {organizations.map(org => (
-                                        <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-                        </Grid>
-                        <Grid item xs={12} md={3}>
-                            <FormControl fullWidth size="small">
-                                <InputLabel>Filter by Role</InputLabel>
-                                <Select
-                                    value={filterRole}
-                                    onChange={(e) => setFilterRole(e.target.value)}
-                                    label="Filter by Role"
-                                >
-                                    <MenuItem value="">All Roles</MenuItem>
-                                    <MenuItem value="admin">Administrator</MenuItem>
-                                    <MenuItem value="user">Regular User</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Grid>
-                        <Grid item xs={12} md={2}>
-                            <Button
-                                fullWidth
-                                variant="outlined"
-                                onClick={() => {
-                                    setSearchTerm('');
-                                    setFilterOrganization('');
-                                    setFilterRole('');
-                                }}
-                                sx={{
-                                    height: '40px',
-                                    color: '#633394',
-                                    borderColor: '#633394',
-                                    '&:hover': { borderColor: '#7c52a5', backgroundColor: 'rgba(99, 51, 148, 0.04)' }
-                                }}
-                            >
-                                Clear Filters
-                            </Button>
-                        </Grid>
+            <Box sx={{ mb: 3 }}>
+                <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={12} md={4}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            label="Search Users"
+                            variant="outlined"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            placeholder="Name, email, organization..."
+                        />
                     </Grid>
-                </CardContent>
-            </Card>
+                    <Grid item xs={12} md={3}>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>Filter by Organization</InputLabel>
+                            <Select
+                                value={filterOrganization}
+                                onChange={(e) => setFilterOrganization(e.target.value)}
+                                label="Filter by Organization"
+                            >
+                                <MenuItem value="">All Organizations</MenuItem>
+                                {organizations.map(org => (
+                                    <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Grid>
+                    <Grid item xs={12} md={3}>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>Filter by Role</InputLabel>
+                            <Select
+                                value={filterRole}
+                                onChange={(e) => setFilterRole(e.target.value)}
+                                label="Filter by Role"
+                            >
+                                <MenuItem value="">All Roles</MenuItem>
+                                <MenuItem value="admin">Administrator</MenuItem>
+                                <MenuItem value="user">Regular User</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Grid>
+                    <Grid item xs={12} md={2}>
+                        <Button
+                            fullWidth
+                            variant="outlined"
+                            onClick={() => {
+                                setSearchTerm('');
+                                setFilterOrganization('');
+                                setFilterRole('');
+                            }}
+                            sx={{
+                                height: '40px',
+                                color: '#633394',
+                                borderColor: '#633394',
+                                '&:hover': { borderColor: '#7c52a5', backgroundColor: 'rgba(99, 51, 148, 0.04)' }
+                            }}
+                        >
+                            Clear Filters
+                        </Button>
+                    </Grid>
+                </Grid>
+            </Box>
+
+            {/* Info Box 
+            <Box sx={{ mb: 2, p: 1.5, backgroundColor: '#f3e5f5', borderRadius: 1, border: '1px solid #ce93d8' }}>
+                <Typography variant="body2" sx={{ color: '#633394', display: 'flex', alignItems: 'center' }}>
+                    <AssignmentIcon sx={{ mr: 1, fontSize: 18 }} />
+                    <strong>Tip:</strong>&nbsp;Click on any user row to expand and view/manage their survey assignments inline.
+                </Typography>
+            </Box>*/}
 
             {renderUsersTable()}
 
-            {/* Survey Assignment Card */}
-            <SurveyAssignmentCard
+            {/* Survey Assignment Card - Commented out, using inline dropdown instead */}
+            {/* <SurveyAssignmentCard
                 users={users}
                 onRefreshUsers={loadUsers}
-            />
+                selectedUserForView={selectedUserForView}
+                onUserDeselect={() => setSelectedUserForView(null)}
+            /> */}
 
             {/* Edit User Dialog */}
             <Dialog open={openEditDialog} onClose={handleCloseDialogs} maxWidth="md" fullWidth>

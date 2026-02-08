@@ -481,12 +481,14 @@ function ContactReferrals() {
         <Box sx={{ p: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                 <Box>
-                    <Typography variant="h4" gutterBottom sx={{ color: '#633394', fontWeight: 'bold', mb: 1 }}>
-                        Contact Referrals Management
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary">
-                        Review and approve contact referrals to create user accounts and organizations
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <Typography variant="h4" sx={{ color: '#633394', fontWeight: 'bold' }}>
+                            Contact Referrals
+                        </Typography>
+                        <Tooltip title="Review and approve contact referrals to create user accounts and organizations" arrow>
+                            <InfoIcon sx={{ color: '#633394', fontSize: 24, cursor: 'help' }} />
+                        </Tooltip>
+                    </Box>
                     {selectedReferralIds.length > 0 && (
                         <Chip
                             label={`${selectedReferralIds.length} referral(s) selected`}
@@ -546,28 +548,28 @@ function ContactReferrals() {
             ) : (
                 <TableContainer component={Paper} elevation={3}>
                     <Table>
-                        <TableHead sx={{ backgroundColor: '#633394' }}>
+                        <TableHead sx={{ backgroundColor: '#E0E0E0' }}>
                             <TableRow>
-                                <TableCell padding="checkbox" sx={{ color: 'white' }}>
+                                <TableCell padding="checkbox" sx={{ color: '#000000' }}>
                                     <Checkbox
                                         indeterminate={isSomeSelected}
                                         checked={isAllSelected}
                                         onChange={handleSelectAll}
                                         sx={{
-                                            color: 'white',
-                                            '&.Mui-checked': { color: 'white' },
-                                            '&.MuiCheckbox-indeterminate': { color: 'white' }
+                                            color: '#000000',
+                                            '&.Mui-checked': { color: '#000000' },
+                                            '&.MuiCheckbox-indeterminate': { color: '#000000' }
                                         }}
                                     />
                                 </TableCell>
-                                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Name</TableCell>
-                                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Email</TableCell>
-                                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Phone</TableCell>
-                                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Institution</TableCell>
-                                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Type</TableCell>
-                                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Country</TableCell>
-                                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Submitted</TableCell>
-                                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Referrals</TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Name</TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Email</TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Phone</TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Institution</TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Type</TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Country</TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Submitted</TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Referrals</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>

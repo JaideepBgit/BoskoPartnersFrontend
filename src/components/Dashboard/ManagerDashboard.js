@@ -30,7 +30,7 @@ const managerColors = {
     warning: '#967CB2', // Light Purple for Pending (Lavender)
     background: '#ffffff',
     cardBg: '#ffffff',
-    headerBg: '#ede7f6', // Light purple for users table
+    headerBg: '#E0E0E0', // Light gray for users table
     borderColor: '#e0e0e0',
     highlightBg: '#f3e5f5'
 };
@@ -579,17 +579,17 @@ function ManagerDashboard({ onLogout }) {
                                                     indeterminate={selectedUsers.length > 0 && selectedUsers.length < users.filter(u => u.status === 'Not-Filled').length}
                                                     checked={users.length > 0 && selectedUsers.length === users.filter(u => u.status === 'Not-Filled').length}
                                                     onChange={handleSelectAllUsers}
-                                                    sx={{ color: '#212121' }}
+                                                    sx={{ color: '#000000' }}
                                                 />
                                             </TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold', color: '#212121' }}>User</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold', color: '#212121' }}>Status</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold', color: '#212121' }}>Created Days Ago</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold', color: '#212121' }}>Progress</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold', color: '#212121' }}>Reminders</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold', color: '#212121' }}>Start Date</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold', color: '#212121' }}>End Date</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold', color: '#212121' }}>Actions</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px' }}>User</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px' }}>Status</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px' }}>Created Days Ago</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px' }}>Progress</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px' }}>Reminders</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px' }}>Start Date</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px' }}>End Date</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px' }}>Actions</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>

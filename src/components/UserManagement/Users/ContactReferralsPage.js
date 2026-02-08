@@ -9,15 +9,7 @@ function ContactReferralsPage() {
             <Navbar />
             <Container maxWidth="xl">
                 <Box sx={{ my: 4 }}>
-                    <Typography variant="h4" component="h1" gutterBottom sx={{ color: '#633394', fontWeight: 'bold' }}>
-                        Contact Referrals
-                    </Typography>
-
-                    <Paper sx={{ width: '100%', mb: 2, boxShadow: 3, overflow: 'hidden' }}>
-                        <Box sx={{ p: 3 }}>
-                            <ContactReferrals />
-                        </Box>
-                    </Paper>
+                    <ContactReferrals />
                 </Box>
             </Container>
         </>

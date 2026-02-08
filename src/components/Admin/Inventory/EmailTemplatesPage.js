@@ -47,16 +47,12 @@ function EmailTemplatesPage() {
                         Email Templates
                     </Typography>
 
-                    <Paper sx={{ width: '100%', mb: 2, boxShadow: 3, overflow: 'hidden' }}>
-                        <Box sx={{ p: 3 }}>
-                            <EmailTemplatesTab
-                                emailTemplates={allEmailTemplates}
-                                onRefreshData={(filterOrgId = null) => fetchAllEmailTemplates(filterOrgId)}
-                                organizationId={null}
-                                organizations={organizations}
-                            />
-                        </Box>
-                    </Paper>
+                    <EmailTemplatesTab
+                        emailTemplates={allEmailTemplates}
+                        onRefreshData={(filterOrgId = null) => fetchAllEmailTemplates(filterOrgId)}
+                        organizationId={null}
+                        organizations={organizations}
+                    />
                 </Box>
             </Container>
         </>

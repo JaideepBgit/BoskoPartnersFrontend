@@ -23,7 +23,6 @@ import {
   IconButton
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import Navbar from '../shared/Navbar/Navbar';
 import ConstantSumInput from '../shared/ConstantSumInput';
 import SurveyCompletionGuidance from '../shared/SurveyCompletionGuidance/SurveyCompletionGuidance';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -44,7 +43,7 @@ const SurveyTaking = () => {
   const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [surveyData, setSurveyData] = useState(null);
+  const [surveyData, setSurveyData] = useState(location.state?.surveyData || null);
   const [selectedSection, setSelectedSection] = useState(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState({});
@@ -52,6 +51,8 @@ const SurveyTaking = () => {
   const [surveyResponseId, setSurveyResponseId] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [showCompletionGuidance, setShowCompletionGuidance] = useState(false);
+  const [showSectionCompletion, setShowSectionCompletion] = useState(false);
+  const [completedSectionName, setCompletedSectionName] = useState('');
 
   // Get survey data from navigation state
   console.log('SurveyTaking location.state:', location);
@@ -64,8 +65,29 @@ const SurveyTaking = () => {
       return;
     }
 
-    fetchSurveyData();
+    // If surveyData was already passed from overview, use it
+    if (location.state?.surveyData) {
+      setSurveyData(location.state.surveyData);
+      if (!isInitialized) {
+        getOrCreateSurveyResponse();
+        setIsInitialized(true);
+      }
+      setLoading(false);
+    } else {
+      fetchSurveyData();
+    }
   }, [survey]);
+
+  // Auto-open section if specified
+  useEffect(() => {
+    if (location.state?.autoOpenSection && surveyData && !selectedSection) {
+      const sectionToOpen = location.state.autoOpenSection;
+      const startIndex = location.state.startQuestionIndex || 0;
+      
+      setSelectedSection(sectionToOpen);
+      setCurrentQuestionIndex(startIndex);
+    }
+  }, [location.state?.autoOpenSection, surveyData]);
 
   // Update progress whenever responses change
   useEffect(() => {
@@ -173,10 +195,32 @@ const SurveyTaking = () => {
 
   const handleCloseSection = () => {
     setSelectedSection(null);
+    setShowSectionCompletion(false);
+  };
+
+  const handleContinueToNextSection = () => {
+    setShowSectionCompletion(false);
+    setSelectedSection(null);
+    // User will select the next section from the main overview
+  };
+
+  const handleExitSurvey = () => {
+    setShowSectionCompletion(false);
+    navigate('/survey/intro', {
+      state: {
+        survey: survey,
+        surveyData: surveyData
+      }
+    });
   };
 
   const handleCloseSurvey = () => {
-    navigate('/surveys');
+    navigate('/survey/intro', {
+      state: {
+        survey: survey,
+        surveyData: surveyData
+      }
+    });
   };
 
   const handleCloseGuidance = () => {
@@ -195,7 +239,7 @@ const SurveyTaking = () => {
     }
   };
 
-  const handleNextQuestion = () => {
+  const handleNextQuestion = async () => {
     const currentQuestion = selectedSection.questions[currentQuestionIndex];
 
     // Check if question is required and has a valid answer
@@ -229,11 +273,15 @@ const SurveyTaking = () => {
       }
     }
 
+    // Auto-save after each question
+    await handleSaveDraft(true); // silent save
+
     if (currentQuestionIndex < selectedSection.questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
-      // End of section
-      handleCloseSection();
+      // End of section - show completion screen
+      setCompletedSectionName(selectedSection.name);
+      setShowSectionCompletion(true);
     }
   };
 
@@ -314,10 +362,12 @@ const SurveyTaking = () => {
     }
   };
 
-  const handleSaveDraft = async () => {
+  const handleSaveDraft = async (silent = false) => {
     try {
       if (!surveyResponseId) {
-        setError('No survey response ID available. Please refresh and try again.');
+        if (!silent) {
+          setError('No survey response ID available. Please refresh and try again.');
+        }
         return;
       }
 
@@ -337,7 +387,9 @@ const SurveyTaking = () => {
 
       if (response.ok) {
         console.log('Draft saved successfully for response ID:', surveyResponseId);
-        alert('Draft saved successfully!');
+        if (!silent) {
+          alert('Draft saved successfully!');
+        }
       } else {
         const errorData = await response.json();
         console.error('Failed to save draft:', errorData);
@@ -345,7 +397,9 @@ const SurveyTaking = () => {
       }
     } catch (err) {
       console.error('Error saving draft:', err);
-      setError('Failed to save draft. Please try again.');
+      if (!silent) {
+        setError('Failed to save draft. Please try again.');
+      }
     }
   };
 
@@ -692,108 +746,271 @@ const SurveyTaking = () => {
 
   if (loading) {
     return (
-      <>
-        <Navbar />
-        <Container sx={{ mt: 4, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-          <Box sx={{ textAlign: 'center' }}>
-            <LinearProgress sx={{ mb: 2, color: '#633394' }} />
-            <Typography>Loading survey...</Typography>
-          </Box>
-        </Container>
-      </>
+      <Box sx={{ 
+        minHeight: '100vh', 
+        backgroundColor: '#f5f5f5',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
+        <Box sx={{ textAlign: 'center' }}>
+          <LinearProgress sx={{ mb: 2, color: '#633394' }} />
+          <Typography>Loading survey...</Typography>
+        </Box>
+      </Box>
     );
   }
 
   if (error) {
     return (
-      <>
-        <Navbar />
-        <Container sx={{ mt: 4 }}>
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-          <Button
-            variant="contained"
-            onClick={() => navigate('/surveys')}
-            sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
-          >
-            Back to Surveys
-          </Button>
-        </Container>
-      </>
+      <Box sx={{ 
+        minHeight: '100vh', 
+        backgroundColor: '#f5f5f5',
+        p: 4
+      }}>
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+        <Button
+          variant="contained"
+          onClick={() => navigate('/surveys')}
+          sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
+        >
+          Back to Surveys
+        </Button>
+      </Box>
     );
   }
 
   const sections = groupQuestionsBySection();
   const stats = calculateSurveyStats();
 
+  // Calculate current question number across all sections
+  const getCurrentQuestionNumber = () => {
+    if (!selectedSection) return 0;
+    const sections = groupQuestionsBySection();
+    const sectionKeys = Object.keys(sections);
+    const currentSectionIndex = sectionKeys.indexOf(selectedSection.name);
+    
+    let questionNumber = 0;
+    for (let i = 0; i < currentSectionIndex; i++) {
+      questionNumber += sections[sectionKeys[i]].length;
+    }
+    questionNumber += currentQuestionIndex + 1;
+    
+    return questionNumber;
+  };
+
+  const getTotalQuestions = () => {
+    return surveyData?.questions?.length || 0;
+  };
+
   return (
-    <>
-      <Navbar />
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4, minHeight: 'calc(100vh - 200px)' }}>
+    <Box sx={{ 
+      minHeight: '100vh', 
+      backgroundColor: '#f5f5f5'
+    }}>
+      {/* Add CSS animation for pulse effect */}
+      <style>
+        {`
+          @keyframes pulse {
+            0% {
+              transform: scale(1);
+            }
+            50% {
+              transform: scale(1.1);
+            }
+            100% {
+              transform: scale(1);
+            }
+          }
+        `}
+      </style>
 
-        {/* Survey Completion Guidance Modal */}
-        <SurveyCompletionGuidance
-          open={showCompletionGuidance}
-          onClose={handleCloseGuidance}
-          surveyTitle={survey?.template_name || surveyData?.survey_code || "Survey"}
-          onNavigateToProfile={handleNavigateToProfile}
-        />
+      {/* Survey Completion Guidance Modal */}
+      <SurveyCompletionGuidance
+        open={showCompletionGuidance}
+        onClose={handleCloseGuidance}
+        surveyTitle={survey?.template_name || surveyData?.survey_code || "Survey"}
+        onNavigateToProfile={handleNavigateToProfile}
+      />
 
-        {/* Survey Intro Card - When no section is selected */}
-        {!selectedSection && (
+      {/* Section Completion Screen */}
+      {showSectionCompletion && (
+        <Box sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
           <Paper sx={{
-            backgroundColor: '#fff',
-            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-            p: 3,
-            minHeight: 'calc(100vh - 250px)'
+            p: 6,
+            maxWidth: 500,
+            textAlign: 'center',
+            borderRadius: 3
           }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="h4" sx={{
-                color: '#633394',
-                fontWeight: 'bold',
-                mb: 1
-              }}>
-                {survey.survey_code || surveyData.survey_code}
-              </Typography>
+            {/* Big Green Checkmark */}
+            <Box sx={{ mb: 3 }}>
+              <CheckCircleIcon sx={{ 
+                fontSize: '6rem', 
+                color: '#4caf50',
+                animation: 'pulse 1.5s ease-in-out'
+              }} />
+            </Box>
+
+            <Typography variant="h4" sx={{ mb: 2, color: '#333', fontWeight: 'bold' }}>
+              Great Job!
+            </Typography>
+
+            <Typography variant="h6" sx={{ mb: 4, color: '#666' }}>
+              You've completed the "{completedSectionName}" section
+            </Typography>
+
+            {/* Buttons */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Button
+                variant="contained"
+                size="large"
+                onClick={handleContinueToNextSection}
+                sx={{
+                  backgroundColor: '#633394',
+                  color: 'white',
+                  py: 1.5,
+                  fontSize: '1.1rem',
+                  '&:hover': {
+                    backgroundColor: '#7c52a5'
+                  }
+                }}
+              >
+                Continue to Next Section
+              </Button>
+              <Button
+                variant="outlined"
+                size="large"
+                onClick={handleExitSurvey}
+                sx={{
+                  borderColor: '#633394',
+                  color: '#633394',
+                  py: 1.5,
+                  fontSize: '1.1rem',
+                  '&:hover': {
+                    borderColor: '#7c52a5',
+                    backgroundColor: 'rgba(99, 51, 148, 0.08)'
+                  }
+                }}
+              >
+                Exit Survey
+              </Button>
+            </Box>
+          </Paper>
+        </Box>
+      )}
+
+      {/* Custom Header - Only show when in a section */}
+      {selectedSection && (
+        <Paper sx={{
+          backgroundColor: '#fff',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 1000
+        }}>
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: 3,
+            py: 2
+          }}>
+            {/* Left: X button to exit survey + Sections button */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <IconButton
-                aria-label="close"
                 onClick={handleCloseSurvey}
-                sx={{ color: '#633394' }}
-                title="Close and go back to My Surveys"
+                sx={{
+                  color: '#633394',
+                  '&:hover': { backgroundColor: 'rgba(99, 51, 148, 0.08)' }
+                }}
+                title="Exit Survey"
               >
                 <CloseIcon />
               </IconButton>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleCloseSection}
+                sx={{
+                  borderColor: '#633394',
+                  color: '#633394',
+                  textTransform: 'none',
+                  '&:hover': {
+                    borderColor: '#7c52a5',
+                    backgroundColor: 'rgba(99, 51, 148, 0.08)'
+                  }
+                }}
+              >
+                Sections
+              </Button>
             </Box>
 
-            <Typography variant="h6" sx={{
-              color: '#666',
-              mb: 3,
-              fontWeight: 400
-            }}>
-              {survey.organization_type} Survey
+            {/* Center: Question counter */}
+            <Typography variant="h6" sx={{ color: '#333', fontWeight: 600 }}>
+              Question {getCurrentQuestionNumber()} of {getTotalQuestions()}
             </Typography>
 
-            <Box sx={{ mb: 4 }}>
-              <Typography variant="body1" sx={{ mb: 2, color: '#333', lineHeight: 1.7, fontWeight: 500 }}>
-                Welcome to Your Survey Experience!
-              </Typography>
+            {/* Right: Save Draft button */}
+            <Button
+              variant="outlined"
+              startIcon={<SaveIcon />}
+              onClick={() => handleSaveDraft(false)}
+              disabled={Object.keys(responses).length === 0}
+              sx={{
+                borderColor: '#633394',
+                color: '#633394',
+                '&:hover': {
+                  borderColor: '#7c52a5',
+                  backgroundColor: 'rgba(99, 51, 148, 0.08)'
+                },
+                '&:disabled': {
+                  borderColor: '#ccc',
+                  color: '#999'
+                }
+              }}
+            >
+              Save Draft
+            </Button>
+          </Box>
+        </Paper>
+      )}
 
-              <Typography variant="body1" sx={{ mb: 2, color: '#555', lineHeight: 1.6 }}>
-                Thank you for participating in this important research initiative. Your insights and experiences are valuable
-                in helping us understand and improve our community services and programs.
+      {/* Section Selection Overview - When no section is selected */}
+      {!selectedSection && (
+        <Container maxWidth="lg" sx={{ py: 4 }}>
+          <Paper sx={{
+            backgroundColor: '#fff',
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+            p: 4,
+            borderRadius: 2
+          }}>
+            {/* Header */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h5" sx={{ color: '#633394', fontWeight: 'bold' }}>
+                Select a Section to Begin
               </Typography>
-
-              <Typography variant="body1" sx={{ mb: 2, color: '#555', lineHeight: 1.6 }}>
-                <strong>What to expect:</strong> This survey is designed to gather meaningful data about your organization,
-                community involvement, and experiences. Your responses will contribute to research that helps shape better
-                policies and programs for communities like yours.
-              </Typography>
-
-              <Typography variant="body1" sx={{ color: '#633394', lineHeight: 1.6, fontWeight: 500 }}>
-                <strong>How to proceed:</strong> Review the survey overview below, then click on any section to begin.
-                You can complete sections in any order and save your progress at any time.
-              </Typography>
+              <IconButton
+                onClick={handleCloseSurvey}
+                sx={{
+                  color: '#633394',
+                  '&:hover': { backgroundColor: 'rgba(99, 51, 148, 0.08)' }
+                }}
+              >
+                <CloseIcon />
+              </IconButton>
             </Box>
 
             {/* Progress Bar */}
@@ -820,253 +1037,93 @@ const SurveyTaking = () => {
               />
             </Box>
 
-            {/* Enhanced Survey Overview */}
-            <Box sx={{
-              backgroundColor: '#f8f9fa',
-              borderRadius: '8px',
-              mb: 3,
-              p: 3,
-              border: '1px solid #e0e0e0'
-            }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <AssignmentIcon sx={{ color: '#633394', fontSize: '1.5rem', mr: 1.5 }} />
-                <Typography variant="h6" sx={{ color: '#333', fontWeight: 700 }}>
-                  Survey Overview & Guide
-                </Typography>
-              </Box>
+            {/* Section List */}
+            <Box sx={{ mb: 4 }}>
+              {Object.entries(sections).map(([sectionName, questions]) => {
+                const sectionProgress = questions.filter(q => responses[q.id]).length;
+                const totalQuestions = questions.length;
+                const isCompleted = sectionProgress === totalQuestions;
 
-              {/* Survey Purpose */}
-              <Box sx={{ mb: 3, p: 2, backgroundColor: '#fff', borderRadius: '6px', border: '1px solid #e8e8e8' }}>
-                <Typography variant="body1" sx={{ color: '#555', lineHeight: 1.6, mb: 1.5 }}>
-                  <strong>About This Survey:</strong> Your responses contribute to important research that helps improve
-                  community services and programs. Each section focuses on different aspects of your organization and experiences.
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#633394', fontWeight: 500 }}>
-                  Take your time and provide thoughtful responses. Your insights are valuable to our research.
-                </Typography>
-              </Box>
-
-              {/* Statistics Grid */}
-              <Box
-                sx={{
-                  p: 2,
-                  display: 'grid',
-                  gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(4, 1fr)' },
-                  gap: { xs: 2, sm: 1.5 },
-                  borderRadius: '6px',
-                  mb: 3,
-                  backgroundColor: '#fff',
-                  border: '1px solid #e0e0e0'
-                }}
-              >
-                <Box sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  textAlign: 'center',
-                  p: 1
-                }}>
-                  <ListAltIcon sx={{ color: '#633394', fontSize: '1.5rem', mb: 0.5 }} />
-                  <Typography variant="h6" sx={{ color: '#633394', fontWeight: 700, mb: 0.5 }}>
-                    {stats.sectionCount}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: '#666', fontWeight: 500 }}>
-                    Sections
-                  </Typography>
-                </Box>
-
-                <Box sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  textAlign: 'center',
-                  p: 1
-                }}>
-                  <QuizIcon sx={{ color: '#633394', fontSize: '1.5rem', mb: 0.5 }} />
-                  <Typography variant="h6" sx={{ color: '#633394', fontWeight: 700, mb: 0.5 }}>
-                    {stats.questionCount}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: '#666', fontWeight: 500 }}>
-                    Questions
-                  </Typography>
-                </Box>
-
-                <Box sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  textAlign: 'center',
-                  p: 1
-                }}>
-                  <AccessTimeIcon sx={{ color: '#633394', fontSize: '1.5rem', mb: 0.5 }} />
-                  <Typography variant="h6" sx={{ color: '#633394', fontWeight: 700, mb: 0.5 }}>
-                    {stats.estimatedTime}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: '#666', fontWeight: 500 }}>
-                    Minutes
-                  </Typography>
-                </Box>
-
-                <Box sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  textAlign: 'center',
-                  p: 1
-                }}>
-                  <CheckCircleIcon sx={{ color: '#633394', fontSize: '1.5rem', mb: 0.5 }} />
-                  <Typography variant="h6" sx={{ color: '#633394', fontWeight: 700, mb: 0.5 }}>
-                    {getTotalRequiredQuestions()}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: '#666', fontWeight: 500 }}>
-                    Required
-                  </Typography>
-                </Box>
-              </Box>
-
-              {/* Helpful Tips */}
-              <Box sx={{
-                p: 2,
-                backgroundColor: 'rgba(99, 51, 148, 0.05)',
-                borderRadius: '6px',
-                border: '1px solid rgba(99, 51, 148, 0.15)'
-              }}>
-                <Typography variant="subtitle2" sx={{ mb: 2, color: '#633394', fontWeight: 600 }}>
-                  📝 How to Complete This Survey:
-                </Typography>
-                <Box sx={{
-                  display: 'grid',
-                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
-                  gap: 1.5
-                }}>
-                  <Typography variant="body2" sx={{ color: '#555', display: 'flex', alignItems: 'flex-start' }}>
-                    <span style={{ marginRight: '8px', color: '#633394' }}>✓</span>
-                    Click any section below to begin
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: '#555', display: 'flex', alignItems: 'flex-start' }}>
-                    <span style={{ marginRight: '8px', color: '#633394' }}>✓</span>
-                    Save progress with "Save Draft" button
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: '#555', display: 'flex', alignItems: 'flex-start' }}>
-                    <span style={{ marginRight: '8px', color: '#633394' }}>✓</span>
-                    Complete sections in any order
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: '#555', display: 'flex', alignItems: 'flex-start' }}>
-                    <span style={{ marginRight: '8px', color: '#633394' }}>✓</span>
-                    Review answers before submitting
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-
-            {/* Section Details */}
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="subtitle2" sx={{ mb: 2, color: '#333', fontWeight: 600 }}>
-                Section Details:
-              </Typography>
-
-              <Box sx={{
-                paddingBottom: 2
-              }}>
-                {Object.entries(sections).map(([sectionName, questions]) => {
-                  const sectionProgress = questions.filter(q => responses[q.id]).length;
-                  const totalQuestions = questions.length;
-                  const isCompleted = sectionProgress === totalQuestions;
-
-                  return (
-                    <Box
-                      key={sectionName}
-                      sx={{
-                        mb: 2,
-                        borderRadius: '4px',
-                        overflow: 'hidden',
-                        cursor: 'pointer',
-                        border: '1px solid #e0e0e0',
-                        transition: 'transform 0.2s, box-shadow 0.2s',
-                        '&:hover': {
-                          transform: 'translateY(-2px)',
-                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
-                        }
-                      }}
-                      onClick={() => handleOpenSection(sectionName, questions)}
-                    >
-                      <Box sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        p: 2,
-                        backgroundColor: '#f9f9f9',
-                        borderBottom: '1px solid #e0e0e0'
-                      }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Box sx={{
-                            display: 'flex',
-                            p: 0.5,
-                            borderRadius: '4px',
-                            backgroundColor: isCompleted ? 'rgba(76, 175, 80, 0.1)' : 'rgba(99, 51, 148, 0.1)'
-                          }}>
-                            {isCompleted ? (
-                              <CheckCircleIcon fontSize="small" sx={{ color: '#4caf50' }} />
-                            ) : (
-                              <AssignmentIcon fontSize="small" sx={{ color: '#633394' }} />
-                            )}
-                          </Box>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#333' }}>
-                            {sectionName}
-                          </Typography>
-                        </Box>
-                        <Chip
-                          label={`${sectionProgress}/${totalQuestions} completed`}
-                          size="small"
-                          sx={{
-                            height: '24px',
-                            fontSize: '0.75rem',
-                            backgroundColor: isCompleted ? 'rgba(76, 175, 80, 0.1)' : 'rgba(99, 51, 148, 0.08)',
-                            color: isCompleted ? '#4caf50' : '#633394',
-                            fontWeight: 500,
-                            borderRadius: '4px'
-                          }}
-                        />
-                      </Box>
-                      <Box sx={{
-                        p: 2,
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        backgroundColor: 'white'
-                      }}>
-                        <Typography variant="body2" sx={{ color: '#666', fontSize: '0.875rem' }}>
-                          {questions.filter(q => q.is_required).length} required questions
-                        </Typography>
+                return (
+                  <Box
+                    key={sectionName}
+                    onClick={() => handleOpenSection(sectionName, questions)}
+                    sx={{
+                      mb: 2,
+                      borderRadius: 2,
+                      overflow: 'hidden',
+                      cursor: 'pointer',
+                      border: '1px solid #e0e0e0',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                      }
+                    }}
+                  >
+                    <Box sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      p: 2,
+                      backgroundColor: '#f9f9f9',
+                      borderBottom: '1px solid #e0e0e0'
+                    }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Box sx={{
                           display: 'flex',
-                          alignItems: 'center',
-                          color: '#633394',
-                          gap: 0.5
+                          p: 0.5,
+                          borderRadius: 1,
+                          backgroundColor: isCompleted ? 'rgba(76, 175, 80, 0.1)' : 'rgba(99, 51, 148, 0.1)'
                         }}>
-                          <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.875rem' }}>
-                            {isCompleted ? 'Review Section' : 'Start Section'}
-                          </Typography>
-                          <ArrowForwardIcon sx={{ fontSize: '0.9rem' }} />
+                          {isCompleted ? (
+                            <CheckCircleIcon fontSize="small" sx={{ color: '#4caf50' }} />
+                          ) : (
+                            <AssignmentIcon fontSize="small" sx={{ color: '#633394' }} />
+                          )}
                         </Box>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333' }}>
+                          {sectionName}
+                        </Typography>
+                      </Box>
+                      <Chip
+                        label={`${sectionProgress}/${totalQuestions} completed`}
+                        size="small"
+                        sx={{
+                          backgroundColor: isCompleted ? 'rgba(76, 175, 80, 0.1)' : 'rgba(99, 51, 148, 0.08)',
+                          color: isCompleted ? '#4caf50' : '#633394',
+                          fontWeight: 500
+                        }}
+                      />
+                    </Box>
+                    <Box sx={{
+                      p: 2,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      backgroundColor: 'white'
+                    }}>
+                      <Typography variant="body2" sx={{ color: '#666' }}>
+                        {questions.filter(q => q.is_required).length} required questions
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', color: '#633394', gap: 0.5 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {isCompleted ? 'Review Section' : 'Start Section'}
+                        </Typography>
+                        <ArrowForwardIcon sx={{ fontSize: '1rem' }} />
                       </Box>
                     </Box>
-                  );
-                })}
-              </Box>
+                  </Box>
+                );
+              })}
             </Box>
 
             {/* Action Buttons */}
-            <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
-              {/* Save Draft Button */}
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
               <Button
                 variant="outlined"
                 size="large"
-                onClick={handleSaveDraft}
+                onClick={() => handleSaveDraft(false)}
                 disabled={Object.keys(responses).length === 0}
                 startIcon={<SaveIcon />}
                 sx={{
@@ -1074,7 +1131,6 @@ const SurveyTaking = () => {
                   color: '#633394',
                   px: 3,
                   py: 1.5,
-                  fontSize: '1rem',
                   '&:hover': {
                     borderColor: '#7c52a5',
                     backgroundColor: 'rgba(99, 51, 148, 0.08)'
@@ -1088,7 +1144,6 @@ const SurveyTaking = () => {
                 Save Draft
               </Button>
 
-              {/* Submit Survey Button */}
               <Button
                 variant="contained"
                 size="large"
@@ -1100,7 +1155,6 @@ const SurveyTaking = () => {
                   color: isAllRequiredQuestionsAnswered() ? '#fff' : '#999',
                   px: 4,
                   py: 1.5,
-                  fontSize: '1.1rem',
                   '&:hover': {
                     backgroundColor: isAllRequiredQuestionsAnswered() ? '#45a049' : '#ccc'
                   },
@@ -1126,68 +1180,20 @@ const SurveyTaking = () => {
               </Typography>
             </Box>
           </Paper>
-        )}
+        </Container>
+      )}
 
-        {/* Section View - When a section is selected */}
-        {selectedSection && (
-          <Paper sx={{
-            display: 'flex',
-            flexDirection: 'column',
+      {/* Section View - When a section is selected */}
+      {selectedSection && (
+        <Container maxWidth="lg" sx={{ py: 0, px: 0 }}>
+          <Box sx={{
             backgroundColor: '#fff',
-            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-            minHeight: 'calc(100vh - 250px)'
+            minHeight: 'calc(100vh - 100px)'
           }}>
-            {/* Header */}
-            <Box sx={{
-              px: 3,
-              py: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              borderBottom: '1px solid #e0e0e0',
-              backgroundColor: '#fff'
-            }}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <IconButton
-                  onClick={handleCloseSection}
-                  size="small"
-                  sx={{
-                    mr: 2,
-                    color: '#633394',
-                    '&:hover': { backgroundColor: 'rgba(99, 51, 148, 0.08)' }
-                  }}
-                >
-                  <CloseIcon />
-                </IconButton>
-                <Typography variant="h6" sx={{ color: '#333', fontWeight: 600 }}>
-                  {selectedSection.name}
-                </Typography>
-              </Box>
-              <Typography variant="body2" sx={{ color: '#666' }}>
-                Question {currentQuestionIndex + 1} of {selectedSection.questions.length}
-              </Typography>
-            </Box>
-
-            {/* Progress Bar */}
-            <Box sx={{ px: 3, py: 2, backgroundColor: '#f9f9f9' }}>
-              <LinearProgress
-                variant="determinate"
-                value={((currentQuestionIndex + 1) / selectedSection.questions.length) * 100}
-                sx={{
-                  height: 6,
-                  borderRadius: 3,
-                  backgroundColor: '#e0e0e0',
-                  '& .MuiLinearProgress-bar': {
-                    backgroundColor: '#633394'
-                  }
-                }}
-              />
-            </Box>
-
             {/* Question Content */}
-            <Box sx={{ px: 3, py: 4, flexGrow: 1 }}>
+            <Box sx={{ px: 3, py: 6, display: 'flex', justifyContent: 'center' }}>
               {selectedSection.questions[currentQuestionIndex] && (
-                <Card sx={{ maxWidth: 800, mx: 'auto', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)' }}>
+                <Card sx={{ maxWidth: 800, width: '100%', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)' }}>
                   <CardContent sx={{ p: 4 }}>
                     <Typography variant="h6" sx={{ mb: 3, color: '#333', fontWeight: 600 }}>
                       {selectedSection.questions[currentQuestionIndex].question_text}
@@ -1204,12 +1210,17 @@ const SurveyTaking = () => {
 
             {/* Navigation Buttons */}
             <Box sx={{
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
               p: 3,
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
+              backgroundColor: '#fff',
               borderTop: '1px solid #e0e0e0',
-              backgroundColor: '#f9f9f9'
+              boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.05)'
             }}>
               <Button
                 variant="outlined"
@@ -1219,26 +1230,14 @@ const SurveyTaking = () => {
                 sx={{
                   borderColor: '#633394',
                   color: '#633394',
-                  '&:hover': { borderColor: '#7c52a5', backgroundColor: 'rgba(99, 51, 148, 0.08)' }
+                  '&:hover': { borderColor: '#7c52a5', backgroundColor: 'rgba(99, 51, 148, 0.08)' },
+                  '&:disabled': {
+                    borderColor: '#ccc',
+                    color: '#999'
+                  }
                 }}
               >
                 Previous
-              </Button>
-
-              {/* Save Draft Button in Section View */}
-              <Button
-                variant="text"
-                onClick={handleSaveDraft}
-                disabled={Object.keys(responses).length === 0}
-                startIcon={<SaveIcon fontSize="small" />}
-                sx={{
-                  color: '#633394',
-                  fontSize: '0.875rem',
-                  '&:hover': { backgroundColor: 'rgba(99, 51, 148, 0.08)' },
-                  '&:disabled': { color: '#ccc' }
-                }}
-              >
-                Save Draft
               </Button>
 
               <Button
@@ -1253,10 +1252,10 @@ const SurveyTaking = () => {
                 {currentQuestionIndex === selectedSection.questions.length - 1 ? 'Complete Section' : 'Next'}
               </Button>
             </Box>
-          </Paper>
-        )}
-      </Container>
-    </>
+          </Box>
+        </Container>
+      )}
+    </Box>
   );
 };
 

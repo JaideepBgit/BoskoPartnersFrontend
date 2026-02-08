@@ -33,7 +33,7 @@ const adminColors = {
     secondary: '#967CB2',       // Secondary color (lighter purple) from AdminLandingPage hover
     background: '#FFFFFF',      // Background color from AdminLandingPage cards
     text: '#212121',            // Text color
-    headerBg: '#b39ddb',        // Mauve/lavender for table header
+    headerBg: '#E0E0E0',        // Light gray for table header
     filledColor: '#633394',     // Primary purple for filled status
     notFilledColor: '#967CB2',  // Secondary purple for not filled status
     borderColor: '#e0e0e0',     // Border color
@@ -1438,7 +1438,7 @@ function AdminDashboard({ onLogout }) {
                                 <Table sx={{ borderCollapse: 'collapse' }}>
                                     <TableHead>
                                         <TableRow sx={{ backgroundColor: adminColors.headerBg }}>
-                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, width: '50px', color: '#212121' }}>
+                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, width: '50px', color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>
                                                 <Checkbox
                                                     checked={selectedUsers.length > 0}
                                                     indeterminate={selectedUsers.length > 0 && selectedUsers.length < data.users.filter(user => {
@@ -1455,18 +1455,18 @@ function AdminDashboard({ onLogout }) {
                                                         return organizationMatch && userMatch && statusMatch && user.status === 'Not-Filled';
                                                     }).length}
                                                     onChange={handleSelectAllUsers}
-                                                    sx={{ color: '#212121' }}
+                                                    sx={{ color: '#000000' }}
                                                 />
                                             </TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, color: '#212121' }}>Organization</TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, color: '#212121' }}>Users</TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, color: '#212121' }}>Status</TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, color: '#212121' }}>Days Since Created</TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, color: '#212121' }}>Survey Progress</TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, color: '#212121' }}>Reminders Sent</TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, color: '#212121' }}>Start Date</TableCell>
-                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, color: '#212121' }}>End Date</TableCell>
-                                            <TableCell sx={{ color: '#212121' }}>Actions</TableCell>
+                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Organization</TableCell>
+                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Users</TableCell>
+                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Status</TableCell>
+                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Days Since Created</TableCell>
+                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Survey Progress</TableCell>
+                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Reminders Sent</TableCell>
+                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Start Date</TableCell>
+                                            <TableCell sx={{ borderRight: `1px solid ${adminColors.borderColor}`, color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>End Date</TableCell>
+                                            <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Actions</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>

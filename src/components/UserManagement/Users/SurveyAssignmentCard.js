@@ -22,7 +22,7 @@ import {
 } from '@mui/icons-material';
 import SurveyAssignmentService from '../../../services/Admin/SurveyAssignment/SurveyAssignmentService';
 
-const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
+const SurveyAssignmentCard = ({ users, onRefreshUsers, selectedUserForView: externalSelectedUser, onUserDeselect }) => {
     // State management
     const [templates, setTemplates] = useState([]);
     const [selectedUsers, setSelectedUsers] = useState([]);
@@ -53,6 +53,15 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
         loadTemplates();
         loadOrganizations();
     }, []);
+
+    // Sync with external user selection
+    useEffect(() => {
+        if (externalSelectedUser) {
+            setSelectedUserForView(externalSelectedUser);
+            setExpanded(true);
+            loadUserAssignments(externalSelectedUser.id);
+        }
+    }, [externalSelectedUser]);
 
     const showAlert = (message, severity = 'info') => {
         const alert = { id: Date.now(), message, severity };
@@ -543,7 +552,10 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers }) => {
                                             <Button
                                                 variant="outlined"
                                                 fullWidth
-                                                onClick={() => setSelectedUserForView(null)}
+                                                onClick={() => {
+                                                    setSelectedUserForView(null);
+                                                    if (onUserDeselect) onUserDeselect();
+                                                }}
                                                 sx={{ color: '#633394', borderColor: '#633394' }}
                                             >
                                                 Back to Bulk Assignment
