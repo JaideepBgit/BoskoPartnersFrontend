@@ -1,6 +1,6 @@
 // SurveyAssignmentService.js - Service for handling survey assignment API calls
 
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 class SurveyAssignmentService {
     /**
@@ -38,7 +38,7 @@ class SurveyAssignmentService {
 
             console.log('AssignSurvey payload', payload);
 
-            const response = await fetch(`${API_BASE_URL}/api/assign-survey`, {
+            const response = await fetch(`${API_BASE_URL}/assign-survey`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -65,8 +65,8 @@ class SurveyAssignmentService {
      */
     static async getUserSurveyAssignments(userId) {
         try {
-            console.log(`Fetching assignments for user ${userId} from: ${API_BASE_URL}/api/users/${userId}/survey-assignments`);
-            const response = await fetch(`${API_BASE_URL}/api/users/${userId}/survey-assignments`);
+            console.log(`Fetching assignments for user ${userId} from: ${API_BASE_URL}/users/${userId}/survey-assignments`);
+            const response = await fetch(`${API_BASE_URL}/users/${userId}/survey-assignments`);
 
             console.log('Response status:', response.status);
             console.log('Response headers:', response.headers);
@@ -95,7 +95,7 @@ class SurveyAssignmentService {
      */
     static async getUsers() {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/users`);
+            const response = await fetch(`${API_BASE_URL}/users`);
 
             if (!response.ok) {
                 throw new Error('Failed to fetch users');
@@ -116,7 +116,7 @@ class SurveyAssignmentService {
      */
     static async getSurveyTemplates() {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/templates`);
+            const response = await fetch(`${API_BASE_URL}/templates`);
 
             if (!response.ok) {
                 throw new Error('Failed to fetch survey templates');
@@ -135,7 +135,7 @@ class SurveyAssignmentService {
      */
     static async getOrganizations() {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/organizations`);
+            const response = await fetch(`${API_BASE_URL}/organizations`);
 
             if (!response.ok) {
                 throw new Error('Failed to fetch organizations');
@@ -156,7 +156,7 @@ class SurveyAssignmentService {
      */
     static async getTemplatesForOrganization(organizationId) {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/organizations/${organizationId}/survey-templates`);
+            const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/survey-templates`);
 
             if (!response.ok) {
                 throw new Error('Failed to fetch survey templates for organization');
@@ -177,7 +177,7 @@ class SurveyAssignmentService {
      */
     static async sendReminderEmail(userId) {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/users/${userId}/reminder-email`, {
+            const response = await fetch(`${API_BASE_URL}/users/${userId}/reminder-email`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -202,7 +202,7 @@ class SurveyAssignmentService {
      */
     static async getUsersWithPendingSurveys() {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/users/pending-surveys`);
+            const response = await fetch(`${API_BASE_URL}/users/pending-surveys`);
 
             if (!response.ok) {
                 const errorData = await response.json();
@@ -223,7 +223,7 @@ class SurveyAssignmentService {
      */
     static async sendBulkReminderEmails(userIds) {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/send-bulk-reminder-emails`, {
+            const response = await fetch(`${API_BASE_URL}/send-bulk-reminder-emails`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -255,7 +255,7 @@ class SurveyAssignmentService {
         try {
             console.log(`Removing assignment ${assignmentId} for user ${userId}`);
 
-            const response = await fetch(`${API_BASE_URL}/api/users/${userId}/survey-assignments/${assignmentId}`, {
+            const response = await fetch(`${API_BASE_URL}/users/${userId}/survey-assignments/${assignmentId}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',

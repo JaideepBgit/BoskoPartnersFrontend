@@ -219,7 +219,7 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers, selectedUserForView: exte
 
     const testDatabaseConnection = async () => {
         try {
-            const response = await fetch('http://localhost:5000/api/test/survey-assignments');
+            const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/test/survey-assignments`);
             const data = await response.json();
             console.log('Database test results:', data);
             showAlert(`Database test: ${data.total_assignments} assignments, ${data.total_users} users, ${data.total_templates} templates`, 'info');

@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
 // Define the backend API URL
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 // Configure axios defaults
 axios.defaults.withCredentials = false;
@@ -40,7 +40,7 @@ export const FormProvider = ({ children }) => {
     const initializeTestData = async () => {
       try {
         console.log('Initializing test data...');
-        const response = await axios.get(`${API_BASE_URL}/api/initialize-test-data`);
+        const response = await axios.get(`${API_BASE_URL}/initialize-test-data`);
         console.log('Test data initialized:', response.data);
 
         if (response.data.status === 'success') {
@@ -69,7 +69,7 @@ export const FormProvider = ({ children }) => {
 
       try {
         console.log('Attempting to load form data for user ID:', userId);
-        const response = await axios.get(`${API_BASE_URL}/api/user-details/${userId}`);
+        const response = await axios.get(`${API_BASE_URL}/user-details/${userId}`);
         console.log('Form data loaded successfully:', response.data);
 
         if (response.data.form_data) {
@@ -197,7 +197,7 @@ export const FormProvider = ({ children }) => {
           }
         } else {
           // Try API save
-          const response = await axios.post(`${API_BASE_URL}/api/user-details/save`, {
+          const response = await axios.post(`${API_BASE_URL}/user-details/save`, {
             user_id: userId,
             organization_id: organizationId,
             form_data: formData,
@@ -254,7 +254,7 @@ export const FormProvider = ({ children }) => {
         }
       } else {
         // Try API save
-        const response = await axios.post(`${API_BASE_URL}/api/user-details/save`, {
+        const response = await axios.post(`${API_BASE_URL}/user-details/save`, {
           user_id: userId,
           organization_id: organizationId,
           form_data: formData,
@@ -312,7 +312,7 @@ export const FormProvider = ({ children }) => {
           }
         } else {
           // Try API save
-          const response = await axios.post(`${API_BASE_URL}/api/user-details/submit`, {
+          const response = await axios.post(`${API_BASE_URL}/user-details/submit`, {
             user_id: userId,
             form_data: formData
           });

@@ -83,7 +83,7 @@ const AIChatInterface = ({ surveyData, comparisonData, onGenerateReport, selecte
     const analyzeQuery = async (query) => {
         try {
             // Call RAG endpoint
-            const response = await fetch('http://localhost:5000/api/rag/ask', {
+            const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/rag/ask`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
