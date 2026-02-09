@@ -20,7 +20,7 @@ const UserLandingPage = () => {
 
   const handleEnterSurvey = async () => {
     console.log('Attempting to validate survey code:', surveyCode);
-    
+
     if (!surveyCode.trim()) {
       setError('Please enter a survey code');
       return;
@@ -31,9 +31,9 @@ const UserLandingPage = () => {
 
     try {
       console.log('Calling validateSurveyCode with:', surveyCode);
-      const {survey} = await validateSurveyCode(surveyCode);
+      const { survey } = await validateSurveyCode(surveyCode);
       console.log('Survey validation successful:', survey);
-      
+
       // Store the validated survey code and redirect to user profile
       localStorage.setItem('surveyCode', surveyCode);
       console.log('Redirecting to user profile...');
@@ -55,8 +55,8 @@ const UserLandingPage = () => {
       }}
     >
       <Navbar />
-      <Container 
-        sx={{ 
+      <Container
+        sx={{
           pt: 4,
           pb: 4,
           display: 'flex',
@@ -76,7 +76,7 @@ const UserLandingPage = () => {
           border: '1px solid #e0e0e0'
         }}>
           <CardContent sx={{ padding: '2rem' }}>
-            <Typography variant="h4" align="center" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
+            <Typography variant="h4" align="center" gutterBottom sx={{ fontWeight: 'bold', mb: 3, color: '#212121' }}>
               Welcome!
             </Typography>
             <Typography variant="h6" align="center" gutterBottom sx={{ mb: 3 }}>
@@ -91,8 +91,8 @@ const UserLandingPage = () => {
                 variant="outlined"
                 value={surveyCode}
                 onChange={(e) => setSurveyCode(e.target.value)}
-                sx={{ 
-                  mb: 3, 
+                sx={{
+                  mb: 3,
                   width: '100%',
                   '& .MuiOutlinedInput-root': {
                     '& fieldset': {
@@ -107,8 +107,8 @@ const UserLandingPage = () => {
                   },
                 }}
               />
-              <Button 
-                variant="contained" 
+              <Button
+                variant="contained"
                 onClick={handleEnterSurvey}
                 disabled={loading}
                 sx={{

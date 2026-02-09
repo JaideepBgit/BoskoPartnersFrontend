@@ -2717,7 +2717,7 @@ const VisualReportBuilder = ({ onLogout }) => {
             <Container maxWidth="xl" sx={{ mt: 4, pb: 4 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                     <Box>
-                        <Typography variant="h4" sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
+                        <Typography variant="h4" sx={{ color: adminColors.text, fontWeight: 'bold' }}>
                             Visual Report Builder
                         </Typography>
                         <Typography variant="body2" sx={{ color: testMode ? '#4caf50' : adminColors.secondary, fontWeight: 500 }}>

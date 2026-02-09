@@ -6,7 +6,7 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
-import Navbar from '../../shared/Navbar/Navbar';
+import InternalHeader from '../../shared/Headers/InternalHeader';
 import EnhancedAddressInput from '../../UserManagement/common/EnhancedAddressInput';
 import { addOrganization } from '../../../services/UserManagement/UserManagementService';
 
@@ -130,61 +130,23 @@ function AddAssociationPage() {
 
     return (
         <>
-            <Navbar />
-            <Container maxWidth="lg" sx={{ py: 4, backgroundColor: colors.background, minHeight: '100vh' }}>
-                {/* Header with Back Button, Title, and Action Buttons */}
-                <Box sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    mb: 4,
-                    position: 'sticky',
-                    top: 0,
-                    backgroundColor: colors.background,
-                    zIndex: 1000,
-                    py: 2
-                }}>
-                    {/* Left: Back Button */}
+            <InternalHeader
+                title="Add New Association"
+                leftActions={
                     <Button
                         variant="outlined"
                         startIcon={<ArrowBackIcon />}
                         onClick={handleBack}
-                        sx={{
-                            borderColor: colors.primary,
-                            color: colors.primary,
-                            textTransform: 'none',
-                            borderRadius: 2,
-                            '&:hover': {
-                                borderColor: colors.secondary,
-                                backgroundColor: colors.accentBg
-                            }
-                        }}
                     >
                         Associations
                     </Button>
-
-                    {/* Center: Title */}
-                    <Typography variant="h4" sx={{ color: colors.textPrimary, fontWeight: 'bold' }}>
-                        Add New Association
-                    </Typography>
-
-                    {/* Right: Action Buttons */}
+                }
+                rightActions={
                     <Box sx={{ display: 'flex', gap: 2 }}>
                         <Button
                             variant="outlined"
                             onClick={handleBack}
                             disabled={loading}
-                            sx={{
-                                borderColor: colors.primary,
-                                color: colors.primary,
-                                textTransform: 'none',
-                                px: 3,
-                                borderRadius: 2,
-                                '&:hover': {
-                                    borderColor: colors.secondary,
-                                    backgroundColor: colors.accentBg
-                                }
-                            }}
                         >
                             Cancel
                         </Button>
@@ -193,19 +155,13 @@ function AddAssociationPage() {
                             variant="contained"
                             disabled={loading}
                             startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-                            sx={{
-                                backgroundColor: colors.primary,
-                                textTransform: 'none',
-                                px: 3,
-                                borderRadius: 2,
-                                minWidth: '180px',
-                                '&:hover': { backgroundColor: colors.secondary }
-                            }}
                         >
                             {loading ? 'Saving...' : 'Save Association'}
                         </Button>
                     </Box>
-                </Box>
+                }
+            />
+            <Container maxWidth="lg" sx={{ py: 4, backgroundColor: colors.background, minHeight: '100vh' }}>
 
                 {error && (
                     <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>

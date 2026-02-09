@@ -302,7 +302,7 @@ const ReportLibrary = ({ onOpenReport, onCreateNew }) => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                             <AssessmentIcon sx={{ color: colors.primary, fontSize: 32 }} />
                             <Box>
-                                <Typography variant="h5" sx={{ fontWeight: 600, color: colors.primary }}>
+                                <Typography variant="h5" sx={{ fontWeight: 600, color: '#212121' }}>
                                     Report Library
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
@@ -425,13 +425,13 @@ const ReportLibrary = ({ onOpenReport, onCreateNew }) => {
                             <Table stickyHeader>
                                 <TableHead>
                                     <TableRow>
-                                        <TableCell sx={{ fontWeight: 600, bgcolor: colors.background }}>Report</TableCell>
-                                        <TableCell sx={{ fontWeight: 600, bgcolor: colors.background }}>Type</TableCell>
-                                        <TableCell sx={{ fontWeight: 600, bgcolor: colors.background }}>Surveys</TableCell>
-                                        <TableCell sx={{ fontWeight: 600, bgcolor: colors.background }}>Performance</TableCell>
-                                        <TableCell sx={{ fontWeight: 600, bgcolor: colors.background }}>Shared With</TableCell>
-                                        <TableCell sx={{ fontWeight: 600, bgcolor: colors.background }}>Created</TableCell>
-                                        <TableCell sx={{ fontWeight: 600, bgcolor: colors.background }} align="right">Actions</TableCell>
+                                        <TableCell sx={{ fontWeight: 600, bgcolor: '#FAFAFA', fontSize: '0.75rem' }}>Report</TableCell>
+                                        <TableCell sx={{ fontWeight: 600, bgcolor: '#FAFAFA', fontSize: '0.75rem' }}>Type</TableCell>
+                                        <TableCell sx={{ fontWeight: 600, bgcolor: '#FAFAFA', fontSize: '0.75rem' }}>Surveys</TableCell>
+                                        <TableCell sx={{ fontWeight: 600, bgcolor: '#FAFAFA', fontSize: '0.75rem' }}>Performance</TableCell>
+                                        <TableCell sx={{ fontWeight: 600, bgcolor: '#FAFAFA', fontSize: '0.75rem' }}>Shared With</TableCell>
+                                        <TableCell sx={{ fontWeight: 600, bgcolor: '#FAFAFA', fontSize: '0.75rem' }}>Created</TableCell>
+                                        <TableCell sx={{ fontWeight: 600, bgcolor: '#FAFAFA', fontSize: '0.75rem' }} align="right">Actions</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>

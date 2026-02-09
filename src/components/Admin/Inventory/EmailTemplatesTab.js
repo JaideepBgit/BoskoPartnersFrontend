@@ -716,13 +716,13 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
 
   return (
     <Box>
-      <Typography
+      {/*<Typography
         variant={isMobile ? 'subtitle1' : 'h6'}
         gutterBottom
         sx={{ color: '#633394', fontWeight: 'bold', fontSize: isMobile ? '1.1rem' : '1.25rem' }}
       >
         Email Templates
-      </Typography>
+      </Typography>*/}
 
       <Paper sx={{ p: isMobile ? 1.5 : 2, mb: 3, backgroundColor: '#FFFFFF', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>

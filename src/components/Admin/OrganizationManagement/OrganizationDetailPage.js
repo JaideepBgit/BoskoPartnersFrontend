@@ -9,6 +9,7 @@ import {
     Dialog, DialogTitle, DialogContent, DialogActions, FormControl, InputLabel, Select, TableSortLabel,
     DialogContentText, Checkbox, Autocomplete
 } from '@mui/material';
+import InternalHeader from '../../shared/Headers/InternalHeader';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import SearchIcon from '@mui/icons-material/Search';
@@ -1044,48 +1045,29 @@ function OrganizationDetailPage() {
 
     return (
         <>
-            <Navbar />
-            <Container maxWidth="xl" sx={{ py: 3, backgroundColor: colors.background, minHeight: '100vh' }}>
-                {/* Header */}
-                <Box sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    mb: 3
-                }}>
+            <InternalHeader
+                title={organization.name}
+                leftActions={
                     <Button
                         variant="outlined"
                         startIcon={<ArrowBackIcon />}
                         onClick={handleBack}
-                        sx={{
-                            borderColor: colors.primary,
-                            color: colors.primary,
-                            textTransform: 'none',
-                            borderRadius: 2,
-                            '&:hover': {
-                                borderColor: colors.secondary,
-                                backgroundColor: colors.accentBg
-                            }
-                        }}
                     >
                         Organizations
                     </Button>
-                    <Typography variant="h5" fontWeight="bold" color="text.primary">
-                        {organization.name}
-                    </Typography>
+                }
+                rightActions={
                     <Button
-                        variant="outlined"
+                        variant="contained"
+                        color="secondary"
                         startIcon={<ArchiveIcon />}
-                        sx={{
-                            borderColor: colors.primary,
-                            color: colors.primary,
-                            borderRadius: 2,
-                            '&:hover': { borderColor: colors.secondary, color: colors.secondary }
-                        }}
+                        onClick={() => { console.log('Archive clicked'); }}
                     >
                         Archive
                     </Button>
-                </Box>
+                }
+            />
+            <Container maxWidth="xl" sx={{ py: 4, backgroundColor: colors.background, minHeight: '100vh' }}>
 
 
 
@@ -1294,7 +1276,7 @@ function OrganizationDetailPage() {
                                 <>
                                     <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 'none', border: `1px solid ${colors.borderColor}` }}>
                                         <Table>
-                                            <TableHead sx={{ backgroundColor: '#E0E0E0' }}>
+                                            <TableHead sx={{ backgroundColor: '#FAFAFA' }}>
                                                 <TableRow>
                                                     <TableCell padding="checkbox">
                                                         <Checkbox
@@ -1308,7 +1290,7 @@ function OrganizationDetailPage() {
                                                             }}
                                                         />
                                                     </TableCell>
-                                                    <TableCell sortDirection={orderBy === 'name' ? order : false} sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                                    <TableCell sortDirection={orderBy === 'name' ? order : false} sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>
                                                         <TableSortLabel
                                                             active={orderBy === 'name'}
                                                             direction={orderBy === 'name' ? order : 'asc'}
@@ -1323,7 +1305,7 @@ function OrganizationDetailPage() {
                                                             Name
                                                         </TableSortLabel>
                                                     </TableCell>
-                                                    <TableCell sortDirection={orderBy === 'email' ? order : false} sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                                    <TableCell sortDirection={orderBy === 'email' ? order : false} sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>
                                                         <TableSortLabel
                                                             active={orderBy === 'email'}
                                                             direction={orderBy === 'email' ? order : 'asc'}
@@ -1338,7 +1320,7 @@ function OrganizationDetailPage() {
                                                             Email
                                                         </TableSortLabel>
                                                     </TableCell>
-                                                    <TableCell sortDirection={orderBy === 'role' ? order : false} sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                                    <TableCell sortDirection={orderBy === 'role' ? order : false} sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>
                                                         <TableSortLabel
                                                             active={orderBy === 'role'}
                                                             direction={orderBy === 'role' ? order : 'asc'}
@@ -1353,8 +1335,8 @@ function OrganizationDetailPage() {
                                                             Role
                                                         </TableSortLabel>
                                                     </TableCell>
-                                                    <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Address</TableCell>
-                                                    <TableCell sortDirection={orderBy === 'is_active' ? order : false} sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                                    <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Address</TableCell>
+                                                    <TableCell sortDirection={orderBy === 'is_active' ? order : false} sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>
                                                         <TableSortLabel
                                                             active={orderBy === 'is_active'}
                                                             direction={orderBy === 'is_active' ? order : 'asc'}
@@ -1369,8 +1351,8 @@ function OrganizationDetailPage() {
                                                             Status
                                                         </TableSortLabel>
                                                     </TableCell>
-                                                    <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Survey Status</TableCell>
-                                                    <TableCell sx={{ color: '#000000', fontWeight: 'bold', textAlign: 'right', textTransform: 'uppercase', letterSpacing: '1px' }}>Actions</TableCell>
+                                                    <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Survey Status</TableCell>
+                                                    <TableCell sx={{ color: '#000000', fontWeight: 'bold', textAlign: 'right', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Actions</TableCell>
                                                 </TableRow>
                                             </TableHead>
                                             <TableBody>
@@ -1383,17 +1365,13 @@ function OrganizationDetailPage() {
                                                         return (
                                                             <TableRow
                                                                 hover
-                                                                onClick={(event) => {
-                                                                    if (!user.has_completed_survey) {
-                                                                        handleSelectClick(event, user.id);
-                                                                    }
-                                                                }}
+                                                                onClick={() => navigate(`/organization-management/${id}/users/${user.id}`)}
                                                                 role="checkbox"
                                                                 aria-checked={isUserSelected}
                                                                 tabIndex={-1}
                                                                 key={user.id}
                                                                 selected={isUserSelected}
-                                                                sx={{ cursor: !user.has_completed_survey ? 'pointer' : 'default' }}
+                                                                sx={{ cursor: 'pointer' }}
                                                             >
                                                                 <TableCell padding="checkbox">
                                                                     <Checkbox
@@ -1401,6 +1379,7 @@ function OrganizationDetailPage() {
                                                                         checked={isUserSelected}
                                                                         disabled={user.has_completed_survey} // Disable if already completed
                                                                         onChange={(event) => handleSelectClick(event, user.id)}
+                                                                        onClick={(event) => event.stopPropagation()}
                                                                         inputProps={{
                                                                             'aria-labelledby': labelId,
                                                                         }}
@@ -1515,7 +1494,7 @@ function OrganizationDetailPage() {
                                                                         }}
                                                                     />
                                                                 </TableCell>
-                                                                <TableCell align="right">
+                                                                <TableCell align="right" onClick={(e) => e.stopPropagation()}>
                                                                     <Stack direction="row" spacing={1} justifyContent="flex-end">
                                                                         {!user.has_completed_survey && (
                                                                             <Tooltip title="Send Reminder">
@@ -1532,7 +1511,7 @@ function OrganizationDetailPage() {
                                                                             <IconButton
                                                                                 size="small"
                                                                                 sx={{ color: colors.primary }}
-                                                                                onClick={() => alert(`User Details:\nName: ${user.firstname} ${user.lastname}\nEmail: ${user.email}`)}
+                                                                                onClick={() => navigate(`/organization-management/${id}/users/${user.id}`)}
                                                                             >
                                                                                 <VisibilityIcon fontSize="small" />
                                                                             </IconButton>
@@ -1640,24 +1619,19 @@ function OrganizationDetailPage() {
                                     ) : (
                                         <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 'none', border: `1px solid ${colors.borderColor}` }}>
                                             <Table>
-                                                <TableHead sx={{ backgroundColor: '#E0E0E0' }}>
+                                                <TableHead sx={{ backgroundColor: '#FAFAFA' }}>
                                                     <TableRow>
-                                                        <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Survey</TableCell>
-                                                        <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Description</TableCell>
-                                                        <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Organization Group</TableCell>
-                                                        <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Created</TableCell>
+                                                        <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Survey</TableCell>
+                                                        <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Description</TableCell>
+                                                        <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Organization Group</TableCell>
+                                                        <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Created</TableCell>
                                                     </TableRow>
                                                 </TableHead>
                                                 <TableBody>
                                                     {filteredSurveys.map((survey) => (
                                                         <TableRow
                                                             key={survey.id}
-                                                            onClick={() => navigate('/inventory', {
-                                                                state: {
-                                                                    selectedTemplate: survey,
-                                                                    organizationId: id
-                                                                }
-                                                            })}
+                                                            onClick={() => navigate(`/organization-management/${id}/surveys/${survey.id}`)}
                                                             sx={{
                                                                 cursor: 'pointer',
                                                                 transition: 'background-color 0.2s',

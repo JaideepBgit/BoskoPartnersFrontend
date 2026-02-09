@@ -185,7 +185,7 @@ const SurveysPage = () => {
           component="h1"
           gutterBottom
           sx={{
-            color: '#633394',
+            color: '#212121',
             fontWeight: 'bold',
             mb: 3
           }}

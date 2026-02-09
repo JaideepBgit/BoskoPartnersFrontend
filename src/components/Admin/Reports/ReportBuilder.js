@@ -1551,7 +1551,7 @@ function ReportBuilder({ onLogout }) {
 
             <Container maxWidth="xl" sx={{ mt: 4, pb: 4 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                    <Typography variant="h4" sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
+                    <Typography variant="h4" sx={{ color: adminColors.text, fontWeight: 'bold' }}>
                         Report Builder
                     </Typography>
 

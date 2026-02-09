@@ -186,10 +186,10 @@ function AssociationsPage() {
                 <TableContainer>
                     <Table>
                         <TableHead>
-                            <TableRow sx={{ backgroundColor: '#E0E0E0' }}>
+                            <TableRow sx={{ backgroundColor: '#FAFAFA' }}>
                                 <TableCell
                                     sortDirection={orderBy === 'organisation' ? order : false}
-                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}
+                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}
                                 >
                                     <TableSortLabel
                                         active={orderBy === 'organisation'}
@@ -207,7 +207,7 @@ function AssociationsPage() {
                                 </TableCell>
                                 <TableCell
                                     sortDirection={orderBy === 'location' ? order : false}
-                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}
+                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}
                                 >
                                     <TableSortLabel
                                         active={orderBy === 'location'}
@@ -223,7 +223,7 @@ function AssociationsPage() {
                                         Location
                                     </TableSortLabel>
                                 </TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', width: 50 }}></TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', width: 50, fontSize: '0.75rem' }}></TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>

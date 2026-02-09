@@ -174,11 +174,11 @@ function ReportsPage({ onLogout }) {
     ];
 
     return (
-        <Box sx={{ minHeight: '100vh', backgroundColor: adminColors.background }}>
+        <>
             <Navbar tabs={tabs} onLogout={onLogout} />
 
-            <Container maxWidth="xl" sx={{ mt: 4, pb: 4 }}>
-                <Typography variant="h4" gutterBottom sx={{ color: adminColors.primary, fontWeight: 'bold' }}>
+            <Container maxWidth="xl" sx={{ py: 4 }}>
+                <Typography variant="h4" gutterBottom sx={{ color: adminColors.text, fontWeight: 'bold' }}>
                     Reports & Analytics
                 </Typography>
 
@@ -277,10 +277,7 @@ function ReportsPage({ onLogout }) {
                                         variant="contained"
                                         startIcon={<BuildIcon />}
                                         onClick={() => navigate('/reportbuilder')}
-                                        sx={{
-                                            backgroundColor: adminColors.primary,
-                                            '&:hover': { backgroundColor: adminColors.secondary }
-                                        }}
+
                                     >
                                         Open Report Builder
                                     </Button>
@@ -440,7 +437,7 @@ function ReportsPage({ onLogout }) {
                     </Grid>
                 </Grid>
             </Container>
-        </Box>
+        </>
     );
 }
 

@@ -34,7 +34,7 @@ const colors = {
     borderColor: '#e0e0e0',
     textPrimary: '#212121',
     textSecondary: '#757575',
-    headerGradient: '#E0E0E0',
+    headerGradient: '#FAFAFA',
 };
 
 // Define main organization types
@@ -220,7 +220,7 @@ function OrganizationManagementPage() {
                             <TableRow sx={{ background: colors.headerGradient }}>
                                 <TableCell
                                     sortDirection={orderBy === 'organisation' ? order : false}
-                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}
+                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}
                                 >
                                     <TableSortLabel
                                         active={orderBy === 'organisation'}
@@ -238,7 +238,7 @@ function OrganizationManagementPage() {
                                 </TableCell>
                                 <TableCell
                                     sortDirection={orderBy === 'location' ? order : false}
-                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}
+                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}
                                 >
                                     <TableSortLabel
                                         active={orderBy === 'location'}
@@ -254,8 +254,8 @@ function OrganizationManagementPage() {
                                         Location
                                     </TableSortLabel>
                                 </TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '1px' }}>Users</TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', width: 50, textTransform: 'uppercase', letterSpacing: '1px' }}></TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Users</TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', width: 50, textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}></TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>

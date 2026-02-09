@@ -509,14 +509,14 @@ const TemplatesTab = ({
             </Typography>
             <TableContainer component={Paper} sx={{ mt: 1 }}>
               <Table size="small">
-                <TableHead>
+                <TableHead sx={{ backgroundColor: '#FAFAFA' }}>
                   <TableRow>
-                    <TableCell>Item</TableCell>
+                    <TableCell sx={{ fontSize: '0.75rem', fontWeight: 'bold' }}>Item</TableCell>
                     {Array.from(
                       { length: (question.config?.end_year || 2029) - (question.config?.start_year || 2024) + 1 },
                       (_, i) => (question.config?.start_year || 2024) + i
                     ).map(year => (
-                      <TableCell key={year} align="center">{year}</TableCell>
+                      <TableCell key={year} align="center" sx={{ fontSize: '0.75rem', fontWeight: 'bold' }}>{year}</TableCell>
                     ))}
                   </TableRow>
                 </TableHead>
@@ -585,7 +585,7 @@ const TemplatesTab = ({
             transition: 'width 0.3s ease'
           }}
         >
-          <Typography variant="h6" sx={{ p: 2, color: '#633394', fontWeight: 'bold' }}>
+          <Typography variant="h6" sx={{ p: 2, color: '#212121', fontWeight: 'bold' }}>
             Template Versions
           </Typography>
 
@@ -644,7 +644,7 @@ const TemplatesTab = ({
               <Box sx={{ mb: 3 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="h6" gutterBottom sx={{
-                    color: '#633394',
+                    color: '#212121',
                     fontWeight: 'bold',
                     fontSize: '1.125rem',
                     mb: 0
@@ -759,7 +759,7 @@ const TemplatesTab = ({
                 <Box sx={{ mb: 3 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                     <Typography variant="h6" sx={{
-                      color: '#633394',
+                      color: '#212121',
                       fontWeight: 600,
                       fontSize: '1.125rem',
                       display: 'flex',
@@ -1197,7 +1197,7 @@ const TemplatesTab = ({
               <AssignmentIcon sx={{ fontSize: '3rem', color: '#633394', mb: 2 }} />
             </Box>
 
-            <Typography variant="h5" sx={{ color: '#633394', fontWeight: 'bold', mb: 2 }}>
+            <Typography variant="h5" sx={{ color: '#212121', fontWeight: 'bold', mb: 2 }}>
               📋 Survey Template Preview Center
             </Typography>
 

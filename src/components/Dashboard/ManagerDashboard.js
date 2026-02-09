@@ -30,9 +30,10 @@ const managerColors = {
     warning: '#967CB2', // Light Purple for Pending (Lavender)
     background: '#ffffff',
     cardBg: '#ffffff',
-    headerBg: '#E0E0E0', // Light gray for users table
+    headerBg: '#FAFAFA', // Light gray for users table
     borderColor: '#e0e0e0',
-    highlightBg: '#f3e5f5'
+    highlightBg: '#f3e5f5',
+    text: '#212121'
 };
 
 function ManagerDashboard({ onLogout }) {
@@ -495,12 +496,12 @@ function ManagerDashboard({ onLogout }) {
     }
 
     return (
-        <Box sx={{ minHeight: '100vh', backgroundColor: managerColors.background }}>
+        <>
             <Navbar onLogout={onLogout} />
 
-            <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+            <Container maxWidth="xl" sx={{ py: 4, minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
                 <Box sx={{ mb: 4 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: managerColors.primary, mb: 1 }}>
+                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: managerColors.text, mb: 1 }}>
                         Dashboard
                     </Typography>
                     <Typography variant="subtitle1" color="text.secondary">
@@ -561,10 +562,7 @@ function ManagerDashboard({ onLogout }) {
                                     startIcon={<SendIcon />}
                                     disabled={selectedUsers.length === 0}
                                     onClick={() => setBulkReminderDialog(true)}
-                                    sx={{
-                                        backgroundColor: managerColors.primary,
-                                        '&:hover': { backgroundColor: managerColors.secondary }
-                                    }}
+
                                 >
                                     Send Bulk Reminders ({selectedUsers.length})
                                 </Button>
@@ -582,14 +580,14 @@ function ManagerDashboard({ onLogout }) {
                                                     sx={{ color: '#000000' }}
                                                 />
                                             </TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px' }}>User</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px' }}>Status</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px' }}>Created Days Ago</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px' }}>Progress</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px' }}>Reminders</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px' }}>Start Date</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px' }}>End Date</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px' }}>Actions</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>User</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Status</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Created Days Ago</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Progress</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Reminders</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Start Date</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>End Date</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Actions</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
@@ -1032,7 +1030,7 @@ function ManagerDashboard({ onLogout }) {
                     )}
                 </DialogActions>
             </Dialog>
-        </Box>
+        </>
     );
 }
 

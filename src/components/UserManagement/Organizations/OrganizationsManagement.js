@@ -1359,28 +1359,28 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
                 </Typography>
                 <TableContainer component={Paper} sx={{ boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
                     <Table>
-                        <TableHead sx={{ backgroundColor: '#E0E0E0' }}>
+                        <TableHead sx={{ backgroundColor: '#FAFAFA' }}>
                             <TableRow>
                                 <TableCell
-                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer' }}
+                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer', fontSize: '0.75rem' }}
                                     onClick={() => handleSort('name')}
                                 >
                                     Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
                                 </TableCell>
                                 <TableCell
-                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer' }}
+                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer', fontSize: '0.75rem' }}
                                     onClick={() => handleSort('type')}
                                 >
                                     Type {sortBy === 'type' && (sortOrder === 'asc' ? '↑' : '↓')}
                                 </TableCell>
                                 <TableCell
-                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer' }}
+                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer', fontSize: '0.75rem' }}
                                     onClick={() => handleSort('location')}
                                 >
                                     Location {sortBy === 'location' && (sortOrder === 'asc' ? '↑' : '↓')}
                                 </TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Affiliations</TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Actions</TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Affiliations</TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Actions</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -1424,28 +1424,28 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
                 </Typography>
                 <TableContainer component={Paper} sx={{ boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#fafafa' }}>
                     <Table>
-                        <TableHead sx={{ backgroundColor: '#E0E0E0' }}>
+                        <TableHead sx={{ backgroundColor: '#FAFAFA' }}>
                             <TableRow>
                                 <TableCell
-                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer' }}
+                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer', fontSize: '0.75rem' }}
                                     onClick={() => handleSort('name')}
                                 >
                                     Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
                                 </TableCell>
                                 <TableCell
-                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer' }}
+                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer', fontSize: '0.75rem' }}
                                     onClick={() => handleSort('type')}
                                 >
                                     Type {sortBy === 'type' && (sortOrder === 'asc' ? '↑' : '↓')}
                                 </TableCell>
                                 <TableCell
-                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer' }}
+                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer', fontSize: '0.75rem' }}
                                     onClick={() => handleSort('location')}
                                 >
                                     Location {sortBy === 'location' && (sortOrder === 'asc' ? '↑' : '↓')}
                                 </TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Affiliations</TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Actions</TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Affiliations</TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Actions</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -2143,7 +2143,7 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
                 flexWrap: 'wrap',
                 gap: 2
             }}>
-                <Typography variant="h5" sx={{ color: '#633394', fontWeight: 'bold' }}>
+                <Typography variant="h5" sx={{ color: '#212121', fontWeight: 'bold' }}>
                     Organizations Management
                 </Typography>
 

@@ -871,15 +871,15 @@ const ChartSelectorCard = ({
           <TableContainer component={Paper}>
             <Table size="small">
               <TableHead>
-                <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                  <TableCell><strong>#</strong></TableCell>
-                  <TableCell><strong>User ID</strong></TableCell>
-                  <TableCell><strong>User Name</strong></TableCell>
-                  <TableCell><strong>Template ID</strong></TableCell>
-                  <TableCell><strong>Answer</strong></TableCell>
-                  <TableCell><strong>Available Keys</strong></TableCell>
-                  <TableCell><strong>Country</strong></TableCell>
-                  <TableCell><strong>City</strong></TableCell>
+                <TableRow sx={{ backgroundColor: '#FAFAFA' }}>
+                  <TableCell sx={{ fontSize: '0.75rem' }}><strong>#</strong></TableCell>
+                  <TableCell sx={{ fontSize: '0.75rem' }}><strong>User ID</strong></TableCell>
+                  <TableCell sx={{ fontSize: '0.75rem' }}><strong>User Name</strong></TableCell>
+                  <TableCell sx={{ fontSize: '0.75rem' }}><strong>Template ID</strong></TableCell>
+                  <TableCell sx={{ fontSize: '0.75rem' }}><strong>Answer</strong></TableCell>
+                  <TableCell sx={{ fontSize: '0.75rem' }}><strong>Available Keys</strong></TableCell>
+                  <TableCell sx={{ fontSize: '0.75rem' }}><strong>Country</strong></TableCell>
+                  <TableCell sx={{ fontSize: '0.75rem' }}><strong>City</strong></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>

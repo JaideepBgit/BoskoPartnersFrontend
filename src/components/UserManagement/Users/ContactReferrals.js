@@ -482,7 +482,7 @@ function ContactReferrals() {
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                 <Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        <Typography variant="h4" sx={{ color: '#633394', fontWeight: 'bold' }}>
+                        <Typography variant="h4" sx={{ color: '#212121', fontWeight: 'bold' }}>
                             Contact Referrals
                         </Typography>
                         <Tooltip title="Review and approve contact referrals to create user accounts and organizations" arrow>
@@ -548,7 +548,7 @@ function ContactReferrals() {
             ) : (
                 <TableContainer component={Paper} elevation={3}>
                     <Table>
-                        <TableHead sx={{ backgroundColor: '#E0E0E0' }}>
+                        <TableHead sx={{ backgroundColor: '#FAFAFA' }}>
                             <TableRow>
                                 <TableCell padding="checkbox" sx={{ color: '#000000' }}>
                                     <Checkbox
@@ -562,14 +562,14 @@ function ContactReferrals() {
                                         }}
                                     />
                                 </TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Name</TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Email</TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Phone</TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Institution</TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Type</TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Country</TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Submitted</TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Referrals</TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Name</TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Email</TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Phone</TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Institution</TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Type</TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Country</TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Submitted</TableCell>
+                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Referrals</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>

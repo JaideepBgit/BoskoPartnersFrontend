@@ -25,6 +25,7 @@ import {
   useMediaQuery,
   useTheme,
   ListItemIcon,
+  Container,
   Slide
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -491,12 +492,12 @@ const InventoryPage = () => {
   return (
     <>
       <Navbar />
-      <Box p={isMobile ? 2 : 3}>
+      <Container maxWidth="xl" sx={{ py: 4, minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
           <Typography
             variant={isMobile ? "h5" : "h4"}
             sx={{
-              color: '#633394',
+              color: '#212121',
               fontWeight: 'bold',
               fontSize: isMobile ? '1.5rem' : '2.125rem'
             }}
@@ -526,10 +527,6 @@ const InventoryPage = () => {
               onClick={handleAddSurveyClick}
               endIcon={<KeyboardArrowDownIcon />}
               sx={{
-                bgcolor: '#633394',
-                '&:hover': { bgcolor: '#7c52a5' },
-                textTransform: 'none',
-                fontWeight: 'bold',
                 minWidth: 150
               }}
             >
@@ -983,7 +980,7 @@ const InventoryPage = () => {
             setUploadedFile(null);
           }}
         />
-      </Box>
+      </Container>
     </>
   );
 };

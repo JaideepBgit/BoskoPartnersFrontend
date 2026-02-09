@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box, 
-  Typography, 
-  Container, 
-  Grid, 
-  Card, 
+  Box,
+  Typography,
+  Container,
+  Grid,
+  Card,
   CardContent,
   FormControl,
   InputLabel,
@@ -55,10 +55,10 @@ const UserReports = ({ onLogout }) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const userId = localStorage.getItem('userId');
       const token = localStorage.getItem('token');
-      
+
       if (!userId) {
         setError('User ID not found. Please log in again.');
         return;
@@ -77,7 +77,7 @@ const UserReports = ({ onLogout }) => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('API Error:', response.status, errorText);
-        
+
         // If it's a 404 or the user has no responses, don't treat it as an error
         if (response.status === 404 || errorText.includes('no responses')) {
           setUserSurveyData({
@@ -87,13 +87,13 @@ const UserReports = ({ onLogout }) => {
           });
           return;
         }
-        
+
         throw new Error(`Failed to fetch user survey responses: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
       console.log('Received user survey data:', data);
-      
+
       // Group responses by survey type
       const groupedData = {
         church: [],
@@ -105,7 +105,7 @@ const UserReports = ({ onLogout }) => {
         data.responses.forEach(response => {
           const surveyType = response.survey_type || response.template_type || 'church';
           const normalizedType = normType(surveyType);
-          
+
           // Ensure response has latitude and longitude properties
           const formattedResponse = {
             ...response,
@@ -113,7 +113,7 @@ const UserReports = ({ onLogout }) => {
             longitude: response.longitude || (response.geo_location && response.geo_location.longitude) || null,
             survey_type: surveyType // Ensure survey_type is set
           };
-          
+
           if (normalizedType.includes('church')) {
             groupedData.church.push(formattedResponse);
           } else if (normalizedType.includes('institution')) {
@@ -128,7 +128,7 @@ const UserReports = ({ onLogout }) => {
       }
 
       setUserSurveyData(groupedData);
-      
+
       // Set default selected response
       const availableTypes = Object.keys(groupedData).filter(type => groupedData[type].length > 0);
       if (availableTypes.length > 0) {
@@ -138,10 +138,10 @@ const UserReports = ({ onLogout }) => {
           setSelectedResponseId(String(groupedData[firstType][0].id));
         }
       }
-      
+
     } catch (err) {
       console.error('Error loading user survey responses:', err);
-      
+
       // If it's an authentication error, show specific message
       if (err.message.includes('401') || err.message.includes('Authentication')) {
         setError('Authentication required. Please log in again.');
@@ -158,7 +158,7 @@ const UserReports = ({ onLogout }) => {
       setLoadingOrganizations(true);
       const userId = localStorage.getItem('userId');
       const token = localStorage.getItem('token');
-      
+
       if (!userId) {
         console.log('No user ID found for loading organizations');
         return;
@@ -176,7 +176,7 @@ const UserReports = ({ onLogout }) => {
 
       if (response.ok) {
         const userData = await response.json();
-        
+
         // If user has an organization_id, fetch that organization
         if (userData.organization_id) {
           const orgResponse = await fetch(`${apiUrl}/organizations/${userData.organization_id}`, {
@@ -186,7 +186,7 @@ const UserReports = ({ onLogout }) => {
               ...(token && { 'Authorization': `Bearer ${token}` })
             }
           });
-          
+
           if (orgResponse.ok) {
             const orgData = await orgResponse.json();
             const userOrg = {
@@ -201,7 +201,7 @@ const UserReports = ({ onLogout }) => {
               },
               is_primary: true
             };
-            
+
             setUserOrganizations([userOrg]);
             setSelectedOrganization(userOrg);
           }
@@ -238,7 +238,7 @@ const UserReports = ({ onLogout }) => {
     try {
       const userId = localStorage.getItem('userId');
       const token = localStorage.getItem('token');
-      
+
       if (!userId || !token) {
         console.log('No authentication data available for comparison');
         return;
@@ -266,7 +266,7 @@ const UserReports = ({ onLogout }) => {
       } else {
         console.error('Failed to generate comparison data');
       }
-      
+
     } catch (err) {
       console.error('Error generating comparison data:', err);
     }
@@ -275,7 +275,7 @@ const UserReports = ({ onLogout }) => {
   const handleSurveyTypeChange = (event) => {
     const newType = event.target.value;
     setSelectedSurveyType(newType);
-    
+
     // Reset selected response for new survey type
     if (userSurveyData[newType] && userSurveyData[newType].length > 0) {
       setSelectedResponseId(String(userSurveyData[newType][0].id));
@@ -290,14 +290,14 @@ const UserReports = ({ onLogout }) => {
 
   const getFilteredResponses = () => {
     if (!userSurveyData[selectedSurveyType]) return [];
-    
+
     let baseResponses = userSurveyData[selectedSurveyType];
-    
+
     // If surveys are selected from the map, use only those
     if (selectedMapSurveys.length > 0) {
       baseResponses = selectedMapSurveys.filter(isSameType);
     }
-    
+
     // Apply filters
     return baseResponses.filter(response => {
       if (filters.country && response.country !== filters.country) return false;
@@ -309,34 +309,34 @@ const UserReports = ({ onLogout }) => {
 
   const getGeographicData = () => {
     if (!userSurveyData[selectedSurveyType]) return {};
-    
+
     let responses = userSurveyData[selectedSurveyType];
-    
+
     // If surveys are selected from the map, use only those
     if (selectedMapSurveys.length > 0) {
       responses = selectedMapSurveys.filter(isSameType);
     }
-    
+
     // Group by country
     const countryData = {};
     responses.forEach(response => {
       const country = response.country || 'Unknown';
       countryData[country] = (countryData[country] || 0) + 1;
     });
-    
+
     return countryData;
   };
 
   const getUniqueValues = (fieldName) => {
     if (!userSurveyData[selectedSurveyType]) return [];
-    
+
     let responses = userSurveyData[selectedSurveyType];
-    
+
     // If surveys are selected from the map, use only those
     if (selectedMapSurveys.length > 0) {
       responses = selectedMapSurveys.filter(isSameType);
     }
-    
+
     const uniqueValues = [...new Set(responses.map(r => r[fieldName]).filter(Boolean))];
     return uniqueValues.sort();
   };
@@ -397,7 +397,7 @@ const UserReports = ({ onLogout }) => {
               {error}
             </Typography>
           </Alert>
-          
+
           <Button variant="contained" onClick={loadUserSurveyResponses}>
             Retry Loading Data
           </Button>
@@ -417,21 +417,21 @@ const UserReports = ({ onLogout }) => {
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
           <Box>
-            <Typography variant="h4" component="h1" gutterBottom>
+            <Typography variant="h4" component="h1" gutterBottom sx={{ color: userColors.text, fontWeight: 'bold' }}>
               Your Survey Reports
             </Typography>
             <Typography variant="body1" color="text.secondary">
               View and analyze your completed survey responses and compare with similar surveys.
             </Typography>
           </Box>
-          
+
           {/* Summary Card */}
           <Card sx={{ p: 2, minWidth: 200 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <Typography variant="subtitle2" gutterBottom>
                 Your Surveys
               </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 'bold', color: userColors.primary }}>
+              <Typography variant="h4" sx={{ fontWeight: 'bold', color: userColors.text }}>
                 {totalResponses}
               </Typography>
               <Typography variant="caption" color="text.secondary">
@@ -467,20 +467,20 @@ const UserReports = ({ onLogout }) => {
                 {/* Status */}
                 <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                   {selectedOrganization && (
-                    <Chip 
+                    <Chip
                       label={`Organization: ${selectedOrganization.name}${selectedOrganization.is_primary ? ' (Primary)' : ''}`}
                       color="primary"
                       size="small"
                       variant="outlined"
                     />
                   )}
-                  <Chip 
+                  <Chip
                     label={`${availableResponses.length} ${selectedSurveyType} responses`}
                     color="info"
                     size="small"
                   />
                   {selectedMapSurveys.length > 0 && (
-                    <Chip 
+                    <Chip
                       label={`Using ${selectedMapSurveys.filter(isSameType).length} selected surveys`}
                       color="warning"
                       size="small"
@@ -490,7 +490,7 @@ const UserReports = ({ onLogout }) => {
                   )}
                 </Box>
                 <Divider sx={{ mb: 2 }} />
-                
+
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={3}>
                     <TextField
@@ -501,7 +501,7 @@ const UserReports = ({ onLogout }) => {
                         readOnly: true,
                       }}
                       size="medium"
-                      sx={{ 
+                      sx={{
                         backgroundColor: 'white',
                         '& .MuiOutlinedInput-root': {
                           '& fieldset': {
@@ -514,7 +514,7 @@ const UserReports = ({ onLogout }) => {
                       }}
                     />
                   </Grid>
-                  
+
                   <Grid item xs={12} md={3}>
                     <FormControl fullWidth>
                       <InputLabel>Survey Type</InputLabel>
@@ -529,7 +529,7 @@ const UserReports = ({ onLogout }) => {
                       </Select>
                     </FormControl>
                   </Grid>
-                  
+
                   <Grid item xs={12} md={3}>
                     <FormControl fullWidth>
                       <InputLabel>Select Response to Analyze</InputLabel>
@@ -553,7 +553,7 @@ const UserReports = ({ onLogout }) => {
                       <Select
                         value={filters.country}
                         label="Country"
-                        onChange={(e) => setFilters({...filters, country: e.target.value})}
+                        onChange={(e) => setFilters({ ...filters, country: e.target.value })}
                       >
                         <MenuItem value="">All Countries</MenuItem>
                         {getUniqueValues('country').map((country) => (
@@ -565,16 +565,16 @@ const UserReports = ({ onLogout }) => {
 
                   <Grid item xs={12} md={3}>
                     <Box display="flex" gap={1} flexWrap="wrap" alignItems="center" pt={1}>
-                      <Chip 
-                        label={`${filteredResponses.length} Filtered Results`} 
-                        color="secondary" 
-                        size="small" 
+                      <Chip
+                        label={`${filteredResponses.length} Filtered Results`}
+                        color="secondary"
+                        size="small"
                       />
                       {filters.country && (
-                        <Chip 
-                          label={`Country: ${filters.country}`} 
-                          color="default" 
-                          size="small" 
+                        <Chip
+                          label={`Country: ${filters.country}`}
+                          color="default"
+                          size="small"
                           variant="outlined"
                         />
                       )}

@@ -15,7 +15,7 @@ import InventoryService from '../../../services/Admin/Inventory/InventoryService
 import { EmailService } from '../../../services/EmailService';
 import EnhancedAddressInput from '../common/EnhancedAddressInput';
 import EmailPreviewDialog from '../common/EmailPreviewDialog';
-import Navbar from '../../shared/Navbar/Navbar';
+import InternalHeader from '../../shared/Headers/InternalHeader';
 
 const defaultRoles = [
     { name: 'admin', description: 'Administrator role with full system access' },
@@ -476,21 +476,9 @@ function AddUserPage() {
 
     return (
         <>
-            <Navbar />
-            <Container maxWidth="lg" sx={{ py: 4 }}>
-                {/* Header with Back Button and Action Buttons */}
-                <Box sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    mb: 4,
-                    position: 'sticky',
-                    top: 0,
-                    backgroundColor: '#f5f5f5',
-                    zIndex: 1000,
-                    py: 2
-                }}>
-                    {/* Left: Back Button */}
+            <InternalHeader
+                title="Add New User"
+                leftActions={
                     <Button
                         variant="outlined"
                         startIcon={<ArrowBackIcon />}
@@ -501,38 +489,15 @@ function AddUserPage() {
                                 navigate('/users');
                             }
                         }}
-                        sx={{
-                            borderColor: '#633394',
-                            color: '#633394',
-                            textTransform: 'none',
-                            borderRadius: 2,
-                            '&:hover': {
-                                borderColor: '#967CB2',
-                                backgroundColor: '#f3e5f5'
-                            }
-                        }}
                     >
                         {returnUrl ? 'Organization' : 'Users'}
                     </Button>
-
-                    {/* Center: Title */}
-                    <Typography variant="h4" sx={{ color: '#633394', fontWeight: 'bold' }}>
-                        Add New User
-                    </Typography>
-
-                    {/* Right: Action Buttons */}
-                    <Box sx={{ display: 'flex', gap: 2 }}>
+                }
+                rightActions={
+                    <>
                         <Button
                             variant="outlined"
                             onClick={() => navigate('/users')}
-                            sx={{
-                                color: '#633394',
-                                borderColor: '#633394',
-                                '&:hover': {
-                                    borderColor: '#7c52a5',
-                                    backgroundColor: 'rgba(99, 51, 148, 0.04)'
-                                }
-                            }}
                         >
                             Cancel
                         </Button>
@@ -541,17 +506,13 @@ function AddUserPage() {
                             onClick={handleAddUser}
                             disabled={saving || !formData.username || !formData.email}
                             startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-                            sx={{
-                                backgroundColor: '#633394',
-                                '&:hover': { backgroundColor: '#7c52a5' },
-                                minWidth: '150px'
-                            }}
                         >
                             {saving ? 'Creating User...' : 'Save User'}
                         </Button>
-                    </Box>
-                </Box>
-
+                    </>
+                }
+            />
+            <Container maxWidth="lg" sx={{ py: 4 }}>
                 {/* User Information Section */}
                 <Paper sx={{ p: 3, mb: 3, boxShadow: 3 }}>
                     <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold', mb: 3, textAlign: 'center' }}>

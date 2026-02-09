@@ -347,7 +347,7 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers, selectedUserForView: exte
                                 <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 300 }}>
                                     <Table size="small" stickyHeader>
                                         <TableHead>
-                                            <TableRow sx={{ backgroundColor: '#ede7f6' }}>
+                                            <TableRow sx={{ backgroundColor: '#FAFAFA' }}>
                                                 <TableCell padding="checkbox">
                                                     <Checkbox
                                                         indeterminate={selectedUsers.length > 0 && selectedUsers.length < filteredUsers.length}
@@ -356,9 +356,9 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers, selectedUserForView: exte
                                                         sx={{ color: '#212121' }}
                                                     />
                                                 </TableCell>
-                                                <TableCell sx={{ color: '#212121' }}><strong>Name</strong></TableCell>
-                                                <TableCell sx={{ color: '#212121' }}><strong>Email</strong></TableCell>
-                                                <TableCell sx={{ color: '#212121' }}><strong>Role</strong></TableCell>
+                                                <TableCell sx={{ color: '#212121', fontSize: '0.75rem' }}><strong>Name</strong></TableCell>
+                                                <TableCell sx={{ color: '#212121', fontSize: '0.75rem' }}><strong>Email</strong></TableCell>
+                                                <TableCell sx={{ color: '#212121', fontSize: '0.75rem' }}><strong>Role</strong></TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
@@ -733,12 +733,12 @@ const SurveyAssignmentCard = ({ users, onRefreshUsers, selectedUserForView: exte
                                     <AccordionDetails>
                                         <TableContainer>
                                             <Table size="small">
-                                                <TableHead>
+                                                <TableHead sx={{ backgroundColor: '#FAFAFA' }}>
                                                     <TableRow>
-                                                        <TableCell>User ID</TableCell>
-                                                        <TableCell>Assignment</TableCell>
-                                                        <TableCell>Email</TableCell>
-                                                        <TableCell>Survey Code</TableCell>
+                                                        <TableCell sx={{ fontSize: '0.75rem' }}>User ID</TableCell>
+                                                        <TableCell sx={{ fontSize: '0.75rem' }}>Assignment</TableCell>
+                                                        <TableCell sx={{ fontSize: '0.75rem' }}>Email</TableCell>
+                                                        <TableCell sx={{ fontSize: '0.75rem' }}>Survey Code</TableCell>
                                                     </TableRow>
                                                 </TableHead>
                                                 <TableBody>

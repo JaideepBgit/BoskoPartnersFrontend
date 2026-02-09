@@ -623,7 +623,7 @@ const ContactReferralPage = () => {
                   }}
                 />
                 <Box>
-                  <Typography variant="h4" sx={{ color: '#633394', fontWeight: 'bold' }}>
+                  <Typography variant="h4" sx={{ color: '#212121', fontWeight: 'bold' }}>
                     Welcome and thank you for collaborating with us.
                   </Typography>
                   <Typography variant="h6" sx={{ color: '#633394', mt: 1 }}>

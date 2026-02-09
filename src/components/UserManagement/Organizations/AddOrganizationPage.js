@@ -14,7 +14,7 @@ import {
     fetchRoles, addUser, addRole
 } from '../../../services/UserManagement/UserManagementService';
 import EnhancedAddressInput from '../common/EnhancedAddressInput';
-import Navbar from '../../shared/Navbar/Navbar';
+import InternalHeader from '../../shared/Headers/InternalHeader';
 
 function AddOrganizationPage() {
     const navigate = useNavigate();
@@ -537,59 +537,29 @@ function AddOrganizationPage() {
 
     return (
         <>
-            <Navbar />
-            <Container maxWidth="lg" sx={{ py: 4 }}>
-                {/* Header with Back Button and Save Button */}
-                <Box sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    mb: 4,
-                    position: 'sticky',
-                    top: 0,
-                    backgroundColor: '#f5f5f5',
-                    zIndex: 1000,
-                    py: 2
-                }}>
-                    {/* Left: Back Button */}
+            <InternalHeader
+                title="Add New Organization"
+                leftActions={
                     <Button
                         variant="outlined"
                         startIcon={<ArrowBackIcon />}
                         onClick={() => navigate('/organizations')}
-                        sx={{
-                            borderColor: '#633394',
-                            color: '#633394',
-                            textTransform: 'none',
-                            borderRadius: 2,
-                            '&:hover': {
-                                borderColor: '#967CB2',
-                                backgroundColor: '#f3e5f5'
-                            }
-                        }}
                     >
                         Organizations
                     </Button>
-
-                    {/* Center: Title */}
-                    <Typography variant="h4" sx={{ color: '#633394', fontWeight: 'bold' }}>
-                        Add New Organization
-                    </Typography>
-
-                    {/* Right: Save Button */}
+                }
+                rightActions={
                     <Button
                         variant="contained"
                         startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
                         onClick={handleAddOrganization}
                         disabled={saving}
-                        sx={{
-                            backgroundColor: '#633394',
-                            '&:hover': { backgroundColor: '#7c52a5' },
-                            minWidth: '180px'
-                        }}
                     >
                         {saving ? 'Saving...' : 'Save Organization'}
                     </Button>
-                </Box>
+                }
+            />
+            <Container maxWidth="lg" sx={{ py: 4 }}>
 
                 {/* Tabs */}
                 <Paper sx={{ mb: 3, boxShadow: 3 }}>

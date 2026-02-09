@@ -1,5 +1,7 @@
 // App.js
 import React, { useState } from 'react';
+import { ThemeProvider } from '@mui/material/styles';
+import theme from './theme';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import LoginPage from './components/Login/Login';
 import FormContainer from './components/UserDetailsForm/FormContainer';
@@ -27,6 +29,8 @@ import SettingsPage from './components/Settings/SettingsPage';
 import OrganizationManagementPage from './components/Admin/OrganizationManagement/OrganizationManagementPage';
 import AssociationsPage from './components/Admin/OrganizationManagement/AssociationsPage';
 import OrganizationDetailPage from './components/Admin/OrganizationManagement/OrganizationDetailPage';
+import SurveyDetailPage from './components/Admin/OrganizationManagement/SurveyDetailPage';
+import UserDetailPage from './components/Admin/OrganizationManagement/UserDetailPage';
 import AddUserPage from './components/UserManagement/Users/AddUserPage';
 import ContactReferralsPage from './components/UserManagement/Users/ContactReferralsPage';
 import AddOrganizationPage from './components/UserManagement/Organizations/AddOrganizationPage';
@@ -86,14 +90,16 @@ function App() {
   };
 
   return (
-    <Router>
-      <Main
-        isAuthenticated={isAuthenticated}
-        userRole={userRole}
-        login={login}
-        logout={logout}
-      />
-    </Router>
+    <ThemeProvider theme={theme}>
+      <Router>
+        <Main
+          isAuthenticated={isAuthenticated}
+          userRole={userRole}
+          login={login}
+          logout={logout}
+        />
+      </Router>
+    </ThemeProvider>
   );
 }
 
@@ -178,6 +184,13 @@ function Main({ isAuthenticated, userRole, login, logout }) {
         <Route path="/users" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <UserManagementMain onLogout={logout} />
+          </ProtectedRoute>
+        } />
+
+        {/* User Detail Page - Individual user from users list */}
+        <Route path="/users/:userId" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <UserDetailPage onLogout={logout} />
           </ProtectedRoute>
         } />
 
@@ -288,6 +301,18 @@ function Main({ isAuthenticated, userRole, login, logout }) {
         <Route path="/organization-management/:id" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <OrganizationDetailPage onLogout={logout} />
+          </ProtectedRoute>
+        } />
+        {/* Survey Detail Page - Individual survey within an organization */}
+        <Route path="/organization-management/:orgId/surveys/:surveyId" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <SurveyDetailPage onLogout={logout} />
+          </ProtectedRoute>
+        } />
+        {/* User Detail Page - Individual user within an organization */}
+        <Route path="/organization-management/:orgId/users/:userId" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <UserDetailPage onLogout={logout} />
           </ProtectedRoute>
         } />
         <Route path="/organizations" element={

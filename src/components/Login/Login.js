@@ -247,7 +247,7 @@ const LoginPage = ({ onLogin }) => {
               <img src={logoImage} alt="Saurara Logo" style={{ maxWidth: '180px', height: 'auto' }} />
             </Box>
 
-            <Typography variant="h5" align="center" gutterBottom>
+            <Typography variant="h5" align="center" gutterBottom sx={{ color: '#212121', fontWeight: 'bold' }}>
               Login
             </Typography>
 

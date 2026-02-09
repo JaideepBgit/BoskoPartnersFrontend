@@ -35,7 +35,7 @@ const rootColors = {
     error: '#633394',         // Using primary purple for destructive actions  
     background: '#FFFFFF',    // Background from platform
     text: '#212121',          // Text color
-    headerBg: '#ede7f6',      // Light purple for table header (from platform)
+    headerBg: '#FAFAFA',      // Light purple for table header (from platform)
     cardBg: '#ffffff',        // Card background
     borderColor: '#e0e0e0',   // Border color
     highlightBg: '#f3e5f5',   // Light purple highlight background
@@ -487,12 +487,12 @@ function RootDashboard() {
     return (
         <>
             <Navbar />
-            <Container maxWidth="xl" sx={{ py: 4 }}>
+            <Container maxWidth="xl" sx={{ py: 4, minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
                 {/* Header Section */}
                 <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
                     <Box>
                         <Typography variant="h4" component="h1" sx={{
-                            color: rootColors.primary,
+                            color: rootColors.text,
                             fontWeight: 700,
                             display: 'flex',
                             alignItems: 'center',
@@ -519,10 +519,7 @@ function RootDashboard() {
                             startIcon={<DownloadIcon />}
                             onClick={handleDownloadCSV}
                             disabled={createdCredentials.length === 0}
-                            sx={{
-                                bgcolor: rootColors.primary,
-                                '&:hover': { bgcolor: '#4A2578' }
-                            }}
+
                         >
                             Download Credentials CSV ({createdCredentials.length})
                         </Button>
@@ -739,13 +736,13 @@ function RootDashboard() {
                             <Table>
                                 <TableHead>
                                     <TableRow sx={{ backgroundColor: rootColors.headerBg }}>
-                                        <TableCell sx={{ fontWeight: 700, color: '#212121' }}>Username</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: '#212121' }}>Name</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: '#212121' }}>Email</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: '#212121' }}>Role</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: '#212121' }}>Organization</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: '#212121' }}>Created</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, textAlign: 'center', color: '#212121' }}>Actions</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: '#212121', fontSize: '0.75rem' }}>Username</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: '#212121', fontSize: '0.75rem' }}>Name</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: '#212121', fontSize: '0.75rem' }}>Email</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: '#212121', fontSize: '0.75rem' }}>Role</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: '#212121', fontSize: '0.75rem' }}>Organization</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: '#212121', fontSize: '0.75rem' }}>Created</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, textAlign: 'center', color: '#212121', fontSize: '0.75rem' }}>Actions</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>

@@ -25,8 +25,8 @@ function UserManagementMain() {
                 <Box sx={{ my: 4 }}>
                     {/* Header with Users Management and Buttons */}
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                        <Typography variant="h4" component="h1" sx={{ color: '#633394', fontWeight: 'bold' }}>
-                            Users Management
+                        <Typography variant="h4" component="h1" sx={{ color: '#212121', fontWeight: 'bold' }}>
+                            Users
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 2 }}>
                             <Button

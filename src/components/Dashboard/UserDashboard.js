@@ -138,7 +138,7 @@ const HomeComponent = () => {
             variant={isMobile ? "h4" : "h3"}
             component="h1"
             gutterBottom
-            sx={{ fontWeight: 'bold', mb: 2, color: '#633394' }}
+            sx={{ fontWeight: 'bold', mb: 2, color: '#212121' }}
           >
             Welcome{userDetails && userDetails.form_data && userDetails.form_data.personal &&
               userDetails.form_data.personal.firstName ?

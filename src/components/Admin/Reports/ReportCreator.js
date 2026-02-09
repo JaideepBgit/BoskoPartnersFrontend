@@ -832,7 +832,7 @@ const ReportCreator = ({
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                         <AssessmentIcon sx={{ color: colors.primary, fontSize: 32 }} />
                         <Box>
-                            <Typography variant="h5" sx={{ fontWeight: 600, color: colors.primary }}>
+                            <Typography variant="h5" sx={{ fontWeight: 600, color: '#212121' }}>
                                 Report Creator
                             </Typography>
                             <Typography variant="body2" color="text.secondary">

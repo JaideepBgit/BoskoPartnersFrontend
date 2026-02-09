@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, TextField,
-    TablePagination, Select, MenuItem, FormControl, InputLabel, Card, IconButton, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
+import {
+    Container, Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, TextField,
+    TablePagination, Select, MenuItem, FormControl, InputLabel, Card, IconButton, Dialog, DialogActions, DialogContent, DialogTitle
+} from '@mui/material';
 import DialogContentText from '@mui/material/DialogContentText';
 import AddIcon from '@mui/icons-material/Add';
 import MinimizeIcon from '@mui/icons-material/Minimize';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { fetchUsers, addUser, deleteUser, fetchCompanies, addCompany, updateCompanyUser,fetchCoachesByCompany,updateCompany, deleteCompany,fetchCompanyCoachDetails,fetchUserHierarchy } from './services/userService'; // Import service functions.... updateCompany, deleteCompany
+import { fetchUsers, addUser, deleteUser, fetchCompanies, addCompany, updateCompanyUser, fetchCoachesByCompany, updateCompany, deleteCompany, fetchCompanyCoachDetails, fetchUserHierarchy } from './services/userService'; // Import service functions.... updateCompany, deleteCompany
 import DashboardLayout from './DashboardLayout'; // Import DashboardLayout
 import { motion } from 'framer-motion'; // Import framer-motion
 import ManageCompanyUsersForm from './Utilities/UserManagement/ManageCompanyUsersFormV1';
-import {InvitationEmailDialog} from './../Email/InvitationEmailDialog';
+import { InvitationEmailDialog } from './../Email/InvitationEmailDialog';
 import DownloadIcon from '@mui/icons-material/Download';
 import { fetchVersionsV2 } from './services/assessmentService';
 
@@ -86,8 +88,8 @@ function UserManagement({ onLogout }) {
         const loadVersions = async () => {
             try {
                 const versions = await fetchVersionsV2(); // You will need to import this
-                const validVersions = versions?.length > 0 
-                    ? versions.map(String) 
+                const validVersions = versions?.length > 0
+                    ? versions.map(String)
                     : ['1'];
                 setAvailableVersions(validVersions);
                 setVersion(validVersions[0]);
@@ -129,7 +131,7 @@ function UserManagement({ onLogout }) {
                             id: c.coach_id,
                             name: c.coach_name,
                         }));
-    
+
                     // Update state with filtered coaches
                     setFilteredCoachesForAddUser(tmpCoachesV1);
                 } catch (error) {
@@ -137,7 +139,7 @@ function UserManagement({ onLogout }) {
                 }
             }
         };
-    
+
         updateFilteredCoaches();
     }, [newUserRole, newUserCompanyId, companyCoachDetails]);
 
@@ -188,7 +190,7 @@ function UserManagement({ onLogout }) {
             'coach': 2,
             'observer': 3
         };
-    
+
         // Create entirely new array with new references
         const stableUsers = users.map(user => ({
             ...user,
@@ -196,20 +198,20 @@ function UserManagement({ onLogout }) {
             // Add a stable, unique identifier that includes both the id and the page
             uniqueKey: `${user.id}-${user.email}-${page}`
         }));
-    
+
         // Sort users by role priority with new array reference
         const sortedUsers = Array.from(stableUsers).sort((a, b) => {
             return rolePriority[a.role] - rolePriority[b.role];
         });
-    
+
         const startIndex = page * rowsPerPage;
         const endIndex = startIndex + rowsPerPage;
-        
+
         // Create new array reference for paginated data
         const paginatedUsers = Array.from(
             sortedUsers.slice(startIndex, endIndex)
         );
-        
+
         // Set with new reference
         setDisplayedUsers(paginatedUsers);
     }, [users, page, rowsPerPage]);
@@ -233,7 +235,7 @@ function UserManagement({ onLogout }) {
             const dataUserHierarchy = await fetchUserHierarchy();
             //console.log(dataUserHierarchy);
             const filteredUsers = data.filter(user => user.role !== 'root');
-    
+
             // Separate roles
             const leaderList = filteredUsers.filter(user => user.role === 'leader');
             const coachList = filteredUsers.filter(user => user.role === 'coach');
@@ -250,13 +252,13 @@ function UserManagement({ onLogout }) {
                 }
                 return observer;
             });
-    
+
             // Merge back updated observer list with other users
             const updatedUsers = [
                 ...filteredUsers.filter(user => user.role !== 'observer'),
                 ...updatedObservers,
             ];
-    
+
             setUsers(updatedUsers);
             setLeaders(leaderList);
             setCoaches(coachList);
@@ -266,7 +268,7 @@ function UserManagement({ onLogout }) {
             console.error('Failed to fetch users:', error);
         }
     };
-    
+
 
     /* Obselete the code is shifted to ManageCompanyUsersFormV1
     const updateFilteredUsers = () => {
@@ -292,10 +294,10 @@ function UserManagement({ onLogout }) {
             return;
         }
         // For observers, ensure we're using the leader's version
-        const userVersion = newUserRole === 'observer' 
-        ? selectedLeaderVersion 
-        : version
-        const newUser = { 
+        const userVersion = newUserRole === 'observer'
+            ? selectedLeaderVersion
+            : version
+        const newUser = {
             name: newUserName,
             email: newUserEmail,
             role: newUserRole,
@@ -308,7 +310,7 @@ function UserManagement({ onLogout }) {
             leader_id: newUserRole === 'observer' ? selectedLeaderId : null,
             coach_id: newUserRole === 'leader' ? selectedCoachId : null
         };
-        
+
         try {
             const response = await addUser(newUser);
             alert(`User added successfully. Generated password: ${response.password}`);
@@ -317,7 +319,7 @@ function UserManagement({ onLogout }) {
 
             if (newUserRole === 'leader' || newUserRole === 'observer') {
                 let additionalInfo = {};
-                
+
                 if (newUserRole === 'leader') {
                     // Get coach name for leader
                     const selectedCoach = coaches.find(coach => coach.id === selectedCoachId);
@@ -374,13 +376,13 @@ function UserManagement({ onLogout }) {
         }
     };
 
-    const handleAddCompany = async() =>{
-        if(!newCompanyName.trim()){
+    const handleAddCompany = async () => {
+        if (!newCompanyName.trim()) {
             alert('Company name cannot be empty');
             return;
         }
 
-        try{
+        try {
             await addCompany({
                 name: newCompanyName,
                 address: newCompanyAddress,
@@ -393,7 +395,7 @@ function UserManagement({ onLogout }) {
             setNewCompanyAddress('');
             setNewCompanyIndustry('');
             setNewCompanyWebsite('');
-        }catch(error){
+        } catch (error) {
             console.error('Failed to add compnay', error);
             alert('Failed to add company');
         }
@@ -445,7 +447,7 @@ function UserManagement({ onLogout }) {
     const toggleFormVisibilityManageCompanies = () => {
         setIsManageCompaniesOpen(!isManageCompaniesOpen);
     };
-    
+
 
     const getCoachName = (userId) => {
         const mapping = userHierarchy.find((uh) => uh.UserID1 === userId);
@@ -464,12 +466,12 @@ function UserManagement({ onLogout }) {
         const currentCoachId = currentCoachMapping ? currentCoachMapping.UserID2 : '';
         setEditUserData({ ...user, coach_id: currentCoachId }); // Add coach_name to editUserData
 
-        
+
         // Filter available coaches based on the user's company
         if (user.role === 'leader' && user.company_id) {
             const filteredCoaches = companyCoachDetails
-            .filter((coach) => coach.company_id === user.company_id)
-            .map((coach) => ({ id: coach.coach_id, name: coach.coach_name }));
+                .filter((coach) => coach.company_id === user.company_id)
+                .map((coach) => ({ id: coach.coach_id, name: coach.coach_name }));
             setAvailableCoachesavailableCoaches(filteredCoaches);
         } else {
             setAvailableCoachesavailableCoaches([]); // Clear if not applicable
@@ -555,7 +557,7 @@ function UserManagement({ onLogout }) {
 
 
     const tabs = [
-        { label: 'Home', path: '/home'},
+        { label: 'Home', path: '/home' },
         { label: 'Assessment Overview', path: '/root-dashboard' },
         { label: '360 Degree Assessment', path: '/edit-assessments' },
         { label: 'Users Management', path: '/users' },
@@ -563,7 +565,7 @@ function UserManagement({ onLogout }) {
         { label: 'Reports', path: '/reports' },
     ];
 
-    const handleCompanyChange = async (event) =>{
+    const handleCompanyChange = async (event) => {
         const tmpCompanyID = event.target.value;
         setNewUserCompanyId(tmpCompanyID);
         setSelectedCoachId(''); // Reset coach selection when company changes
@@ -588,27 +590,27 @@ function UserManagement({ onLogout }) {
         //console.log(selectedCompanyId);
         //setEditUserData({ ...editUserData, company_id: selectedCompanyId }); // Update company in user data - Causing an update problem the coaches are updates for the new company but the company is later set to original company
         setAvailableCoachesavailableCoaches([]); // Clear existing filtered coaches
-        
-            try {
+
+        try {
             // Filter coaches based on the selected company
             const filteredCoaches = companyCoachDetails
                 .filter((coach) => coach.company_id === selectedCompanyId)
                 .map((coach) => ({ id: coach.coach_id, name: coach.coach_name }));
-                //console.log(filteredCoaches);
+            //console.log(filteredCoaches);
 
-        //setEditUserData({ ...editUserData, coach_id: '' }); // Reset selected coach - Causing an update problem the coaches are updates for the new company but the company is later set to original company
-        // Update both company_id and coach_id in a single state update
-        setEditUserData((prevState) => ({
-            ...prevState,
-            company_id: selectedCompanyId,
-            coach_id: '', // Reset selected coach
-        }));
+            //setEditUserData({ ...editUserData, coach_id: '' }); // Reset selected coach - Causing an update problem the coaches are updates for the new company but the company is later set to original company
+            // Update both company_id and coach_id in a single state update
+            setEditUserData((prevState) => ({
+                ...prevState,
+                company_id: selectedCompanyId,
+                coach_id: '', // Reset selected coach
+            }));
             setAvailableCoachesavailableCoaches(filteredCoaches); // Update state with filtered coaches
-            } catch (error) {
+        } catch (error) {
             console.error('Failed to fetch or filter coaches:', error);
-            }
-        };
-    
+        }
+    };
+
     /*Obselete - All the handling code ManageCompanyUsersForm is shifted to ManageCompanyUsersForm
         // handleCompanyChange code is being used for the handling of filtering coaches as per the company, And not used for ManageCompanyUsersForm
         const handleCompanyChange = (event) => { 
@@ -631,10 +633,10 @@ function UserManagement({ onLogout }) {
         const headers = ['Name', 'Email', 'Phone Number', 'Password'];
         const data = [user.name, user.email, user.phone_no, user.password]; // Password is masked for security
         return `${headers.join(',')}\n${data.join(',')}`;
-        };
+    };
     const handleDownload = (user) => {
         if (user.role !== 'coach') return;
-    
+
         const csvContent = generateCSV(user);
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
@@ -652,8 +654,8 @@ function UserManagement({ onLogout }) {
     return (
         <div>
             <DashboardLayout tabs={tabs} onLogout={onLogout} />
-            <Typography variant="h4" gutterBottom sx={{ color: '#263d9d' }}>USERS MANAGEMENT</Typography>
-            <Container maxWidth="xl" sx={{ mt: 4 }}>
+            <Typography variant="h4" gutterBottom sx={{ color: '#263d9d' }}>USERS</Typography>
+            <Container maxWidth="xl" sx={{ py: 4, backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
                 <Box sx={{ display: 'flex', gap: 2 }}>
                     {/* User Management Table */}
                     <Card sx={{ boxShadow: 3, flexBasis: '50%', maxWidth: '50%', padding: 2, backgroundColor: '#5a8354' }}>
@@ -735,44 +737,44 @@ function UserManagement({ onLogout }) {
                                             ))
                                         )}
                                     </TableBody>*/}
-                                    <TableBody>
-                                        {displayedUsers.length === 0 ? (
-                                            <TableRow>
-                                                <TableCell colSpan={6} align="center">No users available</TableCell>
+                                <TableBody>
+                                    {displayedUsers.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={6} align="center">No users available</TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        displayedUsers.map((user) => (
+                                            <TableRow key={user.uniqueKey}> {/* Use the new uniqueKey */}
+                                                <TableCell>{user.name}</TableCell>
+                                                <TableCell>{user.email}</TableCell>
+                                                <TableCell>{user.phone_no}</TableCell>
+                                                <TableCell>{user.role}</TableCell>
+                                                <TableCell>
+                                                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'nowrap' }}>
+                                                        <Button
+                                                            color="primary"
+                                                            onClick={() => handleEditUser(user)}
+                                                            startIcon={<EditIcon />}
+                                                        />
+                                                        <Button
+                                                            color="secondary"
+                                                            onClick={() => handleOpenDeleteDialog(user.id, user.role)}
+                                                            startIcon={<DeleteIcon />}
+                                                        />
+                                                        {user.role === 'coach' && (
+                                                            <Button
+                                                                sx={{ padding: 0.5 }}
+                                                                color="default"
+                                                                onClick={() => handleDownload(user)}
+                                                                startIcon={<DownloadIcon />}
+                                                            />
+                                                        )}
+                                                    </Box>
+                                                </TableCell>
                                             </TableRow>
-                                        ) : (
-                                            displayedUsers.map((user) => (
-                                                <TableRow key={user.uniqueKey}> {/* Use the new uniqueKey */}
-                                                    <TableCell>{user.name}</TableCell>
-                                                    <TableCell>{user.email}</TableCell>
-                                                    <TableCell>{user.phone_no}</TableCell>
-                                                    <TableCell>{user.role}</TableCell>
-                                                    <TableCell>
-                                                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'nowrap' }}>
-                                                            <Button 
-                                                                color="primary" 
-                                                                onClick={() => handleEditUser(user)} 
-                                                                startIcon={<EditIcon />}
-                                                            />
-                                                            <Button 
-                                                                color="secondary" 
-                                                                onClick={() => handleOpenDeleteDialog(user.id, user.role)} 
-                                                                startIcon={<DeleteIcon />}
-                                                            />
-                                                            {user.role === 'coach' && (
-                                                                <Button 
-                                                                    sx={{ padding: 0.5 }} 
-                                                                    color="default" 
-                                                                    onClick={() => handleDownload(user)} 
-                                                                    startIcon={<DownloadIcon />}
-                                                                />
-                                                            )}
-                                                        </Box>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))
-                                        )}
-                                    </TableBody>
+                                        ))
+                                    )}
+                                </TableBody>
                             </Table>
                             <TablePagination
                                 component="div"
@@ -786,338 +788,342 @@ function UserManagement({ onLogout }) {
                         </TableContainer>
                     </Card>
 
-                        {/* Add User Form */}
-                        <Box sx={{ flexBasis: '50%', maxWidth: '50%', position: 'relative', minHeight: 200 }}>
-                            {!isFormOpen && !isManageCompaniesOpen && (
-                                <Button
-                                    variant="contained"
-                                    startIcon={<AddIcon />}
-                                    onClick={() => setIsFormOpen(true)}
-                                    sx={{ backgroundColor: "#263d9d", position: 'absolute', top: 6, right: 350 }}
-                                >
-                                    Add User
-                                </Button>
-                            )}
-                            {isFormOpen && (
+                    {/* Add User Form */}
+                    <Box sx={{ flexBasis: '50%', maxWidth: '50%', position: 'relative', minHeight: 200 }}>
+                        {!isFormOpen && !isManageCompaniesOpen && (
+                            <Button
+                                variant="contained"
+                                startIcon={<AddIcon />}
+                                onClick={() => setIsFormOpen(true)}
+                                sx={{ backgroundColor: "#263d9d", position: 'absolute', top: 6, right: 350 }}
+                            >
+                                Add User
+                            </Button>
+                        )}
+                        {isFormOpen && (
                             <motion.div
                                 initial={{ scale: 0, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
                                 exit={{ scale: 0, opacity: 0 }}
                                 transition={{ type: 'spring', stiffness: 260, damping: 20 }}
                             >
-                            <Box sx={{ backgroundColor: '#5a8354',
-                                boxShadow: 3,
-                                borderRadius:1,
-                                display: 'flex', 
-                                justifyContent: 'center', 
-                                alignItems: 'center', 
-                                padding: 2,  flexDirection: 'column'  }}>
-                            <Typography variant="h6" gutterBottom>Add User</Typography>
+                                <Box sx={{
+                                    backgroundColor: '#5a8354',
+                                    boxShadow: 3,
+                                    borderRadius: 1,
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    padding: 2, flexDirection: 'column'
+                                }}>
+                                    <Typography variant="h6" gutterBottom>Add User</Typography>
 
-                            <Card sx={{ boxShadow: 3, padding: 7 , maxWidth: '90%'}}>
-                                
-                                <IconButton
-                                    onClick={toggleFormVisibility}
-                                    sx={{ position: 'absolute', top: 4, right: 16, color: 'white' }}
-                                >
-                                    <MinimizeIcon />
-                                </IconButton>
-                                {!showAdditionalFields && (
-                                    <Box sx={{ display: 'flex', gap: 1 }}>
-                                    {/* Role Selection */}
-                                    <Box sx={{ width: '300px' }}> {/* Set an appropriate width for visibility */}
-                                        <FormControl variant="outlined" margin="normal" fullWidth>
-                                            <InputLabel>Role</InputLabel>
-                                            <Select 
-                                                value={newUserRole} 
-                                                onChange={(e) => { 
-                                                    setNewUserRole(e.target.value); 
-                                                    setShowAdditionalFields(true); 
-                                                }} 
-                                                label="Role"
-                                            >
-                                                <MenuItem value="none">None</MenuItem>
-                                                <MenuItem value="coach">Coach</MenuItem>
-                                                <MenuItem value="observer">Observer</MenuItem>
-                                                <MenuItem value="leader">Leader</MenuItem>
-                                            </Select>
-                                        </FormControl>
-                                    </Box>
-                                </Box>                                
+                                    <Card sx={{ boxShadow: 3, padding: 7, maxWidth: '90%' }}>
 
-                                )}
-                            {showAdditionalFields && (
-                                    <Box sx={{ display: 'flex', gap: 2 }}>
-                                    {/* First Column */}
-                                    <Box sx={{ flexBasis: '50%' }}>
-                                        <TextField
-                                            label="Name"
-                                            variant="outlined"
-                                            margin="normal"
-                                            value={newUserName}
-                                            onChange={(e) => setNewUserName(e.target.value)}
-                                            fullWidth
-                                        />
-                                        <TextField
-                                            label="Email"
-                                            variant="outlined"
-                                            margin="normal"
-                                            value={newUserEmail}
-                                            onChange={(e) => setNewUserEmail(e.target.value)}
-                                            fullWidth
-                                        />
-                                        <TextField
-                                            label="Phone Number"
-                                            variant="outlined"
-                                            margin="normal"
-                                            value={newUserPhoneNumber}
-                                            onChange={(e) => setNewUserPhoneNumber(e.target.value)}
-                                            fullWidth
-                                        />
-                                        {showAdditionalFields && (newUserRole === 'leader' || newUserRole === 'observer') && (
-                                            <FormControl variant="outlined" margin="normal" fullWidth>
-                                                <InputLabel>Survey Version</InputLabel>
-                                                <Select
-                                                    //value={version}
-                                                    value={newUserRole === 'observer' ? selectedLeaderVersion : version}
-                                                    onChange={(e) => setVersion(e.target.value)}
-                                                    label="Survey Version"
-                                                    disabled={newUserRole === 'observer'}
-                                                >
-                                                    {availableVersions.map((ver) => (
-                                                        <MenuItem key={ver} value={ver}>Version {ver}</MenuItem>
-                                                    ))}
-                                                </Select>
-                                            </FormControl>
-                                        )}
-                                        <Box sx={{display:'flex', alignItems:'center',gap:1}}>
-                                            <FormControl variant="outlined" margin="normal" fullWidth>
-                                                <InputLabel>Company</InputLabel>
-                                                <Select
-                                                    value={newUserCompanyId}
-                                                    onChange={handleCompanyChange}
-                                                    // onChange = {(e) => setNewUserCompanyId(e.target.value)} // moved to handleCompanyChange function
-                                                    label="Company"
-                                                    disabled={newUserRole === 'observer'}
-                                                >
-                                                    {companies.map((company) => (
-                                                        <MenuItem key={company.id} value={company.id}>{company.name}</MenuItem>
-                                                    ))}
-                                                </Select>
-                                            </FormControl>
-                                            <IconButton
-                                                color="primary"
-                                                onClick={()=>setIsAddCompanyDialogOpen(true)}
-                                            >
-                                                <AddIcon/>
-                                            </IconButton>
-                                        </Box>
-                                    </Box>
-                                    
-                                    {/* Second Column */}
-                                    <Box sx={{ flexBasis: '50%' }}>
-                                        <FormControl variant="outlined" margin="normal" fullWidth>
-                                            <InputLabel>Role</InputLabel>
-                                            <Select value={newUserRole} onChange={(e) => setNewUserRole(e.target.value)} label="Role">
-                                                <MenuItem value="none">None</MenuItem>
-                                                <MenuItem value="coach">Coach</MenuItem>
-                                                <MenuItem value="observer">Observer</MenuItem>
-                                                <MenuItem value="leader">Leader</MenuItem>
-                                            </Select>
-                                        </FormControl>
-                                        {(newUserRole === 'leader' || newUserRole === 'observer') && (
-                                            <>
-                                                <TextField
-                                                    label="Start Date"
-                                                    type="date"
-                                                    variant="outlined"
-                                                    margin="normal"
-                                                    value={startDate}
-                                                    onChange={(e) => setStartDate(e.target.value)}
-                                                    fullWidth
-                                                    sx={{
-                                                        '& .MuiInputBase-input': {
-                                                            paddingTop: 2,
-                                                            paddingBottom: 2,
-                                                        }
-                                                    }}
-                                                />
-                                                <TextField
-                                                    label="End Date"
-                                                    type="date"
-                                                    variant="outlined"
-                                                    margin="normal"
-                                                    value={endDate}
-                                                    onChange={(e) => setEndDate(e.target.value)}
-                                                    fullWidth
-                                                    sx={{
-                                                        '& .MuiInputBase-input': {
-                                                            paddingTop: 2,
-                                                            paddingBottom: 2,
-                                                        }
-                                                    }}
-                                                />
-                                                {newUserRole === 'observer' && (
+                                        <IconButton
+                                            onClick={toggleFormVisibility}
+                                            sx={{ position: 'absolute', top: 4, right: 16, color: 'white' }}
+                                        >
+                                            <MinimizeIcon />
+                                        </IconButton>
+                                        {!showAdditionalFields && (
+                                            <Box sx={{ display: 'flex', gap: 1 }}>
+                                                {/* Role Selection */}
+                                                <Box sx={{ width: '300px' }}> {/* Set an appropriate width for visibility */}
                                                     <FormControl variant="outlined" margin="normal" fullWidth>
-                                                        <InputLabel>Sub-role</InputLabel>
+                                                        <InputLabel>Role</InputLabel>
                                                         <Select
-                                                            value={subRole}
-                                                            onChange={(e) => setSubRole(e.target.value)}
-                                                            label="Sub-role"
-                                                        >
-                                                            <MenuItem value="Co-Worker">Co-Worker</MenuItem>
-                                                            <MenuItem value="Manager">Manager</MenuItem>
-                                                            <MenuItem value="Direct Report">Direct Report</MenuItem>
-                                                            <MenuItem value="Other">Other</MenuItem>
-                                                        </Select>
-                                                    </FormControl>
-                                                )}
-
-                                                {newUserRole === 'observer' && (
-                                                    <FormControl variant="outlined" margin="normal" fullWidth>
-                                                        <InputLabel>Leader</InputLabel>
-                                                        <Select 
-                                                            value={selectedLeaderId} 
+                                                            value={newUserRole}
                                                             onChange={(e) => {
-                                                                const leaderId = e.target.value;
-                                                                setSelectedLeaderId(leaderId);
-                                                                // Automatically set the company of the observer based on selected leader
-                                                                const selectedLeader = leaders.find((leader) => leader.id === leaderId);
-                                                                if (selectedLeader) {
-                                                                    setNewUserCompanyId(selectedLeader.company_id);
-                                                                    setVersion(selectedLeader.version || '1'); // Set version from leader
-                                                                    setSelectedLeaderVersion(selectedLeader.Version || '1');
-                                                                }
+                                                                setNewUserRole(e.target.value);
+                                                                setShowAdditionalFields(true);
                                                             }}
-                                                            label="Leader"
+                                                            label="Role"
                                                         >
-                                                            {leaders.map((leader) => (
-                                                                <MenuItem key={leader.id} value={leader.id}>{leader.name}</MenuItem>
-                                                            ))}
+                                                            <MenuItem value="none">None</MenuItem>
+                                                            <MenuItem value="coach">Coach</MenuItem>
+                                                            <MenuItem value="observer">Observer</MenuItem>
+                                                            <MenuItem value="leader">Leader</MenuItem>
                                                         </Select>
                                                     </FormControl>
-                                                )}
-                                                
-                                                {newUserRole === 'leader' && newUserCompanyId && (
-                                                    <FormControl variant="outlined" margin="normal" fullWidth>
-                                                        <InputLabel>Coach</InputLabel>
-                                                        <Select value={selectedCoachId} onChange={(e) => setSelectedCoachId(e.target.value)} label="Coach">
-                                                            {filteredCoachesForAddUser.map((coach) => (
-                                                                <MenuItem key={coach.id} value={coach.id}>{coach.name}</MenuItem>
-                                                            ))}
-                                                        </Select>
-                                                    </FormControl>
-                                                )}
-                                            </>
+                                                </Box>
+                                            </Box>
+
                                         )}
-                                    </Box>
-                                    </Box>
-                                    )}
-                                    {showAdditionalFields && (
-                                    <Button variant="contained" onClick={handleAddUser} sx={{ backgroundColor: "#263d9d", ml: 2 }}>
-                                        Add User
-                                    </Button>
-                                )}
-                            </Card>
-                            </Box>
-                            </motion.div>
-                            )}
-                            {/* Button to manage companies */}
-                            {!isManageCompaniesOpen && !isFormOpen && (
-                                <Button
-                                    variant="contained"
-                                    startIcon={<AddIcon />}
-                                    onClick={toggleManageCompaniesVisibility}
-                                    sx={{ backgroundColor: "#263d9d", position: 'absolute', top: 6, right: 100 }}
-                                >
-                                    Manage Companies
-                                </Button>
-                            )}
-                            {isManageCompaniesOpen && (
-                                <motion.div
-                                    initial={{ scale: 0, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    exit={{ scale: 0, opacity: 0 }}
-                                    transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-                                >
-                                    <Box sx={{ backgroundColor: '#5a8354',
-                                            boxShadow: 3,
-                                            borderRadius: 1,
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            padding: 2,
-                                            //maxHeight: '500px',
-                                            position: 'relative',
-                                            overflow: 'auto'  }}
-                                    >
-                                        <Typography variant="h5" sx={{ paddingBottom: 1}}>Manage Companies</Typography>
+                                        {showAdditionalFields && (
+                                            <Box sx={{ display: 'flex', gap: 2 }}>
+                                                {/* First Column */}
+                                                <Box sx={{ flexBasis: '50%' }}>
+                                                    <TextField
+                                                        label="Name"
+                                                        variant="outlined"
+                                                        margin="normal"
+                                                        value={newUserName}
+                                                        onChange={(e) => setNewUserName(e.target.value)}
+                                                        fullWidth
+                                                    />
+                                                    <TextField
+                                                        label="Email"
+                                                        variant="outlined"
+                                                        margin="normal"
+                                                        value={newUserEmail}
+                                                        onChange={(e) => setNewUserEmail(e.target.value)}
+                                                        fullWidth
+                                                    />
+                                                    <TextField
+                                                        label="Phone Number"
+                                                        variant="outlined"
+                                                        margin="normal"
+                                                        value={newUserPhoneNumber}
+                                                        onChange={(e) => setNewUserPhoneNumber(e.target.value)}
+                                                        fullWidth
+                                                    />
+                                                    {showAdditionalFields && (newUserRole === 'leader' || newUserRole === 'observer') && (
+                                                        <FormControl variant="outlined" margin="normal" fullWidth>
+                                                            <InputLabel>Survey Version</InputLabel>
+                                                            <Select
+                                                                //value={version}
+                                                                value={newUserRole === 'observer' ? selectedLeaderVersion : version}
+                                                                onChange={(e) => setVersion(e.target.value)}
+                                                                label="Survey Version"
+                                                                disabled={newUserRole === 'observer'}
+                                                            >
+                                                                {availableVersions.map((ver) => (
+                                                                    <MenuItem key={ver} value={ver}>Version {ver}</MenuItem>
+                                                                ))}
+                                                            </Select>
+                                                        </FormControl>
+                                                    )}
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                        <FormControl variant="outlined" margin="normal" fullWidth>
+                                                            <InputLabel>Company</InputLabel>
+                                                            <Select
+                                                                value={newUserCompanyId}
+                                                                onChange={handleCompanyChange}
+                                                                // onChange = {(e) => setNewUserCompanyId(e.target.value)} // moved to handleCompanyChange function
+                                                                label="Company"
+                                                                disabled={newUserRole === 'observer'}
+                                                            >
+                                                                {companies.map((company) => (
+                                                                    <MenuItem key={company.id} value={company.id}>{company.name}</MenuItem>
+                                                                ))}
+                                                            </Select>
+                                                        </FormControl>
+                                                        <IconButton
+                                                            color="primary"
+                                                            onClick={() => setIsAddCompanyDialogOpen(true)}
+                                                        >
+                                                            <AddIcon />
+                                                        </IconButton>
+                                                    </Box>
+                                                </Box>
 
-                                        {/*<Card sx={{ boxShadow: 3, padding: 2, mt: 4 }}>*/}
-                                            <IconButton
-                                                onClick={toggleFormVisibilityManageCompanies}
-                                                sx={{ position: 'absolute', top: 4, right: 16, color: 'white' }}
-                                            >
-                                                <MinimizeIcon />
-                                            </IconButton>
+                                                {/* Second Column */}
+                                                <Box sx={{ flexBasis: '50%' }}>
+                                                    <FormControl variant="outlined" margin="normal" fullWidth>
+                                                        <InputLabel>Role</InputLabel>
+                                                        <Select value={newUserRole} onChange={(e) => setNewUserRole(e.target.value)} label="Role">
+                                                            <MenuItem value="none">None</MenuItem>
+                                                            <MenuItem value="coach">Coach</MenuItem>
+                                                            <MenuItem value="observer">Observer</MenuItem>
+                                                            <MenuItem value="leader">Leader</MenuItem>
+                                                        </Select>
+                                                    </FormControl>
+                                                    {(newUserRole === 'leader' || newUserRole === 'observer') && (
+                                                        <>
+                                                            <TextField
+                                                                label="Start Date"
+                                                                type="date"
+                                                                variant="outlined"
+                                                                margin="normal"
+                                                                value={startDate}
+                                                                onChange={(e) => setStartDate(e.target.value)}
+                                                                fullWidth
+                                                                sx={{
+                                                                    '& .MuiInputBase-input': {
+                                                                        paddingTop: 2,
+                                                                        paddingBottom: 2,
+                                                                    }
+                                                                }}
+                                                            />
+                                                            <TextField
+                                                                label="End Date"
+                                                                type="date"
+                                                                variant="outlined"
+                                                                margin="normal"
+                                                                value={endDate}
+                                                                onChange={(e) => setEndDate(e.target.value)}
+                                                                fullWidth
+                                                                sx={{
+                                                                    '& .MuiInputBase-input': {
+                                                                        paddingTop: 2,
+                                                                        paddingBottom: 2,
+                                                                    }
+                                                                }}
+                                                            />
+                                                            {newUserRole === 'observer' && (
+                                                                <FormControl variant="outlined" margin="normal" fullWidth>
+                                                                    <InputLabel>Sub-role</InputLabel>
+                                                                    <Select
+                                                                        value={subRole}
+                                                                        onChange={(e) => setSubRole(e.target.value)}
+                                                                        label="Sub-role"
+                                                                    >
+                                                                        <MenuItem value="Co-Worker">Co-Worker</MenuItem>
+                                                                        <MenuItem value="Manager">Manager</MenuItem>
+                                                                        <MenuItem value="Direct Report">Direct Report</MenuItem>
+                                                                        <MenuItem value="Other">Other</MenuItem>
+                                                                    </Select>
+                                                                </FormControl>
+                                                            )}
 
-                                            <TableContainer component={Paper}>
-                                                <Table>
-                                                    <TableHead>
-                                                        <TableRow sx={{ backgroundColor: '#d1dad6' }}>
-                                                            {/*<TableCell>ID</TableCell>*/}
-                                                            <TableCell>Name</TableCell>
-                                                            <TableCell>Address</TableCell>
-                                                            <TableCell>Industry</TableCell>
-                                                            <TableCell>Website</TableCell>
-                                                            <TableCell>Actions</TableCell>
-                                                        </TableRow>
-                                                    </TableHead>
-                                                    <TableBody>
-                                                        {companies.slice(manageCompaniesPage * manageCompaniesRowsPerPage, manageCompaniesPage * manageCompaniesRowsPerPage + manageCompaniesRowsPerPage).map((company) => (
-                                                            <TableRow key={company.id}>
-                                                                {/*<TableCell>{company.id}</TableCell>*/}
-                                                                <TableCell>{company.name}</TableCell>
-                                                                <TableCell>{company.address}</TableCell>
-                                                                <TableCell>{company.industry}</TableCell>
-                                                                <TableCell>{company.website}</TableCell>
-                                                                <TableCell>
-                                                                    <Button color="primary" onClick={() => handleEditCompany(company)} startIcon={<EditIcon />}></Button>
-                                                                    <Button color="secondary" onClick={() => handleDeleteCompany(company.id)} startIcon={<DeleteIcon />}></Button>
-                                                                </TableCell>
-                                                            </TableRow>
-                                                        ))}
-                                                    </TableBody>
-                                                </Table>
-                                                <TablePagination
-                                                    component="div"
-                                                    count={companies.length}
-                                                    page={manageCompaniesPage}
-                                                    onPageChange={handleManageCompaniesChangePage}
-                                                    rowsPerPage={manageCompaniesRowsPerPage}
-                                                    onRowsPerPageChange={handleManageCompaniesChangeRowsPerPage}
-                                                    rowsPerPageOptions={[4, 8, 12]}
-                                                />
-                                            </TableContainer>
-                                            
-                                            <Button
-                                                variant="contained"
-                                                startIcon={<AddIcon />}
-                                                onClick={handleAddCompanyDialogOpen}
-                                                sx={{ backgroundColor: "#263d9d", position: 'absolute', bottom: 20, left: 20 }}
-                                            >
-                                                Add Company
+                                                            {newUserRole === 'observer' && (
+                                                                <FormControl variant="outlined" margin="normal" fullWidth>
+                                                                    <InputLabel>Leader</InputLabel>
+                                                                    <Select
+                                                                        value={selectedLeaderId}
+                                                                        onChange={(e) => {
+                                                                            const leaderId = e.target.value;
+                                                                            setSelectedLeaderId(leaderId);
+                                                                            // Automatically set the company of the observer based on selected leader
+                                                                            const selectedLeader = leaders.find((leader) => leader.id === leaderId);
+                                                                            if (selectedLeader) {
+                                                                                setNewUserCompanyId(selectedLeader.company_id);
+                                                                                setVersion(selectedLeader.version || '1'); // Set version from leader
+                                                                                setSelectedLeaderVersion(selectedLeader.Version || '1');
+                                                                            }
+                                                                        }}
+                                                                        label="Leader"
+                                                                    >
+                                                                        {leaders.map((leader) => (
+                                                                            <MenuItem key={leader.id} value={leader.id}>{leader.name}</MenuItem>
+                                                                        ))}
+                                                                    </Select>
+                                                                </FormControl>
+                                                            )}
+
+                                                            {newUserRole === 'leader' && newUserCompanyId && (
+                                                                <FormControl variant="outlined" margin="normal" fullWidth>
+                                                                    <InputLabel>Coach</InputLabel>
+                                                                    <Select value={selectedCoachId} onChange={(e) => setSelectedCoachId(e.target.value)} label="Coach">
+                                                                        {filteredCoachesForAddUser.map((coach) => (
+                                                                            <MenuItem key={coach.id} value={coach.id}>{coach.name}</MenuItem>
+                                                                        ))}
+                                                                    </Select>
+                                                                </FormControl>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </Box>
+                                            </Box>
+                                        )}
+                                        {showAdditionalFields && (
+                                            <Button variant="contained" onClick={handleAddUser} sx={{ backgroundColor: "#263d9d", ml: 2 }}>
+                                                Add User
                                             </Button>
-                                        {/*</Card>*/}
-                                    </Box>
-                                </motion.div>
-                            )}
-                            
-                        </Box>
-                    
+                                        )}
+                                    </Card>
+                                </Box>
+                            </motion.div>
+                        )}
+                        {/* Button to manage companies */}
+                        {!isManageCompaniesOpen && !isFormOpen && (
+                            <Button
+                                variant="contained"
+                                startIcon={<AddIcon />}
+                                onClick={toggleManageCompaniesVisibility}
+                                sx={{ backgroundColor: "#263d9d", position: 'absolute', top: 6, right: 100 }}
+                            >
+                                Manage Companies
+                            </Button>
+                        )}
+                        {isManageCompaniesOpen && (
+                            <motion.div
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0, opacity: 0 }}
+                                transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+                            >
+                                <Box sx={{
+                                    backgroundColor: '#5a8354',
+                                    boxShadow: 3,
+                                    borderRadius: 1,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    padding: 2,
+                                    //maxHeight: '500px',
+                                    position: 'relative',
+                                    overflow: 'auto'
+                                }}
+                                >
+                                    <Typography variant="h5" sx={{ paddingBottom: 1 }}>Manage Companies</Typography>
+
+                                    {/*<Card sx={{ boxShadow: 3, padding: 2, mt: 4 }}>*/}
+                                    <IconButton
+                                        onClick={toggleFormVisibilityManageCompanies}
+                                        sx={{ position: 'absolute', top: 4, right: 16, color: 'white' }}
+                                    >
+                                        <MinimizeIcon />
+                                    </IconButton>
+
+                                    <TableContainer component={Paper}>
+                                        <Table>
+                                            <TableHead>
+                                                <TableRow sx={{ backgroundColor: '#d1dad6' }}>
+                                                    {/*<TableCell>ID</TableCell>*/}
+                                                    <TableCell>Name</TableCell>
+                                                    <TableCell>Address</TableCell>
+                                                    <TableCell>Industry</TableCell>
+                                                    <TableCell>Website</TableCell>
+                                                    <TableCell>Actions</TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {companies.slice(manageCompaniesPage * manageCompaniesRowsPerPage, manageCompaniesPage * manageCompaniesRowsPerPage + manageCompaniesRowsPerPage).map((company) => (
+                                                    <TableRow key={company.id}>
+                                                        {/*<TableCell>{company.id}</TableCell>*/}
+                                                        <TableCell>{company.name}</TableCell>
+                                                        <TableCell>{company.address}</TableCell>
+                                                        <TableCell>{company.industry}</TableCell>
+                                                        <TableCell>{company.website}</TableCell>
+                                                        <TableCell>
+                                                            <Button color="primary" onClick={() => handleEditCompany(company)} startIcon={<EditIcon />}></Button>
+                                                            <Button color="secondary" onClick={() => handleDeleteCompany(company.id)} startIcon={<DeleteIcon />}></Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                        <TablePagination
+                                            component="div"
+                                            count={companies.length}
+                                            page={manageCompaniesPage}
+                                            onPageChange={handleManageCompaniesChangePage}
+                                            rowsPerPage={manageCompaniesRowsPerPage}
+                                            onRowsPerPageChange={handleManageCompaniesChangeRowsPerPage}
+                                            rowsPerPageOptions={[4, 8, 12]}
+                                        />
+                                    </TableContainer>
+
+                                    <Button
+                                        variant="contained"
+                                        startIcon={<AddIcon />}
+                                        onClick={handleAddCompanyDialogOpen}
+                                        sx={{ backgroundColor: "#263d9d", position: 'absolute', bottom: 20, left: 20 }}
+                                    >
+                                        Add Company
+                                    </Button>
+                                    {/*</Card>*/}
+                                </Box>
+                            </motion.div>
+                        )}
+
+                    </Box>
+
                 </Box>
                 <ManageCompanyUsersForm
                     // this all parts are shifted to ManageCompanyUsersFormV1
-                    leaders = {leaders}
+                    leaders={leaders}
                     //companies={companies}
                     //selectedCompanyId={userGroupSelectedCompanyId}
                     //handleCompanyChange={handleCompanyChange}
@@ -1159,7 +1165,7 @@ function UserManagement({ onLogout }) {
                         fullWidth
                     />
                     {/*{editUserData.role !== 'observer' && (*/}
-                       {/* <FormControl variant="outlined" margin="normal" fullWidth>
+                    {/* <FormControl variant="outlined" margin="normal" fullWidth>
                             <InputLabel>Company</InputLabel>
                             <Select
                                 value={editUserData.company_id || ''}
@@ -1182,9 +1188,9 @@ function UserManagement({ onLogout }) {
                             disabled={editUserData.role === 'observer' || editUserData.role === 'coach'}
                         >
                             {companies.map((company) => (
-                            <MenuItem key={company.id} value={company.id}>
-                                {company.name}
-                            </MenuItem>
+                                <MenuItem key={company.id} value={company.id}>
+                                    {company.name}
+                                </MenuItem>
                             ))}
                         </Select>
                     </FormControl>
@@ -1194,36 +1200,36 @@ function UserManagement({ onLogout }) {
                         <Select
                             value={editUserData.coach_id || ''}
                             onChange={(e) =>
-                            setEditUserData({ ...editUserData, coach_id: e.target.value })
+                                setEditUserData({ ...editUserData, coach_id: e.target.value })
                             }
                             label="Coach"
                             disabled={!availableCoachesForEditUser.length && editUserData.role !== 'leader'}
                         >
                             {availableCoachesForEditUser.map((coach) => (
-                            <MenuItem key={coach.id} value={coach.id}>
-                                {coach.name}
-                            </MenuItem>
+                                <MenuItem key={coach.id} value={coach.id}>
+                                    {coach.name}
+                                </MenuItem>
                             ))}
                         </Select>
                     </FormControl>
                     {editUserData.role === 'leader' && (
-                            <FormControl variant="outlined" margin="normal" fullWidth>
-                                <InputLabel>Survey Version</InputLabel>
-                                <Select
-                                    value={editUserData.Version || '1'}
-                                    onChange={(e) => setEditUserData({ 
-                                        ...editUserData, 
-                                        Version: e.target.value 
-                                    })}
-                                    label="Survey Version"
-                                >
-                                    {availableVersions.map((ver) => (
-                                        <MenuItem key={ver} value={ver}>
-                                            Version {ver}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
+                        <FormControl variant="outlined" margin="normal" fullWidth>
+                            <InputLabel>Survey Version</InputLabel>
+                            <Select
+                                value={editUserData.Version || '1'}
+                                onChange={(e) => setEditUserData({
+                                    ...editUserData,
+                                    Version: e.target.value
+                                })}
+                                label="Survey Version"
+                            >
+                                {availableVersions.map((ver) => (
+                                    <MenuItem key={ver} value={ver}>
+                                        Version {ver}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
                     )}
                 </DialogContent>
                 <DialogActions>
@@ -1231,12 +1237,12 @@ function UserManagement({ onLogout }) {
                     <Button onClick={handleEditUserSave} color="primary">Save</Button>
                 </DialogActions>
             </Dialog>
-            
+
             <Dialog open={isDeleteDialogOpen} onClose={handleCloseDeleteDialog}>
                 <DialogTitle>Confirm Deletion</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Are you sure you want to delete this user? 
+                        Are you sure you want to delete this user?
                         This action cannot be undone.
                     </DialogContentText>
                 </DialogContent>
@@ -1250,10 +1256,10 @@ function UserManagement({ onLogout }) {
                 </DialogActions>
             </Dialog>
 
-            <Dialog open={isAddCompanyDialogOpen} onClose={()=>setIsAddCompanyDialogOpen(false)}>
+            <Dialog open={isAddCompanyDialogOpen} onClose={() => setIsAddCompanyDialogOpen(false)}>
                 <DialogTitle>Add New Company [ *if not in list ]</DialogTitle>
                 <DialogContent>
-                <TextField
+                    <TextField
                         label="Company Name"
                         variant="outlined"
                         margin="normal"

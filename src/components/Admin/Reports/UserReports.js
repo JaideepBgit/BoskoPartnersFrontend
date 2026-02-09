@@ -1102,7 +1102,7 @@ const UserReports = () => {
         <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
             <Box>
-              <Typography variant="h4" component="h1" gutterBottom>
+              <Typography variant="h4" component="h1" gutterBottom sx={{ color: adminColors.text, fontWeight: 'bold' }}>
                 User Reports - Survey Analytics
               </Typography>
               <Typography variant="body1" color="text.secondary">
@@ -1192,7 +1192,7 @@ const UserReports = () => {
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
           <Box>
-            <Typography variant="h4" component="h1" gutterBottom>
+            <Typography variant="h4" component="h1" gutterBottom sx={{ color: adminColors.text, fontWeight: 'bold' }}>
               User Reports - Survey Analytics
             </Typography>
             <Typography variant="body1" color="text.secondary">
