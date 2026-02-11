@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import InventoryService from '../../../services/Admin/Inventory/InventoryService';
 import {
   Box,
@@ -38,15 +38,17 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import SearchIcon from '@mui/icons-material/Search';
+import InputAdornment from '@mui/material/InputAdornment';
 import Navbar from '../../shared/Navbar/Navbar';
 import QuestionsTab from './QuestionsTab';
 import TemplatesTab from './TemplatesTab';
 import CopyTemplateVersionDialog from './CopyTemplateVersionDialog';
-import CreateQuestionnaireWizard from './CreateQuestionnaireWizard';
 
 const InventoryPage = () => {
   const { templateId } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -133,8 +135,6 @@ const InventoryPage = () => {
     setPreviewInfo({ type: 'version', data: version });
   };
 
-  // Update handleAddSurveyClose and other handlers if they reset previewTemplate
-
   // const [newTemplateData, setNewTemplateData] = useState({
   //   survey_code: '',
   //   version_id: '',
@@ -154,11 +154,6 @@ const InventoryPage = () => {
 
   // Responses
   const [responses, setResponses] = useState([]);
-
-  const [wizardOpen, setWizardOpen] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState(null);
-
-  const [previewTemplate, setPreviewTemplate] = useState(null);
 
   // Fetch organizations
   const fetchOrganizations = async () => {
@@ -493,7 +488,8 @@ const InventoryPage = () => {
     <>
       <Navbar />
       <Container maxWidth="xl" sx={{ py: 4, minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
-        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+        {/* Header */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
           <Typography
             variant={isMobile ? "h5" : "h4"}
             sx={{
@@ -502,32 +498,44 @@ const InventoryPage = () => {
               fontSize: isMobile ? '1.5rem' : '2.125rem'
             }}
           >
-            Surveys
+            Surveys ({filteredVersions.length})
           </Typography>
 
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-            <TextField
-              size="small"
-              placeholder="Search Survey Name"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                setEditingVersion(null);
+                setNewVersionName('');
+                setNewVersionDesc('');
+                setSelectedOrganizationId('');
+                setOpenVersionDialog(true);
+              }}
               sx={{
-                width: 250,
-                backgroundColor: 'white',
-                borderRadius: 1,
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: '#e0e0e0' },
-                  '&:hover fieldset': { borderColor: '#633394' },
-                  '&.Mui-focused fieldset': { borderColor: '#633394' },
+                color: '#633394',
+                borderColor: '#633394',
+                backgroundColor: 'rgba(99, 51, 148, 0.04)',
+                borderRadius: 2,
+                textTransform: 'none',
+                px: 3,
+                '&:hover': {
+                  borderColor: '#7c52a5',
+                  backgroundColor: 'rgba(99, 51, 148, 0.08)'
                 }
               }}
-            />
+            >
+              Add Organization Group
+            </Button>
             <Button
               variant="contained"
               onClick={handleAddSurveyClick}
               endIcon={<KeyboardArrowDownIcon />}
               sx={{
-                minWidth: 150
+                backgroundColor: '#633394',
+                borderRadius: 2,
+                textTransform: 'none',
+                px: 3,
+                '&:hover': { backgroundColor: '#967CB2' }
               }}
             >
               + Add Survey
@@ -550,43 +558,68 @@ const InventoryPage = () => {
             >
               <MenuItem onClick={() => {
                 handleAddSurveyClose();
-                setEditingVersion(null);
-                setNewVersionName('');
-                setNewVersionDesc('');
-                setSelectedOrganizationId('');
-                setOpenVersionDialog(true);
-              }} sx={{ py: 1.5 }}>
-                <ListItemIcon>
-                  <AddIcon fontSize="small" sx={{ color: '#633394' }} />
-                </ListItemIcon>
-                <ListItemText>Add New Survey Group</ListItemText>
-              </MenuItem>
-
-              <MenuItem onClick={() => {
-                handleAddSurveyClose();
-                setWizardOpen(true);
+                navigate('/inventory/blank-survey');
               }} sx={{ py: 1.5 }}>
                 <ListItemIcon>
                   <NoteAddIcon fontSize="small" sx={{ color: '#633394' }} />
                 </ListItemIcon>
-                <ListItemText>Create Surveys</ListItemText>
+                <ListItemText>Blank Survey</ListItemText>
               </MenuItem>
 
-              <MenuItem component="label" sx={{ py: 1.5 }}>
+              <MenuItem onClick={() => {
+                handleAddSurveyClose();
+                navigate('/inventory/use-template');
+              }} sx={{ py: 1.5 }}>
+                <ListItemIcon>
+                  <ContentCopyIcon fontSize="small" sx={{ color: '#633394' }} />
+                </ListItemIcon>
+                <ListItemText>Use Template</ListItemText>
+              </MenuItem>
+
+              <MenuItem onClick={() => {
+                handleAddSurveyClose();
+                navigate('/inventory/upload-document');
+              }} sx={{ py: 1.5 }}>
                 <ListItemIcon>
                   <UploadFileIcon fontSize="small" sx={{ color: '#633394' }} />
                 </ListItemIcon>
                 <ListItemText>Upload Document</ListItemText>
-                <input type="file" hidden onChange={(e) => {
-                  handleAddSurveyClose();
-                  if (e.target.files[0]) {
-                    setUploadedFile(e.target.files[0]);
-                    setWizardOpen(true);
-                  }
-                }} accept=".doc,.docx,.txt,.pdf" />
               </MenuItem>
             </Menu>
           </Box>
+        </Box>
+
+        {/* Search & Filter Bar */}
+        <Box sx={{
+          mb: 3,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 2,
+          flexWrap: 'wrap'
+        }}>
+          <TextField
+            placeholder="Search by survey name, description, or organization..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            size="small"
+            sx={{
+              flex: 1,
+              minWidth: 250,
+              maxWidth: 400,
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: 'white',
+                borderRadius: 2
+              }
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="action" />
+                </InputAdornment>
+              ),
+            }}
+          />
         </Box>
 
         {/* Organization Survey Groups (Master-Detail View) */}
@@ -648,7 +681,7 @@ const InventoryPage = () => {
                               }
                             },
                             '&:hover': {
-                              backgroundColor: selectedVersion?.id === v.id ? 'rgba(99, 51, 148, 0.2)' : 'rgba(99, 51, 148, 0.05)',
+                              backgroundColor: selectedVersion?.id === v.id ? 'rgba(99, 51, 148, 0.2)' : '#f5f5f5',
                               boxShadow: '0 2px 8px rgba(99, 51, 148, 0.15)',
                               transform: 'translateX(2px)',
                             }
@@ -864,11 +897,11 @@ const InventoryPage = () => {
           maxWidth={isMobile ? false : "sm"}
         >
           <DialogTitle sx={{ fontSize: isMobile ? '1.1rem' : '1.25rem' }}>
-            {editingVersion ? 'Edit Template Version' : 'Add Template Version'}
+            {editingVersion ? 'Edit Organization Group' : 'Add Organization Group'}
           </DialogTitle>
           <DialogContent>
             <TextField
-              label="Version Name"
+              label="Organization Group"
               fullWidth
               margin="normal"
               size={isMobile ? "small" : "medium"}
@@ -967,19 +1000,6 @@ const InventoryPage = () => {
           onCopySuccess={handleCopyVersionSuccess}
         />
 
-        <CreateQuestionnaireWizard
-          open={wizardOpen}
-          onClose={() => {
-            setWizardOpen(false);
-            setUploadedFile(null);
-          }}
-          initialFile={uploadedFile}
-          onComplete={() => {
-            fetchTemplateVersions();
-            fetchTemplates();
-            setUploadedFile(null);
-          }}
-        />
       </Container>
     </>
   );

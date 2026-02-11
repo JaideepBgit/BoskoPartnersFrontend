@@ -253,7 +253,7 @@ function ReportsPage({ onLogout }) {
                                                 button
                                                 onClick={report.action}
                                                 sx={{
-                                                    '&:hover': { backgroundColor: adminColors.highlightBg },
+                                                    '&:hover': { backgroundColor: '#f5f5f5' },
                                                     borderRadius: 1,
                                                     mb: 1
                                                 }}
@@ -302,7 +302,7 @@ function ReportsPage({ onLogout }) {
                                                     button
                                                     onClick={() => navigate('/reportbuilder', { state: { loadTemplate: template } })}
                                                     sx={{
-                                                        '&:hover': { backgroundColor: adminColors.highlightBg },
+                                                        '&:hover': { backgroundColor: '#f5f5f5' },
                                                         borderRadius: 1,
                                                         mb: 1
                                                     }}

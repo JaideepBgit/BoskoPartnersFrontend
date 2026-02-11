@@ -157,8 +157,8 @@ const SurveyIntro = () => {
       targetQuestionIndex = 0;
     }
 
-    // Navigate to survey taking page with the target section pre-selected
-    navigate('/survey/taking', {
+    // Navigate to survey overview page (second screen), carrying resume info
+    navigate('/survey/overview', {
       state: {
         survey: survey,
         surveyData: surveyData,

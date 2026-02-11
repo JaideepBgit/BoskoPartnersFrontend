@@ -162,6 +162,7 @@ function AddAssociationPage() {
                 }
             />
             <Container maxWidth="lg" sx={{ py: 4, backgroundColor: colors.background, minHeight: '100vh' }}>
+                <Box sx={{ maxWidth: 600, mx: 'auto' }}>
 
                 {error && (
                     <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
@@ -255,6 +256,7 @@ function AddAssociationPage() {
                         />
                     </Paper>
 
+                </Box>
                 </Box>
             </Container>
         </>

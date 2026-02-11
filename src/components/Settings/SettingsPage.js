@@ -9,7 +9,6 @@ import {
 } from '@mui/material';
 import Navbar from '../shared/Navbar/Navbar';
 import PasswordSettings from './PasswordSettings';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LockIcon from '@mui/icons-material/Lock';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 
@@ -56,11 +55,6 @@ const SettingsPage = ({ onLogout }) => {
             }}
           >
             <Tab
-              icon={<AccountCircleIcon />}
-              iconPosition="start"
-              label="Profile"
-            />
-            <Tab
               icon={<LockIcon />}
               iconPosition="start"
               label="Password"
@@ -73,21 +67,10 @@ const SettingsPage = ({ onLogout }) => {
           </Tabs>
 
           <TabPanel value={tabValue} index={0}>
-            <Box sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Profile Settings
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Profile settings coming soon...
-              </Typography>
-            </Box>
-          </TabPanel>
-
-          <TabPanel value={tabValue} index={1}>
             <PasswordSettings />
           </TabPanel>
 
-          <TabPanel value={tabValue} index={2}>
+          <TabPanel value={tabValue} index={1}>
             <Box sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom>
                 Notification Settings

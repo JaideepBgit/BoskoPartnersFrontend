@@ -320,7 +320,7 @@ const EnhancedCopyTemplateDialog = ({
                         <List>
                           <ListItem
                             onClick={() => handleTemplateActionChange('create')}
-                            sx={{ border: '1px solid #e0e0e0', borderRadius: 1, mb: 1, p: 1, cursor: 'pointer', '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.04)' } }}
+                            sx={{ border: '1px solid #e0e0e0', borderRadius: 1, mb: 1, p: 1, cursor: 'pointer', '&:hover': { bgcolor: '#f5f5f5' } }}
                           >
                             <ListItemIcon>
                               <Radio
@@ -348,7 +348,7 @@ const EnhancedCopyTemplateDialog = ({
                                 p: 1,
                                 cursor: 'pointer',
                                 bgcolor: selectedExistingTemplate === existingTemplate.id.toString() ? 'rgba(99, 51, 148, 0.08)' : 'transparent',
-                                '&:hover': { bgcolor: selectedExistingTemplate === existingTemplate.id.toString() ? 'rgba(99, 51, 148, 0.12)' : 'rgba(0, 0, 0, 0.04)' }
+                                '&:hover': { bgcolor: selectedExistingTemplate === existingTemplate.id.toString() ? 'rgba(99, 51, 148, 0.12)' : '#f5f5f5' }
                               }}
                             >
                               <ListItemIcon>

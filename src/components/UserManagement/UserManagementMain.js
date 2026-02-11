@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Container, Typography, Box, Paper, Button } from '@mui/material';
+import { Container, Typography, Box, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { useNavigate } from 'react-router-dom';
@@ -9,6 +9,7 @@ import Navbar from '../shared/Navbar/Navbar';
 function UserManagementMain() {
     const navigate = useNavigate();
     const [openUploadDialog, setOpenUploadDialog] = useState(false);
+    const [userCount, setUserCount] = useState(0);
 
     const handleOpenAddDialog = () => {
         navigate('/users/add');
@@ -26,7 +27,7 @@ function UserManagementMain() {
                     {/* Header with Users Management and Buttons */}
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                         <Typography variant="h4" component="h1" sx={{ color: '#212121', fontWeight: 'bold' }}>
-                            Users
+                            Users ({userCount})
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 2 }}>
                             <Button
@@ -48,14 +49,11 @@ function UserManagementMain() {
                         </Box>
                     </Box>
 
-                    <Paper sx={{ width: '100%', mb: 2, boxShadow: 3, overflow: 'hidden' }}>
-                        <Box sx={{ p: 3 }}>
-                            <UsersManagement
-                                openUploadDialog={openUploadDialog}
-                                setOpenUploadDialog={setOpenUploadDialog}
-                            />
-                        </Box>
-                    </Paper>
+                    <UsersManagement
+                        openUploadDialog={openUploadDialog}
+                        setOpenUploadDialog={setOpenUploadDialog}
+                        onUserCountChange={setUserCount}
+                    />
                 </Box>
             </Container>
         </>

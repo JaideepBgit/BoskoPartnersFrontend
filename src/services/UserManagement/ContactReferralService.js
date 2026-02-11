@@ -196,6 +196,64 @@ export const checkEmailExists = async (email) => {
 };
 
 /**
+ * Generate a referral invite link for the current user.
+ * If the user already has an active link, it returns the existing one.
+ * @param {number} userId - The ID of the user generating the link
+ * @returns {object} Object containing referral_code and link details
+ */
+export const generateReferralLink = async (userId) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/referral-links/generate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ user_id: userId }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error generating referral link:', error);
+        throw error;
+    }
+};
+
+/**
+ * Validate a referral code and get the referring user's info.
+ * @param {string} code - The referral code from the URL
+ * @returns {object} Object containing validity status and referring user info
+ */
+export const validateReferralCode = async (code) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/referral-links/validate/${code}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            if (response.status === 404) {
+                return { valid: false, message: 'Invalid or expired referral link' };
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error validating referral code:', error);
+        throw error;
+    }
+};
+
+/**
  * Format phone number with country code
  * @param {string} phone - The phone number
  * @param {string} countryCode - The country code (e.g., '+1', '+254')

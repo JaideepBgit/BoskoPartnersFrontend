@@ -12,7 +12,15 @@ import {
   ListItemText,
   Divider,
   useMediaQuery,
-  useTheme
+  useTheme,
+  Avatar,
+  Typography,
+  Popover,
+  Paper,
+  Dialog,
+  DialogContent,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -30,6 +38,14 @@ import SecurityIcon from '@mui/icons-material/Security';
 import GroupWorkIcon from '@mui/icons-material/GroupWork';
 import ContactMailIcon from '@mui/icons-material/ContactMail';
 import EmailIcon from '@mui/icons-material/Email';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import CheckIcon from '@mui/icons-material/Check';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import MailOutlineIcon from '@mui/icons-material/MailOutline';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import CloseIcon from '@mui/icons-material/Close';
+import { generateReferralLink } from '../../../services/UserManagement/ContactReferralService';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -38,8 +54,110 @@ const Navbar = () => {
   const [tabValue, setTabValue] = useState(0);
   const [userTabValue, setUserTabValue] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [accountAnchorEl, setAccountAnchorEl] = useState(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  // Invite modal state
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [inviteLink, setInviteLink] = useState('');
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteSnackbar, setInviteSnackbar] = useState({ open: false, message: '', severity: 'success' });
+
+  const accountMenuOpen = Boolean(accountAnchorEl);
+
+  const handleInviteClick = async () => {
+    if (!user?.id) return;
+    
+    setInviteDialogOpen(true);
+    setInviteLoading(true);
+    
+    try {
+      const result = await generateReferralLink(user.id);
+      const baseUrl = window.location.origin;
+      setInviteLink(`${baseUrl}/contact-referral/${result.referral_code}`);
+    } catch (error) {
+      console.error('Error generating invite link:', error);
+      setInviteSnackbar({
+        open: true,
+        message: 'Error generating invite link. Please try again.',
+        severity: 'error'
+      });
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
+  const handleCopyInviteLink = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setInviteSnackbar({
+        open: true,
+        message: 'Invite link copied to clipboard!',
+        severity: 'success'
+      });
+    } catch (error) {
+      // Fallback for browsers that don't support clipboard API
+      const textArea = document.createElement('textarea');
+      textArea.value = inviteLink;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setInviteSnackbar({
+        open: true,
+        message: 'Invite link copied to clipboard!',
+        severity: 'success'
+      });
+    }
+  };
+
+  const handleAccountClick = (event) => {
+    setAccountAnchorEl(event.currentTarget);
+  };
+
+  const handleAccountClose = () => {
+    setAccountAnchorEl(null);
+  };
+
+  // Get user display name and initials
+  const getUserDisplayName = () => {
+    if (!user) return 'User';
+    if (user.firstname && user.lastname) return `${user.firstname} ${user.lastname}`;
+    if (user.firstName && user.lastName) return `${user.firstName} ${user.lastName}`;
+    if (user.first_name && user.last_name) return `${user.first_name} ${user.last_name}`;
+    if (user.name) return user.name;
+    if (user.username) return user.username;
+    if (user.email) return user.email;
+    return 'User';
+  };
+
+  // Get the correct profile route based on user role
+  const getProfileRoute = () => {
+    if (!user?.role) return '/profile';
+    if (user.role === 'admin' || user.role === 'root' || user.role === 'manager') {
+      return '/admin-profile';
+    }
+    return '/profile';
+  };
+
+  const getUserInitials = () => {
+    const name = getUserDisplayName();
+    const parts = name.split(' ').filter(Boolean);
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  const getRoleLabel = () => {
+    if (!user?.role) return 'Personal';
+    const roleMap = {
+      admin: 'Admin',
+      root: 'Root Admin',
+      manager: 'Manager',
+      user: 'Personal',
+    };
+    return roleMap[user.role] || user.role.charAt(0).toUpperCase() + user.role.slice(1);
+  };
 
   const logoImage = process.env.PUBLIC_URL + '/assets/saurara-high-resolution-logo-transparent.png';
 
@@ -66,7 +184,6 @@ const Navbar = () => {
       else if (p.includes('/contact-referrals')) setTabValue(8); // 8. Contact Referrals
       else if (p.includes('/email-templates')) setTabValue(9);   // 9. Email Templates
       else if (p.includes('/reports') || p.includes('/user-reports')) setTabValue(5); // 5. Reports
-      else if (p.includes('/settings')) setTabValue(6);       // 6. Settings
       else setTabValue(1); // Default to Dashboard
     } else {
       // For regular users
@@ -269,7 +386,7 @@ const Navbar = () => {
             }}
           >
             <ListItemIcon><ContactMailIcon /></ListItemIcon>
-            <ListItemText primary="Contact Referrals" />
+            <ListItemText primary="Referrals" />
           </ListItem>
 
           {/* 9. Email Templates */}
@@ -297,7 +414,7 @@ const Navbar = () => {
             }}
           >
             <ListItemIcon><EmailIcon /></ListItemIcon>
-            <ListItemText primary="Email Templates" />
+            <ListItemText primary="Templates" />
           </ListItem>
 
           {/* 5. Reports */}
@@ -326,34 +443,6 @@ const Navbar = () => {
           >
             <ListItemIcon><BarChartIcon /></ListItemIcon>
             <ListItemText primary="Reports" />
-          </ListItem>
-
-          {/* 6. Settings */}
-          <ListItem
-            button
-            onClick={() => handleNavigation('/settings')}
-            selected={tabValue === 6}
-            sx={{
-              '&.Mui-selected': {
-                backgroundColor: '#633394',
-                color: 'white',
-                '& .MuiListItemIcon-root': {
-                  color: 'white',
-                },
-                '&:hover': {
-                  backgroundColor: '#533082',
-                },
-              },
-              '&:hover': {
-                backgroundColor: '#f5f5f5',
-              },
-              borderRadius: '8px',
-              mx: 1,
-              mb: 0.5,
-            }}
-          >
-            <ListItemIcon><SettingsIcon /></ListItemIcon>
-            <ListItemText primary="Settings" />
           </ListItem>
         </List>
       ) : (
@@ -454,6 +543,32 @@ const Navbar = () => {
             <MenuIcon />
           </IconButton>
 
+          {/* Invite button - visible for admin, root, manager */}
+          {user && (user.role === 'admin' || user.role === 'root' || user.role === 'manager') && (
+            <Button
+              variant="outlined"
+              startIcon={<MailOutlineIcon />}
+              onClick={handleInviteClick}
+              sx={{
+                borderColor: '#633394',
+                color: '#633394',
+                textTransform: 'none',
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                borderRadius: '8px',
+                px: 2,
+                py: 0.5,
+                mr: 2,
+                '&:hover': {
+                  borderColor: '#4a2570',
+                  backgroundColor: 'rgba(99, 51, 148, 0.04)',
+                },
+              }}
+            >
+              Invite
+            </Button>
+          )}
+
           {/* Logo in center */}
           <Box
             sx={{
@@ -472,10 +587,192 @@ const Navbar = () => {
             />
           </Box>
 
-          {/* Empty box to balance the layout */}
-          <Box sx={{ width: 48 }} />
+          {/* Account dropdown trigger */}
+          {user ? (
+            <Box
+              onClick={handleAccountClick}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                cursor: 'pointer',
+                padding: '4px 8px',
+                borderRadius: '24px',
+                '&:hover': { backgroundColor: '#f5f0fa' },
+              }}
+            >
+              {!isMobile && (
+                <Box sx={{ textAlign: 'right' }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 600, color: '#333', lineHeight: 1.2 }}
+                  >
+                    {getUserDisplayName()}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: '#888', lineHeight: 1 }}
+                  >
+                    {getRoleLabel()}
+                  </Typography>
+                </Box>
+              )}
+              <Avatar
+                sx={{
+                  width: 36,
+                  height: 36,
+                  bgcolor: '#e8dff0',
+                  color: '#633394',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                }}
+              >
+                {getUserInitials()}
+              </Avatar>
+            </Box>
+          ) : (
+            <Box sx={{ width: 48 }} />
+          )}
         </Toolbar>
       </AppBar>
+
+      {/* Account dropdown menu */}
+      <Popover
+        open={accountMenuOpen}
+        anchorEl={accountAnchorEl}
+        onClose={handleAccountClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        slotProps={{
+          paper: {
+            sx: {
+              mt: 1,
+              borderRadius: '16px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+              minWidth: 240,
+              overflow: 'visible',
+            },
+          },
+        }}
+      >
+        <Box sx={{ p: 2 }}>
+          {/* ACCOUNT header */}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+            <Typography
+              variant="caption"
+              sx={{ fontWeight: 600, color: '#999', letterSpacing: '0.5px' }}
+            >
+              ACCOUNT
+            </Typography>
+            <IconButton size="small" sx={{ color: '#bbb', p: 0.5 }}>
+              <AddCircleOutlineIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Box>
+
+          {/* Current account card */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              p: 1.5,
+              borderRadius: '12px',
+              backgroundColor: '#fafafa',
+              mb: 1,
+            }}
+          >
+            <Avatar
+              sx={{
+                width: 40,
+                height: 40,
+                bgcolor: '#e8dff0',
+                color: '#633394',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+              }}
+            >
+              {getUserInitials()}
+            </Avatar>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>
+                {getUserDisplayName()}
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#888' }}>
+                {getRoleLabel()}
+              </Typography>
+            </Box>
+            <CheckIcon sx={{ fontSize: 18, color: '#633394' }} />
+          </Box>
+
+          <Divider sx={{ my: 1 }} />
+
+          {/* Profile */}
+          <Box
+            onClick={() => {
+              handleAccountClose();
+              navigate(getProfileRoute());
+            }}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              p: 1,
+              borderRadius: '8px',
+              cursor: 'pointer',
+              '&:hover': { backgroundColor: '#f5f5f5' },
+            }}
+          >
+            <PersonOutlineIcon sx={{ fontSize: 20, color: '#555' }} />
+            <Typography variant="body2" sx={{ color: '#333' }}>
+              Profile
+            </Typography>
+          </Box>
+
+          {/* Settings */}
+          <Box
+            onClick={() => {
+              handleAccountClose();
+              navigate('/settings');
+            }}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              p: 1,
+              borderRadius: '8px',
+              cursor: 'pointer',
+              '&:hover': { backgroundColor: '#f5f5f5' },
+            }}
+          >
+            <SettingsIcon sx={{ fontSize: 20, color: '#555' }} />
+            <Typography variant="body2" sx={{ color: '#333' }}>
+              Settings
+            </Typography>
+          </Box>
+
+          {/* Log Out */}
+          <Box
+            onClick={() => {
+              handleAccountClose();
+              handleLogout();
+            }}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              p: 1,
+              borderRadius: '8px',
+              cursor: 'pointer',
+              '&:hover': { backgroundColor: '#ffebee' },
+            }}
+          >
+            <LogoutIcon sx={{ fontSize: 20, color: '#555' }} />
+            <Typography variant="body2" sx={{ color: '#333' }}>
+              Log Out
+            </Typography>
+          </Box>
+        </Box>
+      </Popover>
 
       {/* Sidebar */}
       <Drawer
@@ -496,6 +793,96 @@ const Navbar = () => {
       >
         {sidebarContent}
       </Drawer>
+
+      {/* Invite a Friend Dialog */}
+      <Dialog
+        open={inviteDialogOpen}
+        onClose={() => setInviteDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '16px',
+            p: 2,
+            textAlign: 'center',
+          },
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <IconButton
+            onClick={() => setInviteDialogOpen(false)}
+            size="small"
+            sx={{ color: '#666' }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </Box>
+        <DialogContent sx={{ pt: 0 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+            <MailOutlineIcon sx={{ fontSize: 48, color: '#633394' }} />
+            <Typography variant="h6" sx={{ fontWeight: 700, color: '#333' }}>
+              Invite a Friend
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
+              Invited users can view and respond to surveys using this link.
+            </Typography>
+            {inviteLoading ? (
+              <Typography variant="body2" sx={{ color: '#999' }}>
+                Generating link...
+              </Typography>
+            ) : inviteLink ? (
+              <>
+                <Box
+                  sx={{
+                    width: '100%',
+                    p: 1.5,
+                    backgroundColor: '#f5f0fa',
+                    borderRadius: '8px',
+                    wordBreak: 'break-all',
+                    mb: 1,
+                  }}
+                >
+                  <Typography variant="body2" sx={{ color: '#633394', fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                    {inviteLink}
+                  </Typography>
+                </Box>
+                <Button
+                  variant="contained"
+                  endIcon={<ContentCopyIcon />}
+                  onClick={handleCopyInviteLink}
+                  sx={{
+                    backgroundColor: '#633394',
+                    '&:hover': { backgroundColor: '#4a2570' },
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    borderRadius: '8px',
+                    px: 4,
+                    py: 1,
+                  }}
+                >
+                  Copy Invite Link
+                </Button>
+              </>
+            ) : null}
+          </Box>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invite Snackbar */}
+      <Snackbar
+        open={inviteSnackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setInviteSnackbar({ ...inviteSnackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setInviteSnackbar({ ...inviteSnackbar, open: false })}
+          severity={inviteSnackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {inviteSnackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 };

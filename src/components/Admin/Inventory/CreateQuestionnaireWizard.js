@@ -28,7 +28,14 @@ import { QUESTION_TYPE_MAP } from '../../../config/questionTypes';
 
 const steps = ['Organization & Version', 'Template Details', 'Add Questions'];
 
-const CreateQuestionnaireWizard = ({ open, onClose, onComplete, initialFile }) => {
+const CreateQuestionnaireWizard = ({
+    open,
+    onClose,
+    onComplete,
+    initialFile,
+    mode = 'blank',
+    variant = 'dialog' // 'dialog' | 'page'
+}) => {
     const [activeStep, setActiveStep] = useState(0);
     const [loading, setLoading] = useState(false);
     const [loadingMessage, setLoadingMessage] = useState('');
@@ -61,14 +68,15 @@ const CreateQuestionnaireWizard = ({ open, onClose, onComplete, initialFile }) =
     const [existingSections, setExistingSections] = useState([]);
 
     useEffect(() => {
-        if (open) {
+        const shouldInitialize = variant === 'page' || open;
+        if (shouldInitialize) {
             fetchOrganizations();
             resetForm();
             if (initialFile) {
                 processUploadedFile(initialFile);
             }
         }
-    }, [open, initialFile]);
+    }, [open, initialFile, mode, variant]);
 
     const processUploadedFile = async (file) => {
         setLoading(true);
@@ -144,8 +152,17 @@ const CreateQuestionnaireWizard = ({ open, onClose, onComplete, initialFile }) =
 
     const fetchOrgVersions = async (orgId) => {
         try {
-            const data = await InventoryService.getTemplateVersions(orgId);
-            setOrgVersions(data);
+            // For "Use Template" we need a base template from a DIFFERENT organization,
+            // because the backend copy endpoint rejects copying into the same org.
+            if (mode === 'template') {
+                const allVersions = await InventoryService.getTemplateVersions();
+                const filtered = (allVersions || []).filter(v => String(v.organization_id) !== String(orgId));
+                setOrgVersions(filtered);
+                return;
+            }
+
+            // For blank/upload flows we don't need base templates here
+            setOrgVersions([]);
         } catch (err) {
             console.error("Error fetching versions", err);
         }
@@ -185,16 +202,18 @@ const CreateQuestionnaireWizard = ({ open, onClose, onComplete, initialFile }) =
                     setLoading(false);
                     return;
                 }
+                if (mode === 'template' && !baseVersionId) {
+                    setError('Please select a base template.');
+                    setLoading(false);
+                    return;
+                }
 
                 // Check if we already created one in this session to avoid duplicates if user goes back/forth (simple logic: create new if null)
                 let vId = createdVersionId;
                 if (!vId) {
-                    if (baseVersionId) {
-                        // Copy existing version
+                    if (mode === 'template' && baseVersionId) {
+                        // Copy an existing version from a different organization
                         const res = await InventoryService.copyTemplateVersion(baseVersionId, organizationId, versionName);
-                        // The response structure of copyTemplateVersion might be different. 
-                        // It returns res.data. Let's assume it returns the new version object or { id: ... }
-                        // InventoryService line 23: .then(res => res.data)
                         vId = res.id;
                     } else {
                         // Create new
@@ -402,22 +421,26 @@ const CreateQuestionnaireWizard = ({ open, onClose, onComplete, initialFile }) =
                             </Select>
                         </FormControl>
 
-                        <FormControl fullWidth margin="normal">
-                            <InputLabel>Base Template (Optional)</InputLabel>
-                            <Select
-                                value={baseVersionId}
-                                label="Base Template (Optional)"
-                                onChange={(e) => setBaseVersionId(e.target.value)}
-                                disabled={!organizationId || orgVersions.length === 0}
-                            >
-                                <MenuItem value="">
-                                    <em>Start from Scratch</em>
-                                </MenuItem>
-                                {orgVersions.map((v) => (
-                                    <MenuItem key={v.id} value={v.id}>{v.name}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
+                        {mode === 'template' && (
+                            <FormControl fullWidth margin="normal">
+                                <InputLabel>Base Template</InputLabel>
+                                <Select
+                                    value={baseVersionId}
+                                    label="Base Template"
+                                    onChange={(e) => setBaseVersionId(e.target.value)}
+                                    disabled={!organizationId || orgVersions.length === 0}
+                                >
+                                    <MenuItem value="">
+                                        <em>Select a template</em>
+                                    </MenuItem>
+                                    {orgVersions.map((v) => (
+                                        <MenuItem key={v.id} value={v.id}>
+                                            {v.name}{v.organization_name ? ` — ${v.organization_name}` : ''}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        )}
 
                         <TextField
                             fullWidth
@@ -558,27 +581,52 @@ const CreateQuestionnaireWizard = ({ open, onClose, onComplete, initialFile }) =
     };
 
 
+    const wizardBody = (
+        <>
+            <Stepper activeStep={activeStep} sx={{ pt: 3, pb: 5 }}>
+                {steps.map((label) => (
+                    <Step key={label}>
+                        <StepLabel>{label}</StepLabel>
+                    </Step>
+                ))}
+            </Stepper>
+            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+            {loading && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', p: 4 }}>
+                    <CircularProgress size={48} sx={{ mb: 2 }} />
+                    <Typography variant="h6" color="textSecondary">
+                        {loadingMessage || 'Loading...'}
+                    </Typography>
+                </Box>
+            )}
+            {!loading && renderStepContent(activeStep)}
+        </>
+    );
+
+    const wizardActions = (
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 2 }}>
+            <Button onClick={onClose}>Cancel</Button>
+            <Button disabled={activeStep === 0} onClick={handleBack}>Back</Button>
+            <Button onClick={handleNext} variant="contained" color="primary">
+                {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
+            </Button>
+        </Box>
+    );
+
+    if (variant === 'page') {
+        return (
+            <Paper sx={{ p: 3, borderRadius: 2 }}>
+                {wizardBody}
+                {wizardActions}
+            </Paper>
+        );
+    }
+
     return (
         <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
             <DialogTitle>Create New Questionnaire</DialogTitle>
             <DialogContent>
-                <Stepper activeStep={activeStep} sx={{ pt: 3, pb: 5 }}>
-                    {steps.map((label) => (
-                        <Step key={label}>
-                            <StepLabel>{label}</StepLabel>
-                        </Step>
-                    ))}
-                </Stepper>
-                {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-                {loading && (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', p: 4 }}>
-                        <CircularProgress size={48} sx={{ mb: 2 }} />
-                        <Typography variant="h6" color="textSecondary">
-                            {loadingMessage || 'Loading...'}
-                        </Typography>
-                    </Box>
-                )}
-                {!loading && renderStepContent(activeStep)}
+                {wizardBody}
             </DialogContent>
             <DialogActions>
                 <Button onClick={onClose}>Cancel</Button>

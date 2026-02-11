@@ -43,10 +43,6 @@ function EmailTemplatesPage() {
             <Navbar />
             <Container maxWidth="xl" sx={{ py: 4, backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
                 <Box>
-                    <Typography variant="h4" component="h1" gutterBottom sx={{ color: '#212121', fontWeight: 'bold' }}>
-                        Email Templates
-                    </Typography>
-
                     <EmailTemplatesTab
                         emailTemplates={allEmailTemplates}
                         onRefreshData={(filterOrgId = null) => fetchAllEmailTemplates(filterOrgId)}

@@ -560,6 +560,7 @@ function AddOrganizationPage() {
                 }
             />
             <Container maxWidth="lg" sx={{ py: 4 }}>
+                <Box sx={{ maxWidth: 600, mx: 'auto' }}>
 
                 {/* Tabs */}
                 <Paper sx={{ mb: 3, boxShadow: 3 }}>
@@ -1346,6 +1347,7 @@ function AddOrganizationPage() {
                         </Button>
                     </DialogActions>
                 </Dialog>
+                </Box>
             </Container>
         </>
     );

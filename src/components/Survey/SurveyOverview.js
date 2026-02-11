@@ -22,6 +22,8 @@ const SurveyOverview = () => {
   // Get survey data from navigation state
   const survey = location.state?.survey;
   const surveyData = location.state?.surveyData;
+  const autoOpenSection = location.state?.autoOpenSection;
+  const startQuestionIndex = location.state?.startQuestionIndex || 0;
 
   if (!survey || !surveyData) {
     return (
@@ -93,7 +95,9 @@ const SurveyOverview = () => {
     navigate('/survey/taking', {
       state: {
         survey: survey,
-        surveyData: surveyData
+        surveyData: surveyData,
+        autoOpenSection,
+        startQuestionIndex
       }
     });
   };

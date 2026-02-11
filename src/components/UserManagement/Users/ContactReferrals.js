@@ -4,19 +4,20 @@ import {
     TableHead, TableRow, Paper, IconButton, Dialog, DialogActions,
     DialogContent, DialogTitle, TextField, Select, MenuItem, FormControl,
     InputLabel, Card, CardContent, Grid, Chip, Alert, CircularProgress,
-    Radio, RadioGroup, FormControlLabel, FormLabel, Divider, Stack,
-    Accordion, AccordionSummary, AccordionDetails, Tooltip, Checkbox,
+    Radio, RadioGroup, FormControlLabel, FormLabel, Divider,
+    Tooltip, Checkbox,
     Autocomplete, LinearProgress
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import BusinessIcon from '@mui/icons-material/Business';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import InfoIcon from '@mui/icons-material/Info';
+import SearchIcon from '@mui/icons-material/Search';
+import InputAdornment from '@mui/material/InputAdornment';
 import {
     fetchContactReferrals,
     approveContactReferral,
@@ -33,6 +34,9 @@ function ContactReferrals() {
     const [organizations, setOrganizations] = useState([]);
     const [templates, setTemplates] = useState([]);
     const [organizationTypes, setOrganizationTypes] = useState([]);
+
+    // Search state
+    const [searchQuery, setSearchQuery] = useState('');
 
     // Table selection state
     const [selectedReferral, setSelectedReferral] = useState(null);
@@ -469,6 +473,21 @@ function ContactReferrals() {
         }
     };
 
+    // Filtered referrals based on search
+    const filteredReferrals = referrals.filter(referral => {
+        if (!searchQuery) return true;
+        const query = searchQuery.toLowerCase();
+        return (
+            (referral.first_name || '').toLowerCase().includes(query) ||
+            (referral.last_name || '').toLowerCase().includes(query) ||
+            (referral.email || '').toLowerCase().includes(query) ||
+            (referral.institution_name || '').toLowerCase().includes(query) ||
+            (referral.country || '').toLowerCase().includes(query) ||
+            (referral.title || '').toLowerCase().includes(query) ||
+            (referral.type_of_institution || '').toLowerCase().includes(query)
+        );
+    });
+
     if (loading) {
         return (
             <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -479,50 +498,86 @@ function ContactReferrals() {
 
     return (
         <Box sx={{ p: 3 }}>
+            {/* Header */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        <Typography variant="h4" sx={{ color: '#212121', fontWeight: 'bold' }}>
-                            Contact Referrals
-                        </Typography>
-                        <Tooltip title="Review and approve contact referrals to create user accounts and organizations" arrow>
-                            <InfoIcon sx={{ color: '#633394', fontSize: 24, cursor: 'help' }} />
-                        </Tooltip>
-                    </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="h4" sx={{ color: '#212121', fontWeight: 'bold' }}>
+                        Contact Referrals
+                    </Typography>
+                    <Tooltip title="Review and approve contact referrals to create user accounts and organizations" arrow>
+                        <InfoIcon sx={{ color: '#633394', fontSize: 24, cursor: 'help' }} />
+                    </Tooltip>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                    {(selectedReferral || selectedReferralIds.length > 0) && (
+                        <>
+                            <Button
+                                variant="contained"
+                                color="success"
+                                startIcon={<CheckCircleIcon />}
+                                onClick={handleOpenApprovalDialog}
+                                size="large"
+                            >
+                                {selectedReferralIds.length > 0
+                                    ? `Approve (${selectedReferralIds.length})`
+                                    : 'Approve'}
+                            </Button>
+                            <Button
+                                variant="contained"
+                                color="error"
+                                startIcon={<CancelIcon />}
+                                onClick={handleOpenRejectDialog}
+                                size="large"
+                            >
+                                {selectedReferralIds.length > 0
+                                    ? `Reject (${selectedReferralIds.length})`
+                                    : 'Reject'}
+                            </Button>
+                        </>
+                    )}
+                </Box>
+            </Box>
+
+            {/* Search & Filter Bar */}
+            <Box sx={{
+                mb: 3,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 2,
+                flexWrap: 'wrap'
+            }}>
+                <TextField
+                    placeholder="Search by name, email, institution, or country..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    size="small"
+                    sx={{
+                        flex: 1,
+                        minWidth: 250,
+                        maxWidth: 400,
+                        '& .MuiOutlinedInput-root': {
+                            backgroundColor: 'white',
+                            borderRadius: 2
+                        }
+                    }}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <SearchIcon color="action" />
+                            </InputAdornment>
+                        ),
+                    }}
+                />
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     {selectedReferralIds.length > 0 && (
                         <Chip
-                            label={`${selectedReferralIds.length} referral(s) selected`}
+                            label={`${selectedReferralIds.length} selected`}
                             color="primary"
-                            sx={{ mt: 1, backgroundColor: '#633394' }}
+                            sx={{ backgroundColor: '#633394' }}
                         />
                     )}
                 </Box>
-                {(selectedReferral || selectedReferralIds.length > 0) && (
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                        <Button
-                            variant="contained"
-                            color="success"
-                            startIcon={<CheckCircleIcon />}
-                            onClick={handleOpenApprovalDialog}
-                            size="large"
-                        >
-                            {selectedReferralIds.length > 0
-                                ? `Approve (${selectedReferralIds.length})`
-                                : 'Approve'}
-                        </Button>
-                        <Button
-                            variant="contained"
-                            color="error"
-                            startIcon={<CancelIcon />}
-                            onClick={handleOpenRejectDialog}
-                            size="large"
-                        >
-                            {selectedReferralIds.length > 0
-                                ? `Reject (${selectedReferralIds.length})`
-                                : 'Reject'}
-                        </Button>
-                    </Box>
-                )}
             </Box>
 
             {error && (
@@ -531,22 +586,25 @@ function ContactReferrals() {
                 </Alert>
             )}
 
-            {referrals.length === 0 ? (
+            {filteredReferrals.length === 0 ? (
                 <Card>
                     <CardContent>
                         <Box textAlign="center" py={4}>
                             <PersonAddIcon sx={{ fontSize: 60, color: '#633394', mb: 2 }} />
                             <Typography variant="h6" color="text.secondary">
-                                No pending contact referrals
+                                {referrals.length === 0 ? 'No pending contact referrals' : 'No referrals match your search'}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                                Contact referrals will appear here when submitted
+                                {referrals.length === 0
+                                    ? 'Contact referrals will appear here when submitted'
+                                    : 'Try adjusting your search terms'}
                             </Typography>
                         </Box>
                     </CardContent>
                 </Card>
             ) : (
-                <TableContainer component={Paper} elevation={3}>
+                <Paper sx={{ borderRadius: 3, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+                <TableContainer>
                     <Table>
                         <TableHead sx={{ backgroundColor: '#FAFAFA' }}>
                             <TableRow>
@@ -569,11 +627,10 @@ function ContactReferrals() {
                                 <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Type</TableCell>
                                 <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Country</TableCell>
                                 <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Submitted</TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Referrals</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {referrals.map((referral) => (
+                            {filteredReferrals.map((referral) => (
                                 <TableRow
                                     key={referral.id}
                                     hover
@@ -581,6 +638,7 @@ function ContactReferrals() {
                                     onClick={() => handleRowSelect(referral)}
                                     sx={{
                                         cursor: 'pointer',
+                                        '&:hover': { backgroundColor: '#f5f5f5' },
                                         '&.Mui-selected': {
                                             backgroundColor: '#ede7f6',
                                         },
@@ -656,23 +714,12 @@ function ContactReferrals() {
                                             {new Date(referral.created_at).toLocaleDateString()}
                                         </Typography>
                                     </TableCell>
-                                    <TableCell>
-                                        {referral.referrals && referral.referrals.length > 0 ? (
-                                            <Chip
-                                                label={`${referral.referrals.length} referral(s)`}
-                                                size="small"
-                                                color="primary"
-                                                sx={{ backgroundColor: '#633394' }}
-                                            />
-                                        ) : (
-                                            <Typography variant="body2" color="text.secondary">None</Typography>
-                                        )}
-                                    </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
                     </Table>
                 </TableContainer>
+                </Paper>
             )}
 
             {/* Selected Referral Details Card */}
@@ -763,121 +810,6 @@ function ContactReferrals() {
                                             </>
                                         )}
                                     </Alert>
-                                </Grid>
-                            )}
-
-                            {/* Sub-referrals */}
-                            {selectedReferral.referrals && selectedReferral.referrals.length > 0 && (
-                                <Grid item xs={12}>
-                                    <Divider sx={{ my: 2 }} />
-                                    <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2, color: '#633394' }}>
-                                        Sub-Referrals ({selectedReferral.referrals.length})
-                                    </Typography>
-                                    <Stack spacing={2}>
-                                        {selectedReferral.referrals.map((ref, idx) => (
-                                            <Accordion key={idx} defaultExpanded={idx === 0}>
-                                                <AccordionSummary
-                                                    expandIcon={<ExpandMoreIcon />}
-                                                    sx={{ bgcolor: '#f5f5f5' }}
-                                                >
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
-                                                        <PersonAddIcon sx={{ color: '#633394' }} />
-                                                        <Box sx={{ flex: 1 }}>
-                                                            <Typography variant="body1" fontWeight="bold">
-                                                                {ref.first_name} {ref.last_name}
-                                                            </Typography>
-                                                            <Typography variant="caption" color="text.secondary">
-                                                                {ref.email}
-                                                            </Typography>
-                                                        </Box>
-                                                        {ref.institution_name && (
-                                                            <Chip
-                                                                label={ref.institution_name}
-                                                                size="small"
-                                                                sx={{ bgcolor: '#e3f2fd' }}
-                                                            />
-                                                        )}
-                                                    </Box>
-                                                </AccordionSummary>
-                                                <AccordionDetails>
-                                                    <Grid container spacing={2}>
-                                                        <Grid item xs={12} md={6}>
-                                                            <Box sx={{ mb: 2 }}>
-                                                                <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                                    <PersonAddIcon fontSize="small" /> Full Name
-                                                                </Typography>
-                                                                <Typography variant="body1" fontWeight="bold">
-                                                                    {ref.first_name} {ref.last_name}
-                                                                </Typography>
-                                                            </Box>
-                                                            <Box sx={{ mb: 2 }}>
-                                                                <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                                    <EmailIcon fontSize="small" /> Email
-                                                                </Typography>
-                                                                <Typography variant="body1">{ref.email}</Typography>
-                                                            </Box>
-                                                            <Box sx={{ mb: 2 }}>
-                                                                <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                                    <PhoneIcon fontSize="small" /> Phone
-                                                                </Typography>
-                                                                <Typography variant="body1">{ref.full_phone || 'N/A'}</Typography>
-                                                            </Box>
-                                                            {ref.whatsapp && (
-                                                                <Box sx={{ mb: 2 }}>
-                                                                    <Typography variant="subtitle2" color="text.secondary">WhatsApp</Typography>
-                                                                    <Typography variant="body1">{ref.whatsapp}</Typography>
-                                                                </Box>
-                                                            )}
-                                                        </Grid>
-                                                        <Grid item xs={12} md={6}>
-                                                            <Box sx={{ mb: 2 }}>
-                                                                <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                                    <BusinessIcon fontSize="small" /> Institution
-                                                                </Typography>
-                                                                <Typography variant="body1">{ref.institution_name || 'N/A'}</Typography>
-                                                            </Box>
-                                                            <Box sx={{ mb: 2 }}>
-                                                                <Typography variant="subtitle2" color="text.secondary">Institution Type</Typography>
-                                                                <Typography variant="body1">
-                                                                    {ref.type_of_institution
-                                                                        ? (ref.type_of_institution.toLowerCase() === 'non_formal_organizations'
-                                                                            ? 'Organization'
-                                                                            : ref.type_of_institution.charAt(0).toUpperCase() + ref.type_of_institution.slice(1))
-                                                                        : 'N/A'}
-                                                                </Typography>
-                                                            </Box>
-                                                            <Box sx={{ mb: 2 }}>
-                                                                <Typography variant="subtitle2" color="text.secondary">Title/Position</Typography>
-                                                                <Typography variant="body1">{ref.title || 'N/A'}</Typography>
-                                                            </Box>
-                                                            <Box sx={{ mb: 2 }}>
-                                                                <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                                    <LocationOnIcon fontSize="small" /> Country
-                                                                </Typography>
-                                                                <Typography variant="body1">{ref.country || 'N/A'}</Typography>
-                                                            </Box>
-                                                        </Grid>
-                                                        {ref.physical_address && (
-                                                            <Grid item xs={12}>
-                                                                <Box sx={{ mb: 2 }}>
-                                                                    <Typography variant="subtitle2" color="text.secondary">Physical Address</Typography>
-                                                                    <Typography variant="body1">{ref.physical_address}</Typography>
-                                                                </Box>
-                                                            </Grid>
-                                                        )}
-                                                        {ref.preferred_contact && (
-                                                            <Grid item xs={12}>
-                                                                <Box sx={{ mb: 2 }}>
-                                                                    <Typography variant="subtitle2" color="text.secondary">Preferred Contact Method</Typography>
-                                                                    <Typography variant="body1">{ref.preferred_contact}</Typography>
-                                                                </Box>
-                                                            </Grid>
-                                                        )}
-                                                    </Grid>
-                                                </AccordionDetails>
-                                            </Accordion>
-                                        ))}
-                                    </Stack>
                                 </Grid>
                             )}
                         </Grid>

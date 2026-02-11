@@ -752,7 +752,7 @@ function RootDashboard() {
                                             <TableRow
                                                 key={user.id}
                                                 sx={{
-                                                    '&:hover': { backgroundColor: '#FFFFFF' },
+                                                    '&:hover': { backgroundColor: '#f5f5f5' },
                                                     ...(user.role === 'root' && { backgroundColor: rootColors.highlightBg })
                                                 }}
                                             >

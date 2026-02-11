@@ -513,6 +513,7 @@ function AddUserPage() {
                 }
             />
             <Container maxWidth="lg" sx={{ py: 4 }}>
+                <Box sx={{ maxWidth: 600, mx: 'auto' }}>
                 {/* User Information Section */}
                 <Paper sx={{ p: 3, mb: 3, boxShadow: 3 }}>
                     <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold', mb: 3, textAlign: 'center' }}>
@@ -858,6 +859,7 @@ function AddUserPage() {
                     formData={formData}
                     organizations={organizations}
                 />
+                </Box>
             </Container>
         </>
     );

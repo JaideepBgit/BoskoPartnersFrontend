@@ -35,6 +35,14 @@ const colors = {
 
 // Define main organization types (to exclude)
 const mainOrganizationTypes = ['church', 'Institution', 'Non_formal_organizations'];
+const associationTypeOptions = [
+    { value: 'accrediting_body', label: 'Accrediting Body' },
+    { value: 'affiliation', label: 'Affiliation' },
+    { value: 'denomination', label: 'Denomination' },
+    { value: 'other', label: 'Other' },
+    { value: 'umbrella_association_membership', label: 'Umbrella Association Membership' },
+    { value: 'validation', label: 'Validation' },
+];
 
 function AssociationsPage() {
     const navigate = useNavigate();
@@ -126,6 +134,13 @@ function AssociationsPage() {
 
     // Filtered organizations (Only Associations/Related)
     const filteredOrganizations = useMemo(() => {
+        const normalizeOrgType = (t) =>
+            (t || '')
+                .toString()
+                .trim()
+                .toLowerCase()
+                .replace(/\s+/g, '_');
+
         return organizations.filter(org => {
             // Must NOT be a main organization type
             const isAssociation = !mainOrganizationTypes.includes(org.organization_type?.type);
@@ -137,7 +152,9 @@ function AssociationsPage() {
                 org.organization_type?.type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 org.geo_location?.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 org.geo_location?.country?.toLowerCase().includes(searchQuery.toLowerCase());
-            const matchesType = !filterType || org.organization_type?.type === filterType;
+            const matchesType =
+                !filterType ||
+                normalizeOrgType(org.organization_type?.type) === normalizeOrgType(filterType);
             return matchesSearch && matchesType;
         });
     }, [organizations, searchQuery, filterType]);
@@ -248,7 +265,7 @@ function AssociationsPage() {
                                                 sx={{
                                                     cursor: 'pointer',
                                                     transition: 'background-color 0.2s',
-                                                    '&:hover': { backgroundColor: colors.accentBg }
+                                                    '&:hover': { backgroundColor: '#f5f5f5' }
                                                 }}
                                             >
 
@@ -322,7 +339,7 @@ function AssociationsPage() {
                     gap: 2
                 }}>
                     <Typography variant="h4" fontWeight="bold" sx={{ color: colors.textPrimary }}>
-                        Associations
+                        Associations ({filteredOrganizations.length})
                     </Typography>
                     <Box sx={{ display: 'flex', gap: 1 }}>
                         <Button
@@ -355,11 +372,8 @@ function AssociationsPage() {
                 </Box>
 
                 {/* Search & Filter Bar */}
-                <Paper sx={{
-                    p: 2,
+                <Box sx={{
                     mb: 3,
-                    borderRadius: 3,
-                    boxShadow: 'none',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
@@ -401,26 +415,15 @@ function AssociationsPage() {
                                 startAdornment={<FilterListIcon sx={{ mr: 1, color: colors.textSecondary }} />}
                             >
                                 <MenuItem value="">All Association Types</MenuItem>
-                                {organizationTypes
-                                    .filter(type => !mainOrganizationTypes.includes(type.type))
-                                    .map(type => (
-                                        <MenuItem key={type.id} value={type.type}>
-                                            {type.type.charAt(0).toUpperCase() + type.type.slice(1)}
-                                        </MenuItem>
-                                    ))
-                                }
+                                {associationTypeOptions.map((opt) => (
+                                    <MenuItem key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                    </MenuItem>
+                                ))}
                             </Select>
                         </FormControl>
-                        <Chip
-                            label={`Showing ${filteredOrganizations.length} associations`}
-                            variant="outlined"
-                            sx={{
-                                borderColor: colors.primary,
-                                color: colors.primary
-                            }}
-                        />
                     </Box>
-                </Paper>
+                </Box>
 
                 {loading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>

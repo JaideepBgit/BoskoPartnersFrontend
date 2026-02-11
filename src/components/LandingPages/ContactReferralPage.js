@@ -24,13 +24,18 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import WarningIcon from '@mui/icons-material/Warning';
 import EditIcon from '@mui/icons-material/Edit';
+import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import { checkEmailExists, formatPhoneNumber, updateContactReferral } from '../../services/UserManagement/ContactReferralService';
+import { checkEmailExists, formatPhoneNumber, updateContactReferral, validateReferralCode } from '../../services/UserManagement/ContactReferralService';
 import { fetchTitles } from '../../services/UserManagement/UserManagementService';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const ContactReferralPage = () => {
+  const { referralCode } = useParams();
+  const [referralInfo, setReferralInfo] = useState(null); // { referral_link_id, referring_user }
+  const [referralValidating, setReferralValidating] = useState(false);
+
   const [primaryContact, setPrimaryContact] = useState({
     firstName: '',
     lastName: '',
@@ -110,6 +115,36 @@ const ContactReferralPage = () => {
     fetchOrganizationTypes();
     loadTitles();
   }, []);
+
+  // Validate referral code from URL if present
+  useEffect(() => {
+    const validateCode = async () => {
+      if (!referralCode) return;
+      
+      setReferralValidating(true);
+      try {
+        const result = await validateReferralCode(referralCode);
+        if (result.valid) {
+          setReferralInfo({
+            referral_link_id: result.referral_link_id,
+            referring_user: result.referring_user
+          });
+        } else {
+          setSnackbar({
+            open: true,
+            message: 'This referral link is invalid or has expired.',
+            severity: 'warning'
+          });
+        }
+      } catch (error) {
+        console.error('Error validating referral code:', error);
+      } finally {
+        setReferralValidating(false);
+      }
+    };
+
+    validateCode();
+  }, [referralCode]);
 
   const contactMethods = ['Email', 'Phone', 'WhatsApp'];
 
@@ -229,10 +264,20 @@ const ContactReferralPage = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post(`${API_BASE_URL}/contact-referrals`, {
+      const payload = {
         primary_contact: primaryContact,
         referrals: []
-      });
+      };
+      
+      // Include referral code if the user came from an invite link
+      if (referralCode) {
+        payload.referral_code = referralCode;
+      }
+      if (referralInfo?.referral_link_id) {
+        payload.referred_by_link_id = referralInfo.referral_link_id;
+      }
+      
+      const response = await axios.post(`${API_BASE_URL}/contact-referrals`, payload);
 
       // After successful save, treat it as an existing record
       if (response.data.primary_contact_id) {
@@ -399,10 +444,20 @@ const ContactReferralPage = () => {
   const handleSubmitAll = async () => {
     setLoading(true);
     try {
-      const response = await axios.post(`${API_BASE_URL}/contact-referrals`, {
+      const payload = {
         primary_contact: primaryContact,
         referrals: referrals
-      });
+      };
+      
+      // Include referral code if the user came from an invite link
+      if (referralCode) {
+        payload.referral_code = referralCode;
+      }
+      if (referralInfo?.referral_link_id) {
+        payload.referred_by_link_id = referralInfo.referral_link_id;
+      }
+      
+      const response = await axios.post(`${API_BASE_URL}/contact-referrals`, payload);
 
       setSnackbar({
         open: true,
@@ -610,6 +665,23 @@ const ContactReferralPage = () => {
       <Container maxWidth="xl">
         {/* Main Content Card */}
         <Paper elevation={3} sx={{ p: 4, mb: 3 }}>
+          {/* Referral Banner - shown when user arrives via invite link */}
+          {referralInfo?.referring_user && (
+            <Alert
+              severity="info"
+              sx={{
+                mb: 3,
+                borderRadius: '8px',
+                backgroundColor: '#f3e8ff',
+                color: '#633394',
+                '& .MuiAlert-icon': { color: '#633394' },
+              }}
+            >
+              You were invited by <strong>{referralInfo.referring_user.firstname} {referralInfo.referring_user.lastname}</strong>.
+              Please fill in your contact information below.
+            </Alert>
+          )}
+
           {/* Header Section */}
           <Box sx={{ mb: 4 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>

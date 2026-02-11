@@ -11,6 +11,9 @@ import AdminDashboard from './components/Dashboard/AdminDashboard';
 import RootDashboard from './components/Dashboard/RootDashboard';
 import ManagerDashboard from './components/Dashboard/ManagerDashboard';
 import InventoryPage from './components/Admin/Inventory/InventoryPage';
+import BlankSurveyBuilderPage from './components/Admin/Inventory/BlankSurveyBuilderPage';
+import UseTemplateSurveyBuilderPage from './components/Admin/Inventory/UseTemplateSurveyBuilderPage';
+import UploadSurveyDocumentPage from './components/Admin/Inventory/UploadSurveyDocumentPage';
 import UserManagementMain from './components/UserManagement/UserManagementMain';
 import SurveysPage from './components/Surveys/SurveysPage';
 import SurveyIntro from './components/Survey/SurveyIntro';
@@ -26,6 +29,7 @@ import ContactReferralPage from './components/LandingPages/ContactReferralPage';
 import ForgotPassword from './components/Login/ForgotPassword';
 import ResetPassword from './components/Login/ResetPassword';
 import SettingsPage from './components/Settings/SettingsPage';
+import AdminProfilePage from './components/Settings/AdminProfilePage';
 import OrganizationManagementPage from './components/Admin/OrganizationManagement/OrganizationManagementPage';
 import AssociationsPage from './components/Admin/OrganizationManagement/AssociationsPage';
 import OrganizationDetailPage from './components/Admin/OrganizationManagement/OrganizationDetailPage';
@@ -124,6 +128,12 @@ function Main({ isAuthenticated, userRole, login, logout }) {
             <ContactReferralPage />
           </div>
         } />
+        {/* Public Contact Referral Page with referral code */}
+        <Route path="/contact-referral/:referralCode" element={
+          <div style={{ padding: '20px' }}>
+            <ContactReferralPage />
+          </div>
+        } />
         <Route path="/form" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <FormContainer onLogout={logout} />
@@ -170,6 +180,21 @@ function Main({ isAuthenticated, userRole, login, logout }) {
         <Route path="/inventory" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <InventoryPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/inventory/blank-survey" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <BlankSurveyBuilderPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/inventory/use-template" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <UseTemplateSurveyBuilderPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/inventory/upload-document" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <UploadSurveyDocumentPage />
           </ProtectedRoute>
         } />
 
@@ -332,6 +357,13 @@ function Main({ isAuthenticated, userRole, login, logout }) {
         <Route path="/associations/add" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <AddAssociationPage />
+          </ProtectedRoute>
+        } />
+
+        {/* Admin/Root/Manager Profile Route */}
+        <Route path="/admin-profile" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <AdminProfilePage />
           </ProtectedRoute>
         } />
 

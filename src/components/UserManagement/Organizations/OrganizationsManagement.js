@@ -2144,7 +2144,7 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
                 gap: 2
             }}>
                 <Typography variant="h5" sx={{ color: '#212121', fontWeight: 'bold' }}>
-                    Organizations Management
+                    Organizations ({filteredOrganizations.length})
                 </Typography>
 
                 {/* Stats and Buttons Container */}
@@ -2192,18 +2192,6 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
                             sx={{
                                 borderColor: '#633394',
                                 color: '#633394',
-                                fontWeight: 'bold',
-                                fontSize: '0.85rem',
-                                height: '36px',
-                                '& .MuiChip-label': { px: 1.5 }
-                            }}
-                        />
-                        <Chip
-                            label={`Filtered: ${filteredOrganizations.length}`}
-                            variant="outlined"
-                            sx={{
-                                borderColor: '#7c52a5',
-                                color: '#7c52a5',
                                 fontWeight: 'bold',
                                 fontSize: '0.85rem',
                                 height: '36px',
@@ -2270,11 +2258,10 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
                                     label="Filter by Type"
                                     sx={{ borderRadius: 0 }}
                                 >
-                                    <MenuItem value="">All Types</MenuItem>
+                                    <MenuItem value="">All Organizations</MenuItem>
                                     <MenuItem value="church">Churches</MenuItem>
                                     <MenuItem value="Institution">Institutions</MenuItem>
-                                    <MenuItem value="Non_formal_organizations">Non-formal Organizations</MenuItem>
-                                    <MenuItem value="other">Other</MenuItem>
+                                    <MenuItem value="Non_formal_organizations">Non-Formal Organizations</MenuItem>
                                 </Select>
                             </FormControl>
                         </Grid>

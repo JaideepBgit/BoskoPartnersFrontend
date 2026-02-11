@@ -4,17 +4,17 @@ import {
     Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
     TableHead, TableRow, Paper, IconButton, Dialog, DialogActions,
     DialogContent, DialogTitle, TextField, Select, MenuItem, FormControl,
-    InputLabel, TablePagination, Card, CardContent, Grid, Chip, useTheme,
+    InputLabel, InputAdornment, TablePagination, Card, CardContent, Grid, Chip, useTheme,
     Autocomplete, CircularProgress, Tooltip, Stack, Collapse
 } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import FilterListIcon from '@mui/icons-material/FilterList';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AssignmentIcon from '@mui/icons-material/Assignment';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 
 import {
     fetchUsers, addUser, updateUser, deleteUser,
@@ -32,7 +32,7 @@ import EnhancedAddressInput from '../common/EnhancedAddressInput';
 import EmailPreviewDialog from '../common/EmailPreviewDialog';
 import SurveyAssignmentCard from './SurveyAssignmentCard';
 
-function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUploadDialog: setOpenUploadDialogProp }) {
+function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUploadDialog: setOpenUploadDialogProp, onUserCountChange }) {
     const theme = useTheme();
     const navigate = useNavigate();
 
@@ -1045,6 +1045,13 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
 
     const filteredUsers = getFilteredAndSortedUsers();
 
+    // Report filtered user count to parent
+    useEffect(() => {
+        if (onUserCountChange) {
+            onUserCountChange(filteredUsers.length);
+        }
+    }, [filteredUsers.length, onUserCountChange]);
+
     // Handle sort
     const handleSort = (column) => {
         if (sortBy === column) {
@@ -1118,7 +1125,7 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
                                         sx={{
                                             cursor: 'pointer',
                                             '&:hover': {
-                                                backgroundColor: '#e8d5f3'
+                                                backgroundColor: '#f5f5f5'
                                             }
                                         }}
                                     >
@@ -1830,82 +1837,99 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
     };
 
     return (
-        <Box sx={{ p: { xs: 1, md: 3 } }}>
+        <Box>
 
-            {/* Search and Filter Bar */}
-            <Box sx={{ mb: 3 }}>
-                <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12} md={4}>
-                        <TextField
-                            fullWidth
-                            size="small"
-                            label="Search Users"
-                            variant="outlined"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Name, email, organization..."
-                        />
-                    </Grid>
-                    <Grid item xs={12} md={3}>
-                        <FormControl fullWidth size="small">
-                            <InputLabel>Filter by Organization</InputLabel>
-                            <Select
-                                value={filterOrganization}
-                                onChange={(e) => setFilterOrganization(e.target.value)}
-                                label="Filter by Organization"
-                            >
-                                <MenuItem value="">All Organizations</MenuItem>
-                                {organizations.map(org => (
-                                    <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    </Grid>
-                    <Grid item xs={12} md={3}>
-                        <FormControl fullWidth size="small">
-                            <InputLabel>Filter by Role</InputLabel>
-                            <Select
-                                value={filterRole}
-                                onChange={(e) => setFilterRole(e.target.value)}
-                                label="Filter by Role"
-                            >
-                                <MenuItem value="">All Roles</MenuItem>
-                                <MenuItem value="admin">Administrator</MenuItem>
-                                <MenuItem value="user">Regular User</MenuItem>
-                            </Select>
-                        </FormControl>
-                    </Grid>
-                    <Grid item xs={12} md={2}>
+            {/* Search and Filter Bar - outside table card, matches organization page */}
+            <Box sx={{
+                mb: 3,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 2,
+                flexWrap: 'wrap'
+            }}>
+                <TextField
+                    placeholder="Search by name, email, or organization..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    size="small"
+                    sx={{
+                        flex: 1,
+                        minWidth: 250,
+                        maxWidth: 400,
+                        '& .MuiOutlinedInput-root': {
+                            backgroundColor: 'white',
+                            borderRadius: 2
+                        }
+                    }}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <SearchIcon color="action" />
+                            </InputAdornment>
+                        ),
+                    }}
+                />
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                        <Select
+                            value={filterOrganization}
+                            onChange={(e) => setFilterOrganization(e.target.value)}
+                            displayEmpty
+                            sx={{
+                                backgroundColor: 'white',
+                                borderRadius: 2
+                            }}
+                            startAdornment={<FilterListIcon sx={{ mr: 1, color: '#757575' }} />}
+                        >
+                            <MenuItem value="">All Organizations</MenuItem>
+                            {organizations.map(org => (
+                                <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                    <FormControl size="small" sx={{ minWidth: 160 }}>
+                        <Select
+                            value={filterRole}
+                            onChange={(e) => setFilterRole(e.target.value)}
+                            displayEmpty
+                            sx={{
+                                backgroundColor: 'white',
+                                borderRadius: 2
+                            }}
+                        >
+                            <MenuItem value="">All Roles</MenuItem>
+                            <MenuItem value="admin">Administrator</MenuItem>
+                            <MenuItem value="user">Regular User</MenuItem>
+                        </Select>
+                    </FormControl>
+                    {(searchTerm || filterOrganization || filterRole) && (
                         <Button
-                            fullWidth
                             variant="outlined"
+                            size="small"
                             onClick={() => {
                                 setSearchTerm('');
                                 setFilterOrganization('');
                                 setFilterRole('');
                             }}
                             sx={{
-                                height: '40px',
                                 color: '#633394',
                                 borderColor: '#633394',
+                                borderRadius: 2,
+                                textTransform: 'none',
                                 '&:hover': { borderColor: '#7c52a5', backgroundColor: 'rgba(99, 51, 148, 0.04)' }
                             }}
                         >
-                            Clear Filters
+                            Clear
                         </Button>
-                    </Grid>
-                </Grid>
+                    )}
+                </Box>
             </Box>
 
-            {/* Info Box 
-            <Box sx={{ mb: 2, p: 1.5, backgroundColor: '#f3e5f5', borderRadius: 1, border: '1px solid #ce93d8' }}>
-                <Typography variant="body2" sx={{ color: '#633394', display: 'flex', alignItems: 'center' }}>
-                    <AssignmentIcon sx={{ mr: 1, fontSize: 18 }} />
-                    <strong>Tip:</strong>&nbsp;Click on any user row to expand and view/manage their survey assignments inline.
-                </Typography>
-            </Box>*/}
-
-            {renderUsersTable()}
+            {/* Users Table */}
+            <Paper sx={{ borderRadius: 3, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+                {renderUsersTable()}
+            </Paper>
 
             {/* Survey Assignment Card - Commented out, using inline dropdown instead */}
             {/* <SurveyAssignmentCard

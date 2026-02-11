@@ -32,8 +32,11 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ClearIcon from '@mui/icons-material/Clear';
 import SearchIcon from '@mui/icons-material/Search';
+import FilterListIcon from '@mui/icons-material/FilterList';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import InputAdornment from '@mui/material/InputAdornment';
+import Chip from '@mui/material/Chip';
 import InventoryService from '../../../services/Admin/Inventory/InventoryService';
 import { EmailService } from '../../../services/EmailService';
 
@@ -716,16 +719,12 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
 
   return (
     <Box>
-      {/*<Typography
-        variant={isMobile ? 'subtitle1' : 'h6'}
-        gutterBottom
-        sx={{ color: '#633394', fontWeight: 'bold', fontSize: isMobile ? '1.1rem' : '1.25rem' }}
-      >
-        Email Templates
-      </Typography>*/}
-
-      <Paper sx={{ p: isMobile ? 1.5 : 2, mb: 3, backgroundColor: '#FFFFFF', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+      {/* Header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+        <Typography variant="h4" sx={{ color: '#212121', fontWeight: 'bold' }}>
+          Email Templates
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
@@ -733,17 +732,10 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
             onClick={openAddDialog}
             sx={{
               backgroundColor: '#633394',
-              transition: 'all 0.2s ease-in-out',
-              fontSize: isMobile ? '0.75rem' : '0.875rem',
-              '&:hover': {
-                backgroundColor: '#7c52a5',
-                transform: 'translateY(-1px)',
-                boxShadow: '0 4px 8px rgba(99, 51, 148, 0.3)',
-              },
-              '&:active': {
-                transform: 'translateY(0)',
-                boxShadow: '0 2px 4px rgba(99, 51, 148, 0.3)',
-              },
+              borderRadius: 2,
+              textTransform: 'none',
+              px: 3,
+              '&:hover': { backgroundColor: '#967CB2' }
             }}
           >
             Add New Template
@@ -756,7 +748,8 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
             sx={{
               color: '#633394',
               borderColor: '#633394',
-              fontSize: isMobile ? '0.75rem' : '0.875rem',
+              borderRadius: 2,
+              textTransform: 'none',
               '&:hover': {
                 backgroundColor: '#f5f5f5',
                 borderColor: '#7c52a5'
@@ -765,95 +758,95 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
           >
             {initializingTemplates ? 'Initializing...' : 'Initialize Defaults'}
           </Button>
-          <Button
-            variant="outlined"
-            size={isMobile ? 'small' : 'medium'}
-            onClick={handleDebugEmailTemplates}
-            sx={{
-              color: '#ff9800',
-              borderColor: '#ff9800',
-              fontSize: isMobile ? '0.75rem' : '0.875rem',
-              '&:hover': {
-                backgroundColor: '#fff3e0',
-                borderColor: '#f57c00'
-              }
-            }}
-          >
-            Debug Info
-          </Button>
         </Box>
-      </Paper>
+      </Box>
 
-      {/* Search and Filter Controls */}
-      <Box sx={{ mb: 2 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={6} md={4}>
-            <TextField
-              fullWidth
-              size="small"
-              label="Search templates"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: <SearchIcon sx={{ color: 'action.active', mr: 1 }} />,
+      {/* Search & Filter Bar */}
+      <Box sx={{
+        mb: 3,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 2,
+        flexWrap: 'wrap'
+      }}>
+        <TextField
+          placeholder="Search by template name or subject..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          size="small"
+          sx={{
+            flex: 1,
+            minWidth: 250,
+            maxWidth: 400,
+            '& .MuiOutlinedInput-root': {
+              backgroundColor: 'white',
+              borderRadius: 2
+            }
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon color="action" />
+              </InputAdornment>
+            ),
+          }}
+        />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <FormControl size="small" sx={{ minWidth: 200 }}>
+            <Select
+              value={filterOrganization}
+              displayEmpty
+              onChange={(e) => {
+                try {
+                  setFilterOrganization(e.target.value);
+                  onRefreshData && onRefreshData(e.target.value || null);
+                } catch (error) {
+                  console.error('Error setting organization filter:', error);
+                }
               }}
-            />
-          </Grid>
-
-          {/* Survey Template filter removed */}
-
-          <Grid item xs={12} sm={6} md={2}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Organization</InputLabel>
-              <Select
-                value={filterOrganization}
-                label="Organization"
-                onChange={(e) => {
-                  try {
-                    console.log('Organization filter changed to:', e.target.value);
-                    setFilterOrganization(e.target.value);
-                    // Refresh data with new filter
-                    onRefreshData && onRefreshData(e.target.value || null);
-                  } catch (error) {
-                    console.error('Error setting organization filter:', error);
-                  }
-                }}
-              >
-                <MenuItem value="">All Organizations</MenuItem>
-                {(organizations || []).map((org) => (
-                  <MenuItem key={org.id} value={org.id}>
-                    {org.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-
-          {/* Role filter removed */}
-
-          <Grid item xs={12} sm={6} md={2}>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<ClearIcon />}
-              onClick={clearFilters}
-              size="small"
               sx={{
-                borderColor: '#633394',
+                backgroundColor: 'white',
+                borderRadius: 2
+              }}
+              startAdornment={<FilterListIcon sx={{ mr: 1, color: '#757575' }} />}
+            >
+              <MenuItem value="">All Organizations</MenuItem>
+              {(organizations || []).map((org) => (
+                <MenuItem key={org.id} value={org.id}>
+                  {org.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          {(searchTerm || filterOrganization) && (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={clearFilters}
+              sx={{
                 color: '#633394',
-                '&:hover': {
-                  borderColor: '#7c52a5',
-                  backgroundColor: 'rgba(99, 51, 148, 0.04)',
-                },
+                borderColor: '#633394',
+                borderRadius: 2,
+                textTransform: 'none',
+                '&:hover': { borderColor: '#7c52a5', backgroundColor: 'rgba(99, 51, 148, 0.04)' }
               }}
             >
               Clear
             </Button>
-          </Grid>
-        </Grid>
+          )}
+          <Chip
+            label={`${filteredTemplates.length} template${filteredTemplates.length !== 1 ? 's' : ''}`}
+            variant="outlined"
+            sx={{
+              borderColor: '#633394',
+              color: '#633394'
+            }}
+          />
+        </Box>
       </Box>
 
-      <Paper sx={{ p: isMobile ? 1.5 : 2 }}>
+      <Paper sx={{ borderRadius: 3, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
         {filteredTemplates.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <Typography variant="body1" color="text.secondary">

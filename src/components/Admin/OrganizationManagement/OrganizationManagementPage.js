@@ -39,6 +39,13 @@ const colors = {
 
 // Define main organization types
 const mainOrganizationTypes = ['church', 'Institution', 'Non_formal_organizations'];
+const mainOrganizationTypeLabels = {
+    church: 'Churches',
+    Institution: 'Institutions',
+    Non_formal_organizations: 'Non-Formal Organizations',
+    // defensive in case older data uses a different casing
+    non_formal_organizations: 'Non-Formal Organizations',
+};
 
 function OrganizationManagementPage() {
     const navigate = useNavigate();
@@ -281,7 +288,7 @@ function OrganizationManagementPage() {
                                                 sx={{
                                                     cursor: 'pointer',
                                                     transition: 'background-color 0.2s',
-                                                    '&:hover': { backgroundColor: colors.accentBg }
+                                                    '&:hover': { backgroundColor: '#f5f5f5' }
                                                 }}
                                             >
 
@@ -384,7 +391,7 @@ function OrganizationManagementPage() {
                     gap: 2
                 }}>
                     <Typography variant="h4" fontWeight="bold" sx={{ color: colors.textPrimary }}>
-                        Organizations
+                        Organizations ({filteredOrganizations.length})
                     </Typography>
                     <Box sx={{ display: 'flex', gap: 1 }}>
                         <Button
@@ -401,28 +408,31 @@ function OrganizationManagementPage() {
                         >
                             Add Organization
                         </Button>
-                        <Tooltip title="Refresh">
-                            <IconButton
-                                onClick={loadData}
-                                disabled={loading}
-                                sx={{
-                                    border: `1px solid ${colors.borderColor}`,
-                                    borderRadius: 2
-                                }}
-                            >
-                                <RefreshIcon />
-                            </IconButton>
-                        </Tooltip>
+                        <Button
+                            variant="outlined"
+                            startIcon={<RefreshIcon />}
+                            onClick={loadData}
+                            disabled={loading}
+                            sx={{
+                                color: colors.primary,
+                                borderColor: colors.primary,
+                                borderRadius: 2,
+                                textTransform: 'none',
+                                px: 2.5,
+                                '&:hover': {
+                                    borderColor: colors.secondary,
+                                    backgroundColor: 'rgba(99, 51, 148, 0.04)'
+                                }
+                            }}
+                        >
+                            Refresh
+                        </Button>
                     </Box>
                 </Box>
 
                 {/* Search & Filter Bar */}
-                <Paper sx={{
-                    p: 2,
+                <Box sx={{
                     mb: 3,
-                    borderRadius: 3,
-                    //backgroundColor: colors.accentBg,
-                    boxShadow: 'none',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
@@ -463,24 +473,16 @@ function OrganizationManagementPage() {
                                 }}
                                 startAdornment={<FilterListIcon sx={{ mr: 1, color: colors.textSecondary }} />}
                             >
-                                <MenuItem value="">All main organization Types</MenuItem>
+                                <MenuItem value="">All Organizations</MenuItem>
                                 {mainOrganizationTypes.map(type => (
                                     <MenuItem key={type} value={type}>
-                                        {type === 'non_formal_organizations' ? 'Non-formal Org' : type.charAt(0).toUpperCase() + type.slice(1)}
+                                        {mainOrganizationTypeLabels[type] || type}
                                     </MenuItem>
                                 ))}
                             </Select>
                         </FormControl>
-                        <Chip
-                            label={`Showing ${filteredOrganizations.length} items`}
-                            variant="outlined"
-                            sx={{
-                                borderColor: colors.primary,
-                                color: colors.primary
-                            }}
-                        />
                     </Box>
-                </Paper>
+                </Box>
 
                 {loading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>

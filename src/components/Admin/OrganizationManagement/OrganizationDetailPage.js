@@ -1635,7 +1635,7 @@ function OrganizationDetailPage() {
                                                             sx={{
                                                                 cursor: 'pointer',
                                                                 transition: 'background-color 0.2s',
-                                                                '&:hover': { backgroundColor: colors.accentBg }
+                                                                '&:hover': { backgroundColor: '#f5f5f5' }
                                                             }}
                                                         >
                                                             <TableCell>

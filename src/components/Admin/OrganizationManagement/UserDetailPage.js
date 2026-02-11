@@ -631,7 +631,7 @@ function UserDetailPage() {
                                                         key={assignment.id}
                                                         sx={{
                                                             transition: 'background-color 0.2s',
-                                                            '&:hover': { backgroundColor: colors.accentBg }
+                                                            '&:hover': { backgroundColor: '#f5f5f5' }
                                                         }}
                                                     >
                                                         <TableCell>
@@ -724,7 +724,7 @@ function UserDetailPage() {
                                                             justifyContent: 'space-between',
                                                             p: 2,
                                                             cursor: 'pointer',
-                                                            '&:hover': { backgroundColor: '#fafafa' }
+                                                            '&:hover': { backgroundColor: '#f5f5f5' }
                                                         }}
                                                         onClick={() => toggleResponseExpand(response.id)}
                                                     >

@@ -34,6 +34,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import CloseIcon from '@mui/icons-material/Close';
 import SaveIcon from '@mui/icons-material/Save';
+import InternalHeader from '../shared/Headers/InternalHeader';
 
 // API Base URL from environment variable
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
@@ -199,9 +200,42 @@ const SurveyTaking = () => {
   };
 
   const handleContinueToNextSection = () => {
+    const sectionsObj = groupQuestionsBySection();
+    const sectionEntries = Object.entries(sectionsObj); // [[name, questions], ...]
+    const completedIndex = sectionEntries.findIndex(([name]) => name === completedSectionName);
+
+    // Dismiss the completion overlay first
     setShowSectionCompletion(false);
-    setSelectedSection(null);
-    // User will select the next section from the main overview
+    setCompletedSectionName('');
+
+    // Try to find the next section (by order) that still has unanswered questions
+    const findNext = (startIdx) => {
+      for (let i = startIdx; i < sectionEntries.length; i++) {
+        const [name, qs] = sectionEntries[i];
+        if (name === completedSectionName) continue; // skip the one we just finished
+        const firstUnanswered = qs.findIndex((q) => !responses[q.id]);
+        if (firstUnanswered >= 0) {
+          return { name, questions: qs, questionIndex: firstUnanswered };
+        }
+      }
+      return null;
+    };
+
+    // 1) Look after the completed section
+    let next = findNext(completedIndex + 1);
+    // 2) Wrap around and look before
+    if (!next) next = findNext(0);
+
+    if (next) {
+      // Use a short timeout so React has time to tear down the overlay
+      setTimeout(() => {
+        setSelectedSection({ name: next.name, questions: next.questions });
+        setCurrentQuestionIndex(next.questionIndex);
+      }, 50);
+    } else {
+      // Everything is answered — go back to section overview so user can submit
+      setSelectedSection(null);
+    }
   };
 
   const handleExitSurvey = () => {
@@ -912,23 +946,11 @@ const SurveyTaking = () => {
         </Box>
       )}
 
-      {/* Custom Header - Only show when in a section */}
+      {/* Internal Header - Only show when in a section */}
       {selectedSection && (
-        <Paper sx={{
-          backgroundColor: '#fff',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-          position: 'sticky',
-          top: 0,
-          zIndex: 1000
-        }}>
-          <Box sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            px: 3,
-            py: 2
-          }}>
-            {/* Left: X button to exit survey + Sections button */}
+        <InternalHeader
+          title={`${selectedSection.name} — Question ${getCurrentQuestionNumber()} of ${getTotalQuestions()}`}
+          leftActions={
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <IconButton
                 onClick={handleCloseSurvey}
@@ -936,6 +958,7 @@ const SurveyTaking = () => {
                   color: '#633394',
                   '&:hover': { backgroundColor: 'rgba(99, 51, 148, 0.08)' }
                 }}
+                aria-label="Exit survey"
                 title="Exit Survey"
               >
                 <CloseIcon />
@@ -957,13 +980,8 @@ const SurveyTaking = () => {
                 Sections
               </Button>
             </Box>
-
-            {/* Center: Question counter */}
-            <Typography variant="h6" sx={{ color: '#333', fontWeight: 600 }}>
-              Question {getCurrentQuestionNumber()} of {getTotalQuestions()}
-            </Typography>
-
-            {/* Right: Save Draft button */}
+          }
+          rightActions={
             <Button
               variant="outlined"
               startIcon={<SaveIcon />}
@@ -984,8 +1002,8 @@ const SurveyTaking = () => {
             >
               Save Draft
             </Button>
-          </Box>
-        </Paper>
+          }
+        />
       )}
 
       {/* Section Selection Overview - When no section is selected */}
