@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import {
     Container, Typography, Box, Button, Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, TablePagination, Card, CardContent, Dialog, DialogActions,
+    TableHead, TableRow, Card, CardContent, Dialog, DialogActions,
     DialogContent, DialogTitle, TextField, Select, MenuItem, FormControl, InputLabel,
     IconButton, Chip, Alert, CircularProgress, Tabs, Tab, Paper, Grid, Tooltip,
     InputAdornment, Snackbar
 } from '@mui/material';
+import DataTable from '../shared/DataTable/DataTable';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -21,6 +22,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import RadarIcon from '@mui/icons-material/Radar';
+import SendIcon from '@mui/icons-material/Send';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../shared/Navbar/Navbar';
 import SpiderChartPopup from '../UserManagement/common/SpiderChartPopup';
@@ -80,6 +82,11 @@ function RootDashboard() {
     const [openEditDialog, setOpenEditDialog] = useState(false);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [openCredentialsDialog, setOpenCredentialsDialog] = useState(false);
+
+    // Bulk selection state
+    const [selectedUserIds, setSelectedUserIds] = useState([]);
+    const [openBulkReminderDialog, setOpenBulkReminderDialog] = useState(false);
+    const [bulkReminderStatus, setBulkReminderStatus] = useState({ sending: false, results: null });
 
     // Spider Chart Popup states
     const [spiderChartOpen, setSpiderChartOpen] = useState(false);
@@ -393,6 +400,51 @@ function RootDashboard() {
         }
     };
 
+    // Handle bulk send reminders
+    const handleSendBulkReminders = async () => {
+        setBulkReminderStatus({ sending: true, results: null });
+        try {
+            const usersToSend = selectedUserIds.map(userId => {
+                const user = users.find(u => u.id === userId);
+                if (!user) return null;
+                return {
+                    to_email: user.email,
+                    username: user.username,
+                    survey_code: user.survey_code || 'N/A',
+                    firstname: user.firstname || user.username,
+                    organization_name: getOrganizationName(user.organization_id),
+                    organization_id: user.organization_id,
+                    days_remaining: null
+                };
+            }).filter(Boolean).filter(u => u.to_email);
+
+            const response = await fetch('/api/send-bulk-reminder-emails', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ users: usersToSend }),
+            });
+            const result = await response.json();
+
+            if (response.ok) {
+                setBulkReminderStatus({
+                    sending: false,
+                    results: { success: true, message: `Sent: ${result.results?.successful_sends || 0}, Failed: ${result.results?.failed_sends || 0}` }
+                });
+                setSnackbar({ open: true, message: `Bulk reminders sent successfully!`, severity: 'success' });
+                setTimeout(() => {
+                    setOpenBulkReminderDialog(false);
+                    setBulkReminderStatus({ sending: false, results: null });
+                    setSelectedUserIds([]);
+                }, 2000);
+            } else {
+                setBulkReminderStatus({ sending: false, results: { success: false, message: result.error || 'Failed to send reminders' } });
+            }
+        } catch (err) {
+            console.error('Bulk reminder error:', err);
+            setBulkReminderStatus({ sending: false, results: { success: false, message: err.message } });
+        }
+    };
+
     // Download credentials as CSV
     const handleDownloadCSV = () => {
         if (createdCredentials.length === 0) {
@@ -469,6 +521,45 @@ function RootDashboard() {
             />
         );
     };
+
+    // Column definitions for the root dashboard users table
+    const rootUserColumns = useMemo(() => [
+        { id: 'username', label: 'Username', render: (user) => <Typography sx={{ fontWeight: 500 }}>{user.username}</Typography> },
+        {
+            id: 'name', label: 'Name',
+            render: (user) => user.firstname || user.lastname ? `${user.firstname || ''} ${user.lastname || ''}`.trim() : '-'
+        },
+        { id: 'email', label: 'Email' },
+        { id: 'role', label: 'Role', render: (user) => renderRoleChip(user.role) },
+        { id: 'organization', label: 'Organization', render: (user) => getOrganizationName(user.organization_id) },
+        {
+            id: 'created', label: 'Created',
+            render: (user) => user.created_at ? new Date(user.created_at).toLocaleDateString() : '-'
+        },
+        {
+            id: 'actions', label: 'Actions', align: 'center',
+            render: (user) => (
+                <>
+                    <Tooltip title="View Analytics">
+                        <IconButton size="small" onClick={() => handleOpenSpiderChart(user)}
+                            sx={{ color: '#633394', '&:hover': { backgroundColor: 'rgba(99, 51, 148, 0.1)', transform: 'scale(1.1)' }, transition: 'all 0.2s ease' }}>
+                            <RadarIcon fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Edit User">
+                        <IconButton size="small" onClick={() => handleOpenEditDialog(user)} sx={{ color: rootColors.primary }}>
+                            <EditIcon fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete User">
+                        <IconButton size="small" onClick={() => handleOpenDeleteDialog(user)} sx={{ color: rootColors.error }}>
+                            <DeleteIcon fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
+                </>
+            )
+        }
+    ], [organizations]);
 
     if (loading) {
         return (
@@ -731,97 +822,51 @@ function RootDashboard() {
                             </FormControl>
                         </Box>
 
+                        {/* Bulk Actions Bar */}
+                        {selectedUserIds.length > 0 && (
+                            <Box sx={{
+                                mb: 2, p: 1.5, display: 'flex', alignItems: 'center', gap: 2,
+                                backgroundColor: rootColors.highlightBg, borderRadius: 2,
+                                border: `1px solid ${rootColors.primary}40`
+                            }}>
+                                <Chip label={`${selectedUserIds.length} selected`} color="primary" sx={{ backgroundColor: rootColors.primary }} />
+                                <Button
+                                    variant="contained"
+                                    size="small"
+                                    startIcon={<SendIcon />}
+                                    onClick={() => { setBulkReminderStatus({ sending: false, results: null }); setOpenBulkReminderDialog(true); }}
+                                    sx={{ bgcolor: rootColors.primary, '&:hover': { bgcolor: '#4A2578' } }}
+                                >
+                                    Send Reminders ({selectedUserIds.length})
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={() => setSelectedUserIds([])}
+                                    sx={{ ml: 'auto', borderColor: rootColors.secondary, color: rootColors.secondary }}
+                                >
+                                    Clear Selection
+                                </Button>
+                            </Box>
+                        )}
+
                         {/* Users Table */}
-                        <TableContainer>
-                            <Table>
-                                <TableHead>
-                                    <TableRow sx={{ backgroundColor: rootColors.headerBg }}>
-                                        <TableCell sx={{ fontWeight: 700, color: '#212121', fontSize: '0.75rem' }}>Username</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: '#212121', fontSize: '0.75rem' }}>Name</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: '#212121', fontSize: '0.75rem' }}>Email</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: '#212121', fontSize: '0.75rem' }}>Role</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: '#212121', fontSize: '0.75rem' }}>Organization</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: '#212121', fontSize: '0.75rem' }}>Created</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, textAlign: 'center', color: '#212121', fontSize: '0.75rem' }}>Actions</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {(activeTab === 0 ? filteredUsers : privilegedUsers)
-                                        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                                        .map((user) => (
-                                            <TableRow
-                                                key={user.id}
-                                                sx={{
-                                                    '&:hover': { backgroundColor: '#f5f5f5' },
-                                                    ...(user.role === 'root' && { backgroundColor: rootColors.highlightBg })
-                                                }}
-                                            >
-                                                <TableCell sx={{ fontWeight: 500 }}>{user.username}</TableCell>
-                                                <TableCell>
-                                                    {user.firstname || user.lastname
-                                                        ? `${user.firstname || ''} ${user.lastname || ''}`.trim()
-                                                        : '-'}
-                                                </TableCell>
-                                                <TableCell>{user.email}</TableCell>
-                                                <TableCell>{renderRoleChip(user.role)}</TableCell>
-                                                <TableCell>{getOrganizationName(user.organization_id)}</TableCell>
-                                                <TableCell>
-                                                    {user.created_at
-                                                        ? new Date(user.created_at).toLocaleDateString()
-                                                        : '-'}
-                                                </TableCell>
-                                                <TableCell sx={{ textAlign: 'center' }}>
-                                                    <Tooltip title="View Analytics">
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() => handleOpenSpiderChart(user)}
-                                                            sx={{
-                                                                color: '#633394',
-                                                                '&:hover': {
-                                                                    backgroundColor: 'rgba(99, 51, 148, 0.1)',
-                                                                    transform: 'scale(1.1)'
-                                                                },
-                                                                transition: 'all 0.2s ease'
-                                                            }}
-                                                        >
-                                                            <RadarIcon fontSize="small" />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                    <Tooltip title="Edit User">
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() => handleOpenEditDialog(user)}
-                                                            sx={{ color: rootColors.primary }}
-                                                        >
-                                                            <EditIcon fontSize="small" />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                    <Tooltip title="Delete User">
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() => handleOpenDeleteDialog(user)}
-                                                            sx={{ color: rootColors.error }}
-                                                        >
-                                                            <DeleteIcon fontSize="small" />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                        <TablePagination
-                            component="div"
-                            count={activeTab === 0 ? filteredUsers.length : privilegedUsers.length}
-                            page={page}
-                            onPageChange={(e, newPage) => setPage(newPage)}
-                            rowsPerPage={rowsPerPage}
-                            onRowsPerPageChange={(e) => {
-                                setRowsPerPage(parseInt(e.target.value, 10));
-                                setPage(0);
-                            }}
+                        <DataTable
+                            columns={rootUserColumns}
+                            data={activeTab === 0 ? filteredUsers : privilegedUsers}
+                            selectable
+                            selectedIds={selectedUserIds}
+                            onSelectionChange={setSelectedUserIds}
+                            pagination
                             rowsPerPageOptions={[5, 10, 25, 50]}
+                            defaultRowsPerPage={10}
+                            showPaper={false}
+                            headerBg={rootColors.headerBg}
+                            headerCellSx={{ fontWeight: 700, color: '#212121', fontSize: '0.75rem' }}
+                            rowSx={(user) => ({
+                                ...(user.role === 'root' && { backgroundColor: rootColors.highlightBg })
+                            })}
+                            emptyMessage="No users found"
                         />
                     </Box>
                 </Paper>
@@ -1184,6 +1229,52 @@ function RootDashboard() {
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={() => setOpenCredentialsDialog(false)}>Close</Button>
+                    </DialogActions>
+                </Dialog>
+
+                {/* Bulk Reminder Dialog */}
+                <Dialog open={openBulkReminderDialog} onClose={() => !bulkReminderStatus.sending && setOpenBulkReminderDialog(false)} maxWidth="sm" fullWidth>
+                    <DialogTitle sx={{ bgcolor: rootColors.primary, color: 'white' }}>
+                        Send Bulk Reminders
+                    </DialogTitle>
+                    <DialogContent sx={{ mt: 2 }}>
+                        {bulkReminderStatus.results ? (
+                            <Alert severity={bulkReminderStatus.results.success ? 'success' : 'error'} sx={{ mt: 1 }}>
+                                {bulkReminderStatus.results.message}
+                            </Alert>
+                        ) : (
+                            <>
+                                <Typography sx={{ mt: 1 }}>
+                                    You are about to send reminder emails to <strong>{selectedUserIds.length}</strong> user(s).
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                    This will send a survey reminder email to each selected user. This process may take a moment.
+                                </Typography>
+                                {bulkReminderStatus.sending && (
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                                        <CircularProgress size={30} sx={{ color: rootColors.primary }} />
+                                    </Box>
+                                )}
+                            </>
+                        )}
+                    </DialogContent>
+                    <DialogActions>
+                        {!bulkReminderStatus.results && (
+                            <>
+                                <Button onClick={() => setOpenBulkReminderDialog(false)} disabled={bulkReminderStatus.sending}>Cancel</Button>
+                                <Button
+                                    variant="contained"
+                                    onClick={handleSendBulkReminders}
+                                    disabled={bulkReminderStatus.sending}
+                                    sx={{ bgcolor: rootColors.primary, '&:hover': { bgcolor: '#4A2578' } }}
+                                >
+                                    {bulkReminderStatus.sending ? 'Sending...' : `Send to ${selectedUserIds.length} Users`}
+                                </Button>
+                            </>
+                        )}
+                        {bulkReminderStatus.results && (
+                            <Button onClick={() => setOpenBulkReminderDialog(false)}>Close</Button>
+                        )}
                     </DialogActions>
                 </Dialog>
 

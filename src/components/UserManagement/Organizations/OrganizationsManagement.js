@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
-    Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, Paper, IconButton, Dialog, DialogActions,
+    Box, Typography, Button, Paper, IconButton, Dialog, DialogActions,
     DialogContent, DialogTitle, TextField, Select, MenuItem, FormControl,
-    InputLabel, TablePagination, Card, CardContent, Grid, Chip, Tabs, Tab, useTheme,
-    Autocomplete, Tooltip, CircularProgress, Stack
+    InputLabel, Card, CardContent, Grid, Chip, Tabs, Tab, useTheme,
+    Autocomplete, Tooltip, CircularProgress, Stack, Alert, Snackbar
 } from '@mui/material';
+import DataTable from '../../shared/DataTable/DataTable';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -16,8 +16,8 @@ import {
     fetchOrganizations, addOrganization, updateOrganization, deleteOrganization,
     fetchDenominations, fetchAccreditationBodies, fetchUmbrellaAssociations,
     uploadOrganizationFile, fetchOrganizationTypes, initializeOrganizationTypes,
-    fetchUsers, addUser, fetchRoles, addRole, addUserOrganizationalRole,
-    fetchUserOrganizationalRoles, updateUserOrganizationalRoles
+    fetchUsers, addUser, fetchRoles, addRole, addUserOrganizationalTitle,
+    fetchUserOrganizationalTitles, updateUserOrganizationalTitles
 } from '../../../services/UserManagement/UserManagementService';
 import MapAddressSelector from '../common/MapAddressSelector';
 import EnhancedAddressInput from '../common/EnhancedAddressInput';
@@ -50,6 +50,14 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
     const [filterLocation, setFilterLocation] = useState('');
     const [sortBy, setSortBy] = useState('name');
     const [sortOrder, setSortOrder] = useState('asc');
+
+    // Bulk selection state
+    const [selectedMainOrgIds, setSelectedMainOrgIds] = useState([]);
+    const [selectedOtherOrgIds, setSelectedOtherOrgIds] = useState([]);
+    const [openBulkDeleteDialog, setOpenBulkDeleteDialog] = useState(false);
+    const [bulkDeleteTarget, setBulkDeleteTarget] = useState('main'); // 'main' or 'other'
+    const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
+    const [orgSnackbar, setOrgSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
     // Dialog states
     const [openAddDialog, setOpenAddDialog] = useState(false);
@@ -144,10 +152,10 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
     const [roleSearchText, setRoleSearchText] = useState('');
     const [isAddingNewRole, setIsAddingNewRole] = useState(false);
     const [roleLoading, setRoleLoading] = useState(false);
-    const [addingOrganizationalRole, setAddingOrganizationalRole] = useState(false);
+    const [addingOrganizationalTitle, setAddingOrganizationalTitle] = useState(false);
     const [selectedOrganizationIdForRole, setSelectedOrganizationIdForRole] = useState('');
     const [selectedRoleType, setSelectedRoleType] = useState('');
-    const [organizationalRoleToAdd, setOrganizationalRoleToAdd] = useState('');
+    const [organizationalTitleToAdd, setOrganizationalTitleToAdd] = useState('');
 
     // Related organization states
     const [relationshipType, setRelationshipType] = useState(''); // 'denomination', 'accreditation', 'affiliation', 'umbrella'
@@ -409,42 +417,42 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
         }
     };
 
-    // Handle adding organizational role to user
-    const handleAddOrganizationalRoleToUser = async () => {
-        if (!selectedOrganizationIdForRole || !organizationalRoleToAdd.trim()) {
-            alert('Please select an organization and enter a role type');
+    // Handle adding organizational title to user
+    const handleAddOrganizationalTitleToUser = async () => {
+        if (!selectedOrganizationIdForRole || !organizationalTitleToAdd.trim()) {
+            alert('Please select an organization and enter a title');
             return;
         }
 
-        setAddingOrganizationalRole(true);
+        setAddingOrganizationalTitle(true);
         try {
-            // Add the role to the user's roles array
-            const newRole = {
+            // Add the title to the user's roles array
+            const newTitle = {
                 organization_id: parseInt(selectedOrganizationIdForRole),
-                role_type: organizationalRoleToAdd.trim()
+                title_type: organizationalTitleToAdd.trim()
             };
 
             setNewUserData({
                 ...newUserData,
-                roles: [...newUserData.roles, newRole]
+                roles: [...newUserData.roles, newTitle]
             });
 
             // Reset the form fields
             setSelectedOrganizationIdForRole('');
-            setOrganizationalRoleToAdd('');
+            setOrganizationalTitleToAdd('');
 
         } catch (error) {
-            console.error('Failed to add organizational role:', error);
-            alert(`Failed to add organizational role: ${error.message}`);
+            console.error('Failed to add organizational title:', error);
+            alert(`Failed to add organizational title: ${error.message}`);
         } finally {
-            setAddingOrganizationalRole(false);
+            setAddingOrganizationalTitle(false);
         }
     };
 
-    // Handle removing organizational role from user
-    const handleRemoveOrganizationalRoleFromUser = (organizationId, roleType) => {
+    // Handle removing organizational title from user
+    const handleRemoveOrganizationalTitleFromUser = (organizationId, titleType) => {
         const updatedRoles = newUserData.roles.filter(
-            role => !(role.organization_id === organizationId && role.role_type === roleType)
+            role => !(role.organization_id === organizationId && role.title_type === titleType)
         );
         setNewUserData({
             ...newUserData,
@@ -452,8 +460,8 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
         });
     };
 
-    // Get organization roles for user
-    const getUserOrganizationRoles = (organizationId) => {
+    // Get organization titles for user
+    const getUserOrganizationTitles = (organizationId) => {
         return newUserData.roles.filter(role => role.organization_id === organizationId);
     };
 
@@ -656,7 +664,7 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
                 userData.geo_location = newUserData.geo_location;
             }
 
-            // Add organizational roles if user role is 'other'
+            // Add organizational titles if user role is 'other'
             if (newUserData.ui_role === 'other' && newUserData.roles.length > 0) {
                 userData.roles = newUserData.roles;
             }
@@ -866,7 +874,7 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
         setIsAddingNewRole(false);
         setSelectedOrganizationIdForRole('');
         setSelectedRoleType('');
-        setOrganizationalRoleToAdd('');
+        setOrganizationalTitleToAdd('');
     };
 
     // Close dialogs only (without resetting form data) - used for dialog onClose events
@@ -1117,6 +1125,38 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
         }
     };
 
+    // Bulk delete organizations
+    const handleBulkDeleteOrganizations = async () => {
+        const idsToDelete = bulkDeleteTarget === 'main' ? selectedMainOrgIds : selectedOtherOrgIds;
+        setBulkDeleteLoading(true);
+        let successCount = 0;
+        let failCount = 0;
+        for (const orgId of idsToDelete) {
+            try {
+                await deleteOrganization(orgId);
+                successCount++;
+            } catch (err) {
+                failCount++;
+                console.error(`Failed to delete organization ${orgId}:`, err);
+            }
+        }
+        setBulkDeleteLoading(false);
+        setOpenBulkDeleteDialog(false);
+        if (bulkDeleteTarget === 'main') {
+            setSelectedMainOrgIds([]);
+        } else {
+            setSelectedOtherOrgIds([]);
+        }
+        loadOrganizations();
+        setOrgSnackbar({
+            open: true,
+            message: failCount > 0
+                ? `Deleted ${successCount} organization(s). ${failCount} failed.`
+                : `Successfully deleted ${successCount} organization(s).`,
+            severity: failCount > 0 ? 'warning' : 'success'
+        });
+    };
+
     // Handle pagination change
     const handleChangePage = (event, newPage) => {
         setPage(newPage);
@@ -1258,22 +1298,15 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
         setOtherPage(0);
     };
 
-    // Reusable table row component
-    const renderOrganizationRow = (org) => (
-        <TableRow
-            key={org.id}
-            sx={{
-                '&:nth-of-type(odd)': { backgroundColor: theme.palette.action.hover },
-                transition: 'all 0.2s ease-in-out',
-                '&:hover': {
-                    backgroundColor: 'rgba(99, 51, 148, 0.2) !important',
-                    boxShadow: '0 2px 8px rgba(99, 51, 148, 0.15)',
-                    transform: 'translateX(2px)',
-                }
-            }}
-        >
-            <TableCell>{org.name}</TableCell>
-            <TableCell>
+    // Shared column definitions for organization tables
+    const orgTableColumns = useMemo(() => [
+        { id: 'name', label: 'Name', sortable: true },
+        {
+            id: 'type',
+            label: 'Type',
+            sortable: true,
+            sortKey: 'type',
+            render: (org) => (
                 <Chip
                     label={org.organization_type?.type === 'church' ? 'Church' :
                         org.organization_type?.type === 'Institution' ? 'Institution' :
@@ -1287,68 +1320,90 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
                     }
                     size="small"
                 />
-            </TableCell>
-            <TableCell>
-                {[
-                    org.geo_location?.city,
-                    org.geo_location?.province,
-                    org.geo_location?.region,
-                    org.geo_location?.continent
-                ]
-                    .filter(Boolean)
-                    .join(', ')}
-            </TableCell>
-            <TableCell>
+            )
+        },
+        {
+            id: 'location',
+            label: 'Location',
+            sortable: true,
+            render: (org) => (
+                [org.geo_location?.city, org.geo_location?.province, org.geo_location?.region, org.geo_location?.continent]
+                    .filter(Boolean).join(', ')
+            )
+        },
+        {
+            id: 'affiliations',
+            label: 'Affiliations',
+            render: (org) => (
                 <Box>
                     {org.denomination_affiliation && (
-                        <Typography variant="body2">
-                            <strong>Denomination:</strong> {org.denomination_affiliation}
-                        </Typography>
+                        <Typography variant="body2"><strong>Denomination:</strong> {org.denomination_affiliation}</Typography>
                     )}
                     {org.affiliation_validation && (
-                        <Typography variant="body2">
-                            <strong>Affiliation:</strong> {org.affiliation_validation}
-                        </Typography>
+                        <Typography variant="body2"><strong>Affiliation:</strong> {org.affiliation_validation}</Typography>
                     )}
                     {org.accreditation_status_or_body && (
-                        <Typography variant="body2">
-                            <strong>Accreditation:</strong> {org.accreditation_status_or_body}
-                        </Typography>
+                        <Typography variant="body2"><strong>Accreditation:</strong> {org.accreditation_status_or_body}</Typography>
                     )}
                     {org.umbrella_association_membership && (
-                        <Typography variant="body2">
-                            <strong>Umbrella Assoc.:</strong> {org.umbrella_association_membership}
-                        </Typography>
+                        <Typography variant="body2"><strong>Umbrella Assoc.:</strong> {org.umbrella_association_membership}</Typography>
                     )}
                     {!org.denomination_affiliation && !org.affiliation_validation &&
                         !org.accreditation_status_or_body && !org.umbrella_association_membership && 'N/A'}
                 </Box>
-            </TableCell>
-            <TableCell>
-                <Tooltip title="View Analytics" arrow>
-                    <IconButton
-                        onClick={() => handleOpenSpiderChart(org)}
-                        sx={{
-                            color: '#633394',
-                            '&:hover': {
-                                backgroundColor: 'rgba(99, 51, 148, 0.1)',
-                                transform: 'scale(1.1)'
-                            },
-                            transition: 'all 0.2s ease'
-                        }}
-                    >
-                        <RadarIcon />
+            )
+        },
+        {
+            id: 'actions',
+            label: 'Actions',
+            render: (org) => (
+                <>
+                    <Tooltip title="View Analytics" arrow>
+                        <IconButton
+                            onClick={() => handleOpenSpiderChart(org)}
+                            sx={{
+                                color: '#633394',
+                                '&:hover': { backgroundColor: 'rgba(99, 51, 148, 0.1)', transform: 'scale(1.1)' },
+                                transition: 'all 0.2s ease'
+                            }}
+                        >
+                            <RadarIcon />
+                        </IconButton>
+                    </Tooltip>
+                    <IconButton onClick={() => handleOpenEditDialog(org)} color="primary">
+                        <EditIcon />
                     </IconButton>
-                </Tooltip>
-                <IconButton onClick={() => handleOpenEditDialog(org)} color="primary">
-                    <EditIcon />
-                </IconButton>
-                <IconButton onClick={() => handleOpenDeleteDialog(org)} color="error">
-                    <DeleteIcon />
-                </IconButton>
-            </TableCell>
-        </TableRow>
-    );
+                    <IconButton onClick={() => handleOpenDeleteDialog(org)} color="error">
+                        <DeleteIcon />
+                    </IconButton>
+                </>
+            )
+        }
+    ], []);
+
+    // Sort value getter for organization tables
+    const orgSortValueGetter = useMemo(() => (row, orderBy) => {
+        if (orderBy === 'type') return row.organization_type?.type || '';
+        if (orderBy === 'location') {
+            return [row.geo_location?.city, row.geo_location?.province, row.geo_location?.region, row.geo_location?.continent]
+                .filter(Boolean).join(', ');
+        }
+        return row[orderBy];
+    }, []);
+
+    const orgRowSx = useMemo(() => (org) => ({
+        '&:nth-of-type(odd)': { backgroundColor: theme.palette.action.hover },
+        transition: 'all 0.2s ease-in-out',
+        '&:hover': {
+            backgroundColor: 'rgba(99, 51, 148, 0.2) !important',
+            boxShadow: '0 2px 8px rgba(99, 51, 148, 0.15)',
+            transform: 'translateX(2px)',
+        }
+    }), [theme]);
+
+    const paginationCompactSx = {
+        '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': { margin: 0 }
+    };
 
     // Render main organizations table (Churches, Institutions, Non-formal Orgs)
     const renderMainOrganizationsTable = () => {
@@ -1357,53 +1412,45 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
                 <Typography variant="h6" sx={{ mb: 2, color: '#633394', fontWeight: 'bold' }}>
                     Main Organizations ({mainOrganizations.length})
                 </Typography>
-                <TableContainer component={Paper} sx={{ boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}>
-                    <Table>
-                        <TableHead sx={{ backgroundColor: '#FAFAFA' }}>
-                            <TableRow>
-                                <TableCell
-                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer', fontSize: '0.75rem' }}
-                                    onClick={() => handleSort('name')}
-                                >
-                                    Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
-                                </TableCell>
-                                <TableCell
-                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer', fontSize: '0.75rem' }}
-                                    onClick={() => handleSort('type')}
-                                >
-                                    Type {sortBy === 'type' && (sortOrder === 'asc' ? '↑' : '↓')}
-                                </TableCell>
-                                <TableCell
-                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer', fontSize: '0.75rem' }}
-                                    onClick={() => handleSort('location')}
-                                >
-                                    Location {sortBy === 'location' && (sortOrder === 'asc' ? '↑' : '↓')}
-                                </TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Affiliations</TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Actions</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {mainOrganizations
-                                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                                .map(renderOrganizationRow)}
-                        </TableBody>
-                    </Table>
-                    <TablePagination
-                        rowsPerPageOptions={[5, 10, 25]}
-                        component="div"
-                        count={mainOrganizations.length}
-                        rowsPerPage={rowsPerPage}
-                        page={page}
-                        onPageChange={handleChangePage}
-                        onRowsPerPageChange={handleChangeRowsPerPage}
-                        sx={{
-                            '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
-                                margin: 0
-                            }
-                        }}
-                    />
-                </TableContainer>
+                {selectedMainOrgIds.length > 0 && (
+                    <Box sx={{
+                        mb: 2, p: 1.5, display: 'flex', alignItems: 'center', gap: 2,
+                        backgroundColor: '#f3e5f5', borderRadius: 2, border: '1px solid rgba(99, 51, 148, 0.25)'
+                    }}>
+                        <Chip label={`${selectedMainOrgIds.length} selected`} color="primary" sx={{ backgroundColor: '#633394' }} />
+                        <Button
+                            variant="contained"
+                            size="small"
+                            startIcon={<DeleteIcon />}
+                            onClick={() => { setBulkDeleteTarget('main'); setOpenBulkDeleteDialog(true); }}
+                            color="error"
+                        >
+                            Delete ({selectedMainOrgIds.length})
+                        </Button>
+                        <Button variant="outlined" size="small" onClick={() => setSelectedMainOrgIds([])}
+                            sx={{ ml: 'auto', borderColor: '#967CB2', color: '#967CB2' }}>
+                            Clear Selection
+                        </Button>
+                    </Box>
+                )}
+                <DataTable
+                    columns={orgTableColumns}
+                    data={mainOrganizations}
+                    selectable
+                    selectedIds={selectedMainOrgIds}
+                    onSelectionChange={setSelectedMainOrgIds}
+                    pagination
+                    rowsPerPageOptions={[5, 10, 25]}
+                    defaultRowsPerPage={10}
+                    defaultSortColumn="name"
+                    defaultSortDirection="asc"
+                    sortIndicator="arrow"
+                    sortValueGetter={orgSortValueGetter}
+                    rowSx={orgRowSx}
+                    emptyMessage="No main organizations found"
+                    paperSx={{ boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#f5f5f5' }}
+                    paginationSx={paginationCompactSx}
+                />
             </Box>
         );
     };
@@ -1422,53 +1469,45 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
                 <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
                     Denominations, Accrediting Bodies, Affiliations, Umbrella Associations, and other organization types
                 </Typography>
-                <TableContainer component={Paper} sx={{ boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#fafafa' }}>
-                    <Table>
-                        <TableHead sx={{ backgroundColor: '#FAFAFA' }}>
-                            <TableRow>
-                                <TableCell
-                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer', fontSize: '0.75rem' }}
-                                    onClick={() => handleSort('name')}
-                                >
-                                    Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
-                                </TableCell>
-                                <TableCell
-                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer', fontSize: '0.75rem' }}
-                                    onClick={() => handleSort('type')}
-                                >
-                                    Type {sortBy === 'type' && (sortOrder === 'asc' ? '↑' : '↓')}
-                                </TableCell>
-                                <TableCell
-                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer', fontSize: '0.75rem' }}
-                                    onClick={() => handleSort('location')}
-                                >
-                                    Location {sortBy === 'location' && (sortOrder === 'asc' ? '↑' : '↓')}
-                                </TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Affiliations</TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Actions</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {otherOrganizations
-                                .slice(otherPage * otherRowsPerPage, otherPage * otherRowsPerPage + otherRowsPerPage)
-                                .map(renderOrganizationRow)}
-                        </TableBody>
-                    </Table>
-                    <TablePagination
-                        rowsPerPageOptions={[5, 10, 25]}
-                        component="div"
-                        count={otherOrganizations.length}
-                        rowsPerPage={otherRowsPerPage}
-                        page={otherPage}
-                        onPageChange={handleChangeOtherPage}
-                        onRowsPerPageChange={handleChangeOtherRowsPerPage}
-                        sx={{
-                            '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
-                                margin: 0
-                            }
-                        }}
-                    />
-                </TableContainer>
+                {selectedOtherOrgIds.length > 0 && (
+                    <Box sx={{
+                        mb: 2, p: 1.5, display: 'flex', alignItems: 'center', gap: 2,
+                        backgroundColor: '#f3e5f5', borderRadius: 2, border: '1px solid rgba(99, 51, 148, 0.25)'
+                    }}>
+                        <Chip label={`${selectedOtherOrgIds.length} selected`} color="primary" sx={{ backgroundColor: '#967CB2' }} />
+                        <Button
+                            variant="contained"
+                            size="small"
+                            startIcon={<DeleteIcon />}
+                            onClick={() => { setBulkDeleteTarget('other'); setOpenBulkDeleteDialog(true); }}
+                            color="error"
+                        >
+                            Delete ({selectedOtherOrgIds.length})
+                        </Button>
+                        <Button variant="outlined" size="small" onClick={() => setSelectedOtherOrgIds([])}
+                            sx={{ ml: 'auto', borderColor: '#967CB2', color: '#967CB2' }}>
+                            Clear Selection
+                        </Button>
+                    </Box>
+                )}
+                <DataTable
+                    columns={orgTableColumns}
+                    data={otherOrganizations}
+                    selectable
+                    selectedIds={selectedOtherOrgIds}
+                    onSelectionChange={setSelectedOtherOrgIds}
+                    pagination
+                    rowsPerPageOptions={[5, 10, 25]}
+                    defaultRowsPerPage={10}
+                    defaultSortColumn="name"
+                    defaultSortDirection="asc"
+                    sortIndicator="arrow"
+                    sortValueGetter={orgSortValueGetter}
+                    rowSx={orgRowSx}
+                    emptyMessage="No related organizations found"
+                    paperSx={{ boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#fafafa' }}
+                    paginationSx={paginationCompactSx}
+                />
             </Box>
         );
     };
@@ -2587,15 +2626,15 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
                             </Box>
                         </Paper>
 
-                        {/* Organizational Roles Section - Hidden when UI role is 'other' */}
+                        {/* Organizational Titles Section - Hidden when UI role is 'other' */}
                         {newUserData.ui_role !== 'other' && newUserData.ui_role && (
                             <Paper sx={{ p: 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', mb: 3 }}>
                                 <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold', mb: 2, textAlign: 'center' }}>
-                                    Organizational Roles
+                                    Organizational Titles
                                 </Typography>
                                 <Box sx={{ maxWidth: '900px', mx: 'auto' }}>
 
-                                    {/* Add New Role Section */}
+                                    {/* Add New Title Section */}
                                     <Box sx={{
                                         p: 2,
                                         border: '1px solid #e0e0e0',
@@ -2604,7 +2643,7 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
                                         mb: 3
                                     }}>
                                         <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#633394', mb: 2, textAlign: 'center' }}>
-                                            Add Role to Organization
+                                            Add Title to Organization
                                         </Typography>
                                         <Grid container spacing={2} alignItems="end">
                                             <Grid item xs={12} md={4}>
@@ -2641,32 +2680,32 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
                                             <Grid item xs={12} md={4}>
                                                 <TextField
                                                     fullWidth
-                                                    label="Role Type"
-                                                    value={organizationalRoleToAdd}
-                                                    onChange={(e) => setOrganizationalRoleToAdd(e.target.value)}
+                                                    label="Title"
+                                                    value={organizationalTitleToAdd}
+                                                    onChange={(e) => setOrganizationalTitleToAdd(e.target.value)}
                                                     variant="outlined"
-                                                    placeholder="e.g., Manager, Coordinator, Member"
+                                                    placeholder="e.g., Pastor, Director, President"
                                                 />
                                             </Grid>
                                             <Grid item xs={12} md={4}>
                                                 <Button
                                                     variant="contained"
                                                     fullWidth
-                                                    onClick={handleAddOrganizationalRoleToUser}
-                                                    disabled={!selectedOrganizationIdForRole || !organizationalRoleToAdd.trim() || addingOrganizationalRole}
+                                                    onClick={handleAddOrganizationalTitleToUser}
+                                                    disabled={!selectedOrganizationIdForRole || !organizationalTitleToAdd.trim() || addingOrganizationalTitle}
                                                     sx={{
                                                         backgroundColor: '#633394',
                                                         '&:hover': { backgroundColor: '#7c52a5' }
                                                     }}
-                                                    startIcon={addingOrganizationalRole ? <CircularProgress size={20} color="inherit" /> : null}
+                                                    startIcon={addingOrganizationalTitle ? <CircularProgress size={20} color="inherit" /> : null}
                                                 >
-                                                    {addingOrganizationalRole ? 'Adding...' : 'Add Role'}
+                                                    {addingOrganizationalTitle ? 'Adding...' : 'Add Title'}
                                                 </Button>
                                             </Grid>
                                         </Grid>
                                     </Box>
 
-                                    {/* Display Current Roles */}
+                                    {/* Display Current Titles */}
                                     {newUserData.roles.length > 0 && (
                                         <Box sx={{
                                             p: 2,
@@ -2679,7 +2718,7 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
                                             </Typography>
                                             <Grid container spacing={2}>
                                                 {organizations.map((org) => {
-                                                    const orgRoles = getUserOrganizationRoles(org.id);
+                                                    const orgRoles = getUserOrganizationTitles(org.id);
                                                     if (orgRoles.length === 0) return null;
 
                                                     return (
@@ -2697,8 +2736,8 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
                                                                     {orgRoles.map((role, index) => (
                                                                         <Chip
                                                                             key={index}
-                                                                            label={role.role_type}
-                                                                            onDelete={() => handleRemoveOrganizationalRoleFromUser(org.id, role.role_type)}
+                                                                            label={role.title_type}
+                                                                            onDelete={() => handleRemoveOrganizationalTitleFromUser(org.id, role.title_type)}
                                                                             color="primary"
                                                                             size="small"
                                                                             sx={{ mb: 1 }}
@@ -3011,6 +3050,56 @@ function OrganizationsManagement({ showAddDialogOnly = false, onClose = null, on
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Bulk Delete Organizations Dialog */}
+            <Dialog open={openBulkDeleteDialog} onClose={() => !bulkDeleteLoading && setOpenBulkDeleteDialog(false)} maxWidth="sm" fullWidth>
+                <DialogTitle sx={{ backgroundColor: '#d32f2f', color: 'white' }}>
+                    Delete {(bulkDeleteTarget === 'main' ? selectedMainOrgIds : selectedOtherOrgIds).length} Organization(s)
+                </DialogTitle>
+                <DialogContent sx={{ mt: 2 }}>
+                    <Typography>
+                        Are you sure you want to delete <strong>{(bulkDeleteTarget === 'main' ? selectedMainOrgIds : selectedOtherOrgIds).length}</strong> organization(s)?
+                    </Typography>
+                    <Alert severity="error" sx={{ mt: 2 }}>
+                        This will permanently delete all selected organizations along with their survey templates, responses, user details, and role assignments. This action cannot be undone!
+                    </Alert>
+                    <Box sx={{ mt: 2, maxHeight: 200, overflowY: 'auto' }}>
+                        {organizations
+                            .filter(o => (bulkDeleteTarget === 'main' ? selectedMainOrgIds : selectedOtherOrgIds).includes(o.id))
+                            .map(org => (
+                                <Box key={org.id} sx={{ p: 1, mb: 0.5, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+                                    <Typography variant="body2">
+                                        <strong>{org.name}</strong> — {org.organization_type?.type || 'Unknown type'}
+                                    </Typography>
+                                </Box>
+                            ))}
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenBulkDeleteDialog(false)} disabled={bulkDeleteLoading}>Cancel</Button>
+                    <Button
+                        variant="contained"
+                        color="error"
+                        onClick={handleBulkDeleteOrganizations}
+                        disabled={bulkDeleteLoading}
+                        startIcon={bulkDeleteLoading ? <CircularProgress size={20} color="inherit" /> : <DeleteIcon />}
+                    >
+                        {bulkDeleteLoading ? 'Deleting...' : 'Yes, Delete All'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Snackbar for notifications */}
+            <Snackbar
+                open={orgSnackbar.open}
+                autoHideDuration={4000}
+                onClose={() => setOrgSnackbar({ ...orgSnackbar, open: false })}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            >
+                <Alert onClose={() => setOrgSnackbar({ ...orgSnackbar, open: false })} severity={orgSnackbar.severity} variant="filled">
+                    {orgSnackbar.message}
+                </Alert>
+            </Snackbar>
 
             {/* Spider Chart Popup */}
             <SpiderChartPopup

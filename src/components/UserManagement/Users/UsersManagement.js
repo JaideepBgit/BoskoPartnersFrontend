@@ -1,26 +1,28 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, Paper, IconButton, Dialog, DialogActions,
+    Box, Typography, Button, Paper, IconButton, Dialog, DialogActions,
     DialogContent, DialogTitle, TextField, Select, MenuItem, FormControl,
-    InputLabel, InputAdornment, TablePagination, Card, CardContent, Grid, Chip, useTheme,
-    Autocomplete, CircularProgress, Tooltip, Stack, Collapse
+    InputLabel, InputAdornment, Card, CardContent, Grid, Chip, useTheme,
+    Autocomplete, CircularProgress, Tooltip, Stack, Collapse,
+    Alert, Snackbar
 } from '@mui/material';
+import DataTable from '../../shared/DataTable/DataTable';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import SendIcon from '@mui/icons-material/Send';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 
 import {
     fetchUsers, addUser, updateUser, deleteUser,
     fetchOrganizations, fetchRoles, fetchTitles, uploadUserFile, addRole,
-    addUserOrganizationalRole, fetchUserOrganizationalRoles,
-    updateUserOrganizationalRoles, fetchTemplatesByOrganization
+    addUserOrganizationalTitle, fetchUserOrganizationalTitles,
+    updateUserOrganizationalTitles, fetchTemplatesByOrganization
 } from '../../../services/UserManagement/UserManagementService';
 import InventoryService from '../../../services/Admin/Inventory/InventoryService';
 import { EmailService } from '../../../services/EmailService';
@@ -96,15 +98,15 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
     const [roleSearchText, setRoleSearchText] = useState('');
     const [isAddingNewRole, setIsAddingNewRole] = useState(false);
     const [roleLoading, setRoleLoading] = useState(false);
-    const [addingOrganizationalRole, setAddingOrganizationalRole] = useState(false);
+    const [addingOrganizationalTitle, setAddingOrganizationalTitle] = useState(false);
     const [emailPreviewLoading, setEmailPreviewLoading] = useState(false);
     const [selectedEmailTemplate, setSelectedEmailTemplate] = useState(null);
     const [emailPreviewDialogOpen, setEmailPreviewDialogOpen] = useState(false);
 
-    // New state variables for improved organizational roles workflow
+    // New state variables for improved organizational titles workflow
     const [selectedOrganizationId, setSelectedOrganizationId] = useState('');
     const [selectedRoleType, setSelectedRoleType] = useState('');
-    const [organizationalRoleToAdd, setOrganizationalRoleToAdd] = useState('');
+    const [organizationalTitleToAdd, setOrganizationalTitleToAdd] = useState('');
 
     // Email dialog states
     const [emailData, setEmailData] = useState({
@@ -137,6 +139,13 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
     const [filterRole, setFilterRole] = useState('');
     const [sortBy, setSortBy] = useState('username');
     const [sortOrder, setSortOrder] = useState('asc');
+
+    // Bulk selection state
+    const [selectedUserIds, setSelectedUserIds] = useState([]);
+    const [openBulkDeleteDialog, setOpenBulkDeleteDialog] = useState(false);
+    const [openBulkReminderDialog, setOpenBulkReminderDialog] = useState(false);
+    const [bulkActionLoading, setBulkActionLoading] = useState(false);
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
     // Selected user for viewing survey assignments
     const [selectedUserForView, setSelectedUserForView] = useState(null);
@@ -526,14 +535,14 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
     const handleOpenEditDialog = async (user) => {
         setSelectedUser(user);
 
-        // Load organizational roles for the user if they have the 'other' role
+        // Load organizational titles for the user if they have the 'other' role
         let userRoles = user.roles || [];
         if (user.ui_role === 'other') {
             try {
-                const organizationalRoles = await fetchUserOrganizationalRoles(user.id);
-                userRoles = organizationalRoles || [];
+                const organizationalTitles = await fetchUserOrganizationalTitles(user.id);
+                userRoles = organizationalTitles || [];
             } catch (error) {
-                console.warn('Failed to fetch organizational roles for user:', error);
+                console.warn('Failed to fetch organizational titles for user:', error);
             }
         }
 
@@ -609,10 +618,10 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
         setOpenUploadDialogProp(false);
         setOpenEmailDialog(false);
         setSelectedUser(null);
-        // Reset new organizational role fields
+        // Reset new organizational title fields
         setSelectedOrganizationId('');
         setSelectedRoleType('');
-        setOrganizationalRoleToAdd('');
+        setOrganizationalTitleToAdd('');
         // Reset email preview states
         setShowEmailPreview(false);
         setEmailPreviewData({
@@ -721,7 +730,7 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
 
             // Remove ui_role and roles from the user data as they're handled separately
             delete userData.ui_role;
-            const organizationalRoles = userData.roles || [];
+            const organizationalTitles = userData.roles || [];
             delete userData.roles;
 
             // First, create the user
@@ -730,13 +739,13 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
             console.log('Password from backend:', newUser.password);
             console.log('Password from form:', formData.password);
 
-            // Then, if there are organizational roles, save them
-            if (organizationalRoles.length > 0) {
+            // Then, if there are organizational titles, save them
+            if (organizationalTitles.length > 0) {
                 try {
-                    await updateUserOrganizationalRoles(newUser.id, { roles: organizationalRoles });
-                } catch (roleError) {
-                    console.warn('User created but failed to save organizational roles:', roleError);
-                    alert('User created successfully, but there was an issue saving organizational roles. You can edit the user to add roles.');
+                    await updateUserOrganizationalTitles(newUser.id, { roles: organizationalTitles });
+                } catch (titleError) {
+                    console.warn('User created but failed to save organizational titles:', titleError);
+                    alert('User created successfully, but there was an issue saving organizational titles. You can edit the user to add titles.');
                 }
             }
 
@@ -767,83 +776,83 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
         return hasStringData || hasCoordinates;
     };
 
-    // New handlers for improved organizational roles workflow
-    const handleAddOrganizationalRole = async () => {
-        if (!selectedOrganizationId || !organizationalRoleToAdd.trim()) {
-            alert('Please select an organization and enter a role type');
+    // New handlers for improved organizational titles workflow
+    const handleAddOrganizationalTitle = async () => {
+        if (!selectedOrganizationId || !organizationalTitleToAdd.trim()) {
+            alert('Please select an organization and enter a title');
             return;
         }
 
-        // Check if this role type already exists for this organization
-        const existingRole = formData.roles.find(
-            r => r.organization_id === parseInt(selectedOrganizationId) && r.role_type === organizationalRoleToAdd.trim()
+        // Check if this title already exists for this organization
+        const existingTitle = formData.roles.find(
+            r => r.organization_id === parseInt(selectedOrganizationId) && r.title_type === organizationalTitleToAdd.trim()
         );
 
-        if (existingRole) {
-            alert('This role type already exists for the selected organization');
+        if (existingTitle) {
+            alert('This title already exists for the selected organization');
             return;
         }
 
-        setAddingOrganizationalRole(true);
+        setAddingOrganizationalTitle(true);
         try {
-            // Add the new role to the roles table if it doesn't exist
+            // Add the new title to the roles table if it doesn't exist
             const roleData = {
-                name: organizationalRoleToAdd.trim(),
-                description: `Created for organizational role: ${organizationalRoleToAdd.trim()}`
+                name: organizationalTitleToAdd.trim(),
+                description: `Created for organizational title: ${organizationalTitleToAdd.trim()}`
             };
 
             // This will add to roles table
             await addRole(roleData);
 
-            // Add the new organizational role to the form data
-            const newRole = {
+            // Add the new organizational title to the form data
+            const newTitle = {
                 organization_id: parseInt(selectedOrganizationId),
-                role_type: organizationalRoleToAdd.trim(),
+                title_type: organizationalTitleToAdd.trim(),
                 id: Date.now() // Temporary ID for frontend display
             };
 
             setFormData({
                 ...formData,
-                roles: [...formData.roles, newRole]
+                roles: [...formData.roles, newTitle]
             });
 
             // Reset the form
             setSelectedOrganizationId('');
-            setOrganizationalRoleToAdd('');
+            setOrganizationalTitleToAdd('');
 
-            alert('Role added successfully!');
+            alert('Title added successfully!');
         } catch (error) {
-            // If the role already exists in the database, that's okay
+            // If the title already exists in the database, that's okay
             if (error.response && error.response.status === 409) {
-                // Role already exists, just add it to the form
-                const newRole = {
+                // Title already exists, just add it to the form
+                const newTitle = {
                     organization_id: parseInt(selectedOrganizationId),
-                    role_type: organizationalRoleToAdd.trim(),
+                    title_type: organizationalTitleToAdd.trim(),
                     id: Date.now()
                 };
 
                 setFormData({
                     ...formData,
-                    roles: [...formData.roles, newRole]
+                    roles: [...formData.roles, newTitle]
                 });
 
                 setSelectedOrganizationId('');
-                setOrganizationalRoleToAdd('');
-                alert('Role was already in system, added to user successfully!');
+                setOrganizationalTitleToAdd('');
+                alert('Title was already in system, added to user successfully!');
             } else {
-                console.error('Failed to add role:', error);
-                alert(`Failed to add role: ${error.message}`);
+                console.error('Failed to add title:', error);
+                alert(`Failed to add title: ${error.message}`);
             }
         } finally {
-            setAddingOrganizationalRole(false);
+            setAddingOrganizationalTitle(false);
         }
     };
 
-    const handleRemoveOrganizationalRole = (organizationId, roleType) => {
+    const handleRemoveOrganizationalTitle = (organizationId, titleType) => {
         setFormData({
             ...formData,
             roles: formData.roles.filter(
-                r => !(r.organization_id === organizationId && r.role_type === roleType)
+                r => !(r.organization_id === organizationId && r.title_type === titleType)
             )
         });
     };
@@ -904,14 +913,14 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
             delete userData.system_roles;
             delete userData.title_ids;
 
-            // Handle organizational roles (legacy list of objects) separately
-            const organizationalRoles = formData.roles || [];
+            // Handle organizational titles (legacy list of objects) separately
+            const organizationalTitles = formData.roles || [];
             // We don't delete userData.roles here because we just set it to system_roles above.
-            // The backend distinguishes between list-of-strings (system) and list-of-dicts (org roles).
-            // But UsersManagement stores org roles in formData.roles. 
+            // The backend distinguishes between list-of-strings (system) and list-of-dicts (org titles).
+            // But UsersManagement stores org titles in formData.roles. 
             // So we need to be careful. 
             // In handleUpdateUser, we want to send system roles as 'roles'.
-            // Organizational roles are sent via updateUserOrganizationalRoles separately below.
+            // Organizational titles are sent via updateUserOrganizationalTitles separately below.
             // So userData.roles MUST be formData.system_roles.
             // We already set that above.
 
@@ -926,13 +935,13 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
             // First, update the user
             await updateUser(selectedUser.id, userData);
 
-            // Then, update organizational roles
+            // Then, update organizational titles
             if (formData.ui_role === 'other') {
                 try {
-                    await updateUserOrganizationalRoles(selectedUser.id, { roles: organizationalRoles });
-                } catch (roleError) {
-                    console.warn('User updated but failed to save organizational roles:', roleError);
-                    alert('User updated successfully, but there was an issue saving organizational roles.');
+                    await updateUserOrganizationalTitles(selectedUser.id, { roles: organizationalTitles });
+                } catch (titleError) {
+                    console.warn('User updated but failed to save organizational titles:', titleError);
+                    alert('User updated successfully, but there was an issue saving organizational titles.');
                 }
             }
 
@@ -955,6 +964,79 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
         } catch (error) {
             console.error('Failed to delete user:', error);
             alert(`Failed to delete user: ${error.message}`);
+        }
+    };
+
+    // Bulk delete users
+    const handleBulkDeleteUsers = async () => {
+        setBulkActionLoading(true);
+        let successCount = 0;
+        let failCount = 0;
+        for (const userId of selectedUserIds) {
+            try {
+                await deleteUser(userId);
+                successCount++;
+            } catch (err) {
+                failCount++;
+                console.error(`Failed to delete user ${userId}:`, err);
+            }
+        }
+        setBulkActionLoading(false);
+        setOpenBulkDeleteDialog(false);
+        setSelectedUserIds([]);
+        loadUsers();
+        setSnackbar({
+            open: true,
+            message: failCount > 0
+                ? `Deleted ${successCount} user(s). ${failCount} failed.`
+                : `Successfully deleted ${successCount} user(s).`,
+            severity: failCount > 0 ? 'warning' : 'success'
+        });
+    };
+
+    // Bulk send reminders
+    const handleBulkSendReminders = async () => {
+        setBulkActionLoading(true);
+        try {
+            const usersToSend = selectedUserIds.map(userId => {
+                const user = users.find(u => u.id === userId);
+                if (!user) return null;
+                return {
+                    to_email: user.email,
+                    username: user.username,
+                    survey_code: user.survey_code || 'N/A',
+                    firstname: user.firstname || user.username,
+                    organization_name: user.organization?.name || '',
+                    organization_id: user.organization_id,
+                    days_remaining: null
+                };
+            }).filter(Boolean).filter(u => u.to_email);
+
+            const response = await fetch('/api/send-bulk-reminder-emails', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ users: usersToSend }),
+            });
+            const result = await response.json();
+
+            if (response.ok) {
+                setSnackbar({
+                    open: true,
+                    message: `Reminders sent: ${result.results?.successful_sends || 0} successful, ${result.results?.failed_sends || 0} failed`,
+                    severity: 'success'
+                });
+                setTimeout(() => {
+                    setOpenBulkReminderDialog(false);
+                    setSelectedUserIds([]);
+                }, 1500);
+            } else {
+                setSnackbar({ open: true, message: result.error || 'Failed to send reminders', severity: 'error' });
+            }
+        } catch (err) {
+            console.error('Bulk reminder error:', err);
+            setSnackbar({ open: true, message: err.message || 'Failed to send reminders', severity: 'error' });
+        } finally {
+            setBulkActionLoading(false);
         }
     };
 
@@ -1052,220 +1134,171 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
         }
     }, [filteredUsers.length, onUserCountChange]);
 
-    // Handle sort
-    const handleSort = (column) => {
-        if (sortBy === column) {
-            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-        } else {
-            setSortBy(column);
-            setSortOrder('asc');
-        }
-    };
-
     // Handle row click to navigate to user detail page
     const handleRowClick = (user) => {
         navigate(`/users/${user.id}`);
     };
 
+    // Sort value getter for DataTable
+    const userSortValueGetter = useMemo(() => (row, orderBy) => {
+        if (orderBy === 'organization') {
+            return row.organization?.name || getOrganizationName(row.organization_id) || '';
+        }
+        return row[orderBy];
+    }, [organizations]);
+
+    // Column definitions for the users table
+    const usersTableColumns = useMemo(() => [
+        {
+            id: 'username',
+            label: 'Username',
+            sortable: true,
+            render: (user) => (
+                <Typography variant="body2" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                    {user.username}
+                </Typography>
+            )
+        },
+        { id: 'email', label: 'Email', sortable: true },
+        {
+            id: 'firstname',
+            label: 'First Name',
+            sortable: true,
+            render: (user) => (
+                <Typography variant="body2" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                    {user.firstname}
+                </Typography>
+            )
+        },
+        {
+            id: 'lastname',
+            label: 'Last Name',
+            sortable: true,
+            render: (user) => (
+                <Typography variant="body2" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                    {user.lastname}
+                </Typography>
+            )
+        },
+        {
+            id: 'roles',
+            label: 'Roles',
+            render: (user) => (user.roles && user.roles.length > 0) ? (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {user.roles.map((role, idx) => (
+                        <Chip
+                            key={`role-${idx}`}
+                            label={role}
+                            size="small"
+                            sx={{
+                                bgcolor: role === 'admin' ? '#e3f2fd' : '#f5f5f5',
+                                color: role === 'admin' ? '#1565c0' : '#616161',
+                                fontWeight: 500,
+                                textTransform: 'capitalize'
+                            }}
+                        />
+                    ))}
+                </Box>
+            ) : (user.ui_role || 'User')
+        },
+        {
+            id: 'title',
+            label: 'Title',
+            render: (user) => (user.titles && user.titles.length > 0) ? (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {user.titles.map((title, idx) => (
+                        <Chip
+                            key={`title-${idx}`}
+                            label={title.name}
+                            size="small"
+                            variant="outlined"
+                            sx={{ borderColor: '#ddd' }}
+                        />
+                    ))}
+                </Box>
+            ) : (user.title || 'N/A')
+        },
+        {
+            id: 'phone',
+            label: 'Phone',
+            render: (user) => (
+                <Typography variant="body2" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                    {user.phone || 'N/A'}
+                </Typography>
+            )
+        },
+        {
+            id: 'address',
+            label: 'User Address',
+            render: (user) => user.geo_location ? (
+                <Box sx={{ maxWidth: 250, whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                    {user.geo_location.address_line1 && (
+                        <Typography variant="body2">{user.geo_location.address_line1}</Typography>
+                    )}
+                    <Typography variant="caption" color="textSecondary" display="block">
+                        {[user.geo_location.city, user.geo_location.province, user.geo_location.country, user.geo_location.postal_code].filter(Boolean).join(', ')}
+                    </Typography>
+                </Box>
+            ) : 'N/A'
+        },
+        {
+            id: 'organization',
+            label: 'Organization',
+            sortable: true,
+            render: (user) => user.organization ? (
+                <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold', maxWidth: 200, whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                        {user.organization.name}
+                    </Typography>
+                    {user.organization.organization_type && (
+                        <Typography variant="body2" color="textSecondary">Type: {user.organization.organization_type.type}</Typography>
+                    )}
+                    {user.organization.website && (
+                        <Typography variant="body2" color="textSecondary">Website: {user.organization.website}</Typography>
+                    )}
+                </Box>
+            ) : (
+                <Typography variant="body2" sx={{ maxWidth: 200, whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                    {getOrganizationName(user.organization_id)}
+                </Typography>
+            )
+        },
+        {
+            id: 'actions',
+            label: 'Actions',
+            render: (user) => (
+                <>
+                    <IconButton onClick={(e) => { e.stopPropagation(); handleOpenEditDialog(user); }} color="primary">
+                        <EditIcon />
+                    </IconButton>
+                    <IconButton onClick={(e) => { e.stopPropagation(); handleOpenDeleteDialog(user); }} color="error">
+                        <DeleteIcon />
+                    </IconButton>
+                </>
+            )
+        }
+    ], [organizations]);
+
     // Render the users table
     const renderUsersTable = () => {
         return (
-            <TableContainer>
-                <Table>
-                    <TableHead sx={{ backgroundColor: '#FAFAFA' }}>
-                        <TableRow>
-                            <TableCell
-                                sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer', fontSize: '0.75rem' }}
-                                onClick={() => handleSort('username')}
-                            >
-                                Username {sortBy === 'username' && (sortOrder === 'asc' ? '↑' : '↓')}
-                            </TableCell>
-                            <TableCell
-                                sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer', fontSize: '0.75rem' }}
-                                onClick={() => handleSort('email')}
-                            >
-                                Email {sortBy === 'email' && (sortOrder === 'asc' ? '↑' : '↓')}
-                            </TableCell>
-                            <TableCell
-                                sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer', fontSize: '0.75rem' }}
-                                onClick={() => handleSort('firstname')}
-                            >
-                                First Name {sortBy === 'firstname' && (sortOrder === 'asc' ? '↑' : '↓')}
-                            </TableCell>
-                            <TableCell
-                                sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer', fontSize: '0.75rem' }}
-                                onClick={() => handleSort('lastname')}
-                            >
-                                Last Name {sortBy === 'lastname' && (sortOrder === 'asc' ? '↑' : '↓')}
-                            </TableCell>
-                            <TableCell
-                                sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}
-                            >
-                                Roles
-                            </TableCell>
-                            <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Title</TableCell>
-                            <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Phone</TableCell>
-                            <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>User Address</TableCell>
-                            <TableCell
-                                sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer', fontSize: '0.75rem' }}
-                                onClick={() => handleSort('organization')}
-                            >
-                                Organization {sortBy === 'organization' && (sortOrder === 'asc' ? '↑' : '↓')}
-                            </TableCell>
-                            <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Actions</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {filteredUsers
-                            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                            .map((user) => (
-                                <React.Fragment key={user.id}>
-                                    <TableRow
-                                        onClick={() => handleRowClick(user)}
-                                        sx={{
-                                            cursor: 'pointer',
-                                            '&:hover': {
-                                                backgroundColor: '#f5f5f5'
-                                            }
-                                        }}
-                                    >
-                                        <TableCell>
-                                            <Typography variant="body2" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                                                {user.username}
-                                            </Typography>
-                                        </TableCell>
-                                        <TableCell>{user.email}</TableCell>
-                                        <TableCell>
-                                            <Typography variant="body2" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                                                {user.firstname}
-                                            </Typography>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Typography variant="body2" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                                                {user.lastname}
-                                            </Typography>
-                                        </TableCell>
-                                        <TableCell>
-                                            {(user.roles && user.roles.length > 0) ? (
-                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                    {user.roles.map((role, idx) => (
-                                                        <Chip
-                                                            key={`role-${idx}`}
-                                                            label={role}
-                                                            size="small"
-                                                            sx={{
-                                                                bgcolor: role === 'admin' ? '#e3f2fd' : '#f5f5f5',
-                                                                color: role === 'admin' ? '#1565c0' : '#616161',
-                                                                fontWeight: 500,
-                                                                textTransform: 'capitalize'
-                                                            }}
-                                                        />
-                                                    ))}
-                                                </Box>
-                                            ) : (
-                                                user.ui_role || 'User'
-                                            )}
-                                        </TableCell>
-                                        <TableCell>
-                                            {(user.titles && user.titles.length > 0) ? (
-                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                    {user.titles.map((title, idx) => (
-                                                        <Chip
-                                                            key={`title-${idx}`}
-                                                            label={title.name}
-                                                            size="small"
-                                                            variant="outlined"
-                                                            sx={{ borderColor: '#ddd' }}
-                                                        />
-                                                    ))}
-                                                </Box>
-                                            ) : (
-                                                user.title || 'N/A'
-                                            )}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Typography variant="body2" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                                                {user.phone || 'N/A'}
-                                            </Typography>
-                                        </TableCell>
-                                        <TableCell>
-                                            {user.geo_location ? (
-                                                <Box sx={{ maxWidth: 250, whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                                                    {user.geo_location.address_line1 && (
-                                                        <Typography variant="body2">
-                                                            {user.geo_location.address_line1}
-                                                        </Typography>
-                                                    )}
-                                                    <Typography variant="caption" color="textSecondary" display="block">
-                                                        {[
-                                                            user.geo_location.city,
-                                                            user.geo_location.province,
-                                                            user.geo_location.country,
-                                                            user.geo_location.postal_code
-                                                        ].filter(Boolean).join(', ')}
-                                                    </Typography>
-                                                </Box>
-                                            ) : 'N/A'}
-                                        </TableCell>
-                                        <TableCell>
-                                            {user.organization ? (
-                                                <Box>
-                                                    <Typography variant="body2" sx={{ fontWeight: 'bold', maxWidth: 200, whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                                                        {user.organization.name}
-                                                    </Typography>
-                                                    {user.organization.organization_type && (
-                                                        <Typography variant="body2" color="textSecondary">
-                                                            Type: {user.organization.organization_type.type}
-                                                        </Typography>
-                                                    )}
-                                                    {user.organization.website && (
-                                                        <Typography variant="body2" color="textSecondary">
-                                                            Website: {user.organization.website}
-                                                        </Typography>
-                                                    )}
-                                                </Box>
-                                            ) : (
-                                                <Typography variant="body2" sx={{ maxWidth: 200, whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                                                    {getOrganizationName(user.organization_id)}
-                                                </Typography>
-                                            )}
-                                        </TableCell>
-                                        <TableCell>
-                                            <IconButton
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleOpenEditDialog(user);
-                                                }}
-                                                color="primary"
-                                            >
-                                                <EditIcon />
-                                            </IconButton>
-                                            <IconButton
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleOpenDeleteDialog(user);
-                                                }}
-                                                color="error"
-                                            >
-                                                <DeleteIcon />
-                                            </IconButton>
-                                        </TableCell>
-                                    </TableRow>
-
-                                </React.Fragment>
-                            ))}
-                    </TableBody>
-                </Table>
-                <TablePagination
-                    rowsPerPageOptions={[5, 10, 25, 50]}
-                    component="div"
-                    count={filteredUsers.length}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
-                    onPageChange={handleChangePage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                />
-            </TableContainer >
+            <DataTable
+                columns={usersTableColumns}
+                data={filteredUsers}
+                selectable
+                selectedIds={selectedUserIds}
+                onSelectionChange={setSelectedUserIds}
+                pagination
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                defaultRowsPerPage={rowsPerPage}
+                defaultSortColumn="username"
+                defaultSortDirection="asc"
+                sortIndicator="arrow"
+                sortValueGetter={userSortValueGetter}
+                onRowClick={(user) => handleRowClick(user)}
+                emptyMessage="No users found"
+                showPaper={false}
+            />
         );
     };
 
@@ -1542,11 +1575,11 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
                 </Paper>
 
 
-                {/* Organizational Roles Section - Only shown when UI role is 'other' */}
+                {/* Organizational Titles Section - Only shown when UI role is 'other' */}
                 {formData.ui_role === 'other' && (
                     <Paper sx={{ p: 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', mb: 3 }}>
                         <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold', mb: 2, textAlign: 'center' }}>
-                            Organizational Roles
+                            Organizational Titles
                         </Typography>
                         <Box sx={{ maxWidth: '900px', mx: 'auto' }}>
 
@@ -1597,26 +1630,26 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
                                     <Grid item xs={12} md={4}>
                                         <TextField
                                             fullWidth
-                                            label="Role Type"
-                                            value={organizationalRoleToAdd}
-                                            onChange={(e) => setOrganizationalRoleToAdd(e.target.value)}
+                                            label="Title"
+                                            value={organizationalTitleToAdd}
+                                            onChange={(e) => setOrganizationalTitleToAdd(e.target.value)}
                                             variant="outlined"
-                                            placeholder="e.g., Manager, Coordinator, Member"
+                                            placeholder="e.g., Pastor, Director, President"
                                         />
                                     </Grid>
                                     <Grid item xs={12} md={4}>
                                         <Button
                                             variant="contained"
                                             fullWidth
-                                            onClick={handleAddOrganizationalRole}
-                                            disabled={!selectedOrganizationId || !organizationalRoleToAdd.trim() || addingOrganizationalRole}
+                                            onClick={handleAddOrganizationalTitle}
+                                            disabled={!selectedOrganizationId || !organizationalTitleToAdd.trim() || addingOrganizationalTitle}
                                             sx={{
                                                 backgroundColor: '#633394',
                                                 '&:hover': { backgroundColor: '#7c52a5' }
                                             }}
-                                            startIcon={addingOrganizationalRole ? <CircularProgress size={20} color="inherit" /> : null}
+                                            startIcon={addingOrganizationalTitle ? <CircularProgress size={20} color="inherit" /> : null}
                                         >
-                                            {addingOrganizationalRole ? 'Adding...' : 'Add Role'}
+                                            {addingOrganizationalTitle ? 'Adding...' : 'Add Title'}
                                         </Button>
                                     </Grid>
                                 </Grid>
@@ -1652,11 +1685,11 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
                                                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                                                             {orgRoles.map((role) => (
                                                                 <Chip
-                                                                    key={`${role.organization_id}-${role.role_type}`}
-                                                                    label={role.role_type}
+                                                                    key={`${role.organization_id}-${role.title_type}`}
+                                                                    label={role.title_type}
                                                                     color="primary"
                                                                     variant="filled"
-                                                                    onDelete={() => handleRemoveOrganizationalRole(role.organization_id, role.role_type)}
+                                                                    onDelete={() => handleRemoveOrganizationalTitle(role.organization_id, role.title_type)}
                                                                     sx={{
                                                                         backgroundColor: '#633394',
                                                                         '&:hover': { backgroundColor: '#7c52a5' }
@@ -1926,6 +1959,43 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
                 </Box>
             </Box>
 
+            {/* Bulk Actions Bar */}
+            {selectedUserIds.length > 0 && (
+                <Box sx={{
+                    mb: 2, p: 1.5, display: 'flex', alignItems: 'center', gap: 2,
+                    backgroundColor: '#f3e5f5', borderRadius: 2,
+                    border: '1px solid rgba(99, 51, 148, 0.25)'
+                }}>
+                    <Chip label={`${selectedUserIds.length} selected`} color="primary" sx={{ backgroundColor: '#633394' }} />
+                    <Button
+                        variant="contained"
+                        size="small"
+                        startIcon={<SendIcon />}
+                        onClick={() => setOpenBulkReminderDialog(true)}
+                        sx={{ bgcolor: '#633394', '&:hover': { bgcolor: '#7c52a5' } }}
+                    >
+                        Send Reminders ({selectedUserIds.length})
+                    </Button>
+                    <Button
+                        variant="contained"
+                        size="small"
+                        startIcon={<DeleteIcon />}
+                        onClick={() => setOpenBulkDeleteDialog(true)}
+                        color="error"
+                    >
+                        Delete ({selectedUserIds.length})
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => setSelectedUserIds([])}
+                        sx={{ ml: 'auto', borderColor: '#967CB2', color: '#967CB2' }}
+                    >
+                        Clear Selection
+                    </Button>
+                </Box>
+            )}
+
             {/* Users Table */}
             <Paper sx={{ borderRadius: 3, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
                 {renderUsersTable()}
@@ -2178,6 +2248,90 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
                     organization_name: organizations.find(org => org.id === formData.organization_id)?.name || ''
                 }}
             />
+
+            {/* Bulk Delete Dialog */}
+            <Dialog open={openBulkDeleteDialog} onClose={() => !bulkActionLoading && setOpenBulkDeleteDialog(false)} maxWidth="sm" fullWidth>
+                <DialogTitle sx={{ bgcolor: '#633394', color: 'white' }}>
+                    Delete {selectedUserIds.length} User(s)
+                </DialogTitle>
+                <DialogContent sx={{ mt: 2 }}>
+                    <Typography>
+                        Are you sure you want to delete <strong>{selectedUserIds.length}</strong> user(s)?
+                    </Typography>
+                    <Alert severity="warning" sx={{ mt: 2 }}>
+                        This action cannot be undone. All selected users and their associated data will be permanently removed.
+                    </Alert>
+                    <Box sx={{ mt: 2, maxHeight: 200, overflowY: 'auto' }}>
+                        {users.filter(u => selectedUserIds.includes(u.id)).map(user => (
+                            <Box key={user.id} sx={{ p: 1, mb: 0.5, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+                                <Typography variant="body2">
+                                    <strong>{user.username}</strong> — {user.email}
+                                </Typography>
+                            </Box>
+                        ))}
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenBulkDeleteDialog(false)} disabled={bulkActionLoading}>Cancel</Button>
+                    <Button
+                        variant="contained"
+                        color="error"
+                        onClick={handleBulkDeleteUsers}
+                        disabled={bulkActionLoading}
+                        startIcon={bulkActionLoading ? <CircularProgress size={20} color="inherit" /> : <DeleteIcon />}
+                    >
+                        {bulkActionLoading ? 'Deleting...' : `Delete ${selectedUserIds.length} User(s)`}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Bulk Reminder Dialog */}
+            <Dialog open={openBulkReminderDialog} onClose={() => !bulkActionLoading && setOpenBulkReminderDialog(false)} maxWidth="sm" fullWidth>
+                <DialogTitle sx={{ bgcolor: '#633394', color: 'white' }}>
+                    Send Bulk Reminders
+                </DialogTitle>
+                <DialogContent sx={{ mt: 2 }}>
+                    <Typography sx={{ mt: 1 }}>
+                        You are about to send reminder emails to <strong>{selectedUserIds.length}</strong> user(s).
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        This will send a survey reminder email to each selected user.
+                    </Typography>
+                    {bulkActionLoading && (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                            <CircularProgress size={30} sx={{ color: '#633394' }} />
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenBulkReminderDialog(false)} disabled={bulkActionLoading}>Cancel</Button>
+                    <Button
+                        variant="contained"
+                        onClick={handleBulkSendReminders}
+                        disabled={bulkActionLoading}
+                        startIcon={bulkActionLoading ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
+                        sx={{ bgcolor: '#633394', '&:hover': { bgcolor: '#7c52a5' } }}
+                    >
+                        {bulkActionLoading ? 'Sending...' : `Send to ${selectedUserIds.length} Users`}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Snackbar for notifications */}
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={4000}
+                onClose={() => setSnackbar({ ...snackbar, open: false })}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            >
+                <Alert
+                    onClose={() => setSnackbar({ ...snackbar, open: false })}
+                    severity={snackbar.severity}
+                    variant="filled"
+                >
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 }

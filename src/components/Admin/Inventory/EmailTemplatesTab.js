@@ -1,5 +1,5 @@
 // src/components/Admin/Inventory/EmailTemplatesTab.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -73,9 +73,14 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
   const [previewContent, setPreviewContent] = useState('');
   const [previewLoading, setPreviewLoading] = useState(false);
 
-  // Function to convert text to HTML
-  const convertTextToHtml = (text) => {
+  // Ref for debounce timers
+  const htmlGenerateTimerRef = useRef(null);
+
+  // Function to convert text to HTML (memoized with useCallback)
+  const convertTextToHtml = useCallback((text, subject) => {
     if (!text.trim()) return '';
+
+    const emailSubject = subject || formData.subject || 'Email';
 
     // Split text into paragraphs
     const paragraphs = text.split('\n\n').filter(p => p.trim());
@@ -86,7 +91,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${formData.subject || 'Email'}</title>
+    <title>${emailSubject}</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -186,7 +191,7 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
 <body>
     <div class="email-container">
         <div class="header">
-            <h2>${formData.subject || 'Email Subject'}</h2>
+            <h2>${emailSubject || 'Email Subject'}</h2>
         </div>
         
         <div class="content">
@@ -232,27 +237,48 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
 </html>`;
 
     return html;
-  };
+  }, [formData.subject]);
 
-  // Handle text body changes with auto HTML generation
-  const handleTextBodyChange = (newTextBody) => {
+  // Debounced HTML generation to avoid expensive reflows on every keystroke
+  const debouncedGenerateHtml = useCallback((textBody, subject) => {
+    if (htmlGenerateTimerRef.current) {
+      clearTimeout(htmlGenerateTimerRef.current);
+    }
+    htmlGenerateTimerRef.current = setTimeout(() => {
+      setFormData(prev => ({
+        ...prev,
+        html_body: convertTextToHtml(textBody, subject)
+      }));
+    }, 300);
+  }, [convertTextToHtml]);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (htmlGenerateTimerRef.current) {
+        clearTimeout(htmlGenerateTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Handle text body changes with debounced HTML generation
+  const handleTextBodyChange = useCallback((newTextBody) => {
     setFormData(prev => ({
       ...prev,
       text_body: newTextBody,
-      html_body: autoGenerateHtml ? convertTextToHtml(newTextBody) : prev.html_body
     }));
-  };
+    if (autoGenerateHtml) {
+      debouncedGenerateHtml(newTextBody);
+    }
+  }, [autoGenerateHtml, debouncedGenerateHtml]);
 
-  // Handle subject changes (affects HTML generation)
-  const handleSubjectChange = (newSubject) => {
-    setFormData(prev => {
-      const updatedFormData = { ...prev, subject: newSubject };
-      return {
-        ...updatedFormData,
-        html_body: autoGenerateHtml && prev.text_body ? convertTextToHtml(prev.text_body) : prev.html_body
-      };
-    });
-  };
+  // Handle subject changes with debounced HTML generation
+  const handleSubjectChange = useCallback((newSubject) => {
+    setFormData(prev => ({ ...prev, subject: newSubject }));
+    if (autoGenerateHtml && formData.text_body) {
+      debouncedGenerateHtml(formData.text_body, newSubject);
+    }
+  }, [autoGenerateHtml, formData.text_body, debouncedGenerateHtml]);
 
   // Fetch sample templates when dialog opens
   const fetchSampleTemplates = async () => {
@@ -509,47 +535,39 @@ const EmailTemplatesTab = ({ emailTemplates = [], onRefreshData, organizationId 
 
   // Removed survey template re-validation effect
 
-  // Filter and search logic with error boundary
-  let filteredTemplates = [];
-  try {
-    console.log('EmailTemplatesTab received templates:', emailTemplates);
-    filteredTemplates = (emailTemplates || []).filter((template) => {
-      try {
-        // Debug logging for first template to understand data structure
-        if (emailTemplates && emailTemplates.length > 0 && template === emailTemplates[0]) {
-          console.log('Sample email template structure:', template);
-          console.log('Current filters:', { filterOrganization, filterRole, searchTerm });
-        }
-        // Ensure template has required properties
-        if (!template || typeof template !== 'object') {
+  // Filter and search logic - memoized to avoid re-running on unrelated state changes (e.g. dialog input)
+  const filteredTemplates = useMemo(() => {
+    try {
+      return (emailTemplates || []).filter((template) => {
+        try {
+          // Ensure template has required properties
+          if (!template || typeof template !== 'object') {
+            return false;
+          }
+
+          // Search by name or subject only (roles removed)
+          const matchesSearch = !searchTerm ||
+            (template.name && template.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (template.subject && template.subject.toLowerCase().includes(searchTerm.toLowerCase()));
+
+          // Organization filter by template.organization_id
+          const matchesOrganization = !filterOrganization || (
+            typeof template.organization_id !== 'undefined' &&
+            template.organization_id === parseInt(filterOrganization, 10)
+          );
+
+          return matchesSearch && matchesOrganization;
+        } catch (error) {
+          console.error('Error filtering template:', template, error);
           return false;
         }
-
-        // Search by name or subject only (roles removed)
-        const matchesSearch = !searchTerm ||
-          (template.name && template.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (template.subject && template.subject.toLowerCase().includes(searchTerm.toLowerCase()));
-
-        // Organization filter by template.organization_id
-        const matchesOrganization = !filterOrganization || (
-          typeof template.organization_id !== 'undefined' &&
-          template.organization_id === parseInt(filterOrganization, 10)
-        );
-
-        // Role filter removed
-        const matchesRole = true;
-
-        return matchesSearch && matchesOrganization && matchesRole;
-      } catch (error) {
-        console.error('Error filtering template:', template, error);
-        return false;
-      }
-    });
-  } catch (filterError) {
-    console.error('Critical error in email template filtering:', filterError);
-    // Fallback to showing all templates if filtering fails
-    filteredTemplates = emailTemplates || [];
-  }
+      });
+    } catch (filterError) {
+      console.error('Critical error in email template filtering:', filterError);
+      // Fallback to showing all templates if filtering fails
+      return emailTemplates || [];
+    }
+  }, [emailTemplates, searchTerm, filterOrganization]);
 
   // Clear all filters
   const clearFilters = () => {

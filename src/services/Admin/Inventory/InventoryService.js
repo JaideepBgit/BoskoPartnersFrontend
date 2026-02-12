@@ -166,6 +166,10 @@ const InventoryService = {
       });
   },
 
+  // Titles
+  getTitles: () => axios.get(`${BASE_URL}/titles`).then(res => res.data),
+  addTitle: (name) => axios.post(`${BASE_URL}/titles`, { name }).then(res => res.data),
+
   // Organizations
   getOrganizations: () => axios.get(`${BASE_URL}/organizations`).then(res => res.data),
 

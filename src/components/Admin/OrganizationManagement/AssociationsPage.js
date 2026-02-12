@@ -1,23 +1,24 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-    Container, Typography, Box, Paper, TextField, InputAdornment,
-    Select, MenuItem, FormControl, InputLabel, IconButton, Button,
-    CircularProgress,
-    Chip, Table, TableBody, TableCell, TableContainer, TableHead,
-    TableRow, TablePagination, Avatar, TableSortLabel, Tooltip
+    Container, Typography, Box, TextField, InputAdornment,
+    Select, MenuItem, FormControl, IconButton, Button,
+    CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle,
+    Chip, Tooltip, Alert, Snackbar
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import AddIcon from '@mui/icons-material/Add';
-import RefreshIcon from '@mui/icons-material/Refresh';
+import DeleteIcon from '@mui/icons-material/Delete';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import FilterListIcon from '@mui/icons-material/FilterList';
-import BusinessIcon from '@mui/icons-material/Business';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../shared/Navbar/Navbar';
+import DataTable from '../../shared/DataTable/DataTable';
+import RefreshButton from '../../shared/RefreshButton/RefreshButton';
 import {
     fetchOrganizations,
     fetchOrganizationTypes,
+    deleteOrganization,
 } from '../../../services/UserManagement/UserManagementService';
 
 // Color theme
@@ -50,63 +51,31 @@ function AssociationsPage() {
     const [organizations, setOrganizations] = useState([]);
     const [organizationTypes, setOrganizationTypes] = useState([]);
 
+    // Bulk selection state
+    const [selectedAssocIds, setSelectedAssocIds] = useState([]);
+    const [openBulkDeleteDialog, setOpenBulkDeleteDialog] = useState(false);
+    const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+
     // UI State
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState('');
 
-    // Pagination
-    const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const getLocation = useCallback((org) => {
+        if (!org.geo_location) return 'N/A';
+        const { city, province, country } = org.geo_location;
+        return [city, province, country].filter(Boolean).join(', ') || 'N/A';
+    }, []);
 
-    // Sorting state
-    const [order, setOrder] = useState('asc');
-    const [orderBy, setOrderBy] = useState('name');
-
-
-
-    // Sorting functions
-    const handleRequestSort = (property) => {
-        const isAsc = orderBy === property && order === 'asc';
-        setOrder(isAsc ? 'desc' : 'asc');
-        setOrderBy(property);
-    };
-
-    const descendingComparator = (a, b, orderBy) => {
-        let aValue = a[orderBy];
-        let bValue = b[orderBy];
-
+    // Sort value getter for DataTable
+    const sortValueGetter = useCallback((row, orderBy) => {
         if (orderBy === 'organisation') {
-            aValue = (a.name || '').toLowerCase();
-            bValue = (b.name || '').toLowerCase();
+            return (row.name || '').toLowerCase();
         } else if (orderBy === 'location') {
-            aValue = getLocation(a).toLowerCase();
-            bValue = getLocation(b).toLowerCase();
+            return getLocation(row).toLowerCase();
         }
-
-        if (bValue < aValue) {
-            return -1;
-        }
-        if (bValue > aValue) {
-            return 1;
-        }
-        return 0;
-    };
-
-    const getComparator = (order, orderBy) => {
-        return order === 'desc'
-            ? (a, b) => descendingComparator(a, b, orderBy)
-            : (a, b) => -descendingComparator(a, b, orderBy);
-    };
-
-    const stableSort = (array, comparator) => {
-        const stabilizedThis = array.map((el, index) => [el, index]);
-        stabilizedThis.sort((a, b) => {
-            const order = comparator(a[0], b[0]);
-            if (order !== 0) return order;
-            return a[1] - b[1];
-        });
-        return stabilizedThis.map((el) => el[0]);
-    };
+        return row[orderBy];
+    }, [getLocation]);
 
     // Load data
     const loadData = useCallback(async () => {
@@ -167,10 +136,31 @@ function AssociationsPage() {
         navigate('/associations/add');
     };
 
-    const getLocation = (org) => {
-        if (!org.geo_location) return 'N/A';
-        const { city, province, country } = org.geo_location;
-        return [city, province, country].filter(Boolean).join(', ') || 'N/A';
+    // Bulk delete associations
+    const handleBulkDeleteAssociations = async () => {
+        setBulkDeleteLoading(true);
+        let successCount = 0;
+        let failCount = 0;
+        for (const orgId of selectedAssocIds) {
+            try {
+                await deleteOrganization(orgId);
+                successCount++;
+            } catch (err) {
+                failCount++;
+                console.error(`Failed to delete association ${orgId}:`, err);
+            }
+        }
+        setBulkDeleteLoading(false);
+        setOpenBulkDeleteDialog(false);
+        setSelectedAssocIds([]);
+        loadData();
+        setSnackbar({
+            open: true,
+            message: failCount > 0
+                ? `Deleted ${successCount} association(s). ${failCount} failed.`
+                : `Successfully deleted ${successCount} association(s).`,
+            severity: failCount > 0 ? 'warning' : 'success'
+        });
     };
 
     const getOrgTypeLabel = (type) => {
@@ -191,139 +181,58 @@ function AssociationsPage() {
         }
     };
 
-    // Render organization table
-    const renderOrganizationTable = (orgs) => {
-        return (
-            <Paper sx={{
-                borderRadius: 3,
-                overflow: 'hidden',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-                mb: 4
-            }}>
-                <TableContainer>
-                    <Table>
-                        <TableHead>
-                            <TableRow sx={{ backgroundColor: '#FAFAFA' }}>
-                                <TableCell
-                                    sortDirection={orderBy === 'organisation' ? order : false}
-                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}
-                                >
-                                    <TableSortLabel
-                                        active={orderBy === 'organisation'}
-                                        direction={orderBy === 'organisation' ? order : 'asc'}
-                                        onClick={() => handleRequestSort('organisation')}
-                                        sx={{
-                                            color: '#000000 !important',
-                                            '& .MuiTableSortLabel-icon': {
-                                                color: '#000000 !important',
-                                            },
-                                        }}
-                                    >
-                                        Organization
-                                    </TableSortLabel>
-                                </TableCell>
-                                <TableCell
-                                    sortDirection={orderBy === 'location' ? order : false}
-                                    sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}
-                                >
-                                    <TableSortLabel
-                                        active={orderBy === 'location'}
-                                        direction={orderBy === 'location' ? order : 'asc'}
-                                        onClick={() => handleRequestSort('location')}
-                                        sx={{
-                                            color: '#000000 !important',
-                                            '& .MuiTableSortLabel-icon': {
-                                                color: '#000000 !important',
-                                            },
-                                        }}
-                                    >
-                                        Location
-                                    </TableSortLabel>
-                                </TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', width: 50, fontSize: '0.75rem' }}></TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {orgs.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={3} sx={{ textAlign: 'center', py: 4 }}>
-                                        <Typography color="text.secondary">
-                                            No associations found
-                                        </Typography>
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                stableSort(orgs, getComparator(order, orderBy))
-                                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                                    .map((org) => {
-                                        const typeColors = getTypeChipColor(org.organization_type?.type);
-
-                                        return (
-                                            <TableRow
-                                                key={org.id}
-                                                onClick={() => handleOrganizationClick(org)}
-                                                sx={{
-                                                    cursor: 'pointer',
-                                                    transition: 'background-color 0.2s',
-                                                    '&:hover': { backgroundColor: '#f5f5f5' }
-                                                }}
-                                            >
-
-                                                <TableCell>
-                                                    <Box>
-                                                        <Typography variant="body1" fontWeight="600">
-                                                            {org.name}
-                                                        </Typography>
-                                                        <Chip
-                                                            label={getOrgTypeLabel(org.organization_type?.type)}
-                                                            size="small"
-                                                            sx={{
-                                                                mt: 0.5,
-                                                                backgroundColor: typeColors.bg,
-                                                                color: typeColors.color,
-                                                                fontSize: '0.7rem',
-                                                                height: 22
-                                                            }}
-                                                        />
-                                                    </Box>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                        <LocationOnIcon sx={{ color: colors.textSecondary, fontSize: 18 }} />
-                                                        <Typography variant="body2" color="text.secondary">
-                                                            {getLocation(org)}
-                                                        </Typography>
-                                                    </Box>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                                                        <ChevronRightIcon sx={{ color: colors.textSecondary }} />
-                                                    </Box>
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })
-                            )}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-                {orgs.length > 0 && (
-                    <TablePagination
-                        rowsPerPageOptions={[5, 10, 25, 50]}
-                        component="div"
-                        count={orgs.length}
-                        rowsPerPage={rowsPerPage}
-                        page={page}
-                        onPageChange={(e, newPage) => setPage(newPage)}
-                        onRowsPerPageChange={(e) => {
-                            setRowsPerPage(parseInt(e.target.value, 10));
-                            setPage(0);
-                        }}
-                    />
-                )}
-            </Paper>
-        );
-    };
+    // Column definitions for DataTable
+    const tableColumns = useMemo(() => [
+        {
+            id: 'organisation',
+            label: 'Organization',
+            sortable: true,
+            render: (org) => {
+                const typeColors = getTypeChipColor(org.organization_type?.type);
+                return (
+                    <Box>
+                        <Typography variant="body1" fontWeight="600">
+                            {org.name}
+                        </Typography>
+                        <Chip
+                            label={getOrgTypeLabel(org.organization_type?.type)}
+                            size="small"
+                            sx={{
+                                mt: 0.5,
+                                backgroundColor: typeColors.bg,
+                                color: typeColors.color,
+                                fontSize: '0.7rem',
+                                height: 22
+                            }}
+                        />
+                    </Box>
+                );
+            }
+        },
+        {
+            id: 'location',
+            label: 'Location',
+            sortable: true,
+            render: (org) => (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <LocationOnIcon sx={{ color: colors.textSecondary, fontSize: 18 }} />
+                    <Typography variant="body2" color="text.secondary">
+                        {getLocation(org)}
+                    </Typography>
+                </Box>
+            )
+        },
+        {
+            id: 'chevron',
+            label: '',
+            width: 50,
+            render: () => (
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                    <ChevronRightIcon sx={{ color: colors.textSecondary }} />
+                </Box>
+            )
+        }
+    ], []);
 
     return (
         <>
@@ -356,18 +265,12 @@ function AssociationsPage() {
                         >
                             Add Association
                         </Button>
-                        <Tooltip title="Refresh">
-                            <IconButton
-                                onClick={loadData}
-                                disabled={loading}
-                                sx={{
-                                    border: `1px solid ${colors.borderColor}`,
-                                    borderRadius: 2
-                                }}
-                            >
-                                <RefreshIcon />
-                            </IconButton>
-                        </Tooltip>
+                        <RefreshButton
+                            onClick={loadData}
+                            disabled={loading}
+                            color={colors.primary}
+                            hoverColor={colors.secondary}
+                        />
                     </Box>
                 </Box>
 
@@ -431,9 +334,98 @@ function AssociationsPage() {
                     </Box>
                 ) : (
                     <Box>
-                        {renderOrganizationTable(filteredOrganizations)}
+                        {/* Bulk Actions Bar */}
+                        {selectedAssocIds.length > 0 && (
+                            <Box sx={{
+                                mb: 2, p: 1.5, display: 'flex', alignItems: 'center', gap: 2,
+                                backgroundColor: colors.accentBg, borderRadius: 2,
+                                border: `1px solid ${colors.primary}40`
+                            }}>
+                                <Chip label={`${selectedAssocIds.length} selected`} color="primary" sx={{ backgroundColor: colors.primary }} />
+                                <Button
+                                    variant="contained"
+                                    size="small"
+                                    startIcon={<DeleteIcon />}
+                                    onClick={() => setOpenBulkDeleteDialog(true)}
+                                    color="error"
+                                >
+                                    Delete ({selectedAssocIds.length})
+                                </Button>
+                                <Button variant="outlined" size="small" onClick={() => setSelectedAssocIds([])}
+                                    sx={{ ml: 'auto', borderColor: colors.secondary, color: colors.secondary }}>
+                                    Clear Selection
+                                </Button>
+                            </Box>
+                        )}
+
+                        <DataTable
+                            columns={tableColumns}
+                            data={filteredOrganizations}
+                            selectable
+                            selectedIds={selectedAssocIds}
+                            onSelectionChange={setSelectedAssocIds}
+                            pagination
+                            rowsPerPageOptions={[5, 10, 25, 50]}
+                            defaultRowsPerPage={10}
+                            defaultSortColumn="organisation"
+                            defaultSortDirection="asc"
+                            sortValueGetter={sortValueGetter}
+                            onRowClick={(org) => handleOrganizationClick(org)}
+                            emptyMessage="No associations found"
+                            paperSx={{ mb: 4 }}
+                        />
                     </Box>
                 )}
+
+                {/* Bulk Delete Dialog */}
+                <Dialog open={openBulkDeleteDialog} onClose={() => !bulkDeleteLoading && setOpenBulkDeleteDialog(false)} maxWidth="sm" fullWidth>
+                    <DialogTitle sx={{ backgroundColor: '#d32f2f', color: 'white' }}>
+                        Delete {selectedAssocIds.length} Association(s)
+                    </DialogTitle>
+                    <DialogContent sx={{ mt: 2 }}>
+                        <Typography>
+                            Are you sure you want to delete <strong>{selectedAssocIds.length}</strong> association(s)?
+                        </Typography>
+                        <Alert severity="error" sx={{ mt: 2 }}>
+                            This will permanently delete all selected associations along with their associated data. This action cannot be undone!
+                        </Alert>
+                        <Box sx={{ mt: 2, maxHeight: 200, overflowY: 'auto' }}>
+                            {filteredOrganizations
+                                .filter(o => selectedAssocIds.includes(o.id))
+                                .map(org => (
+                                    <Box key={org.id} sx={{ p: 1, mb: 0.5, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+                                        <Typography variant="body2">
+                                            <strong>{org.name}</strong> — {org.organization_type?.type || 'Unknown'}
+                                        </Typography>
+                                    </Box>
+                                ))}
+                        </Box>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setOpenBulkDeleteDialog(false)} disabled={bulkDeleteLoading}>Cancel</Button>
+                        <Button
+                            variant="contained"
+                            color="error"
+                            onClick={handleBulkDeleteAssociations}
+                            disabled={bulkDeleteLoading}
+                            startIcon={bulkDeleteLoading ? <CircularProgress size={20} color="inherit" /> : <DeleteIcon />}
+                        >
+                            {bulkDeleteLoading ? 'Deleting...' : 'Yes, Delete All'}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+
+                {/* Snackbar for notifications */}
+                <Snackbar
+                    open={snackbar.open}
+                    autoHideDuration={4000}
+                    onClose={() => setSnackbar({ ...snackbar, open: false })}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                >
+                    <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} variant="filled">
+                        {snackbar.message}
+                    </Alert>
+                </Snackbar>
 
             </Container>
         </>

@@ -14,7 +14,8 @@ import {
   Chip,
   Paper,
   Grid,
-  CircularProgress
+  CircularProgress,
+  Autocomplete
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -46,6 +47,7 @@ import TemplateUtils from './shared/TemplateUtils';
 import QuestionDialog from './QuestionDialog';
 import SectionOrderDialog from './SectionOrderDialog';
 import { getQuestionTypeById } from '../../../config/questionTypes';
+import InventoryService from '../../../services/Admin/Inventory/InventoryService';
 
 // Compact Question Item Component for question list display
 const CompactQuestionItem = ({ question, index, onEdit, onDelete, getQuestionTypeName, sectionName }) => {
@@ -203,45 +205,11 @@ const TemplateChip = ({
   onEdit,
   onPreview
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedName, setEditedName] = useState(template.survey_code);
-
   const handleClick = (e) => {
-    if (isMultiSelectMode || isEditing) {
-      return; // Don't select when in multi-select mode or editing
-    }
     if (isMultiSelectMode) {
       onToggleSelect();
     } else {
       onSelect();
-    }
-  };
-
-  const handleStartEdit = (e) => {
-    e.stopPropagation();
-    setIsEditing(true);
-    setEditedName(template.survey_code);
-  };
-
-  const handleSaveEdit = (e) => {
-    e.stopPropagation();
-    if (editedName.trim() && editedName !== template.survey_code) {
-      onEdit(template.id, editedName.trim());
-    }
-    setIsEditing(false);
-  };
-
-  const handleCancelEdit = (e) => {
-    e.stopPropagation();
-    setIsEditing(false);
-    setEditedName(template.survey_code);
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleSaveEdit(e);
-    } else if (e.key === 'Escape') {
-      handleCancelEdit(e);
     }
   };
 
@@ -256,7 +224,7 @@ const TemplateChip = ({
         backgroundColor: isSelected ? 'rgba(99, 51, 148, 0.15)' : '#FFFFFF',
         border: '1px solid',
         borderColor: isSelected ? '#633394' : '#e0e0e0',
-        cursor: isEditing ? 'default' : 'pointer',
+        cursor: 'pointer',
         transition: 'all 0.2s ease-in-out',
         '&:hover': {
           boxShadow: '0 2px 8px rgba(99, 51, 148, 0.2)',
@@ -284,41 +252,19 @@ const TemplateChip = ({
         />
       )}
       <Box sx={{ flex: 1 }}>
-        {isEditing ? (
-          <TextField
-            value={editedName}
-            onChange={(e) => setEditedName(e.target.value)}
-            onKeyDown={handleKeyPress}
-            onBlur={handleSaveEdit}
-            autoFocus
-            size="small"
-            fullWidth
-            variant="outlined"
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                fontSize: '0.875rem',
-                '&.Mui-focused fieldset': {
-                  borderColor: '#633394',
-                },
-              },
-            }}
-            onClick={(e) => e.stopPropagation()}
-          />
-        ) : (
-          <Typography
-            variant="body2"
-            sx={{
-              fontWeight: isSelected ? 600 : 400,
-              color: isSelected ? '#633394' : '#333',
-              transition: 'color 0.2s ease-in-out',
-              wordBreak: 'break-word',
-              whiteSpace: 'normal'
-            }}
-          >
-            {template.survey_code}
-          </Typography>
-        )}
-        <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
+        <Typography
+          variant="body2"
+          sx={{
+            fontWeight: isSelected ? 600 : 400,
+            color: isSelected ? '#633394' : '#333',
+            transition: 'color 0.2s ease-in-out',
+            wordBreak: 'break-word',
+            whiteSpace: 'normal'
+          }}
+        >
+          {template.survey_code}
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5, gap: 0.5, flexWrap: 'wrap' }}>
           <Chip
             label={`${template.questions?.length || 0} Questions`}
             size="small"
@@ -331,13 +277,27 @@ const TemplateChip = ({
               '& .MuiChip-label': { px: 1 }
             }}
           />
-          <Typography variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
+          {template.title_name && (
+            <Chip
+              label={template.title_name}
+              size="small"
+              sx={{
+                height: 18,
+                fontSize: '0.65rem',
+                backgroundColor: 'rgba(99, 51, 148, 0.1)',
+                color: '#633394',
+                fontWeight: 600,
+                '& .MuiChip-label': { px: 1 }
+              }}
+            />
+          )}
+          <Typography variant="caption" sx={{ ml: 0.5, color: 'text.secondary' }}>
             {new Date(template.created_at).toLocaleDateString()}
           </Typography>
         </Box>
       </Box>
 
-      {!isMultiSelectMode && !isEditing && (
+      {!isMultiSelectMode && (
         <Box sx={{ display: 'flex', gap: 0.5 }}>
           {onPreview && (
             <IconButton
@@ -361,13 +321,17 @@ const TemplateChip = ({
           <IconButton
             size="small"
             color="primary"
-            onClick={handleStartEdit}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(template);
+            }}
             sx={{
               color: '#633394',
               '&:hover': {
                 backgroundColor: 'rgba(99, 51, 148, 0.08)',
               }
             }}
+            title="Edit Template"
           >
             <EditIcon fontSize="small" />
           </IconButton>
@@ -376,12 +340,8 @@ const TemplateChip = ({
             color="error"
             onClick={(e) => {
               e.stopPropagation();
-              console.log('Delete button clicked for template:', template.survey_code, 'ID:', template.id);
               if (window.confirm(`Delete template "${template.survey_code}"?`)) {
-                console.log('User confirmed deletion, calling onDelete...');
                 onDelete(template.id);
-              } else {
-                console.log('User cancelled deletion');
               }
             }}
             sx={{ ml: 0.5 }}
@@ -410,8 +370,12 @@ const QuestionsTab = ({
   const [newTemplateData, setNewTemplateData] = useState({
     survey_code: '',
     version_id: '',
+    title_id: null,
+    new_title_name: '',
     questions: []
   });
+  const [titles, setTitles] = useState([]);
+  const [selectedTitleForNew, setSelectedTitleForNew] = useState(null);
   const [selectedTemplates, setSelectedTemplates] = useState([]);
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
 
@@ -451,8 +415,18 @@ const QuestionsTab = ({
       fetchTemplateVersions();
       fetchTemplates();
     }
+    fetchTitles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [parentTemplateVersions.length, parentTemplates.length]);
+
+  const fetchTitles = async () => {
+    try {
+      const data = await InventoryService.getTitles();
+      setTitles(data);
+    } catch (err) {
+      console.error('Error fetching titles:', err);
+    }
+  };
 
   const fetchTemplateVersions = useCallback(async () => {
     if (onRefreshData) {
@@ -501,8 +475,10 @@ const QuestionsTab = ({
 
     const success = await TemplateUtils.addTemplate(templateToAdd);
     if (success) {
-      setNewTemplateData({ survey_code: '', version_id: '', questions: [] });
+      setNewTemplateData({ survey_code: '', version_id: '', title_id: null, new_title_name: '', questions: [] });
+      setSelectedTitleForNew(null);
       fetchTemplates();
+      fetchTitles(); // Refresh titles in case a new one was created
     }
   };
 
@@ -529,31 +505,70 @@ const QuestionsTab = ({
     }
   };
 
-  const handleEditTemplate = async (templateId, newName) => {
+  // Edit Template Dialog state
+  const [openEditTemplateDialog, setOpenEditTemplateDialog] = useState(false);
+  const [editTemplateData, setEditTemplateData] = useState({ id: null, survey_code: '', title_id: null, title_name: '' });
+  const [editSelectedTitle, setEditSelectedTitle] = useState(null);
+
+  const handleOpenEditTemplateDialog = (template) => {
+    setEditTemplateData({
+      id: template.id,
+      survey_code: template.survey_code,
+      title_id: template.title_id || null,
+      title_name: template.title_name || ''
+    });
+    // Set the selected title object for the Autocomplete
+    if (template.title_id && template.title_name) {
+      setEditSelectedTitle({ id: template.title_id, name: template.title_name });
+    } else {
+      setEditSelectedTitle(null);
+    }
+    setOpenEditTemplateDialog(true);
+  };
+
+  const handleSaveEditTemplate = async () => {
+    if (!editTemplateData.id || !editTemplateData.survey_code.trim()) return;
+
     try {
-      console.log('Attempting to edit template with ID:', templateId, 'to name:', newName);
-      const success = await TemplateUtils.updateTemplateName(templateId, newName);
-      console.log('Edit result:', success);
-
-      if (success) {
-        console.log('Template name updated successfully, updating UI...');
-        // Update the templates list
-        await fetchTemplates();
-
-        // Update selected template if it's the one being edited
-        if (selectedTemplate?.id === templateId) {
-          const updatedTemplate = { ...selectedTemplate, survey_code: newName };
-          setSelectedTemplate(updatedTemplate);
-        }
-
-        console.log('UI updated after template name change');
-      } else {
-        console.error('Failed to edit template:', templateId);
-        alert('Failed to update template name. Please try again.');
+      // If a new title name was typed, create it first
+      let titleId = editTemplateData.title_id;
+      let titleName = editSelectedTitle?.name || null;
+      
+      if (editTemplateData.new_title_name && !titleId) {
+        const result = await InventoryService.addTitle(editTemplateData.new_title_name.trim());
+        titleId = result.id;
+        titleName = result.name;
       }
+
+      // Update name
+      const nameChanged = editTemplateData.survey_code !== (templates.find(t => t.id === editTemplateData.id)?.survey_code);
+      if (nameChanged) {
+        await TemplateUtils.updateTemplateName(editTemplateData.id, editTemplateData.survey_code.trim());
+      }
+
+      // Update title_id via the API
+      await InventoryService.updateTemplate(editTemplateData.id, {
+        title_id: titleId
+      });
+
+      // Refresh data
+      await fetchTemplates();
+      fetchTitles();
+
+      // Update selected template if it's the one being edited
+      if (selectedTemplate?.id === editTemplateData.id) {
+        setSelectedTemplate(prev => ({
+          ...prev,
+          survey_code: editTemplateData.survey_code.trim(),
+          title_id: titleId,
+          title_name: titleName
+        }));
+      }
+
+      setOpenEditTemplateDialog(false);
     } catch (error) {
       console.error('Error editing template:', error);
-      alert('Error occurred while updating template name: ' + error.message);
+      alert('Error occurred while updating template: ' + error.message);
     }
   };
 
@@ -985,6 +1000,103 @@ const QuestionsTab = ({
                     }}
                   />
 
+                  <Autocomplete
+                    fullWidth
+                    freeSolo
+                    options={titles}
+                    getOptionLabel={(option) => {
+                      if (typeof option === 'string') return option;
+                      return option.name || '';
+                    }}
+                    value={selectedTitleForNew}
+                    onChange={(event, newValue) => {
+                      if (typeof newValue === 'string') {
+                        setSelectedTitleForNew(null);
+                        setNewTemplateData(prev => ({
+                          ...prev,
+                          title_id: null,
+                          new_title_name: newValue
+                        }));
+                      } else if (newValue && newValue.id) {
+                        setSelectedTitleForNew(newValue);
+                        setNewTemplateData(prev => ({
+                          ...prev,
+                          title_id: newValue.id,
+                          new_title_name: ''
+                        }));
+                      } else {
+                        setSelectedTitleForNew(null);
+                        setNewTemplateData(prev => ({
+                          ...prev,
+                          title_id: null,
+                          new_title_name: ''
+                        }));
+                      }
+                    }}
+                    onInputChange={(event, newInputValue, reason) => {
+                      if (reason === 'input') {
+                        const match = titles.find(t => t.name.toLowerCase() === newInputValue.toLowerCase());
+                        if (match) {
+                          setNewTemplateData(prev => ({
+                            ...prev,
+                            title_id: match.id,
+                            new_title_name: ''
+                          }));
+                        } else {
+                          setNewTemplateData(prev => ({
+                            ...prev,
+                            title_id: null,
+                            new_title_name: newInputValue
+                          }));
+                        }
+                      }
+                    }}
+                    filterOptions={(options, params) => {
+                      const filtered = options.filter(option =>
+                        option.name.toLowerCase().includes(params.inputValue.toLowerCase())
+                      );
+                      if (params.inputValue !== '' && !filtered.some(o => o.name.toLowerCase() === params.inputValue.toLowerCase())) {
+                        filtered.push({
+                          id: null,
+                          name: params.inputValue,
+                          isNew: true
+                        });
+                      }
+                      return filtered;
+                    }}
+                    renderOption={(props, option) => (
+                      <Box component="li" {...props} key={option.id || `new-${option.name}`}>
+                        {option.isNew ? (
+                          <Typography variant="body2" sx={{ fontStyle: 'italic', color: '#633394' }}>
+                            + Add new title: "{option.name}"
+                          </Typography>
+                        ) : (
+                          <Typography variant="body2">{option.name}</Typography>
+                        )}
+                      </Box>
+                    )}
+                    isOptionEqualToValue={(option, value) => option.id === value?.id}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Title of User Taking the Survey"
+                        placeholder="Search or type a new title..."
+                        helperText="Select an existing title or type a new one"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            '&.Mui-focused fieldset': {
+                              borderColor: '#633394',
+                            },
+                          },
+                          '& .MuiInputLabel-root.Mui-focused': {
+                            color: '#633394',
+                          }
+                        }}
+                      />
+                    )}
+                    sx={{ mb: 2 }}
+                  />
+
                   <Button
                     variant="contained"
                     startIcon={<AddIcon />}
@@ -1032,7 +1144,7 @@ const QuestionsTab = ({
                           isMultiSelectMode={isMultiSelectMode}
                           isChecked={selectedTemplates.includes(template.id)}
                           onDelete={handleDeleteTemplate}
-                          onEdit={handleEditTemplate}
+                          onEdit={handleOpenEditTemplateDialog}
                           onPreview={onPreview}
                         />
                       ))}
@@ -1059,9 +1171,24 @@ const QuestionsTab = ({
                 }}
               >
                 <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-                  <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold' }}>
-                    Questions for {selectedTemplate.survey_code}
-                  </Typography>
+                  <Box>
+                    <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold' }}>
+                      Questions for {selectedTemplate.survey_code}
+                    </Typography>
+                    {selectedTemplate.title_name && (
+                      <Chip
+                        label={`Title: ${selectedTemplate.title_name}`}
+                        size="small"
+                        sx={{
+                          mt: 0.5,
+                          backgroundColor: 'rgba(99, 51, 148, 0.1)',
+                          color: '#633394',
+                          fontWeight: 600,
+                          fontSize: '0.75rem'
+                        }}
+                      />
+                    )}
+                  </Box>
                   <Box sx={{ display: 'flex', gap: 1 }}>
                     {onPreview && (
                       <Button
@@ -1220,6 +1347,124 @@ const QuestionsTab = ({
         sections={templateSections}
         templateName={selectedTemplate?.survey_code || ''}
       />
+
+      {/* Edit Template Dialog */}
+      <Dialog
+        open={openEditTemplateDialog}
+        onClose={() => setOpenEditTemplateDialog(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle sx={{ color: '#633394', fontWeight: 'bold' }}>Edit Template</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Template Name"
+            fullWidth
+            margin="normal"
+            value={editTemplateData.survey_code}
+            onChange={(e) => setEditTemplateData(prev => ({ ...prev, survey_code: e.target.value }))}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                '&.Mui-focused fieldset': { borderColor: '#633394' },
+              },
+              '& .MuiInputLabel-root.Mui-focused': { color: '#633394' }
+            }}
+          />
+          <Autocomplete
+            fullWidth
+            freeSolo
+            options={titles}
+            getOptionLabel={(option) => {
+              if (typeof option === 'string') return option;
+              return option.name || '';
+            }}
+            value={editSelectedTitle}
+            onChange={(event, newValue) => {
+              if (typeof newValue === 'string') {
+                // User typed a new title and pressed Enter
+                setEditSelectedTitle({ id: null, name: newValue, isNew: true });
+                setEditTemplateData(prev => ({ ...prev, title_id: null, new_title_name: newValue }));
+              } else if (newValue && newValue.isNew) {
+                // User selected the "+ Add new title" option
+                setEditSelectedTitle({ id: null, name: newValue.name, isNew: true });
+                setEditTemplateData(prev => ({ ...prev, title_id: null, new_title_name: newValue.name }));
+              } else if (newValue && newValue.id) {
+                setEditSelectedTitle(newValue);
+                setEditTemplateData(prev => ({ ...prev, title_id: newValue.id, new_title_name: '' }));
+              } else {
+                setEditSelectedTitle(null);
+                setEditTemplateData(prev => ({ ...prev, title_id: null, new_title_name: '' }));
+              }
+            }}
+            onInputChange={(event, newInputValue, reason) => {
+              if (reason === 'input') {
+                const match = titles.find(t => t.name.toLowerCase() === newInputValue.toLowerCase());
+                if (match) {
+                  setEditTemplateData(prev => ({ ...prev, title_id: match.id, new_title_name: '' }));
+                } else {
+                  setEditTemplateData(prev => ({ ...prev, title_id: null, new_title_name: newInputValue }));
+                }
+              }
+            }}
+            filterOptions={(options, params) => {
+              const filtered = options.filter(option =>
+                option.name.toLowerCase().includes(params.inputValue.toLowerCase())
+              );
+              if (params.inputValue !== '' && !filtered.some(o => o.name.toLowerCase() === params.inputValue.toLowerCase())) {
+                filtered.push({ id: null, name: params.inputValue, isNew: true });
+              }
+              return filtered;
+            }}
+            renderOption={(props, option) => (
+              <Box component="li" {...props} key={option.id || `new-${option.name}`}>
+                {option.isNew ? (
+                  <Typography variant="body2" sx={{ fontStyle: 'italic', color: '#633394' }}>
+                    + Add new title: "{option.name}"
+                  </Typography>
+                ) : (
+                  <Typography variant="body2">{option.name}</Typography>
+                )}
+              </Box>
+            )}
+            isOptionEqualToValue={(option, value) => option.id === value?.id}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Title of User Taking the Survey"
+                margin="normal"
+                placeholder="Search or type a new title..."
+                helperText="Select an existing title or type a new one"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '&.Mui-focused fieldset': { borderColor: '#633394' },
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': { color: '#633394' }
+                }}
+              />
+            )}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setOpenEditTemplateDialog(false)}
+            sx={{ color: '#633394' }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleSaveEditTemplate}
+            disabled={!editTemplateData.survey_code.trim()}
+            sx={{
+              backgroundColor: '#633394',
+              '&:hover': { backgroundColor: '#7c52a5' },
+              '&.Mui-disabled': { backgroundColor: '#d1c4e9' }
+            }}
+          >
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

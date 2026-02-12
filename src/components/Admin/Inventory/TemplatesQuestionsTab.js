@@ -45,8 +45,12 @@ const TemplatesQuestionsTab = () => {
   const [newTemplateData, setNewTemplateData] = useState({
     survey_code: '',
     version_id: '',
+    title_id: null,
+    new_title_name: '',
     questions: []
   });
+  const [titles, setTitles] = useState([]);
+  const [selectedTitle, setSelectedTitle] = useState(null);
   const [questionTypes, setQuestionTypes] = useState([
     { id: 1, name: 'text' },
     { id: 2, name: 'textarea' },
@@ -82,7 +86,17 @@ const TemplatesQuestionsTab = () => {
   useEffect(() => {
     fetchTemplateVersions();
     fetchTemplates();
+    fetchTitles();
   }, []);
+
+  const fetchTitles = async () => {
+    try {
+      const data = await InventoryService.getTitles();
+      setTitles(data);
+    } catch (err) {
+      console.error('Error fetching titles:', err.response || err);
+    }
+  };
 
   const fetchTemplateVersions = async () => {
     try {
@@ -106,10 +120,10 @@ const TemplatesQuestionsTab = () => {
     try {
       const data = await InventoryService.getTemplate(id);
       setSelectedTemplate(data);
-      
+
       // Update the templates array with the latest data to ensure question count is correct
-      setTemplates(prevTemplates => 
-        prevTemplates.map(template => 
+      setTemplates(prevTemplates =>
+        prevTemplates.map(template =>
           template.id === id ? { ...template, questions: data.questions } : template
         )
       );
@@ -122,13 +136,19 @@ const TemplatesQuestionsTab = () => {
     if (!newTemplateData.version_id) return;
     try {
       const payload = {
-        ...newTemplateData,
+        survey_code: newTemplateData.survey_code,
+        version_id: newTemplateData.version_id,
+        title_id: newTemplateData.title_id,
+        new_title_name: newTemplateData.new_title_name || '',
         created_by: 1,
         questions: newTemplateData.questions || []
       };
       const response = await InventoryService.addTemplate(payload);
-      setNewTemplateData({ survey_code: '', version_id: '', questions: [] });
+      setNewTemplateData({ survey_code: '', version_id: '', title_id: null, new_title_name: '', questions: [] });
+      setSelectedTitle(null);
       fetchTemplates();
+      // Refresh titles in case a new one was created
+      fetchTitles();
       // Show success message with the generated survey code
       if (response && response.survey_code) {
         alert(`Template created successfully with survey code: ${response.survey_code}`);
@@ -180,7 +200,7 @@ const TemplatesQuestionsTab = () => {
       is_required: q.is_required,
       config: q.config || null
     });
-    
+
     // Initialize dynamic field states based on question type and config
     if (q.question_type_id === 3 || q.question_type_id === 4) { // single_choice or multi_choice
       setChoiceOptions(q.config?.options || []);
@@ -190,7 +210,7 @@ const TemplatesQuestionsTab = () => {
         max: q.config?.max || 5,
         step: q.config?.step || 1
       });
-            } else if (q.question_type_id === 8) { // constant sum
+    } else if (q.question_type_id === 8) { // constant sum
       setDropdownOptions(q.config?.options || []);
     } else {
       // Reset dynamic field states for other types
@@ -198,7 +218,7 @@ const TemplatesQuestionsTab = () => {
       setRatingConfig({ min: 1, max: 5, step: 1 });
       setDropdownOptions([]);
     }
-    
+
     setOpenQDialog(true);
   };
 
@@ -208,16 +228,16 @@ const TemplatesQuestionsTab = () => {
 
   const handleSaveQuestion = async () => {
     if (!selectedTemplate) return;
-    
+
     // Prepare config based on question type
     let config = null;
-    
+
     if (questionData.question_type_id === 3 || questionData.question_type_id === 4) { // single_choice or multi_choice
       config = { options: choiceOptions };
     } else if (questionData.question_type_id === 5) { // rating
       config = ratingConfig;
-            } else if (questionData.question_type_id === 9) { // flexible input
-      config = { 
+    } else if (questionData.question_type_id === 9) { // flexible input
+      config = {
         items: dropdownOptions.map(opt => ({ value: opt.value, label: opt.label })),
         instructions: '',
         placeholder: 'Enter your response'
@@ -229,7 +249,7 @@ const TemplatesQuestionsTab = () => {
     } else if (questionData.question_type_id === 13) { // ranking
       config = { items: [] };
     }
-    
+
     const payload = {
       question_text: questionData.question_text,
       question_type_id: questionData.question_type_id,
@@ -238,7 +258,7 @@ const TemplatesQuestionsTab = () => {
       is_required: questionData.is_required,
       config: config
     };
-    
+
     let updatedQuestions = [...(selectedTemplate.questions || [])];
     if (editingQuestion) {
       const index = updatedQuestions.findIndex(q => q.id === editingQuestion.id);
@@ -248,20 +268,20 @@ const TemplatesQuestionsTab = () => {
       updatedQuestions.push({ id: newId, ...payload });
     }
     updatedQuestions.sort((a, b) => a.order - b.order);
-    
+
     try {
       await InventoryService.updateTemplate(selectedTemplate.id, { questions: updatedQuestions });
-      
+
       // Update local state for immediate UI update
       const updatedTemplate = { ...selectedTemplate, questions: updatedQuestions };
       setSelectedTemplate(updatedTemplate);
-      
+
       // Update templates array to reflect the new question count
-      const updatedTemplates = templates.map(t => 
+      const updatedTemplates = templates.map(t =>
         t.id === selectedTemplate.id ? { ...t, questions: updatedQuestions } : t
       );
       setTemplates(updatedTemplates);
-      
+
       setOpenQDialog(false);
     } catch (err) {
       console.error('Error updating questions:', err.response || err);
@@ -272,18 +292,18 @@ const TemplatesQuestionsTab = () => {
     if (!selectedTemplate) return;
     try {
       await InventoryService.deleteTemplateQuestion(selectedTemplate.id, questionId);
-      
+
       // Update local state for immediate UI update
       const updatedQuestions = selectedTemplate.questions.filter(q => q.id !== questionId);
       const updatedTemplate = { ...selectedTemplate, questions: updatedQuestions };
       setSelectedTemplate(updatedTemplate);
-      
+
       // Update templates array to reflect the new question count
-      const updatedTemplates = templates.map(t => 
+      const updatedTemplates = templates.map(t =>
         t.id === selectedTemplate.id ? { ...t, questions: updatedQuestions } : t
       );
       setTemplates(updatedTemplates);
-      
+
     } catch (err) {
       console.error('Error deleting question:', err.response || err);
     }
@@ -308,7 +328,7 @@ const TemplatesQuestionsTab = () => {
   // Get existing sections from the current template
   const getExistingSections = () => {
     if (!selectedTemplate?.questions) return [];
-    
+
     const sectionsMap = selectedTemplate.questions.reduce((acc, question) => {
       const section = question.section || 'Uncategorized';
       if (section !== 'Uncategorized') {
@@ -316,7 +336,7 @@ const TemplatesQuestionsTab = () => {
       }
       return acc;
     }, {});
-    
+
     return Object.keys(sectionsMap);
   };
 
@@ -329,16 +349,16 @@ const TemplatesQuestionsTab = () => {
             <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold' }}>Template Versions</Typography>
             <List sx={{ maxHeight: '70vh', overflow: 'auto' }}>
               {templateVersions.map(version => (
-                <ListItem 
-                  key={version.id} 
-                  button 
+                <ListItem
+                  key={version.id}
+                  button
                   selected={selectedVersion?.id === version.id}
                   onClick={() => handleSelectVersion(version)}
                   sx={{ '&.Mui-selected': { backgroundColor: 'rgba(99, 51, 148, 0.1)' } }}
                 >
-                  <ListItemText 
-                    primary={version.name} 
-                    secondary={version.description || 'No description'} 
+                  <ListItemText
+                    primary={version.name}
+                    secondary={version.description || 'No description'}
                   />
                 </ListItem>
               ))}
@@ -348,7 +368,7 @@ const TemplatesQuestionsTab = () => {
             </List>
           </Paper>
         </Grid>
-        
+
         {/* Right column - Template and Questions */}
         <Grid item xs={12} md={9}>
           {selectedVersion ? (
@@ -357,12 +377,12 @@ const TemplatesQuestionsTab = () => {
                 <Typography variant="h6" gutterBottom sx={{ color: '#633394', fontWeight: 'bold' }}>
                   Templates for {selectedVersion.name}
                 </Typography>
-                
+
                 {/* Add new template form */}
                 <Box sx={{ mb: 3, p: 2, backgroundColor: 'white', borderRadius: 1 }}>
                   <Typography variant="subtitle2" gutterBottom>Add New Template</Typography>
                   <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12} sm={6}>
+                    <Grid item xs={12} sm={5}>
                       <TextField
                         fullWidth
                         size="small"
@@ -373,12 +393,120 @@ const TemplatesQuestionsTab = () => {
                         helperText="A unique identifier for this template. If left empty, one will be generated automatically."
                       />
                     </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <Button 
-                        variant="contained" 
+                    <Grid item xs={12} sm={5}>
+                      <Autocomplete
+                        fullWidth
+                        freeSolo
+                        options={titles}
+                        getOptionLabel={(option) => {
+                          // Handle both string (typed) and object (selected) values
+                          if (typeof option === 'string') return option;
+                          return option.name || '';
+                        }}
+                        value={selectedTitle}
+                        onChange={(event, newValue) => {
+                          if (typeof newValue === 'string') {
+                            // User typed a new title name and pressed Enter
+                            setSelectedTitle(null);
+                            setNewTemplateData({
+                              ...newTemplateData,
+                              title_id: null,
+                              new_title_name: newValue,
+                              version_id: selectedVersion.id
+                            });
+                          } else if (newValue && newValue.isNew) {
+                            // User clicked the "+ Add new title" option (id is null)
+                            setSelectedTitle(null);
+                            setNewTemplateData({
+                              ...newTemplateData,
+                              title_id: null,
+                              new_title_name: newValue.name,
+                              version_id: selectedVersion.id
+                            });
+                          } else if (newValue && newValue.id) {
+                            // User selected an existing title
+                            setSelectedTitle(newValue);
+                            setNewTemplateData({
+                              ...newTemplateData,
+                              title_id: newValue.id,
+                              new_title_name: '',
+                              version_id: selectedVersion.id
+                            });
+                          } else {
+                            // Cleared
+                            setSelectedTitle(null);
+                            setNewTemplateData({
+                              ...newTemplateData,
+                              title_id: null,
+                              new_title_name: '',
+                              version_id: selectedVersion.id
+                            });
+                          }
+                        }}
+                        onInputChange={(event, newInputValue, reason) => {
+                          if (reason === 'input') {
+                            // User is typing - check if it matches an existing title
+                            const match = titles.find(t => t.name.toLowerCase() === newInputValue.toLowerCase());
+                            if (match) {
+                              setNewTemplateData({
+                                ...newTemplateData,
+                                title_id: match.id,
+                                new_title_name: '',
+                                version_id: selectedVersion.id
+                              });
+                            } else {
+                              setNewTemplateData({
+                                ...newTemplateData,
+                                title_id: null,
+                                new_title_name: newInputValue,
+                                version_id: selectedVersion.id
+                              });
+                            }
+                          }
+                        }}
+                        filterOptions={(options, params) => {
+                          const filtered = options.filter(option =>
+                            option.name.toLowerCase().includes(params.inputValue.toLowerCase())
+                          );
+                          // If user typed something that doesn't match, show "Add" option
+                          if (params.inputValue !== '' && !filtered.some(o => o.name.toLowerCase() === params.inputValue.toLowerCase())) {
+                            filtered.push({
+                              id: null,
+                              name: params.inputValue,
+                              isNew: true
+                            });
+                          }
+                          return filtered;
+                        }}
+                        renderOption={(props, option) => (
+                          <Box component="li" {...props} key={option.id || `new-${option.name}`}>
+                            {option.isNew ? (
+                              <Typography variant="body2" sx={{ fontStyle: 'italic', color: '#633394' }}>
+                                + Add new title: "{option.name}"
+                              </Typography>
+                            ) : (
+                              <Typography variant="body2">{option.name}</Typography>
+                            )}
+                          </Box>
+                        )}
+                        isOptionEqualToValue={(option, value) => option.id === value?.id}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            label="Title of User Taking the Survey"
+                            placeholder="Search or type a new title..."
+                            helperText="Select an existing title or type a new one"
+                          />
+                        )}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={2}>
+                      <Button
+                        variant="contained"
                         onClick={handleAddTemplate}
-                        sx={{ 
-                          backgroundColor: '#633394', 
+                        sx={{
+                          backgroundColor: '#633394',
                           '&:hover': { backgroundColor: '#7c52a5' }
                         }}
                       >
@@ -393,10 +521,10 @@ const TemplatesQuestionsTab = () => {
                   {templates
                     .filter(t => t.version_id === selectedVersion.id)
                     .map(template => (
-                      <Card 
+                      <Card
                         key={template.id}
-                        sx={{ 
-                          minWidth: 250, 
+                        sx={{
+                          minWidth: 250,
                           cursor: 'pointer',
                           border: selectedTemplate?.id === template.id ? '2px solid #633394' : '1px solid #e0e0e0',
                           '&:hover': { boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }
@@ -404,9 +532,22 @@ const TemplatesQuestionsTab = () => {
                         onClick={() => handleSelectTemplate(template.id)}
                       >
                         <CardContent>
-                          <Typography variant="h6" sx={{ color: '#633394' }}>{template.survey_code}</Typography>
+                          <Typography variant="h6" sx={{ color: '#633394' }}>{template.survey_code || template.name}</Typography>
+                          {template.title_name && (
+                            <Chip
+                              label={template.title_name}
+                              size="small"
+                              sx={{
+                                mb: 0.5,
+                                backgroundColor: 'rgba(99, 51, 148, 0.1)',
+                                color: '#633394',
+                                fontWeight: 'bold',
+                                fontSize: '0.7rem'
+                              }}
+                            />
+                          )}
                           <Typography variant="body2" color="text.secondary">
-                            {template.questions?.length || 0} questions
+                            {template.questions?.length || template.question_count || 0} questions
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             Created: {new Date(template.created_at).toLocaleDateString()}
@@ -423,25 +564,32 @@ const TemplatesQuestionsTab = () => {
                       </Card>
                     ))}
                 </Box>
-                
+
                 {templates.filter(t => t.version_id === selectedVersion.id).length === 0 && (
                   <Alert severity="info" sx={{ mt: 2 }}>No templates available for this version. Create one to add questions.</Alert>
                 )}
               </Paper>
-              
+
               {/* Questions section */}
               {selectedTemplate && (
                 <Paper sx={{ p: 2, backgroundColor: '#f5f5f5', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
                   <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-                    <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold' }}>
-                      Questions for {selectedTemplate.survey_code}
-                    </Typography>
-                    <Button 
-                      variant="contained" 
-                      startIcon={<AddIcon />} 
+                    <Box>
+                      <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold' }}>
+                        Questions for {selectedTemplate.survey_code || selectedTemplate.name}
+                      </Typography>
+                      {selectedTemplate.title_name && (
+                        <Typography variant="body2" color="text.secondary">
+                          Title: <Chip label={selectedTemplate.title_name} size="small" sx={{ backgroundColor: 'rgba(99, 51, 148, 0.1)', color: '#633394' }} />
+                        </Typography>
+                      )}
+                    </Box>
+                    <Button
+                      variant="contained"
+                      startIcon={<AddIcon />}
                       onClick={handleOpenAdd}
-                      sx={{ 
-                        backgroundColor: '#633394 !important', 
+                      sx={{
+                        backgroundColor: '#633394 !important',
                         color: 'white !important',
                         '&:hover': { backgroundColor: '#7c52a5 !important' }
                       }}
@@ -449,7 +597,7 @@ const TemplatesQuestionsTab = () => {
                       Add Question
                     </Button>
                   </Box>
-                  
+
                   {selectedTemplate.questions?.length > 0 ? (
                     <List>
                       {selectedTemplate.questions.map((question, index) => (
@@ -510,7 +658,7 @@ const TemplatesQuestionsTab = () => {
           )}
         </Grid>
       </Grid>
-      
+
       {/* Question Dialog */}
       <Dialog open={openQDialog} onClose={handleCloseDialog} fullWidth maxWidth="sm">
         <DialogTitle>{editingQuestion ? 'Edit Question' : 'Add Question'}</DialogTitle>
@@ -569,7 +717,7 @@ const TemplatesQuestionsTab = () => {
                 ))}
               </Select>
             </FormControl>
-            
+
             {/* Dynamic fields based on question type */}
             {questionData.question_type_id === 3 || questionData.question_type_id === 4 ? (
               // Single choice or Multi choice
@@ -590,8 +738,8 @@ const TemplatesQuestionsTab = () => {
                         setChoiceOptions(newOptions);
                       }}
                     />
-                    <IconButton 
-                      color="error" 
+                    <IconButton
+                      color="error"
                       onClick={() => setChoiceOptions(choiceOptions.filter((_, i) => i !== index))}
                     >
                       <DeleteIcon />
@@ -671,8 +819,8 @@ const TemplatesQuestionsTab = () => {
                         setDropdownOptions(newOptions);
                       }}
                     />
-                    <IconButton 
-                      color="error" 
+                    <IconButton
+                      color="error"
                       onClick={() => setDropdownOptions(dropdownOptions.filter((_, i) => i !== index))}
                     >
                       <DeleteIcon />
@@ -688,7 +836,7 @@ const TemplatesQuestionsTab = () => {
                 </Button>
               </Box>
             ) : null}
-            
+
             <TextField
               fullWidth
               type="number"
@@ -697,7 +845,7 @@ const TemplatesQuestionsTab = () => {
               onChange={(e) => setQuestionData({ ...questionData, order: parseInt(e.target.value) || 0 })}
               margin="normal"
             />
-            
+
             <FormControlLabel
               control={
                 <Checkbox
@@ -712,12 +860,12 @@ const TemplatesQuestionsTab = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             onClick={handleSaveQuestion}
             disabled={!questionData.question_text || !questionData.question_type_id}
-            sx={{ 
-              backgroundColor: '#633394', 
+            sx={{
+              backgroundColor: '#633394',
               '&:hover': { backgroundColor: '#7c52a5' }
             }}
           >

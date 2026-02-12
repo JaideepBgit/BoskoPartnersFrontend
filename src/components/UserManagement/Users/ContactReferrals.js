@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
-    Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, Paper, IconButton, Dialog, DialogActions,
+    Box, Typography, Button, Paper, Dialog, DialogActions,
     DialogContent, DialogTitle, TextField, Select, MenuItem, FormControl,
     InputLabel, Card, CardContent, Grid, Chip, Alert, CircularProgress,
     Radio, RadioGroup, FormControlLabel, FormLabel, Divider,
@@ -18,6 +17,7 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import InfoIcon from '@mui/icons-material/Info';
 import SearchIcon from '@mui/icons-material/Search';
 import InputAdornment from '@mui/material/InputAdornment';
+import DataTable from '../../shared/DataTable/DataTable';
 import {
     fetchContactReferrals,
     approveContactReferral,
@@ -204,28 +204,6 @@ function ContactReferrals() {
         }
     };
 
-    const handleCheckboxToggle = (referralId, event) => {
-        event.stopPropagation();
-        setSelectedReferralIds(prev => {
-            if (prev.includes(referralId)) {
-                return prev.filter(id => id !== referralId);
-            } else {
-                return [...prev, referralId];
-            }
-        });
-    };
-
-    const handleSelectAll = (event) => {
-        if (event.target.checked) {
-            setSelectedReferralIds(referrals.map(r => r.id));
-        } else {
-            setSelectedReferralIds([]);
-        }
-    };
-
-    const isSelected = (referralId) => selectedReferralIds.includes(referralId);
-    const isAllSelected = referrals.length > 0 && selectedReferralIds.length === referrals.length;
-    const isSomeSelected = selectedReferralIds.length > 0 && selectedReferralIds.length < referrals.length;
 
     const handleOpenApprovalDialog = async () => {
         if (!selectedReferral && selectedReferralIds.length === 0) return;
@@ -488,6 +466,94 @@ function ContactReferrals() {
         );
     });
 
+    // Column definitions for DataTable
+    const referralColumns = useMemo(() => [
+        {
+            id: 'name',
+            label: 'Name',
+            render: (referral) => (
+                <>
+                    <Typography variant="body2" fontWeight="bold">
+                        {referral.first_name} {referral.last_name}
+                    </Typography>
+                    {referral.title && (
+                        <Typography variant="caption" color="text.secondary">
+                            {referral.title}
+                        </Typography>
+                    )}
+                </>
+            )
+        },
+        {
+            id: 'email',
+            label: 'Email',
+            render: (referral) => (
+                <Box display="flex" alignItems="center" gap={0.5}>
+                    <EmailIcon fontSize="small" color="action" />
+                    <Typography variant="body2">{referral.email}</Typography>
+                </Box>
+            )
+        },
+        {
+            id: 'phone',
+            label: 'Phone',
+            render: (referral) => referral.full_phone ? (
+                <Box display="flex" alignItems="center" gap={0.5}>
+                    <PhoneIcon fontSize="small" color="action" />
+                    <Typography variant="body2">{referral.full_phone}</Typography>
+                </Box>
+            ) : (
+                <Typography variant="body2" color="text.secondary">N/A</Typography>
+            )
+        },
+        {
+            id: 'institution',
+            label: 'Institution',
+            render: (referral) => referral.institution_name ? (
+                <Box display="flex" alignItems="center" gap={0.5}>
+                    <BusinessIcon fontSize="small" color="action" />
+                    <Typography variant="body2">{referral.institution_name}</Typography>
+                </Box>
+            ) : (
+                <Typography variant="body2" color="text.secondary">N/A</Typography>
+            )
+        },
+        {
+            id: 'type',
+            label: 'Type',
+            render: (referral) => (
+                <Typography variant="body2">
+                    {referral.type_of_institution
+                        ? (referral.type_of_institution.toLowerCase() === 'non_formal_organizations'
+                            ? 'Organization'
+                            : referral.type_of_institution.charAt(0).toUpperCase() + referral.type_of_institution.slice(1))
+                        : 'N/A'}
+                </Typography>
+            )
+        },
+        {
+            id: 'country',
+            label: 'Country',
+            render: (referral) => referral.country ? (
+                <Box display="flex" alignItems="center" gap={0.5}>
+                    <LocationOnIcon fontSize="small" color="action" />
+                    <Typography variant="body2">{referral.country}</Typography>
+                </Box>
+            ) : (
+                <Typography variant="body2" color="text.secondary">N/A</Typography>
+            )
+        },
+        {
+            id: 'submitted',
+            label: 'Submitted',
+            render: (referral) => (
+                <Typography variant="body2">
+                    {new Date(referral.created_at).toLocaleDateString()}
+                </Typography>
+            )
+        }
+    ], []);
+
     if (loading) {
         return (
             <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -603,123 +669,22 @@ function ContactReferrals() {
                     </CardContent>
                 </Card>
             ) : (
-                <Paper sx={{ borderRadius: 3, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-                <TableContainer>
-                    <Table>
-                        <TableHead sx={{ backgroundColor: '#FAFAFA' }}>
-                            <TableRow>
-                                <TableCell padding="checkbox" sx={{ color: '#000000' }}>
-                                    <Checkbox
-                                        indeterminate={isSomeSelected}
-                                        checked={isAllSelected}
-                                        onChange={handleSelectAll}
-                                        sx={{
-                                            color: '#000000',
-                                            '&.Mui-checked': { color: '#000000' },
-                                            '&.MuiCheckbox-indeterminate': { color: '#000000' }
-                                        }}
-                                    />
-                                </TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Name</TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Email</TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Phone</TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Institution</TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Type</TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Country</TableCell>
-                                <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Submitted</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {filteredReferrals.map((referral) => (
-                                <TableRow
-                                    key={referral.id}
-                                    hover
-                                    selected={selectedRowId === referral.id || isSelected(referral.id)}
-                                    onClick={() => handleRowSelect(referral)}
-                                    sx={{
-                                        cursor: 'pointer',
-                                        '&:hover': { backgroundColor: '#f5f5f5' },
-                                        '&.Mui-selected': {
-                                            backgroundColor: '#ede7f6',
-                                        },
-                                        '&.Mui-selected:hover': {
-                                            backgroundColor: '#d1c4e9',
-                                        },
-                                    }}
-                                >
-                                    <TableCell padding="checkbox" onClick={(e) => e.stopPropagation()}>
-                                        <Checkbox
-                                            checked={isSelected(referral.id)}
-                                            onChange={(e) => handleCheckboxToggle(referral.id, e)}
-                                            color="primary"
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="body2" fontWeight="bold">
-                                            {referral.first_name} {referral.last_name}
-                                        </Typography>
-                                        {referral.title && (
-                                            <Typography variant="caption" color="text.secondary">
-                                                {referral.title}
-                                            </Typography>
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Box display="flex" alignItems="center" gap={0.5}>
-                                            <EmailIcon fontSize="small" color="action" />
-                                            <Typography variant="body2">{referral.email}</Typography>
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell>
-                                        {referral.full_phone ? (
-                                            <Box display="flex" alignItems="center" gap={0.5}>
-                                                <PhoneIcon fontSize="small" color="action" />
-                                                <Typography variant="body2">{referral.full_phone}</Typography>
-                                            </Box>
-                                        ) : (
-                                            <Typography variant="body2" color="text.secondary">N/A</Typography>
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        {referral.institution_name ? (
-                                            <Box display="flex" alignItems="center" gap={0.5}>
-                                                <BusinessIcon fontSize="small" color="action" />
-                                                <Typography variant="body2">{referral.institution_name}</Typography>
-                                            </Box>
-                                        ) : (
-                                            <Typography variant="body2" color="text.secondary">N/A</Typography>
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="body2">
-                                            {referral.type_of_institution
-                                                ? (referral.type_of_institution.toLowerCase() === 'non_formal_organizations'
-                                                    ? 'Organization'
-                                                    : referral.type_of_institution.charAt(0).toUpperCase() + referral.type_of_institution.slice(1))
-                                                : 'N/A'}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        {referral.country ? (
-                                            <Box display="flex" alignItems="center" gap={0.5}>
-                                                <LocationOnIcon fontSize="small" color="action" />
-                                                <Typography variant="body2">{referral.country}</Typography>
-                                            </Box>
-                                        ) : (
-                                            <Typography variant="body2" color="text.secondary">N/A</Typography>
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="body2">
-                                            {new Date(referral.created_at).toLocaleDateString()}
-                                        </Typography>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-                </Paper>
+                <DataTable
+                    columns={referralColumns}
+                    data={filteredReferrals}
+                    selectable
+                    selectedIds={selectedReferralIds}
+                    onSelectionChange={setSelectedReferralIds}
+                    onRowClick={(referral) => handleRowSelect(referral)}
+                    rowSx={(referral) => ({
+                        ...(selectedRowId === referral.id ? {
+                            backgroundColor: '#ede7f6',
+                            '&:hover': { backgroundColor: '#d1c4e9 !important' },
+                        } : {}),
+                    })}
+                    emptyMessage="No contact referrals found"
+                    paperSx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+                />
             )}
 
             {/* Selected Referral Details Card */}

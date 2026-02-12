@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     Container, Typography, Box, Paper, Button, Grid, Card, CardContent,
@@ -7,6 +7,7 @@ import {
     Breadcrumbs, Link, LinearProgress, Tooltip, IconButton, Collapse,
     Autocomplete, TextField, Snackbar
 } from '@mui/material';
+import DataTable from '../../shared/DataTable/DataTable';
 import InternalHeader from '../../shared/Headers/InternalHeader';
 import Navbar from '../../shared/Navbar/Navbar';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -179,11 +180,11 @@ function UserDetailPage() {
         return await response.json();
     };
 
-    // Load available survey templates for the user's organization
-    const loadSurveyTemplates = async (organizationId) => {
-        if (!organizationId) return;
+    // Load ALL available survey templates (across all organizations)
+    // so users can be assigned surveys from any org, not just their own.
+    const loadSurveyTemplates = async () => {
         try {
-            const templateData = await SurveyAssignmentService.getTemplatesForOrganization(organizationId);
+            const templateData = await SurveyAssignmentService.getSurveyTemplates();
             setSurveyTemplates(templateData);
         } catch (err) {
             console.error('Error loading survey templates:', err);
@@ -212,13 +213,12 @@ function UserDetailPage() {
         }
     };
 
-    // Load templates when user/org data is available
+    // Load all templates when user data is available
     useEffect(() => {
-        const userOrgId = orgId || user?.organization_id;
-        if (userOrgId) {
-            loadSurveyTemplates(userOrgId);
+        if (user) {
+            loadSurveyTemplates();
         }
-    }, [user, orgId]);
+    }, [user]);
 
     const handleBack = () => {
         if (isFromOrganization) {
@@ -256,6 +256,76 @@ function UserDetailPage() {
             return val !== null && val !== undefined && val !== '';
         }).length;
     };
+
+    // Column definitions for assignments table
+    const assignmentColumns = useMemo(() => [
+        {
+            id: 'survey',
+            label: 'Survey',
+            render: (assignment) => (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Avatar
+                        sx={{
+                            bgcolor: colors.accentBg,
+                            color: colors.primary,
+                            width: 32,
+                            height: 32
+                        }}
+                    >
+                        <AssignmentIcon sx={{ fontSize: '1.1rem' }} />
+                    </Avatar>
+                    <Typography variant="body2" fontWeight="600">
+                        {assignment.template_name}
+                    </Typography>
+                </Box>
+            )
+        },
+        {
+            id: 'survey_code',
+            label: 'Survey Code',
+            render: (assignment) => (
+                <Typography variant="body2" color="text.secondary">
+                    {assignment.survey_code || '-'}
+                </Typography>
+            )
+        },
+        {
+            id: 'status',
+            label: 'Status',
+            render: (assignment) => (
+                <Chip
+                    label={formatStatus(assignment.status)}
+                    size="small"
+                    sx={{
+                        ...getStatusStyles(assignment.status),
+                        fontWeight: 500
+                    }}
+                />
+            )
+        },
+        {
+            id: 'assigned',
+            label: 'Assigned',
+            render: (assignment) => (
+                <Typography variant="body2" color="text.secondary">
+                    {assignment.created_at
+                        ? new Date(assignment.created_at).toLocaleDateString()
+                        : '-'}
+                </Typography>
+            )
+        },
+        {
+            id: 'updated',
+            label: 'Last Updated',
+            render: (assignment) => (
+                <Typography variant="body2" color="text.secondary">
+                    {assignment.updated_at
+                        ? new Date(assignment.updated_at).toLocaleDateString()
+                        : '-'}
+                </Typography>
+            )
+        }
+    ], []);
 
     if (loading) {
         return (
@@ -570,9 +640,11 @@ function UserDetailPage() {
                                     <Autocomplete
                                         size="small"
                                         sx={{ flex: 1, '& .MuiOutlinedInput-root': { backgroundColor: 'white' } }}
-                                        options={surveyTemplates.filter(
-                                            t => !assignments.some(a => a.template_id === t.id)
-                                        )}
+                                        options={surveyTemplates
+                                            .filter(t => !assignments.some(a => a.template_id === t.id))
+                                            .sort((a, b) => (a.organization_name || '').localeCompare(b.organization_name || ''))
+                                        }
+                                        groupBy={(option) => option.organization_name || 'General'}
                                         value={surveyTemplates.find(t => t.id === selectedSurveyTemplate) || null}
                                         onChange={(event, newValue) => {
                                             setSelectedSurveyTemplate(newValue ? newValue.id : '');
@@ -580,6 +652,21 @@ function UserDetailPage() {
                                         getOptionLabel={(option) =>
                                             `${option.version_name || 'Survey'}${option.survey_code ? ` - ${option.survey_code}` : ''}`
                                         }
+                                        renderGroup={(params) => (
+                                            <li key={params.key}>
+                                                <Box sx={{
+                                                    px: 2, py: 0.75,
+                                                    fontWeight: 700, fontSize: '0.75rem',
+                                                    color: colors.primary,
+                                                    backgroundColor: colors.accentBg,
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: '0.5px'
+                                                }}>
+                                                    {params.group}
+                                                </Box>
+                                                <ul style={{ padding: 0 }}>{params.children}</ul>
+                                            </li>
+                                        )}
                                         renderInput={(params) => (
                                             <TextField
                                                 {...params}
@@ -614,77 +701,13 @@ function UserDetailPage() {
                                         </Typography>
                                     </Box>
                                 ) : (
-                                    <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 'none', border: `1px solid ${colors.borderColor}` }}>
-                                        <Table>
-                                            <TableHead sx={{ backgroundColor: '#FAFAFA' }}>
-                                                <TableRow>
-                                                    <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Survey</TableCell>
-                                                    <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Survey Code</TableCell>
-                                                    <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Status</TableCell>
-                                                    <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Assigned</TableCell>
-                                                    <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Last Updated</TableCell>
-                                                </TableRow>
-                                            </TableHead>
-                                            <TableBody>
-                                                {assignments.map((assignment) => (
-                                                    <TableRow
-                                                        key={assignment.id}
-                                                        sx={{
-                                                            transition: 'background-color 0.2s',
-                                                            '&:hover': { backgroundColor: '#f5f5f5' }
-                                                        }}
-                                                    >
-                                                        <TableCell>
-                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                                <Avatar
-                                                                    sx={{
-                                                                        bgcolor: colors.accentBg,
-                                                                        color: colors.primary,
-                                                                        width: 32,
-                                                                        height: 32
-                                                                    }}
-                                                                >
-                                                                    <AssignmentIcon sx={{ fontSize: '1.1rem' }} />
-                                                                </Avatar>
-                                                                <Typography variant="body2" fontWeight="600">
-                                                                    {assignment.template_name}
-                                                                </Typography>
-                                                            </Box>
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <Typography variant="body2" color="text.secondary">
-                                                                {assignment.survey_code || '-'}
-                                                            </Typography>
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <Chip
-                                                                label={formatStatus(assignment.status)}
-                                                                size="small"
-                                                                sx={{
-                                                                    ...getStatusStyles(assignment.status),
-                                                                    fontWeight: 500
-                                                                }}
-                                                            />
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <Typography variant="body2" color="text.secondary">
-                                                                {assignment.created_at
-                                                                    ? new Date(assignment.created_at).toLocaleDateString()
-                                                                    : '-'}
-                                                            </Typography>
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <Typography variant="body2" color="text.secondary">
-                                                                {assignment.updated_at
-                                                                    ? new Date(assignment.updated_at).toLocaleDateString()
-                                                                    : '-'}
-                                                            </Typography>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    </TableContainer>
+                                    <DataTable
+                                        columns={assignmentColumns}
+                                        data={assignments}
+                                        showPaper={false}
+                                        emptyMessage="No survey assignments found"
+                                        paperSx={{ borderRadius: 2, boxShadow: 'none', border: `1px solid ${colors.borderColor}` }}
+                                    />
                                 )}
                             </Box>
                         )}

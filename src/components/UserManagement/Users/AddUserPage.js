@@ -9,7 +9,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import SaveIcon from '@mui/icons-material/Save';
 import {
     addUser, fetchOrganizations, fetchRoles, addRole,
-    updateUserOrganizationalRoles, fetchTemplatesByOrganization, fetchTitles
+    updateUserOrganizationalTitles, fetchTemplatesByOrganization, fetchTitles
 } from '../../../services/UserManagement/UserManagementService';
 import InventoryService from '../../../services/Admin/Inventory/InventoryService';
 import { EmailService } from '../../../services/EmailService';
@@ -20,7 +20,7 @@ import InternalHeader from '../../shared/Headers/InternalHeader';
 const defaultRoles = [
     { name: 'admin', description: 'Administrator role with full system access' },
     { name: 'user', description: 'Regular user role with standard access' },
-    { name: 'manager', description: 'Created for organizational role: Manager' },
+    { name: 'manager', description: 'Created for organizational title: Manager' },
     { name: 'primary_contact', description: 'Primary Contact' },
     { name: 'secondary_contact', description: 'Secondary Contact' }
 ];
@@ -52,7 +52,7 @@ function AddUserPage() {
         email_template_id: '',
         roles: ['user'], // System roles
         titles: [], // System titles
-        organizational_roles: [], // Organization-specific roles
+        organizational_titles: [], // Organization-specific titles
         geo_location: {
             continent: '',
             region: '',
@@ -68,10 +68,10 @@ function AddUserPage() {
         }
     });
 
-    // Organizational roles states
+    // Organizational titles states
     const [selectedOrganizationId, setSelectedOrganizationId] = useState('');
-    const [organizationalRoleToAdd, setOrganizationalRoleToAdd] = useState('');
-    const [addingOrganizationalRole, setAddingOrganizationalRole] = useState(false);
+    const [organizationalTitleToAdd, setOrganizationalTitleToAdd] = useState('');
+    const [addingOrganizationalTitle, setAddingOrganizationalTitle] = useState(false);
 
     // Email preview states
     const [showEmailPreview, setShowEmailPreview] = useState(false);
@@ -335,82 +335,82 @@ function AddUserPage() {
         return hasStringData || hasCoordinates;
     };
 
-    // Handle adding organizational role
-    const handleAddOrganizationalRole = async () => {
-        if (!selectedOrganizationId || !organizationalRoleToAdd.trim()) {
-            alert('Please select an organization and enter a role type');
+    // Handle adding organizational title
+    const handleAddOrganizationalTitle = async () => {
+        if (!selectedOrganizationId || !organizationalTitleToAdd.trim()) {
+            alert('Please select an organization and enter a title');
             return;
         }
 
-        const existingRole = formData.organizational_roles.find(
-            r => r.organization_id === parseInt(selectedOrganizationId) && r.role_type === organizationalRoleToAdd.trim()
+        const existingTitle = formData.organizational_titles.find(
+            r => r.organization_id === parseInt(selectedOrganizationId) && r.title_type === organizationalTitleToAdd.trim()
         );
 
-        if (existingRole) {
-            alert('This role type already exists for the selected organization');
+        if (existingTitle) {
+            alert('This title already exists for the selected organization');
             return;
         }
 
-        setAddingOrganizationalRole(true);
+        setAddingOrganizationalTitle(true);
         try {
             const roleData = {
-                name: organizationalRoleToAdd.trim(),
-                description: `Created for organizational role: ${organizationalRoleToAdd.trim()}`
+                name: organizationalTitleToAdd.trim(),
+                description: `Created for organizational title: ${organizationalTitleToAdd.trim()}`
             };
 
             await addRole(roleData);
 
-            const newRole = {
+            const newTitle = {
                 organization_id: parseInt(selectedOrganizationId),
-                role_type: organizationalRoleToAdd.trim(),
+                title_type: organizationalTitleToAdd.trim(),
                 id: Date.now()
             };
 
             setFormData({
                 ...formData,
-                organizational_roles: [...formData.organizational_roles, newRole]
+                organizational_titles: [...formData.organizational_titles, newTitle]
             });
 
             setSelectedOrganizationId('');
-            setOrganizationalRoleToAdd('');
+            setOrganizationalTitleToAdd('');
 
         } catch (error) {
             if (error.response && error.response.status === 409) {
-                const newRole = {
+                const newTitle = {
                     organization_id: parseInt(selectedOrganizationId),
-                    role_type: organizationalRoleToAdd.trim(),
+                    title_type: organizationalTitleToAdd.trim(),
                     id: Date.now()
                 };
 
                 setFormData({
                     ...formData,
-                    organizational_roles: [...formData.organizational_roles, newRole]
+                    organizational_titles: [...formData.organizational_titles, newTitle]
                 });
 
                 setSelectedOrganizationId('');
-                setOrganizationalRoleToAdd('');
+                setOrganizationalTitleToAdd('');
             } else {
-                console.error('Failed to add role:', error);
-                alert(`Failed to add role: ${error.message}`);
+                console.error('Failed to add title:', error);
+                alert(`Failed to add title: ${error.message}`);
             }
         } finally {
-            setAddingOrganizationalRole(false);
+            setAddingOrganizationalTitle(false);
         }
     };
 
-    // Handle removing organizational role
-    const handleRemoveOrganizationalRole = (organizationId, roleType) => {
+    // Handle removing organizational title
+    const handleRemoveOrganizationalTitle = (organizationId, titleType) => {
         setFormData({
             ...formData,
-            organizational_roles: formData.organizational_roles.filter(
-                r => !(r.organization_id === organizationId && r.role_type === roleType)
+            organizational_titles: formData.organizational_titles.filter(
+                r => !(r.organization_id === organizationId && r.title_type === titleType)
             )
         });
     };
 
-    // Get roles for specific organization
-    const getOrganizationRoles = (organizationId) => {
-        return formData.organizational_roles.filter(r => r.organization_id === organizationId);
+    // Get titles for specific organization
+    const getOrganizationTitles = (organizationId) => {
+        return formData.organizational_titles.filter(r => r.organization_id === organizationId);
     };
 
     // Truncate text helper
@@ -435,16 +435,16 @@ function AddUserPage() {
                 title: formData.titles[0] || '', // Backwards compatibility
             };
 
-            const organizationalRoles = userData.organizational_roles || [];
-            delete userData.organizational_roles;
+            const organizationalTitles = userData.organizational_titles || [];
+            delete userData.organizational_titles;
 
             const newUser = await addUser(userData);
 
-            if (organizationalRoles.length > 0) {
+            if (organizationalTitles.length > 0) {
                 try {
-                    await updateUserOrganizationalRoles(newUser.id, { roles: organizationalRoles });
-                } catch (roleError) {
-                    console.warn('User created but failed to save organizational roles:', roleError);
+                    await updateUserOrganizationalTitles(newUser.id, { roles: organizationalTitles });
+                } catch (titleError) {
+                    console.warn('User created but failed to save organizational titles:', titleError);
                 }
             }
 
@@ -729,14 +729,14 @@ function AddUserPage() {
                     </Grid>
                 </Paper>
 
-                {/* Organizational Roles Section (Hidden as per request) */}
+                {/* Organizational Titles Section (Hidden as per request) */}
                 {false && !formData.roles.includes('other') && (
                     <Paper sx={{ p: 3, mb: 3, boxShadow: 3 }}>
                         <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold', mb: 3, textAlign: 'center' }}>
-                            Organizational Roles
+                            Organizational Titles
                         </Typography>
 
-                        {/* Add New Role Section */}
+                        {/* Add New Title Section */}
                         <Box sx={{
                             p: 2,
                             border: '1px solid #e0e0e0',
@@ -745,7 +745,7 @@ function AddUserPage() {
                             mb: 3
                         }}>
                             <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#633394', mb: 2 }}>
-                                Add Role to Organization
+                                Add Title to Organization
                             </Typography>
                             <Grid container spacing={2} alignItems="center">
                                 <Grid item xs={12} md={4}>
@@ -766,42 +766,42 @@ function AddUserPage() {
                                 <Grid item xs={12} md={4}>
                                     <TextField
                                         fullWidth
-                                        label="Role Type"
-                                        value={organizationalRoleToAdd}
-                                        onChange={(e) => setOrganizationalRoleToAdd(e.target.value)}
+                                        label="Title"
+                                        value={organizationalTitleToAdd}
+                                        onChange={(e) => setOrganizationalTitleToAdd(e.target.value)}
                                         variant="outlined"
-                                        placeholder="e.g., Manager, Coordinator"
+                                        placeholder="e.g., Pastor, Director"
                                     />
                                 </Grid>
                                 <Grid item xs={12} md={4}>
                                     <Button
                                         variant="contained"
                                         fullWidth
-                                        onClick={handleAddOrganizationalRole}
-                                        disabled={!selectedOrganizationId || !organizationalRoleToAdd.trim() || addingOrganizationalRole}
+                                        onClick={handleAddOrganizationalTitle}
+                                        disabled={!selectedOrganizationId || !organizationalTitleToAdd.trim() || addingOrganizationalTitle}
                                         sx={{
                                             height: '56px',
                                             backgroundColor: '#633394',
                                             '&:hover': { backgroundColor: '#7c52a5' }
                                         }}
-                                        startIcon={addingOrganizationalRole ? <CircularProgress size={20} color="inherit" /> : null}
+                                        startIcon={addingOrganizationalTitle ? <CircularProgress size={20} color="inherit" /> : null}
                                     >
-                                        {addingOrganizationalRole ? 'Adding...' : 'Add Role'}
+                                        {addingOrganizationalTitle ? 'Adding...' : 'Add Title'}
                                     </Button>
                                 </Grid>
                             </Grid>
                         </Box>
 
-                        {/* Display Current Roles */}
-                        {formData.organizational_roles.length > 0 && (
+                        {/* Display Current Titles */}
+                        {formData.organizational_titles.length > 0 && (
                             <Box sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 1, backgroundColor: '#fafafa' }}>
                                 <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#633394', mb: 2 }}>
-                                    Assigned Roles
+                                    Assigned Titles
                                 </Typography>
                                 <Grid container spacing={2}>
                                     {organizations.map((org) => {
-                                        const orgRoles = getOrganizationRoles(org.id);
-                                        if (orgRoles.length === 0) return null;
+                                        const orgTitles = getOrganizationTitles(org.id);
+                                        if (orgTitles.length === 0) return null;
 
                                         return (
                                             <Grid item xs={12} key={org.id}>
@@ -810,13 +810,13 @@ function AddUserPage() {
                                                         {org.name}
                                                     </Typography>
                                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                                        {orgRoles.map((role) => (
+                                                        {orgTitles.map((title) => (
                                                             <Chip
-                                                                key={`${role.organization_id}-${role.role_type}`}
-                                                                label={role.role_type}
+                                                                key={`${title.organization_id}-${title.title_type}`}
+                                                                label={title.title_type}
                                                                 color="primary"
                                                                 variant="filled"
-                                                                onDelete={() => handleRemoveOrganizationalRole(role.organization_id, role.role_type)}
+                                                                onDelete={() => handleRemoveOrganizationalTitle(title.organization_id, title.title_type)}
                                                                 sx={{
                                                                     backgroundColor: '#633394',
                                                                     '&:hover': { backgroundColor: '#7c52a5' }

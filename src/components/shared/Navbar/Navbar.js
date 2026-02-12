@@ -68,10 +68,10 @@ const Navbar = () => {
 
   const handleInviteClick = async () => {
     if (!user?.id) return;
-    
+
     setInviteDialogOpen(true);
     setInviteLoading(true);
-    
+
     try {
       const result = await generateReferralLink(user.id);
       const baseUrl = window.location.origin;
@@ -219,7 +219,6 @@ const Navbar = () => {
         <List sx={{ pt: 2 }}>
           {/* 1. Dashboard */}
           <ListItem
-            button
             onClick={() => handleNavigation(user?.role === 'manager' ? '/manager-dashboard' : '/dashboard')}
             selected={tabValue === 1}
             sx={{
@@ -247,7 +246,6 @@ const Navbar = () => {
 
           {/* 2. Surveys */}
           <ListItem
-            button
             onClick={() => handleNavigation('/inventory')}
             selected={tabValue === 2}
             sx={{
@@ -276,7 +274,6 @@ const Navbar = () => {
           {/* 3. Organizations - Only for Admin/Root */}
           {(user?.role === 'admin' || user?.role === 'root') && (
             <ListItem
-              button
               onClick={() => handleNavigation('/organization-management')}
               selected={tabValue === 3}
               sx={{
@@ -306,7 +303,6 @@ const Navbar = () => {
           {/* 7. Associations - Only for Admin/Root */}
           {(user?.role === 'admin' || user?.role === 'root') && (
             <ListItem
-              button
               onClick={() => handleNavigation('/associations')}
               selected={tabValue === 7}
               sx={{
@@ -335,7 +331,6 @@ const Navbar = () => {
 
           {/* 4. Users */}
           <ListItem
-            button
             onClick={() => handleNavigation('/users')}
             selected={tabValue === 4}
             sx={{
@@ -363,7 +358,6 @@ const Navbar = () => {
 
           {/* 8. Contact Referrals */}
           <ListItem
-            button
             onClick={() => handleNavigation('/contact-referrals')}
             selected={tabValue === 8}
             sx={{
@@ -391,7 +385,6 @@ const Navbar = () => {
 
           {/* 9. Email Templates */}
           <ListItem
-            button
             onClick={() => handleNavigation('/email-templates')}
             selected={tabValue === 9}
             sx={{
@@ -419,7 +412,6 @@ const Navbar = () => {
 
           {/* 5. Reports */}
           <ListItem
-            button
             onClick={() => handleNavigation('/user-reports')}
             selected={tabValue === 5}
             sx={{
@@ -448,7 +440,6 @@ const Navbar = () => {
       ) : (
         <List sx={{ pt: 2 }}>
           <ListItem
-            button
             onClick={() => handleNavigation('/profile')}
             selected={userTabValue === 0}
             sx={{
@@ -474,7 +465,6 @@ const Navbar = () => {
             <ListItemText primary="Profile" />
           </ListItem>
           <ListItem
-            button
             onClick={() => handleNavigation('/surveys')}
             selected={userTabValue === 1}
             sx={{
@@ -505,7 +495,6 @@ const Navbar = () => {
         <Divider />
         <List>
           <ListItem
-            button
             onClick={handleLogout}
             sx={{
               '&:hover': {
@@ -887,4 +876,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default React.memo(Navbar);

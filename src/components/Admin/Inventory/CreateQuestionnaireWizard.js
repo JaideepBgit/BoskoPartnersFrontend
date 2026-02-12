@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -19,7 +19,8 @@ import {
     Paper,
     Divider,
     Alert,
-    Grid
+    Grid,
+    Autocomplete
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import InventoryService from '../../../services/Admin/Inventory/InventoryService';
@@ -50,6 +51,10 @@ const CreateQuestionnaireWizard = ({
     const [orgVersions, setOrgVersions] = useState([]);
 
     const [surveyCode, setSurveyCode] = useState('');
+    const [titles, setTitles] = useState([]);
+    const [wizardSelectedTitle, setWizardSelectedTitle] = useState(null);
+    const [wizardTitleId, setWizardTitleId] = useState(null);
+    const [wizardNewTitleName, setWizardNewTitleName] = useState('');
 
     // Created IDs
     const [createdVersionId, setCreatedVersionId] = useState(null);
@@ -71,12 +76,22 @@ const CreateQuestionnaireWizard = ({
         const shouldInitialize = variant === 'page' || open;
         if (shouldInitialize) {
             fetchOrganizations();
+            fetchTitles();
             resetForm();
             if (initialFile) {
                 processUploadedFile(initialFile);
             }
         }
     }, [open, initialFile, mode, variant]);
+
+    const fetchTitles = async () => {
+        try {
+            const data = await InventoryService.getTitles();
+            setTitles(data);
+        } catch (err) {
+            console.error('Error fetching titles:', err);
+        }
+    };
 
     const processUploadedFile = async (file) => {
         setLoading(true);
@@ -234,9 +249,13 @@ const CreateQuestionnaireWizard = ({
 
                 let tId = createdTemplateId;
                 if (!tId) {
+                    setLoadingMessage('Initializing template...');
+
                     const payload = {
                         survey_code: surveyCode,
                         version_id: createdVersionId,
+                        title_id: wizardTitleId,
+                        new_title_name: wizardNewTitleName || '',
                         questions: []
                     };
                     const res = await InventoryService.addTemplate(payload);
@@ -475,6 +494,89 @@ const CreateQuestionnaireWizard = ({
                             onChange={(e) => setSurveyCode(e.target.value)}
                             placeholder="e.g. EMP-SAT-2024"
                             helperText="A unique code or name for this specific template."
+                        />
+                        <Autocomplete
+                            fullWidth
+                            freeSolo
+                            options={titles}
+                            getOptionLabel={(option) => {
+                                if (typeof option === 'string') return option;
+                                return option.name || '';
+                            }}
+                            value={wizardSelectedTitle}
+                            onChange={(event, newValue) => {
+                                if (typeof newValue === 'string') {
+                                    // User pressed Enter on a free-text value
+                                    setWizardSelectedTitle(null);
+                                    setWizardTitleId(null);
+                                    setWizardNewTitleName(newValue);
+                                } else if (newValue && newValue.isNew) {
+                                    // User clicked the "+ Add new title" option (id is null)
+                                    setWizardSelectedTitle(null);
+                                    setWizardTitleId(null);
+                                    setWizardNewTitleName(newValue.name);
+                                } else if (newValue && newValue.id) {
+                                    // User selected an existing title
+                                    setWizardSelectedTitle(newValue);
+                                    setWizardTitleId(newValue.id);
+                                    setWizardNewTitleName('');
+                                } else {
+                                    // User cleared the selection
+                                    setWizardSelectedTitle(null);
+                                    setWizardTitleId(null);
+                                    setWizardNewTitleName('');
+                                }
+                            }}
+                            onInputChange={(event, newInputValue, reason) => {
+                                if (reason === 'input') {
+                                    // Only do the expensive title lookup after user stops typing briefly
+                                    setWizardNewTitleName(newInputValue);
+                                    setWizardTitleId(null);
+                                    // Check for exact match
+                                    const lowerInput = newInputValue.toLowerCase();
+                                    const match = titles.find(t => t.name.toLowerCase() === lowerInput);
+                                    if (match) {
+                                        setWizardTitleId(match.id);
+                                        setWizardNewTitleName('');
+                                    }
+                                }
+                            }}
+                            filterOptions={(options, params) => {
+                                const inputLower = params.inputValue.toLowerCase();
+                                const filtered = options.filter(option =>
+                                    option.name.toLowerCase().includes(inputLower)
+                                );
+                                if (params.inputValue !== '' && !filtered.some(o => o.name.toLowerCase() === inputLower)) {
+                                    filtered.push({
+                                        id: null,
+                                        name: params.inputValue,
+                                        isNew: true
+                                    });
+                                }
+                                return filtered;
+                            }}
+                            renderOption={(props, option) => (
+                                <Box component="li" {...props} key={option.id || `new-${option.name}`}>
+                                    {option.isNew ? (
+                                        <Typography variant="body2" sx={{ fontStyle: 'italic', color: '#633394' }}>
+                                            + Add new title: "{option.name}"
+                                        </Typography>
+                                    ) : (
+                                        <Typography variant="body2">{option.name}</Typography>
+                                    )}
+                                </Box>
+                            )}
+                            isOptionEqualToValue={(option, value) => option.id === value?.id}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Title of User Taking the Survey"
+                                    margin="normal"
+                                    placeholder="Search or type a new title..."
+                                    helperText="Select an existing title or type a new one"
+                                />
+                            )}
+                            sx={{ mt: 1 }}
                         />
                     </Box>
                 );

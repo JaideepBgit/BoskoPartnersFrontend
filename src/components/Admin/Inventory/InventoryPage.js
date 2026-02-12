@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import InventoryService from '../../../services/Admin/Inventory/InventoryService';
 import {
@@ -26,7 +26,11 @@ import {
   useTheme,
   ListItemIcon,
   Container,
-  Slide
+  Slide,
+  Chip,
+  Alert,
+  Snackbar,
+  CircularProgress
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -127,6 +131,12 @@ const InventoryPage = () => {
   const [versionToCopy, setVersionToCopy] = useState(null);
   const [previewInfo, setPreviewInfo] = useState(null); // { type: 'version' | 'template', data: any }
 
+  // Bulk selection state
+  const [selectedVersionIds, setSelectedVersionIds] = useState([]);
+  const [openBulkDeleteDialog, setOpenBulkDeleteDialog] = useState(false);
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+
   // Templates
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -205,12 +215,26 @@ const InventoryPage = () => {
     }
   };
 
-  // Initial data loading
+  // Initial data loading (batched to minimize re-renders)
   useEffect(() => {
-    fetchOrganizations();
-    fetchTemplateVersions();
-    fetchTemplates();
-    fetchResponses();
+    const loadInitialData = async () => {
+      try {
+        const [orgs, versions, tmpls, resps] = await Promise.all([
+          InventoryService.getOrganizations().catch(err => { console.error('Error fetching organizations:', err); return []; }),
+          InventoryService.getTemplateVersions().catch(err => { console.error('Error fetching template versions:', err); return []; }),
+          InventoryService.getTemplates().catch(err => { console.error('Error fetching templates:', err); return []; }),
+          InventoryService.getResponses().catch(err => { console.error('Error fetching responses:', err); return []; })
+        ]);
+        // Batch all state updates together
+        setOrganizations(orgs);
+        setTemplateVersions(versions);
+        setTemplates(tmpls);
+        setResponses(resps);
+      } catch (err) {
+        console.error('Error loading initial data:', err);
+      }
+    };
+    loadInitialData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load specific template if ID is provided
@@ -311,6 +335,43 @@ const InventoryPage = () => {
     setNewVersionName('');
     setNewVersionDesc('');
     setSelectedOrganizationId('');
+  };
+
+  // Bulk selection handlers
+  const handleToggleVersionSelection = (e, versionId) => {
+    e.stopPropagation();
+    setSelectedVersionIds(prev =>
+      prev.includes(versionId) ? prev.filter(id => id !== versionId) : [...prev, versionId]
+    );
+  };
+
+  // Bulk delete template versions
+  const handleBulkDeleteVersions = async () => {
+    setBulkDeleteLoading(true);
+    let successCount = 0;
+    let failCount = 0;
+    for (const versionId of selectedVersionIds) {
+      try {
+        await InventoryService.deleteTemplateVersion(versionId);
+        successCount++;
+      } catch (err) {
+        failCount++;
+        console.error(`Failed to delete version ${versionId}:`, err);
+      }
+    }
+    setBulkDeleteLoading(false);
+    setOpenBulkDeleteDialog(false);
+    setSelectedVersionIds([]);
+    setSelectedVersion(null);
+    setSelectedTemplate(null);
+    await Promise.all([fetchTemplateVersions(), fetchTemplates()]);
+    setSnackbar({
+      open: true,
+      message: failCount > 0
+        ? `Deleted ${successCount} survey group(s). ${failCount} failed.`
+        : `Successfully deleted ${successCount} survey group(s).`,
+      severity: failCount > 0 ? 'warning' : 'success'
+    });
   };
 
   // Copy template version handlers
@@ -467,22 +528,55 @@ const InventoryPage = () => {
     }
   }, []);
 
-  // Filter template versions based on search term and role
-  const filteredVersions = templateVersions.filter(v => {
-    // For managers, strictly filter by organization_id
-    if (userRole === 'manager') {
-      if (v.organization_id !== userOrgId) return false;
+  // Filter template versions based on search term and role (memoized for performance)
+  const filteredVersions = useMemo(() => {
+    return templateVersions.filter(v => {
+      // For managers, strictly filter by organization_id
+      if (userRole === 'manager') {
+        if (v.organization_id !== userOrgId) return false;
+      }
+
+      // Then apply search term
+      if (!searchTerm) return true;
+
+      const term = searchTerm.toLowerCase();
+      return (
+        v.name.toLowerCase().includes(term) ||
+        (v.description && v.description.toLowerCase().includes(term)) ||
+        (v.organization_name && v.organization_name.toLowerCase().includes(term))
+      );
+    });
+  }, [templateVersions, searchTerm, userRole, userOrgId]);
+
+  // Bulk selection computed values (must be after filteredVersions)
+  const handleSelectAllVersions = (e) => {
+    if (e.target.checked) {
+      setSelectedVersionIds(filteredVersions.map(v => v.id));
+    } else {
+      setSelectedVersionIds([]);
     }
+  };
 
-    // Then apply search term
-    if (!searchTerm) return true;
+  const isAllSelected = filteredVersions.length > 0 && selectedVersionIds.length === filteredVersions.length;
+  const isSomeSelected = selectedVersionIds.length > 0 && !isAllSelected;
 
-    return (
-      v.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (v.description && v.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (v.organization_name && v.organization_name.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
-  });
+  // Stable callback references for child components (prevents unnecessary re-renders)
+  const handleRefreshData = useCallback(() => {
+    fetchTemplateVersions();
+    fetchTemplates();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleClosePreview = useCallback(() => {
+    setPreviewInfo(null);
+  }, []);
+
+  const handleCloseVersion = useCallback(() => {
+    setSelectedVersion(null);
+  }, []);
+
+  const handlePreviewTemplate = useCallback((template) => {
+    setPreviewInfo({ type: 'template', data: template });
+  }, []);
 
   return (
     <>
@@ -632,19 +726,64 @@ const InventoryPage = () => {
               flexShrink: 0
             }}
           >
+            {/* Bulk Actions Bar */}
+            {selectedVersionIds.length > 0 && (
+              <Box sx={{
+                mb: 2, p: 1.5, display: 'flex', alignItems: 'center', gap: 2,
+                backgroundColor: '#f3e5f5', borderRadius: 2, border: '1px solid rgba(99, 51, 148, 0.25)',
+                flexWrap: 'wrap'
+              }}>
+                <Chip label={`${selectedVersionIds.length} selected`} color="primary" sx={{ backgroundColor: '#633394' }} />
+                <Button
+                  variant="contained"
+                  size="small"
+                  startIcon={<DeleteIcon />}
+                  onClick={() => setOpenBulkDeleteDialog(true)}
+                  color="error"
+                >
+                  Delete ({selectedVersionIds.length})
+                </Button>
+                <Button variant="outlined" size="small" onClick={() => setSelectedVersionIds([])}
+                  sx={{ ml: 'auto', borderColor: '#967CB2', color: '#967CB2' }}>
+                  Clear
+                </Button>
+              </Box>
+            )}
+
             <Paper elevation={3} sx={{ borderRadius: 2, overflow: 'hidden', bgcolor: 'white' }}>
               <Box sx={{ p: 2, pb: 0, display: (selectedVersion || previewInfo) && !isMobile ? 'none' : 'block' }}>
-                <Typography
-                  variant={isMobile ? "subtitle1" : "h6"}
-                  gutterBottom
-                  sx={{
-                    color: '#633394',
-                    fontWeight: 'bold',
-                    fontSize: isMobile ? '1.1rem' : '1.25rem'
-                  }}
-                >
-                  Organization Groups
-                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                  <Typography
+                    variant={isMobile ? "subtitle1" : "h6"}
+                    gutterBottom
+                    sx={{
+                      color: '#633394',
+                      fontWeight: 'bold',
+                      fontSize: isMobile ? '1.1rem' : '1.25rem'
+                    }}
+                  >
+                    Organization Groups
+                  </Typography>
+                  {filteredVersions.length > 0 && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', mt: -1, mb: 0.5 }}>
+                      <Checkbox
+                        indeterminate={isSomeSelected}
+                        checked={isAllSelected}
+                        onChange={handleSelectAllVersions}
+                        size="small"
+                        sx={{
+                          color: '#633394',
+                          '&.Mui-checked': { color: '#633394' },
+                          '&.MuiCheckbox-indeterminate': { color: '#633394' },
+                        }}
+                        title="Select All"
+                      />
+                      <Typography variant="caption" sx={{ color: '#633394', fontWeight: 600 }}>
+                        Select all
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
               </Box>
 
               <Box sx={{ p: isMobile ? 1.5 : 2 }}>
@@ -660,11 +799,8 @@ const InventoryPage = () => {
                       .map(v => (
                         <ListItem
                           key={v.id}
-                          button
                           selected={selectedVersion?.id === v.id || previewInfo?.data?.id === v.id || previewInfo?.data?.version_id === v.id}
                           onClick={() => {
-                            // If in preview mode, maybe update preview? Or just switch to edit mode?
-                            // For now, switch to edit mode for the selected version
                             setPreviewInfo(null);
                             setSelectedVersion(v);
                           }}
@@ -674,6 +810,7 @@ const InventoryPage = () => {
                             py: isMobile || selectedVersion || previewInfo ? 1 : 1.5,
                             transition: 'all 0.2s ease-in-out',
                             borderLeft: selectedVersion?.id === v.id ? '4px solid #633394' : '4px solid transparent',
+                            backgroundColor: selectedVersionIds.includes(v.id) ? 'rgba(99, 51, 148, 0.08)' : undefined,
                             '&.Mui-selected': {
                               backgroundColor: 'rgba(99, 51, 148, 0.15)',
                               '&:hover': {
@@ -687,34 +824,47 @@ const InventoryPage = () => {
                             }
                           }}
                         >
+                          {/* Selection Checkbox */}
+                          <ListItemIcon sx={{ minWidth: 36 }}>
+                            <Checkbox
+                              edge="start"
+                              checked={selectedVersionIds.includes(v.id)}
+                              onChange={(e) => handleToggleVersionSelection(e, v.id)}
+                              onClick={(e) => e.stopPropagation()}
+                              size="small"
+                              color="primary"
+                            />
+                          </ListItemIcon>
                           <ListItemText
                             primary={v.name}
                             secondary={
-                              <Box>
+                              <Box component="span" sx={{ display: 'block' }}>
                                 <Typography
                                   variant="body2"
+                                  component="span"
                                   color="text.secondary"
                                   noWrap={!!selectedVersion || !!previewInfo}
                                   sx={{
-                                    fontSize: isMobile ? '0.75rem' : '0.875rem'
+                                    fontSize: isMobile ? '0.75rem' : '0.875rem',
+                                    display: 'block'
                                   }}
                                 >
                                   {v.description || 'No description'}
                                 </Typography>
                                 {!selectedVersion && !previewInfo && (
-                                  <Typography variant="caption" color="primary" sx={{ fontWeight: 500, fontSize: isMobile ? '0.7rem' : '0.75rem' }}>
+                                  <Typography variant="caption" component="span" color="primary" sx={{ fontWeight: 500, fontSize: isMobile ? '0.7rem' : '0.75rem', display: 'block' }}>
                                     Organization: {v.organization_name || 'N/A'}
                                   </Typography>
                                 )}
                               </Box>
                             }
+                            secondaryTypographyProps={{ component: 'div' }}
                             primaryTypographyProps={{
                               fontWeight: selectedVersion?.id === v.id ? 600 : 400,
                               color: selectedVersion?.id === v.id ? '#633394' : '#333',
                               transition: 'color 0.2s ease-in-out',
                               fontSize: isMobile ? '0.9rem' : '1rem',
-                              wordBreak: 'break-word',
-                              whiteSpace: 'normal'
+                              sx: { wordBreak: 'break-word', whiteSpace: 'normal' }
                             }}
                           />
                           <ListItemSecondaryAction>
@@ -853,28 +1003,22 @@ const InventoryPage = () => {
                 <TemplatesTab
                   templateVersions={templateVersions}
                   templates={templates}
-                  onRefreshData={() => {
-                    fetchTemplateVersions();
-                    fetchTemplates();
-                  }}
+                  onRefreshData={handleRefreshData}
                   previewMode={true}
                   initialVersion={previewInfo.type === 'version' ? previewInfo.data : null}
                   initialTemplate={previewInfo.type === 'template' ? previewInfo.data : null}
-                  onClose={() => setPreviewInfo(null)}
+                  onClose={handleClosePreview}
                   hideSidebar={true}
                 />
               ) : (
                 <QuestionsTab
                   templateVersions={templateVersions}
                   templates={templates}
-                  onRefreshData={() => {
-                    fetchTemplateVersions();
-                    fetchTemplates();
-                  }}
+                  onRefreshData={handleRefreshData}
                   currentVersion={selectedVersion}
                   hideSidebar={true}
-                  onClose={() => setSelectedVersion(null)}
-                  onPreview={(template) => setPreviewInfo({ type: 'template', data: template })}
+                  onClose={handleCloseVersion}
+                  onPreview={handlePreviewTemplate}
                 />
               )}
             </Box>
@@ -999,6 +1143,56 @@ const InventoryPage = () => {
           templates={templates}
           onCopySuccess={handleCopyVersionSuccess}
         />
+
+        {/* Bulk Delete Dialog */}
+        <Dialog open={openBulkDeleteDialog} onClose={() => !bulkDeleteLoading && setOpenBulkDeleteDialog(false)} maxWidth="sm" fullWidth>
+          <DialogTitle sx={{ backgroundColor: '#d32f2f', color: 'white' }}>
+            Delete {selectedVersionIds.length} Survey Group(s)
+          </DialogTitle>
+          <DialogContent sx={{ mt: 2 }}>
+            <Typography>
+              Are you sure you want to delete <strong>{selectedVersionIds.length}</strong> survey group(s)?
+            </Typography>
+            <Alert severity="error" sx={{ mt: 2 }}>
+              This will permanently delete the selected organization groups along with all their survey templates, questions, and responses. This action cannot be undone!
+            </Alert>
+            <Box sx={{ mt: 2, maxHeight: 200, overflowY: 'auto' }}>
+              {filteredVersions
+                .filter(v => selectedVersionIds.includes(v.id))
+                .map(v => (
+                  <Box key={v.id} sx={{ p: 1, mb: 0.5, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+                    <Typography variant="body2">
+                      <strong>{v.name}</strong> — {v.organization_name || 'N/A'}
+                    </Typography>
+                  </Box>
+                ))}
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenBulkDeleteDialog(false)} disabled={bulkDeleteLoading}>Cancel</Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={handleBulkDeleteVersions}
+              disabled={bulkDeleteLoading}
+              startIcon={bulkDeleteLoading ? <CircularProgress size={20} color="inherit" /> : <DeleteIcon />}
+            >
+              {bulkDeleteLoading ? 'Deleting...' : 'Yes, Delete All'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Snackbar for notifications */}
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={4000}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        >
+          <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} variant="filled">
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
 
       </Container>
     </>

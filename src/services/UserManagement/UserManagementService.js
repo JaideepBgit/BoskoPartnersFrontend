@@ -273,35 +273,35 @@ export const addOrganizationType = async (typeData) => {
     }
 };
 
-// Add user organizational role
-export const addUserOrganizationalRole = async (roleData) => {
+// Add user organizational title
+export const addUserOrganizationalTitle = async (titleData) => {
     try {
-        const response = await axios.post(`${BASE_URL}/user-organizational-roles`, roleData);
+        const response = await axios.post(`${BASE_URL}/user-organizational-titles`, titleData);
         return response.data;
     } catch (error) {
-        console.error('Failed to add user organizational role:', error);
+        console.error('Failed to add user organizational title:', error);
         throw error;
     }
 };
 
-// Fetch user organizational roles
-export const fetchUserOrganizationalRoles = async (userId) => {
+// Fetch user organizational titles
+export const fetchUserOrganizationalTitles = async (userId) => {
     try {
-        const response = await axios.get(`${BASE_URL}/users/${userId}/organizational-roles`);
+        const response = await axios.get(`${BASE_URL}/user-organizational-titles/${userId}`);
         return response.data;
     } catch (error) {
-        console.error('Failed to fetch user organizational roles:', error);
+        console.error('Failed to fetch user organizational titles:', error);
         throw error;
     }
 };
 
-// Update user organizational roles
-export const updateUserOrganizationalRoles = async (userId, rolesData) => {
+// Update user organizational titles
+export const updateUserOrganizationalTitles = async (userId, titlesData) => {
     try {
-        const response = await axios.put(`${BASE_URL}/users/${userId}/organizational-roles`, rolesData);
+        const response = await axios.put(`${BASE_URL}/user-organizational-titles/${userId}`, titlesData);
         return response.data;
     } catch (error) {
-        console.error('Failed to update user organizational roles:', error);
+        console.error('Failed to update user organizational titles:', error);
         throw error;
     }
 };
