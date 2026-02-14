@@ -129,7 +129,6 @@ function OrganizationDetailPage() {
         email: '',
         email: '',
         role: '',
-        title_id: '',
         geo_location: {}
     });
     const [savingUser, setSavingUser] = useState(false);
@@ -356,11 +355,6 @@ function OrganizationDetailPage() {
         let userTitles = [];
         if (user.titles && Array.isArray(user.titles)) {
             userTitles = user.titles;
-        } else if (user.title_id) {
-            userTitles = [user.title_id];
-        } else if (user.title) {
-            const titleObj = titles.find(t => t.name === user.title);
-            userTitles = titleObj ? [titleObj.id] : [];
         }
 
         setEditUserFormData({
@@ -371,7 +365,6 @@ function OrganizationDetailPage() {
             titles: userTitles,
             // Keep backwards compatibility
             role: user.role || userRoles[0] || 'user',
-            title_id: user.title_id || userTitles[0] || '',
             geo_location: user.geo_location || {}
         });
         setEditUserDialogOpen(true);
@@ -387,7 +380,6 @@ function OrganizationDetailPage() {
             roles: [],
             titles: [],
             role: '',
-            title_id: '',
             geo_location: {}
         });
     };
@@ -425,9 +417,8 @@ function OrganizationDetailPage() {
                     ? editUserFormData.roles
                     : editUserFormData.role ? [editUserFormData.role] : ['user'],
                 titles: editUserFormData.titles || [],
-                // Keep backwards compatibility for single role/title
-                role: editUserFormData.roles?.[0] || editUserFormData.role || 'user',
-                title_id: editUserFormData.titles?.[0] || editUserFormData.title_id || null
+                // Keep backwards compatibility for single role
+                role: editUserFormData.roles?.[0] || editUserFormData.role || 'user'
             };
 
             await updateUser(selectedUserToEdit.id, userData);
@@ -1875,8 +1866,7 @@ function OrganizationDetailPage() {
                                     onChange={(event, newValue) => {
                                         setEditUserFormData({
                                             ...editUserFormData,
-                                            titles: newValue.map(v => v.id),
-                                            title_id: newValue.length > 0 ? newValue[0].id : ''
+                                            titles: newValue.map(v => v.id)
                                         });
                                     }}
                                     options={titles}

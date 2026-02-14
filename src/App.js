@@ -4,6 +4,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import theme from './theme';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import LoginPage from './components/Login/Login';
+import RoleSelectionPage from './components/Login/RoleSelectionPage';
 import FormContainer from './components/UserDetailsForm/FormContainer';
 import UserLandingPage from './components/LandingPages/UserLandingPage';
 import UserDashboard from './components/Dashboard/UserDashboard';
@@ -40,6 +41,7 @@ import ContactReferralsPage from './components/UserManagement/Users/ContactRefer
 import AddOrganizationPage from './components/UserManagement/Organizations/AddOrganizationPage';
 import AddAssociationPage from './components/Admin/OrganizationManagement/AddAssociationPage';
 import EmailTemplatesPage from './components/Admin/Inventory/EmailTemplatesPage';
+import AudienceManagement from './components/Admin/Audience/AudienceManagement';
 
 import './App.css';
 import './styles/form.css';
@@ -119,6 +121,7 @@ function Main({ isAuthenticated, userRole, login, logout }) {
       <Routes>
         <Route path="/" element={<LoginPage onLogin={login} />} />
         <Route path="/login" element={<LoginPage onLogin={login} />} />
+        <Route path="/select-role" element={<RoleSelectionPage onLogin={login} />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
 
@@ -237,6 +240,13 @@ function Main({ isAuthenticated, userRole, login, logout }) {
         <Route path="/email-templates" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <EmailTemplatesPage />
+          </ProtectedRoute>
+        } />
+
+        {/* Audience Management Route */}
+        <Route path="/audiences" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <AudienceManagement />
           </ProtectedRoute>
         } />
 

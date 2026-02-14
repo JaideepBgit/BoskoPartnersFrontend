@@ -9,25 +9,8 @@ import {
   Box,
   Link,
   Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Chip,
   CircularProgress
 } from '@mui/material';
-import {
-  AdminPanelSettings as AdminIcon,
-  Person as UserIcon,
-  SupervisorAccount as ManagerIcon,
-  Security as RootIcon,
-  Badge as OtherIcon
-} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import UserService from '../../services/Login/UserService';
 
@@ -38,51 +21,9 @@ const LoginPage = ({ onLogin }) => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Role selection state
-  const [showRoleSelection, setShowRoleSelection] = useState(false);
-  const [availableRoles, setAvailableRoles] = useState([]);
-  const [pendingUserData, setPendingUserData] = useState(null);
-  const [selectedRole, setSelectedRole] = useState(null);
-
   const navigate = useNavigate();
 
   const logoImage = process.env.PUBLIC_URL + '/assets/saurara-high-resolution-logo-transparent.png';
-
-  // Role icon mapping
-  const getRoleIcon = (role) => {
-    switch (role.toLowerCase()) {
-      case 'admin':
-        return <AdminIcon sx={{ color: '#633394' }} />;
-      case 'root':
-        return <RootIcon sx={{ color: '#d32f2f' }} />;
-      case 'manager':
-        return <ManagerIcon sx={{ color: '#633394' }} />;
-      case 'user':
-        return <UserIcon sx={{ color: '#2e7d32' }} />;
-      default:
-        return <OtherIcon sx={{ color: '#757575' }} />;
-    }
-  };
-
-  // Role description mapping
-  const getRoleDescription = (role) => {
-    switch (role.toLowerCase()) {
-      case 'admin':
-        return 'Full administrative access to manage organizations, users, and surveys';
-      case 'root':
-        return 'Super administrator with complete system access';
-      case 'manager':
-        return 'Manage team members and view reports';
-      case 'user':
-        return 'Access assigned surveys and complete responses';
-      case 'primary_contact':
-        return 'Primary point of contact for the organization';
-      case 'secondary_contact':
-        return 'Secondary point of contact for the organization';
-      default:
-        return 'Access based on assigned permissions';
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -105,11 +46,16 @@ const LoginPage = ({ onLogin }) => {
       console.log('Requires role selection:', response.requires_role_selection);
 
       // Check if user has multiple roles
-      if (response.requires_role_selection && userData.available_roles && userData.available_roles.length > 1) {
-        // Show role selection dialog
-        setAvailableRoles(userData.available_roles);
-        setPendingUserData(userData);
-        setShowRoleSelection(true);
+      // Check if user has multiple roles (or same role in multiple contexts)
+      if (response.requires_role_selection) {
+        // Navigate to role selection page
+        navigate('/select-role', {
+          state: {
+            userData,
+            availableRoles: userData.available_roles || [],
+            availableRolesContext: userData.available_roles_context || []
+          }
+        });
         setLoading(false);
         return;
       }
@@ -120,29 +66,6 @@ const LoginPage = ({ onLogin }) => {
     } catch (err) {
       console.error('Login error:', err);
       setError('Invalid email or password');
-      setLoading(false);
-    }
-  };
-
-  const handleRoleSelect = async (role) => {
-    setSelectedRole(role);
-    setLoading(true);
-    setError('');
-
-    try {
-      // Call select-role endpoint to validate and get updated user data
-      const response = await UserService.selectRole(pendingUserData.id, role);
-      const userData = response.data || response;
-
-      console.log('Role selected successfully:', userData);
-
-      // Close dialog and complete login
-      setShowRoleSelection(false);
-      completeLogin(userData);
-
-    } catch (err) {
-      console.error('Role selection error:', err);
-      setError(err.response?.data?.error || 'Failed to select role');
       setLoading(false);
     }
   };
@@ -166,6 +89,9 @@ const LoginPage = ({ onLogin }) => {
     }
     if (userData.available_roles) {
       localStorage.setItem('availableRoles', JSON.stringify(userData.available_roles));
+    }
+    if (userData.available_roles_context) {
+      localStorage.setItem('availableRolesContext', JSON.stringify(userData.available_roles_context));
     }
     if (userData.organization_id) {
       localStorage.setItem('organizationId', userData.organization_id);
@@ -196,13 +122,6 @@ const LoginPage = ({ onLogin }) => {
         console.warn('Unknown role, defaulting to /');
         navigate('/');
     }
-  };
-
-  const handleCloseRoleSelection = () => {
-    setShowRoleSelection(false);
-    setPendingUserData(null);
-    setAvailableRoles([]);
-    setSelectedRole(null);
   };
 
   return (
@@ -311,113 +230,6 @@ const LoginPage = ({ onLogin }) => {
           </Box>
         </Container>
       </Box>
-
-      {/* Role Selection Dialog */}
-      <Dialog
-        open={showRoleSelection}
-        onClose={handleCloseRoleSelection}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            background: 'linear-gradient(135deg, #ffffff 0%, #f8f6fc 100%)',
-          }
-        }}
-      >
-        <DialogTitle sx={{
-          background: 'linear-gradient(135deg, #633394 0%, #967CB2 100%)',
-          color: 'white',
-          textAlign: 'center',
-          py: 3
-        }}>
-          <Typography variant="h5" component="div" sx={{ fontWeight: 600 }}>
-            Welcome, {pendingUserData?.firstname || pendingUserData?.username}!
-          </Typography>
-          <Typography variant="body2" sx={{ mt: 1, opacity: 0.9 }}>
-            You have multiple roles. Please select how you want to log in:
-          </Typography>
-        </DialogTitle>
-
-        <DialogContent sx={{ p: 3 }}>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-
-          <List sx={{ pt: 0 }}>
-            {availableRoles.map((role) => (
-              <ListItem
-                key={role}
-                disablePadding
-                sx={{ mb: 1 }}
-              >
-                <ListItemButton
-                  onClick={() => handleRoleSelect(role)}
-                  disabled={loading && selectedRole === role}
-                  sx={{
-                    borderRadius: 2,
-                    border: '1px solid',
-                    borderColor: selectedRole === role ? '#633394' : 'rgba(0,0,0,0.12)',
-                    backgroundColor: selectedRole === role ? 'rgba(99, 51, 148, 0.08)' : 'transparent',
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      backgroundColor: 'rgba(99, 51, 148, 0.12)',
-                      borderColor: '#633394',
-                      transform: 'translateX(4px)',
-                    }
-                  }}
-                >
-                  <ListItemIcon>
-                    {getRoleIcon(role)}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 600, textTransform: 'capitalize' }}>
-                          {role.replace('_', ' ')}
-                        </Typography>
-                        <Chip
-                          label={role.toUpperCase()}
-                          size="small"
-                          sx={{
-                            backgroundColor: '#633394',
-                            color: 'white',
-                            fontSize: '0.65rem',
-                            height: 20
-                          }}
-                        />
-                      </Box>
-                    }
-                    secondary={getRoleDescription(role)}
-                  />
-                  {loading && selectedRole === role && (
-                    <CircularProgress size={24} sx={{ ml: 2 }} />
-                  )}
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-        </DialogContent>
-
-        <DialogActions sx={{ p: 2, pt: 0, justifyContent: 'center' }}>
-          <Button
-            onClick={handleCloseRoleSelection}
-            variant="outlined"
-            sx={{
-              borderColor: '#633394',
-              color: '#633394',
-              '&:hover': {
-                borderColor: '#967CB2',
-                backgroundColor: 'rgba(99, 51, 148, 0.08)'
-              }
-            }}
-          >
-            Cancel
-          </Button>
-        </DialogActions>
-      </Dialog>
     </>
   );
 };

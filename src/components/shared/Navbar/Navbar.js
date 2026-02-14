@@ -20,7 +20,10 @@ import {
   Dialog,
   DialogContent,
   Snackbar,
-  Alert
+  Alert,
+  Menu,
+  MenuItem,
+  CircularProgress
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -45,7 +48,9 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CloseIcon from '@mui/icons-material/Close';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import { generateReferralLink } from '../../../services/UserManagement/ContactReferralService';
+import UserService from '../../../services/Login/UserService';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -63,6 +68,10 @@ const Navbar = () => {
   const [inviteLink, setInviteLink] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteSnackbar, setInviteSnackbar] = useState({ open: false, message: '', severity: 'success' });
+
+  // Role switcher state
+  const [availableRoles, setAvailableRoles] = useState([]);
+  const [switchingRole, setSwitchingRole] = useState(false);
 
   const accountMenuOpen = Boolean(accountAnchorEl);
 
@@ -168,7 +177,43 @@ const Navbar = () => {
   // load user once
   useEffect(() => {
     const stored = localStorage.getItem('user');
-    if (stored) setUser(JSON.parse(stored));
+    if (stored) {
+      const userData = JSON.parse(stored);
+      setUser(userData);
+      
+      // Load available roles from localStorage
+      const storedRolesContext = localStorage.getItem('availableRolesContext');
+      const storedRoles = localStorage.getItem('availableRoles');
+      
+      console.log('Navbar - Loading roles:', { storedRolesContext, storedRoles });
+      
+      if (storedRolesContext) {
+        try {
+          const rolesContext = JSON.parse(storedRolesContext);
+          console.log('Navbar - Parsed roles context:', rolesContext);
+          setAvailableRoles(rolesContext);
+        } catch (e) {
+          console.error('Error parsing availableRolesContext:', e);
+        }
+      } else if (storedRoles) {
+        try {
+          const roles = JSON.parse(storedRoles);
+          console.log('Navbar - Parsed roles:', roles);
+          setAvailableRoles(roles.map(r => ({ role: r })));
+        } catch (e) {
+          console.error('Error parsing availableRoles:', e);
+        }
+      }
+      
+      // Also check if userData has the roles embedded
+      if (userData.available_roles_context) {
+        console.log('Navbar - Using roles from userData:', userData.available_roles_context);
+        setAvailableRoles(userData.available_roles_context);
+      } else if (userData.available_roles) {
+        console.log('Navbar - Using simple roles from userData:', userData.available_roles);
+        setAvailableRoles(userData.available_roles.map(r => ({ role: r })));
+      }
+    }
   }, []);
 
   // sync tab value when route or user changes
@@ -183,6 +228,7 @@ const Navbar = () => {
       else if (p.includes('/users')) setTabValue(4);          // 4. Users
       else if (p.includes('/contact-referrals')) setTabValue(8); // 8. Contact Referrals
       else if (p.includes('/email-templates')) setTabValue(9);   // 9. Email Templates
+      else if (p.includes('/audiences')) setTabValue(10);         // 10. Audiences
       else if (p.includes('/reports') || p.includes('/user-reports')) setTabValue(5); // 5. Reports
       else setTabValue(1); // Default to Dashboard
     } else {
@@ -204,6 +250,87 @@ const Navbar = () => {
     localStorage.removeItem('user');
     navigate('/login');
   };
+
+  const handleSwitchRole = async (roleObj) => {
+    if (!user?.id) return;
+
+    const roleName = typeof roleObj === 'string' ? roleObj : roleObj.role;
+    const orgId = typeof roleObj === 'object' ? roleObj.org_id : null;
+
+    setSwitchingRole(true);
+    handleAccountClose();
+
+    try {
+      const response = await UserService.selectRole(user.id, roleName, orgId);
+      const userData = response.data || response;
+
+      console.log('Role switch response:', userData);
+
+      // Update localStorage with all available roles preserved
+      localStorage.setItem('user', JSON.stringify(userData));
+      if (userData.role) localStorage.setItem('userRole', userData.role);
+      if (userData.organization_id) localStorage.setItem('organizationId', userData.organization_id);
+      if (userData.available_roles) {
+        localStorage.setItem('availableRoles', JSON.stringify(userData.available_roles));
+      }
+      if (userData.available_roles_context) {
+        localStorage.setItem('availableRolesContext', JSON.stringify(userData.available_roles_context));
+      }
+
+      // Update state
+      setUser(userData);
+      if (userData.available_roles_context) {
+        setAvailableRoles(userData.available_roles_context);
+      }
+
+      // Show success message
+      setInviteSnackbar({
+        open: true,
+        message: `Switched to ${roleName} role successfully`,
+        severity: 'success'
+      });
+
+      // Navigate based on new role
+      switch (userData.role) {
+        case 'admin':
+          navigate('/dashboard');
+          break;
+        case 'root':
+          navigate('/root-dashboard');
+          break;
+        case 'user':
+          navigate('/profile');
+          break;
+        case 'manager':
+          navigate('/manager-dashboard');
+          break;
+        default:
+          navigate('/dashboard');
+      }
+
+      // Reload page to refresh all components with new role
+      setTimeout(() => window.location.reload(), 500);
+
+    } catch (err) {
+      console.error('Role switch error:', err);
+      setInviteSnackbar({
+        open: true,
+        message: 'Failed to switch role. Please try again.',
+        severity: 'error'
+      });
+    } finally {
+      setSwitchingRole(false);
+    }
+  };
+
+  // Check if user has multiple roles
+  const hasMultipleRoles = availableRoles.length > 1;
+  
+  console.log('Navbar - hasMultipleRoles check:', { 
+    availableRoles, 
+    length: availableRoles.length, 
+    hasMultipleRoles 
+  });
 
   // Sidebar content
   const sidebarContent = (
@@ -408,6 +535,33 @@ const Navbar = () => {
           >
             <ListItemIcon><EmailIcon /></ListItemIcon>
             <ListItemText primary="Templates" />
+          </ListItem>
+
+          {/* 10. Audience Management */}
+          <ListItem
+            onClick={() => handleNavigation('/audiences')}
+            selected={tabValue === 10}
+            sx={{
+              '&.Mui-selected': {
+                backgroundColor: '#633394',
+                color: 'white',
+                '& .MuiListItemIcon-root': {
+                  color: 'white',
+                },
+                '&:hover': {
+                  backgroundColor: '#533082',
+                },
+              },
+              '&:hover': {
+                backgroundColor: '#f5f5f5',
+              },
+              borderRadius: '8px',
+              mx: 1,
+              mb: 0.5,
+            }}
+          >
+            <ListItemIcon><PeopleIcon /></ListItemIcon>
+            <ListItemText primary="Audiences" />
           </ListItem>
 
           {/* 5. Reports */}
@@ -694,6 +848,70 @@ const Navbar = () => {
           </Box>
 
           <Divider sx={{ my: 1 }} />
+
+          {/* Switch Role - Only show if user has multiple roles */}
+          {hasMultipleRoles && (
+            <>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                  p: 1,
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  '&:hover': { backgroundColor: '#f5f5f5' },
+                }}
+              >
+                <SwapHorizIcon sx={{ fontSize: 20, color: '#555' }} />
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="body2" sx={{ color: '#333', fontWeight: 600 }}>
+                    Switch Role
+                  </Typography>
+                </Box>
+              </Box>
+              
+              {/* Available Roles List */}
+              <Box sx={{ pl: 4.5, pr: 1, pb: 1 }}>
+                {availableRoles.map((roleObj) => {
+                  const roleName = typeof roleObj === 'string' ? roleObj : roleObj.role;
+                  const orgName = roleObj.org_name;
+                  const orgId = roleObj.org_id;
+                  const uniqueKey = orgId ? `${roleName}-${orgId}` : roleName;
+                  const isCurrentRole = user?.role === roleName && (!orgId || user?.organization_id === orgId);
+
+                  return (
+                    <Box
+                      key={uniqueKey}
+                      onClick={() => !isCurrentRole && !switchingRole && handleSwitchRole(roleObj)}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        p: 0.75,
+                        pl: 1,
+                        borderRadius: '6px',
+                        cursor: isCurrentRole ? 'default' : 'pointer',
+                        backgroundColor: isCurrentRole ? '#f0e7f7' : 'transparent',
+                        opacity: isCurrentRole ? 0.7 : 1,
+                        '&:hover': isCurrentRole ? {} : { backgroundColor: '#f5f5f5' },
+                        mb: 0.5
+                      }}
+                    >
+                      <Typography variant="caption" sx={{ color: '#333', textTransform: 'capitalize', flex: 1 }}>
+                        {roleName.replace('_', ' ')}
+                        {orgName && ` @ ${orgName}`}
+                      </Typography>
+                      {isCurrentRole && <CheckIcon sx={{ fontSize: 14, color: '#633394' }} />}
+                      {switchingRole && !isCurrentRole && <CircularProgress size={12} />}
+                    </Box>
+                  );
+                })}
+              </Box>
+
+              <Divider sx={{ my: 1 }} />
+            </>
+          )}
 
           {/* Profile */}
           <Box

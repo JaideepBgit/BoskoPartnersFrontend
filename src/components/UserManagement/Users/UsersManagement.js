@@ -60,7 +60,6 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
     // Form states
     const [formData, setFormData] = useState({
         username: '',
-        title_id: '',
         email: '',
         password: '',
         ui_role: 'user',
@@ -548,7 +547,6 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
 
         setFormData({
             username: user.username,
-            title_id: user.title_id || (user.title && titles.find(t => t.name === user.title)?.id) || '',
             email: user.email,
             password: '', // Don't populate password for security
             ui_role: user.ui_role,
@@ -560,7 +558,7 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
             email_template_id: user.email_template_id || '',
             roles: userRoles,
             system_roles: user.roles && Array.isArray(user.roles) ? user.roles : (user.ui_role ? [user.ui_role] : ['user']),
-            title_ids: user.titles && Array.isArray(user.titles) ? user.titles.map(t => t.id) : (user.title_id ? [user.title_id] : []),
+            title_ids: user.titles && Array.isArray(user.titles) ? user.titles.map(t => t.id) : [],
             geo_location: user.geo_location ? {
                 continent: user.geo_location.continent || '',
                 region: user.geo_location.region || '',
@@ -1411,8 +1409,7 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
                                 onChange={(event, newValue) => {
                                     setFormData({
                                         ...formData,
-                                        title_ids: newValue.map(v => v.id),
-                                        title_id: newValue.length > 0 ? newValue[0].id : ''
+                                        title_ids: newValue.map(v => v.id)
                                     });
                                 }}
                                 options={titles}

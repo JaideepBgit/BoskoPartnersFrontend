@@ -174,6 +174,17 @@ export const fetchTitles = async () => {
     }
 };
 
+// Add a new title
+export const addTitle = async (titleData) => {
+    try {
+        const response = await axios.post(`${BASE_URL}/titles`, titleData);
+        return response.data;
+    } catch (error) {
+        console.error('Failed to add title:', error);
+        throw error;
+    }
+};
+
 // Fetch user roles
 export const fetchRoles = async () => {
     try {
@@ -273,13 +284,24 @@ export const addOrganizationType = async (typeData) => {
     }
 };
 
-// Add user organizational title
-export const addUserOrganizationalTitle = async (titleData) => {
+// Add user organizational title (Assign user to organization)
+export const addUserOrganizationalTitle = async (userId, data) => {
     try {
-        const response = await axios.post(`${BASE_URL}/user-organizational-titles`, titleData);
+        const response = await axios.post(`${BASE_URL}/users/${userId}/organization-titles`, data);
         return response.data;
     } catch (error) {
         console.error('Failed to add user organizational title:', error);
+        throw error;
+    }
+};
+
+// Remove user organizational title
+export const removeUserOrganizationalTitle = async (userId, orgId, titleId) => {
+    try {
+        const response = await axios.delete(`${BASE_URL}/users/${userId}/organization-titles/${orgId}/${titleId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Failed to remove user organizational title:', error);
         throw error;
     }
 };

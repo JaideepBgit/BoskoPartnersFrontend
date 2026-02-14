@@ -20,13 +20,19 @@ const loginUser = async (username, password) => {
     }
 };
 
-const selectRole = async (userId, selectedRole) => {
+const selectRole = async (userId, selectedRole, organizationId = null) => {
     try {
-        console.log('Selecting role:', { userId, selectedRole });
-        const response = await axios.post(`${BASE_URL}/users/select-role`, {
+        console.log('Selecting role:', { userId, selectedRole, organizationId });
+        const requestData = {
             user_id: userId,
             selected_role: selectedRole
-        });
+        };
+
+        if (organizationId) {
+            requestData.organization_id = organizationId;
+        }
+
+        const response = await axios.post(`${BASE_URL}/users/select-role`, requestData);
         console.log('Role selection response:', response.data);
         return response.data;
     } catch (error) {
