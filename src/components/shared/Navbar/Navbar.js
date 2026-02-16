@@ -46,6 +46,7 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CheckIcon from '@mui/icons-material/Check';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
+import MailIcon from '@mui/icons-material/Mail';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CloseIcon from '@mui/icons-material/Close';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
@@ -84,7 +85,7 @@ const Navbar = () => {
     try {
       const result = await generateReferralLink(user.id);
       const baseUrl = window.location.origin;
-      setInviteLink(`${baseUrl}/contact-referral/${result.referral_code}`);
+      setInviteLink(`${baseUrl}/contact-referral/v2/${result.referral_code}`);
     } catch (error) {
       console.error('Error generating invite link:', error);
       setInviteSnackbar({
@@ -762,22 +763,10 @@ const Navbar = () => {
           {user && (user.role === 'admin' || user.role === 'root' || user.role === 'manager' || user.role === 'association') && (
             <Button
               variant="outlined"
-              startIcon={<MailOutlineIcon />}
+              startIcon={<MailIcon />}
               onClick={handleInviteClick}
               sx={{
-                borderColor: '#633394',
-                color: '#633394',
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: '0.85rem',
-                borderRadius: '8px',
-                px: 2,
-                py: 0.5,
                 mr: 2,
-                '&:hover': {
-                  borderColor: '#4a2570',
-                  backgroundColor: 'rgba(99, 51, 148, 0.04)',
-                },
               }}
             >
               Invite

@@ -28,6 +28,7 @@ import ReportDocumentEditor from './components/Admin/Reports/ReportDocumentEdito
 import AdminUserReports from './components/Admin/Reports/UserReports';
 import RoleBasedReports from './components/Reports/RoleBasedReports';
 import ContactReferralPage from './components/LandingPages/ContactReferralPage';
+import ContactReferralPageV2 from './components/LandingPages/ContactReferralPageV2';
 import ForgotPassword from './components/Login/ForgotPassword';
 import ResetPassword from './components/Login/ResetPassword';
 import SettingsPage from './components/Settings/SettingsPage';
@@ -136,6 +137,8 @@ function Main({ isAuthenticated, userRole, login, logout }) {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
 
+        {/* V2 Contact Referral Page - must be before v1 routes */}
+        <Route path="/contact-referral/v2/:referralCode" element={<ContactReferralPageV2 />} />
         {/* Public Contact Referral Page - No authentication required */}
         <Route path="/contact-referral" element={
           <div style={{ padding: '20px' }}>

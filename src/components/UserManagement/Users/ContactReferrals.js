@@ -17,6 +17,7 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import InfoIcon from '@mui/icons-material/Info';
 import SearchIcon from '@mui/icons-material/Search';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import InputAdornment from '@mui/material/InputAdornment';
 import DataTable from '../../shared/DataTable/DataTable';
 import {
@@ -36,13 +37,17 @@ function ContactReferrals() {
     const [templates, setTemplates] = useState([]);
     const [organizationTypes, setOrganizationTypes] = useState([]);
 
-    // Search state
+    // Search and filter state
     const [searchQuery, setSearchQuery] = useState('');
+    const [filterReferrer, setFilterReferrer] = useState('');
+    const [filterCountry, setFilterCountry] = useState('');
+    const [filterOrganization, setFilterOrganization] = useState('');
 
     // Table selection state
     const [selectedReferral, setSelectedReferral] = useState(null);
     const [selectedRowId, setSelectedRowId] = useState(null);
     const [selectedReferralIds, setSelectedReferralIds] = useState([]);
+    const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
 
     // Approval dialog state
     const [openApprovalDialog, setOpenApprovalDialog] = useState(false);
@@ -199,6 +204,7 @@ function ContactReferrals() {
     const handleRowSelect = async (referral) => {
         setSelectedReferral(referral);
         setSelectedRowId(referral.id);
+        setOpenDetailsDialog(true);
 
         // Pre-check organization when row is selected
         if (referral.institution_name) {
@@ -209,6 +215,12 @@ function ContactReferrals() {
                 console.error('Error checking organization:', err);
             }
         }
+    };
+
+    const handleCloseDetailsDialog = () => {
+        setOpenDetailsDialog(false);
+        setSelectedReferral(null);
+        setSelectedRowId(null);
     };
 
 
@@ -464,6 +476,7 @@ function ContactReferrals() {
         if (!approvalLoading) {
             setOpenApprovalDialog(false);
             setSelectedReferral(null);
+            setSelectedRowId(null);
             setSuccessMessage('');
             setGeneratedPassword('');
         }
@@ -473,36 +486,79 @@ function ContactReferrals() {
         if (!rejectLoading) {
             setOpenRejectDialog(false);
             setSelectedReferral(null);
+            setSelectedRowId(null);
         }
     };
 
-    // Filtered referrals based on search
+    // Unique filter options derived from referral data
+    const referrerOptions = useMemo(() => {
+        const names = referrals
+            .map(r => r.referrer_info?.name)
+            .filter(Boolean);
+        return [...new Set(names)].sort();
+    }, [referrals]);
+
+    const countryOptions = useMemo(() => {
+        const countries = referrals
+            .map(r => r.country)
+            .filter(Boolean);
+        return [...new Set(countries)].sort();
+    }, [referrals]);
+
+    const organizationOptions = useMemo(() => {
+        const orgs = referrals
+            .map(r => r.institution_name)
+            .filter(Boolean);
+        return [...new Set(orgs)].sort();
+    }, [referrals]);
+
+    // Filtered referrals based on search and filters
     const filteredReferrals = referrals.filter(referral => {
-        if (!searchQuery) return true;
-        const query = searchQuery.toLowerCase();
-        return (
-            (referral.first_name || '').toLowerCase().includes(query) ||
-            (referral.last_name || '').toLowerCase().includes(query) ||
-            (referral.email || '').toLowerCase().includes(query) ||
-            (referral.institution_name || '').toLowerCase().includes(query) ||
-            (referral.country || '').toLowerCase().includes(query) ||
-            (referral.title || '').toLowerCase().includes(query) ||
-            (referral.type_of_institution || '').toLowerCase().includes(query)
-        );
+        // Text search
+        if (searchQuery) {
+            const query = searchQuery.toLowerCase();
+            const matchesSearch = (
+                (referral.first_name || '').toLowerCase().includes(query) ||
+                (referral.last_name || '').toLowerCase().includes(query) ||
+                (referral.email || '').toLowerCase().includes(query) ||
+                (referral.institution_name || '').toLowerCase().includes(query) ||
+                (referral.country || '').toLowerCase().includes(query) ||
+                (referral.title || '').toLowerCase().includes(query) ||
+                (referral.type_of_institution || '').toLowerCase().includes(query)
+            );
+            if (!matchesSearch) return false;
+        }
+
+        // Referred by filter
+        if (filterReferrer && referral.referrer_info?.name !== filterReferrer) return false;
+
+        // Country filter
+        if (filterCountry && referral.country !== filterCountry) return false;
+
+        // Organization filter
+        if (filterOrganization && referral.institution_name !== filterOrganization) return false;
+
+        return true;
     });
+
+    // Check if an organization name exists in the system
+    const isExistingOrganization = (institutionName) => {
+        if (!institutionName) return false;
+        return organizations.some(org => org.name?.toLowerCase() === institutionName.toLowerCase());
+    };
 
     // Column definitions for DataTable
     const referralColumns = useMemo(() => [
         {
             id: 'name',
-            label: 'Name',
+            label: 'Referral',
             render: (referral) => (
                 <>
                     <Typography variant="body2" fontWeight="bold">
                         {referral.first_name} {referral.last_name}
                     </Typography>
                     {referral.title && (
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" color="text.secondary" display="block">
                             {referral.title}
                         </Typography>
                     )}
@@ -526,18 +582,45 @@ function ContactReferrals() {
                 <Box display="flex" alignItems="center" gap={0.5}>
                     <PhoneIcon fontSize="small" color="action" />
                     <Typography variant="body2">{referral.full_phone}</Typography>
+                    {referral.whatsapp && (
+                        <Tooltip title={`WhatsApp: ${referral.whatsapp}`} arrow>
+                            <WhatsAppIcon fontSize="small" sx={{ color: '#25D366' }} />
+                        </Tooltip>
+                    )}
+                </Box>
+            ) : referral.whatsapp ? (
+                <Box display="flex" alignItems="center" gap={0.5}>
+                    <Tooltip title={`WhatsApp: ${referral.whatsapp}`} arrow>
+                        <WhatsAppIcon fontSize="small" sx={{ color: '#25D366' }} />
+                    </Tooltip>
+                    <Typography variant="body2">{referral.whatsapp}</Typography>
                 </Box>
             ) : (
                 <Typography variant="body2" color="text.secondary">N/A</Typography>
             )
         },
         {
-            id: 'institution',
-            label: 'Institution',
+            id: 'organization',
+            label: 'Organization',
             render: (referral) => referral.institution_name ? (
-                <Box display="flex" alignItems="center" gap={0.5}>
-                    <BusinessIcon fontSize="small" color="action" />
-                    <Typography variant="body2">{referral.institution_name}</Typography>
+                <Box>
+                    <Box display="flex" alignItems="center" gap={0.5}>
+                        <BusinessIcon fontSize="small" color="action" />
+                        <Typography variant="body2">{referral.institution_name}</Typography>
+                        {!isExistingOrganization(referral.institution_name) && (
+                            <Chip
+                                label="New"
+                                size="small"
+                                color="warning"
+                                sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                        )}
+                    </Box>
+                    {(referral.physical_address || referral.country) && (
+                        <Typography variant="caption" color="text.secondary" display="block" sx={{ ml: 3 }}>
+                            {[referral.physical_address, referral.country].filter(Boolean).join(', ')}
+                        </Typography>
+                    )}
                 </Box>
             ) : (
                 <Typography variant="body2" color="text.secondary">N/A</Typography>
@@ -557,27 +640,15 @@ function ContactReferrals() {
             )
         },
         {
-            id: 'country',
-            label: 'Country',
-            render: (referral) => referral.country ? (
-                <Box display="flex" alignItems="center" gap={0.5}>
-                    <LocationOnIcon fontSize="small" color="action" />
-                    <Typography variant="body2">{referral.country}</Typography>
-                </Box>
-            ) : (
-                <Typography variant="body2" color="text.secondary">N/A</Typography>
-            )
-        },
-        {
             id: 'referrer',
-            label: 'Referred By',
+            label: 'Referrer',
             render: (referral) => {
                 if (!referral.referrer_info) {
                     return <Typography variant="body2" color="text.secondary">N/A</Typography>;
                 }
-                
-                const { type, name, email, referral_code } = referral.referrer_info;
-                
+
+                const { type, name, referral_code } = referral.referrer_info;
+
                 return (
                     <Box>
                         <Box display="flex" alignItems="center" gap={0.5}>
@@ -586,23 +657,18 @@ function ContactReferrals() {
                                 {name}
                             </Typography>
                         </Box>
-                        {email && (
-                            <Typography variant="caption" color="text.secondary" display="block">
-                                {email}
-                            </Typography>
-                        )}
                         {type === 'link' && referral_code && (
-                            <Chip 
-                                label={`Link: ${referral_code}`} 
-                                size="small" 
+                            <Chip
+                                label={`Link: ${referral_code}`}
+                                size="small"
                                 sx={{ mt: 0.5, height: 20, fontSize: '0.7rem' }}
                                 color="primary"
                             />
                         )}
                         {type === 'manual' && (
-                            <Chip 
-                                label="Manual" 
-                                size="small" 
+                            <Chip
+                                label="Manual"
+                                size="small"
                                 sx={{ mt: 0.5, height: 20, fontSize: '0.7rem' }}
                                 color="default"
                             />
@@ -614,13 +680,14 @@ function ContactReferrals() {
         {
             id: 'submitted',
             label: 'Submitted',
+            sortable: true,
             render: (referral) => (
                 <Typography variant="body2">
                     {new Date(referral.created_at).toLocaleDateString()}
                 </Typography>
             )
         }
-    ], []);
+    ], [organizations]);
 
     if (loading) {
         return (
@@ -636,14 +703,14 @@ function ContactReferrals() {
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Typography variant="h4" sx={{ color: '#212121', fontWeight: 'bold' }}>
-                        Contact Referrals
+                        Referrals
                     </Typography>
                     <Tooltip title="Review and approve contact referrals to create user accounts and organizations" arrow>
                         <InfoIcon sx={{ color: '#633394', fontSize: 24, cursor: 'help' }} />
                     </Tooltip>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 2 }}>
-                    {(selectedReferral || selectedReferralIds.length > 0) && (
+                    {selectedReferralIds.length > 0 && (
                         <>
                             <Button
                                 variant="contained"
@@ -652,9 +719,7 @@ function ContactReferrals() {
                                 onClick={handleOpenApprovalDialog}
                                 size="large"
                             >
-                                {selectedReferralIds.length > 0
-                                    ? `Approve (${selectedReferralIds.length})`
-                                    : 'Approve'}
+                                {`Approve (${selectedReferralIds.length})`}
                             </Button>
                             <Button
                                 variant="contained"
@@ -663,9 +728,7 @@ function ContactReferrals() {
                                 onClick={handleOpenRejectDialog}
                                 size="large"
                             >
-                                {selectedReferralIds.length > 0
-                                    ? `Reject (${selectedReferralIds.length})`
-                                    : 'Reject'}
+                                {`Reject (${selectedReferralIds.length})`}
                             </Button>
                         </>
                     )}
@@ -677,19 +740,17 @@ function ContactReferrals() {
                 mb: 3,
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
                 gap: 2,
                 flexWrap: 'wrap'
             }}>
                 <TextField
-                    placeholder="Search by name, email, institution, or country..."
+                    placeholder="Search by name, email, organization, or country..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     size="small"
                     sx={{
-                        flex: 1,
-                        minWidth: 250,
-                        maxWidth: 400,
+                        minWidth: 200,
+                        maxWidth: 300,
                         '& .MuiOutlinedInput-root': {
                             backgroundColor: 'white',
                             borderRadius: 2
@@ -703,15 +764,68 @@ function ContactReferrals() {
                         ),
                     }}
                 />
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    {selectedReferralIds.length > 0 && (
-                        <Chip
-                            label={`${selectedReferralIds.length} selected`}
-                            color="primary"
-                            sx={{ backgroundColor: '#633394' }}
-                        />
-                    )}
-                </Box>
+                {selectedReferralIds.length > 0 && (
+                    <Chip
+                        label={`${selectedReferralIds.length} selected`}
+                        color="primary"
+                        sx={{ backgroundColor: '#633394' }}
+                    />
+                )}
+                <Box sx={{ flex: 1 }} />
+                <FormControl size="small" sx={{ minWidth: 160 }}>
+                    <InputLabel>Referred by</InputLabel>
+                    <Select
+                        value={filterReferrer}
+                        onChange={(e) => setFilterReferrer(e.target.value)}
+                        label="Referred by"
+                        sx={{ backgroundColor: 'white', borderRadius: 2 }}
+                    >
+                        <MenuItem value="">All</MenuItem>
+                        {referrerOptions.map(name => (
+                            <MenuItem key={name} value={name}>{name}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+                <FormControl size="small" sx={{ minWidth: 140 }}>
+                    <InputLabel>Country</InputLabel>
+                    <Select
+                        value={filterCountry}
+                        onChange={(e) => setFilterCountry(e.target.value)}
+                        label="Country"
+                        sx={{ backgroundColor: 'white', borderRadius: 2 }}
+                    >
+                        <MenuItem value="">All</MenuItem>
+                        {countryOptions.map(country => (
+                            <MenuItem key={country} value={country}>{country}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+                <FormControl size="small" sx={{ minWidth: 160 }}>
+                    <InputLabel>Organization</InputLabel>
+                    <Select
+                        value={filterOrganization}
+                        onChange={(e) => setFilterOrganization(e.target.value)}
+                        label="Organization"
+                        sx={{ backgroundColor: 'white', borderRadius: 2 }}
+                    >
+                        <MenuItem value="">All</MenuItem>
+                        {organizationOptions.map(org => (
+                            <MenuItem key={org} value={org}>{org}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+                {(filterReferrer || filterCountry || filterOrganization) && (
+                    <Chip
+                        label="Clear filters"
+                        size="small"
+                        onDelete={() => {
+                            setFilterReferrer('');
+                            setFilterCountry('');
+                            setFilterOrganization('');
+                        }}
+                        sx={{ height: 28 }}
+                    />
+                )}
             </Box>
 
             {error && (
@@ -744,6 +858,12 @@ function ContactReferrals() {
                     selectedIds={selectedReferralIds}
                     onSelectionChange={setSelectedReferralIds}
                     onRowClick={(referral) => handleRowSelect(referral)}
+                    defaultSortColumn="submitted"
+                    defaultSortDirection="desc"
+                    sortValueGetter={(row, orderBy) => {
+                        if (orderBy === 'submitted') return new Date(row.created_at).getTime();
+                        return row[orderBy];
+                    }}
                     rowSx={(referral) => ({
                         ...(selectedRowId === referral.id ? {
                             backgroundColor: '#ede7f6',
@@ -755,13 +875,18 @@ function ContactReferrals() {
                 />
             )}
 
-            {/* Selected Referral Details Card */}
-            {selectedReferral && (
-                <Card sx={{ mt: 3, border: '2px solid #633394' }} elevation={3}>
-                    <CardContent>
-                        <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold', mb: 2 }}>
-                            Selected Referral Details
-                        </Typography>
+            {/* Selected Referral Details Dialog */}
+            <Dialog
+                open={openDetailsDialog}
+                onClose={handleCloseDetailsDialog}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle sx={{ bgcolor: '#633394', color: 'white' }}>
+                    Referral Details
+                </DialogTitle>
+                <DialogContent sx={{ mt: 2 }}>
+                    {selectedReferral && (
                         <Grid container spacing={2}>
                             <Grid item xs={12} md={6}>
                                 <Box sx={{ mb: 2 }}>
@@ -781,17 +906,20 @@ function ContactReferrals() {
                                 {selectedReferral.whatsapp && (
                                     <Box sx={{ mb: 2 }}>
                                         <Typography variant="subtitle2" color="text.secondary">WhatsApp</Typography>
-                                        <Typography variant="body1">{selectedReferral.whatsapp}</Typography>
+                                        <Box display="flex" alignItems="center" gap={0.5}>
+                                            <WhatsAppIcon fontSize="small" sx={{ color: '#25D366' }} />
+                                            <Typography variant="body1">{selectedReferral.whatsapp}</Typography>
+                                        </Box>
                                     </Box>
                                 )}
                             </Grid>
                             <Grid item xs={12} md={6}>
                                 <Box sx={{ mb: 2 }}>
-                                    <Typography variant="subtitle2" color="text.secondary">Institution</Typography>
+                                    <Typography variant="subtitle2" color="text.secondary">Organization</Typography>
                                     <Typography variant="body1">{selectedReferral.institution_name || 'N/A'}</Typography>
                                 </Box>
                                 <Box sx={{ mb: 2 }}>
-                                    <Typography variant="subtitle2" color="text.secondary">Institution Type</Typography>
+                                    <Typography variant="subtitle2" color="text.secondary">Organization Type</Typography>
                                     <Typography variant="body1">
                                         {selectedReferral.type_of_institution
                                             ? (selectedReferral.type_of_institution.toLowerCase() === 'non_formal_organizations'
@@ -846,9 +974,36 @@ function ContactReferrals() {
                                 </Grid>
                             )}
                         </Grid>
-                    </CardContent>
-                </Card>
-            )}
+                    )}
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button onClick={handleCloseDetailsDialog}>
+                        Close
+                    </Button>
+                    <Button
+                        variant="contained"
+                        color="error"
+                        startIcon={<CancelIcon />}
+                        onClick={() => {
+                            setOpenDetailsDialog(false);
+                            handleOpenRejectDialog();
+                        }}
+                    >
+                        Reject
+                    </Button>
+                    <Button
+                        variant="contained"
+                        color="success"
+                        startIcon={<CheckCircleIcon />}
+                        onClick={() => {
+                            setOpenDetailsDialog(false);
+                            handleOpenApprovalDialog();
+                        }}
+                    >
+                        Approve
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             {/* Approval Dialog */}
             <Dialog

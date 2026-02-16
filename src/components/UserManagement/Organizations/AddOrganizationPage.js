@@ -717,8 +717,8 @@ function AddOrganizationPage() {
                                     <TextField
                                         required
                                         fullWidth
-                                        label={formData.type === 'church' ? 'Name of Church' :
-                                            formData.type === 'Institution' ? 'Name of Institution' :
+                                        label={formData.type?.toLowerCase() === 'church' ? 'Name of Church' :
+                                            formData.type?.toLowerCase() === 'institution' ? 'Name of Institution' :
                                                 'Name of Organization'}
                                         name="name"
                                         value={formData.name}
@@ -755,7 +755,7 @@ function AddOrganizationPage() {
                                         variant="outlined"
                                     />
                                 </Grid>
-                                {formData.type === 'Institution' && (
+                                {formData.type?.toLowerCase() === 'institution' && (
                                     <Grid item xs={12} md={6}>
                                         <TextField
                                             fullWidth
@@ -787,7 +787,7 @@ function AddOrganizationPage() {
                         </Paper>
 
                         {/* Organizational Relationships Section - Only show for main organization types */}
-                        {['church', 'Institution', 'non_formal_organizations'].includes(formData.type) && (
+                        {['church', 'institution', 'non_formal_organizations'].includes(formData.type?.toLowerCase()) && (
                             <Paper sx={{ p: 3, mb: 3, boxShadow: 3 }}>
                                 <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold', mb: 3, textAlign: 'center' }}>
                                     Organizational Relationships & Affiliations
@@ -845,7 +845,7 @@ function AddOrganizationPage() {
                                 </Grid>
 
                                 {/* Umbrella Association for Churches */}
-                                {formData.type === 'church' && (
+                                {formData.type?.toLowerCase() === 'church' && (
                                     <Grid item xs={12} md={6}>
                                         <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
                                             <Autocomplete
@@ -897,7 +897,7 @@ function AddOrganizationPage() {
                                 )}
 
                                 {/* Accreditation Status/Body for Institutions */}
-                                {formData.type === 'Institution' && (
+                                {formData.type?.toLowerCase() === 'institution' && (
                                     <Grid item xs={12} md={6}>
                                         <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
                                             <Autocomplete
@@ -949,7 +949,7 @@ function AddOrganizationPage() {
                                 )}
 
                                 {/* Affiliation/Validation for Non-formal Organizations */}
-                                {formData.type === 'non_formal_organizations' && (
+                                {formData.type?.toLowerCase() === 'non_formal_organizations' && (
                                     <Grid item xs={12} md={6}>
                                         <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
                                             <Autocomplete
@@ -1084,8 +1084,8 @@ function AddOrganizationPage() {
                 <Dialog open={openAddUserDialog} onClose={handleCloseAddUserDialog} maxWidth="sm" fullWidth>
                     <DialogTitle sx={{ backgroundColor: '#633394', color: 'white' }}>
                         Add New {contactType === 'head' ?
-                            (formData.type === 'church' ? 'Pastor' :
-                                formData.type === 'Institution' ? 'President' : 'Lead') :
+                            (formData.type?.toLowerCase() === 'church' ? 'Pastor' :
+                                formData.type?.toLowerCase() === 'institution' ? 'President' : 'Lead') :
                             `${contactType.charAt(0).toUpperCase() + contactType.slice(1)} Contact`}
                     </DialogTitle>
                     <DialogContent dividers>
