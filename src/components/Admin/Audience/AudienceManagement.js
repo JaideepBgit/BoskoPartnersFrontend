@@ -5,6 +5,7 @@
 // ============================================================================
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -28,16 +29,17 @@ import {
   Delete as DeleteIcon,
   Email as EmailIcon,
   People as PeopleIcon,
-  Search as SearchIcon
+  Search as SearchIcon,
+  GroupWork as GroupWorkIcon
 } from '@mui/icons-material';
 import Navbar from '../../shared/Navbar/Navbar';
 import DataTable from '../../shared/DataTable/DataTable';
 import AudienceService from '../../../services/Admin/AudienceService';
-import CreateAudienceDialog from './CreateAudienceDialog';
 import AudienceMembersDialog from './AudienceMembersDialog';
 import SendRemindersDialog from './SendRemindersDialog';
 
 const AudienceManagement = () => {
+  const navigate = useNavigate();
   const [audiences, setAudiences] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -48,8 +50,6 @@ const AudienceManagement = () => {
   const [selectedAudienceIds, setSelectedAudienceIds] = useState([]);
   
   // Dialog states
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [membersDialogOpen, setMembersDialogOpen] = useState(false);
   const [remindersDialogOpen, setRemindersDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -88,13 +88,11 @@ const AudienceManagement = () => {
   }, [audiences, searchQuery]);
 
   const handleCreateAudience = () => {
-    setSelectedAudience(null);
-    setCreateDialogOpen(true);
+    navigate('/audiences/create');
   };
 
   const handleEditAudience = (audience) => {
-    setSelectedAudience(audience);
-    setEditDialogOpen(true);
+    navigate(`/audiences/edit/${audience.id}`);
   };
 
   const handleViewMembers = (audience) => {
@@ -152,13 +150,6 @@ const AudienceManagement = () => {
     } catch (err) {
       setError(err.message);
     }
-  };
-
-  const handleAudienceSaved = () => {
-    setSuccess('Audience saved successfully');
-    setCreateDialogOpen(false);
-    setEditDialogOpen(false);
-    loadAudiences();
   };
 
   const handleRemindersSent = (result) => {
@@ -405,27 +396,9 @@ const AudienceManagement = () => {
         defaultRowsPerPage={10}
         rowsPerPageOptions={[5, 10, 25, 50]}
         emptyMessage="No audiences found. Create your first audience to get started."
+        emptyIcon={<GroupWorkIcon sx={{ fontSize: 48, color: '#967CB2', opacity: 0.5 }} />}
         paperSx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
       />
-
-      {/* Create/Edit Audience Dialog */}
-      {createDialogOpen && (
-        <CreateAudienceDialog
-          open={createDialogOpen}
-          onClose={() => setCreateDialogOpen(false)}
-          onSave={handleAudienceSaved}
-        />
-      )}
-
-      {editDialogOpen && selectedAudience && (
-        <CreateAudienceDialog
-          open={editDialogOpen}
-          onClose={() => setEditDialogOpen(false)}
-          onSave={handleAudienceSaved}
-          audience={selectedAudience}
-          isEdit={true}
-        />
-      )}
 
       {/* View Members Dialog */}
       {membersDialogOpen && selectedAudience && (

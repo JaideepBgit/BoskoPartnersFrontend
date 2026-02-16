@@ -17,6 +17,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import SendIcon from '@mui/icons-material/Send';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import WarningIcon from '@mui/icons-material/Warning';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 
 import {
     fetchUsers, addUser, updateUser, deleteUser,
@@ -1198,6 +1200,23 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
                     ))}
                 </Box>
             ) : (user.ui_role || 'User')
+        },
+        {
+            id: 'has_survey_assigned',
+            label: 'Survey',
+            render: (user) => (
+                <Box display="flex" justifyContent="center">
+                    {user.has_survey_assigned ? (
+                        <Tooltip title="Survey Assigned">
+                            <CheckCircleOutlineIcon color="success" fontSize="small" />
+                        </Tooltip>
+                    ) : (
+                        <Tooltip title="No Survey Assigned">
+                            <WarningIcon color="warning" fontSize="small" />
+                        </Tooltip>
+                    )}
+                </Box>
+            )
         },
         {
             id: 'title',

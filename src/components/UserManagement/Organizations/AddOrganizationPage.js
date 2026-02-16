@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
     Container, Box, Typography, Button, Paper, TextField, Select, MenuItem,
     FormControl, InputLabel, Grid, Tabs, Tab, Autocomplete, Tooltip, IconButton,
@@ -11,13 +11,21 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {
     addOrganization, fetchOrganizations, fetchOrganizationTypes, fetchUsers,
-    fetchRoles, addUser, addRole
+    fetchRoles, addUser, addRole, updateOrganization
 } from '../../../services/UserManagement/UserManagementService';
 import EnhancedAddressInput from '../common/EnhancedAddressInput';
 import InternalHeader from '../../shared/Headers/InternalHeader';
 
 function AddOrganizationPage() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const { id } = useParams(); // Get organization ID from URL for edit mode
+    const isEditMode = Boolean(id);
+    
+    // Get navigation context from location state
+    const fromAssociation = location.state?.fromAssociation;
+    const associationId = location.state?.associationId;
+    const associationName = location.state?.associationName;
 
     // State variables
     const [organizations, setOrganizations] = useState([]);
@@ -113,7 +121,60 @@ function AddOrganizationPage() {
         loadOrganizationTypes();
         loadUsers();
         loadRoles();
-    }, []);
+        
+        // Load organization data if in edit mode
+        if (isEditMode && id) {
+            loadOrganizationData();
+        }
+    }, [id, isEditMode]);
+
+    // Load organization data for editing
+    const loadOrganizationData = async () => {
+        try {
+            setSaving(true);
+            const orgsData = await fetchOrganizations();
+            const currentOrg = orgsData.find(o => o.id === parseInt(id));
+            
+            if (currentOrg) {
+                setFormData({
+                    name: currentOrg.name || '',
+                    type: currentOrg.organization_type?.type || 'church',
+                    website: currentOrg.website || '',
+                    geo_location: currentOrg.geo_location || {
+                        continent: '',
+                        region: '',
+                        country: '',
+                        province: '',
+                        city: '',
+                        town: '',
+                        address_line1: '',
+                        address_line2: '',
+                        postal_code: '',
+                        latitude: '',
+                        longitude: ''
+                    },
+                    primary_contact_id: currentOrg.primary_contact_id || '',
+                    secondary_contact_id: currentOrg.secondary_contact_id || '',
+                    head_id: currentOrg.head_id || '',
+                    head_name: currentOrg.head_name || '',
+                    head_email: currentOrg.head_email || '',
+                    head_phone: currentOrg.head_phone || '',
+                    head_address: currentOrg.head_address || '',
+                    denomination_affiliation: currentOrg.denomination_affiliation || '',
+                    accreditation_status_or_body: currentOrg.accreditation_status_or_body || '',
+                    highest_level_of_education: currentOrg.highest_level_of_education || '',
+                    affiliation_validation: currentOrg.affiliation_validation || '',
+                    umbrella_association_membership: currentOrg.umbrella_association_membership || '',
+                    details: currentOrg.misc || currentOrg.details || {}
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load organization data:', error);
+            alert('Failed to load organization data');
+        } finally {
+            setSaving(false);
+        }
+    };
 
     // Load organizations from API
     const loadOrganizations = async () => {
@@ -454,6 +515,38 @@ function AddOrganizationPage() {
             misc: formData.details || {}
         };
 
+        // Build relationships array from affiliation fields
+        const relationships = [];
+        
+        // Map affiliation field names to relationship types
+        const affiliationMapping = {
+            'denomination_affiliation': 'denomination',
+            'accreditation_status_or_body': 'accreditation',
+            'affiliation_validation': 'affiliation',
+            'umbrella_association_membership': 'umbrella_association'
+        };
+
+        // For each affiliation field, check if an organization was selected
+        Object.entries(affiliationMapping).forEach(([fieldName, relType]) => {
+            const affiliationValue = formData[fieldName];
+            if (affiliationValue) {
+                // Try to find the organization by name
+                const relatedOrg = organizations.find(org => org.name === affiliationValue);
+                if (relatedOrg && relatedOrg.id) {
+                    relationships.push({
+                        related_organization_id: relatedOrg.id,
+                        relationship_type: relType,
+                        notes: null
+                    });
+                }
+            }
+        });
+
+        // Add relationships array if there are any relationships
+        if (relationships.length > 0) {
+            apiData.relationships = relationships;
+        }
+
         // Add contact information if provided
         if (formData.primary_contact_id) {
             const primaryContact = users.find(user => user.id === formData.primary_contact_id);
@@ -498,7 +591,7 @@ function AddOrganizationPage() {
         return apiData;
     };
 
-    // Handle adding organization
+    // Handle adding/updating organization
     const handleAddOrganization = async () => {
         if (!formData.name) {
             alert('Organization name is required');
@@ -508,18 +601,33 @@ function AddOrganizationPage() {
         setSaving(true);
         try {
             const apiData = transformFormDataToApiFormat(formData);
-            const result = await addOrganization(apiData);
-
-            if (result.default_template_version_id) {
-                alert(`Organization "${formData.name}" added successfully! A default survey template version has been created.`);
+            
+            if (isEditMode) {
+                // Update existing organization
+                await updateOrganization(id, apiData);
+                alert(`Organization "${formData.name}" updated successfully!`);
+                
+                // Navigate back to the appropriate detail page
+                if (fromAssociation && associationId) {
+                    navigate(`/association-management/${associationId}`);
+                } else {
+                    navigate(`/organization-management/${id}`);
+                }
             } else {
-                alert(`Organization "${formData.name}" added successfully!`);
-            }
+                // Add new organization
+                const result = await addOrganization(apiData);
 
-            navigate('/organizations');
+                if (result.default_template_version_id) {
+                    alert(`Organization "${formData.name}" added successfully! A default survey template version has been created.`);
+                } else {
+                    alert(`Organization "${formData.name}" added successfully!`);
+                }
+
+                navigate('/organizations');
+            }
         } catch (error) {
-            console.error('Failed to add organization:', error);
-            alert(`Failed to add organization: ${error.message}`);
+            console.error(`Failed to ${isEditMode ? 'update' : 'add'} organization:`, error);
+            alert(`Failed to ${isEditMode ? 'update' : 'add'} organization: ${error.message}`);
         } finally {
             setSaving(false);
         }
@@ -538,14 +646,25 @@ function AddOrganizationPage() {
     return (
         <>
             <InternalHeader
-                title="Add New Organization"
+                title={isEditMode ? "Edit Organization" : "Add New Organization"}
                 leftActions={
                     <Button
                         variant="outlined"
                         startIcon={<ArrowBackIcon />}
-                        onClick={() => navigate('/organizations')}
+                        onClick={() => {
+                            if (isEditMode) {
+                                // If editing and came from association, go back to association
+                                if (fromAssociation && associationId) {
+                                    navigate(`/association-management/${associationId}`);
+                                } else {
+                                    navigate(`/organization-management/${id}`);
+                                }
+                            } else {
+                                navigate('/organizations');
+                            }
+                        }}
                     >
-                        Organizations
+                        {isEditMode ? (fromAssociation ? `Back to ${associationName}` : 'Back to Details') : 'Organizations'}
                     </Button>
                 }
                 rightActions={
@@ -555,7 +674,7 @@ function AddOrganizationPage() {
                         onClick={handleAddOrganization}
                         disabled={saving}
                     >
-                        {saving ? 'Saving...' : 'Save Organization'}
+                        {saving ? 'Saving...' : (isEditMode ? 'Update Organization' : 'Save Organization')}
                     </Button>
                 }
             />
@@ -667,11 +786,12 @@ function AddOrganizationPage() {
                             </Box>
                         </Paper>
 
-                        {/* Organizational Relationships Section */}
-                        <Paper sx={{ p: 3, mb: 3, boxShadow: 3 }}>
-                            <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold', mb: 3, textAlign: 'center' }}>
-                                Organizational Relationships & Affiliations
-                            </Typography>
+                        {/* Organizational Relationships Section - Only show for main organization types */}
+                        {['church', 'Institution', 'non_formal_organizations'].includes(formData.type) && (
+                            <Paper sx={{ p: 3, mb: 3, boxShadow: 3 }}>
+                                <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold', mb: 3, textAlign: 'center' }}>
+                                    Organizational Relationships & Affiliations
+                                </Typography>
 
                             <Grid container spacing={3}>
                                 {/* Denomination/Affiliation */}
@@ -881,6 +1001,7 @@ function AddOrganizationPage() {
                                 )}
                             </Grid>
                         </Paper>
+                        )}
                     </Box>
                 )}
 

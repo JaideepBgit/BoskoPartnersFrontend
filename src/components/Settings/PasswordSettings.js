@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import {
   Box,
-  Card,
-  CardContent,
   TextField,
   Button,
   Typography,
@@ -88,137 +86,133 @@ const PasswordSettings = () => {
   };
 
   return (
-    <Box sx={{ maxWidth: 600, mx: 'auto', p: 3 }}>
-      <Card elevation={3}>
-        <CardContent sx={{ p: 4 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-            <LockIcon sx={{ fontSize: 32, color: '#633394', mr: 2 }} />
-            <Typography variant="h5" component="h2">
-              Change Password
-            </Typography>
-          </Box>
+    <Box sx={{ p: 3 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+        <LockIcon sx={{ fontSize: 32, color: '#633394', mr: 2 }} />
+        <Typography variant="h5" component="h2">
+          Change Password
+        </Typography>
+      </Box>
 
-          <Divider sx={{ mb: 3 }} />
+      <Divider sx={{ mb: 3 }} />
 
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Update your password to keep your account secure. Make sure your new password is strong and unique.
-          </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        Update your password to keep your account secure. Make sure your new password is strong and unique.
+      </Typography>
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
 
-          {success && (
-            <Alert severity="success" sx={{ mb: 2 }}>
-              {success}
-            </Alert>
-          )}
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {success}
+        </Alert>
+      )}
 
-          <Box component="form" onSubmit={handleSubmit}>
-            <TextField
-              label="Current Password"
-              type={showCurrentPassword ? 'text' : 'password'}
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              required
-              disabled={loading}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                      edge="end"
-                    >
-                      {showCurrentPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
+      <Box component="form" onSubmit={handleSubmit}>
+        <TextField
+          label="Current Password"
+          type={showCurrentPassword ? 'text' : 'password'}
+          variant="outlined"
+          fullWidth
+          margin="normal"
+          value={currentPassword}
+          onChange={(e) => setCurrentPassword(e.target.value)}
+          required
+          disabled={loading}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  edge="end"
+                >
+                  {showCurrentPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
 
-            <TextField
-              label="New Password"
-              type={showNewPassword ? 'text' : 'password'}
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
-              disabled={loading}
-              helperText="Password must be at least 6 characters long"
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                      edge="end"
-                    >
-                      {showNewPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
+        <TextField
+          label="New Password"
+          type={showNewPassword ? 'text' : 'password'}
+          variant="outlined"
+          fullWidth
+          margin="normal"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          required
+          disabled={loading}
+          helperText="Password must be at least 6 characters long"
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  edge="end"
+                >
+                  {showNewPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
 
-            <TextField
-              label="Confirm New Password"
-              type={showConfirmPassword ? 'text' : 'password'}
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              disabled={loading}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      edge="end"
-                    >
-                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
+        <TextField
+          label="Confirm New Password"
+          type={showConfirmPassword ? 'text' : 'password'}
+          variant="outlined"
+          fullWidth
+          margin="normal"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          required
+          disabled={loading}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  edge="end"
+                >
+                  {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
 
-            <Button
-              type="submit"
-              variant="contained"
-              fullWidth
-              disabled={loading}
-              sx={{
-                mt: 3,
-                backgroundColor: '#633394',
-                '&:hover': { backgroundColor: '#967CB2' },
-                py: 1.5,
-                fontSize: '1rem',
-              }}
-            >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Change Password'}
-            </Button>
-          </Box>
+        <Button
+          type="submit"
+          variant="contained"
+          fullWidth
+          disabled={loading}
+          sx={{
+            mt: 3,
+            backgroundColor: '#633394',
+            '&:hover': { backgroundColor: '#967CB2' },
+            py: 1.5,
+            fontSize: '1rem',
+          }}
+        >
+          {loading ? <CircularProgress size={24} color="inherit" /> : 'Change Password'}
+        </Button>
+      </Box>
 
-          <Box sx={{ mt: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
-            <Typography variant="subtitle2" gutterBottom>
-              Password Requirements:
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              • Minimum 6 characters<br />
-              • Different from current password<br />
-              • Use a combination of letters, numbers, and symbols for better security
-            </Typography>
-          </Box>
-        </CardContent>
-      </Card>
+      <Box sx={{ mt: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+        <Typography variant="subtitle2" gutterBottom>
+          Password Requirements:
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          • Minimum 6 characters<br />
+          • Different from current password<br />
+          • Use a combination of letters, numbers, and symbols for better security
+        </Typography>
+      </Box>
     </Box>
   );
 };

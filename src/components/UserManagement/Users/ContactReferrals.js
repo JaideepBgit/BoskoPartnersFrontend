@@ -10,6 +10,7 @@ import {
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import PersonIcon from '@mui/icons-material/Person';
 import BusinessIcon from '@mui/icons-material/Business';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
@@ -25,7 +26,7 @@ import {
     checkOrganizationExists,
     searchOrganizations
 } from '../../../services/UserManagement/ContactReferralService';
-import { fetchOrganizations, fetchTemplatesByOrganization } from '../../../services/UserManagement/UserManagementService';
+import { fetchOrganizations, fetchTemplatesByOrganization, fetchTemplates } from '../../../services/UserManagement/UserManagementService';
 
 function ContactReferrals() {
     const [referrals, setReferrals] = useState([]);
@@ -82,7 +83,13 @@ function ContactReferrals() {
         try {
             setLoading(true);
             const response = await fetchContactReferrals();
+            console.log('Fetched contact referrals response:', response);
             if (response.success) {
+                console.log('Contact referrals data:', response.contacts);
+                // Log first contact's referrer_info for debugging
+                if (response.contacts && response.contacts.length > 0) {
+                    console.log('First contact referrer_info:', response.contacts[0].referrer_info);
+                }
                 setReferrals(response.contacts || []);
             }
         } catch (err) {
@@ -212,6 +219,7 @@ function ContactReferrals() {
         if (selectedReferralIds.length > 0) {
             setIsBulkOperation(true);
             setBulkProgress({ current: 0, total: selectedReferralIds.length, results: [] });
+            loadAllTemplates(); // Load all templates for bulk selection
         } else {
             setIsBulkOperation(false);
         }
@@ -363,6 +371,18 @@ function ContactReferrals() {
         }
     };
 
+    const loadAllTemplates = async () => {
+        try {
+            const temps = await fetchTemplates();
+            // Flatten templates from list format if needed, depending on API response
+            // Assuming API returns array of templates
+            setTemplates(temps || []);
+        } catch (err) {
+            console.error('Failed to load all templates:', err);
+            setTemplates([]);
+        }
+    };
+
     const loadTemplatesForOrganization = async (orgId) => {
         try {
             const temps = await fetchTemplatesByOrganization(orgId);
@@ -382,6 +402,11 @@ function ContactReferrals() {
         // Load templates when organization is selected
         if (field === 'organization_id' && value) {
             loadTemplatesForOrganization(value);
+        }
+
+        // Load all templates if creating new organization
+        if (field === 'create_organization' && value === true) {
+            loadAllTemplates();
         }
     };
 
@@ -542,6 +567,49 @@ function ContactReferrals() {
             ) : (
                 <Typography variant="body2" color="text.secondary">N/A</Typography>
             )
+        },
+        {
+            id: 'referrer',
+            label: 'Referred By',
+            render: (referral) => {
+                if (!referral.referrer_info) {
+                    return <Typography variant="body2" color="text.secondary">N/A</Typography>;
+                }
+                
+                const { type, name, email, referral_code } = referral.referrer_info;
+                
+                return (
+                    <Box>
+                        <Box display="flex" alignItems="center" gap={0.5}>
+                            <PersonIcon fontSize="small" color="action" />
+                            <Typography variant="body2" fontWeight="medium">
+                                {name}
+                            </Typography>
+                        </Box>
+                        {email && (
+                            <Typography variant="caption" color="text.secondary" display="block">
+                                {email}
+                            </Typography>
+                        )}
+                        {type === 'link' && referral_code && (
+                            <Chip 
+                                label={`Link: ${referral_code}`} 
+                                size="small" 
+                                sx={{ mt: 0.5, height: 20, fontSize: '0.7rem' }}
+                                color="primary"
+                            />
+                        )}
+                        {type === 'manual' && (
+                            <Chip 
+                                label="Manual" 
+                                size="small" 
+                                sx={{ mt: 0.5, height: 20, fontSize: '0.7rem' }}
+                                color="default"
+                            />
+                        )}
+                    </Box>
+                );
+            }
         },
         {
             id: 'submitted',
@@ -880,6 +948,31 @@ function ContactReferrals() {
                                 </Grid>
 
                                 <Grid item xs={12}>
+                                    <FormControl fullWidth>
+                                        <Autocomplete
+                                            options={templates}
+                                            getOptionLabel={(option) => option.name || option.version_name || ''}
+                                            value={templates.find(t => t.id === approvalData.template_id) || null}
+                                            onChange={(event, newValue) => {
+                                                handleApprovalDataChange('template_id', newValue ? newValue.id : '');
+                                            }}
+                                            renderInput={(params) => (
+                                                <TextField
+                                                    {...params}
+                                                    label="Assign Survey (Optional)"
+                                                    placeholder="Search for a survey..."
+                                                />
+                                            )}
+                                        />
+                                        {templates.length === 0 && (
+                                            <Typography variant="caption" color="text.secondary">
+                                                No templates available.
+                                            </Typography>
+                                        )}
+                                    </FormControl>
+                                </Grid>
+
+                                <Grid item xs={12}>
                                     <FormControlLabel
                                         control={
                                             <Checkbox
@@ -1152,23 +1245,23 @@ function ContactReferrals() {
                             </FormControl>
 
                             {/* Survey Template */}
-                            {templates.length > 0 && (
-                                <FormControl fullWidth sx={{ mb: 2 }}>
-                                    <InputLabel>Assign Survey Template (Optional)</InputLabel>
-                                    <Select
-                                        value={approvalData.template_id}
-                                        onChange={(e) => handleApprovalDataChange('template_id', e.target.value)}
-                                        label="Assign Survey Template (Optional)"
-                                    >
-                                        <MenuItem value="">None</MenuItem>
-                                        {templates.map((template) => (
-                                            <MenuItem key={template.id} value={template.id}>
-                                                {template.name}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                            )}
+                            <FormControl fullWidth sx={{ mb: 2 }}>
+                                <Autocomplete
+                                    options={templates}
+                                    getOptionLabel={(option) => option.name || option.version_name || ''}
+                                    value={templates.find(t => t.id === approvalData.template_id) || null}
+                                    onChange={(event, newValue) => {
+                                        handleApprovalDataChange('template_id', newValue ? newValue.id : '');
+                                    }}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            label="Assign Survey (Optional)"
+                                            placeholder="Search for a survey..."
+                                        />
+                                    )}
+                                />
+                            </FormControl>
 
                             {/* Send Welcome Email */}
                             <FormControlLabel

@@ -18,12 +18,16 @@ import {
   DialogActions,
   Autocomplete,
   Chip,
-  CircularProgress
+  CircularProgress,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import WarningIcon from '@mui/icons-material/Warning';
 import EditIcon from '@mui/icons-material/Edit';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { checkEmailExists, formatPhoneNumber, updateContactReferral, validateReferralCode } from '../../services/UserManagement/ContactReferralService';
@@ -47,7 +51,12 @@ const ContactReferralPage = () => {
     institutionName: '',
     title: '',
     physicalAddress: '',
-    country: ''
+    country: '',
+    manualReferrerName: '',
+    manualReferrerContact: '',
+    manualReferrerEmail: '',
+    manualReferrerPhone: '',
+    manualReferrerNotes: ''
   });
 
   const [referrals, setReferrals] = useState([]);
@@ -120,7 +129,7 @@ const ContactReferralPage = () => {
   useEffect(() => {
     const validateCode = async () => {
       if (!referralCode) return;
-      
+
       setReferralValidating(true);
       try {
         const result = await validateReferralCode(referralCode);
@@ -268,7 +277,7 @@ const ContactReferralPage = () => {
         primary_contact: primaryContact,
         referrals: []
       };
-      
+
       // Include referral code if the user came from an invite link
       if (referralCode) {
         payload.referral_code = referralCode;
@@ -276,7 +285,7 @@ const ContactReferralPage = () => {
       if (referralInfo?.referral_link_id) {
         payload.referred_by_link_id = referralInfo.referral_link_id;
       }
-      
+
       const response = await axios.post(`${API_BASE_URL}/contact-referrals`, payload);
 
       // After successful save, treat it as an existing record
@@ -448,7 +457,12 @@ const ContactReferralPage = () => {
         primary_contact: primaryContact,
         referrals: referrals
       };
-      
+
+      // If we have an existing record ID, include it
+      if (existingRecordId) {
+        payload.primary_contact_id = existingRecordId;
+      }
+
       // Include referral code if the user came from an invite link
       if (referralCode) {
         payload.referral_code = referralCode;
@@ -456,7 +470,7 @@ const ContactReferralPage = () => {
       if (referralInfo?.referral_link_id) {
         payload.referred_by_link_id = referralInfo.referral_link_id;
       }
-      
+
       const response = await axios.post(`${API_BASE_URL}/contact-referrals`, payload);
 
       setSnackbar({
@@ -497,9 +511,94 @@ const ContactReferralPage = () => {
 
   const renderContactForm = (contact, onChange, isReferral = false, referralId = null) => (
     <Box sx={{ mb: 3 }}>
-      <Grid container spacing={2}>
-        {/* Row 1 */}
-        <Grid item xs={12} sm={6} md={2}>
+      <Grid container spacing={3}>
+        {/* Manual Referrer Info - Collapsible section on top */}
+        {!isReferral && !referralCode && (
+          <Grid item xs={12}>
+            <Accordion defaultExpanded={false} sx={{ mb: 2, backgroundColor: '#f8f4fc', border: '1px solid #e0e0e0', boxShadow: 'none' }}>
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon />}
+                aria-controls="referrer-content"
+                id="referrer-header"
+              >
+                <Typography sx={{ color: '#633394', fontWeight: 'bold' }}>
+                  Referrer Information (Optional)
+                </Typography>
+                <Typography variant="caption" sx={{ ml: 2, alignSelf: 'center', color: '#666' }}>
+                  If you were referred by someone, let us know who
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Referrer Name"
+                      value={contact.manualReferrerName || ''}
+                      onChange={(e) => onChange('manualReferrerName', e.target.value)}
+                      size="small"
+                      helperText="Name of the person who referred you"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Referrer Contact (General)"
+                      value={contact.manualReferrerContact || ''}
+                      onChange={(e) => onChange('manualReferrerContact', e.target.value)}
+                      size="small"
+                      helperText="General contact info if email/phone unavailable"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Referrer Email"
+                      value={contact.manualReferrerEmail || ''}
+                      onChange={(e) => onChange('manualReferrerEmail', e.target.value)}
+                      size="small"
+                      type="email"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Referrer Phone"
+                      value={contact.manualReferrerPhone || ''}
+                      onChange={(e) => onChange('manualReferrerPhone', e.target.value)}
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Referrer Notes"
+                      value={contact.manualReferrerNotes || ''}
+                      onChange={(e) => onChange('manualReferrerNotes', e.target.value)}
+                      size="small"
+                      multiline
+                      rows={2}
+                      helperText="Any additional details about the referrer"
+                    />
+                  </Grid>
+                </Grid>
+              </AccordionDetails>
+            </Accordion>
+          </Grid>
+        )}
+
+        {/* Basic Information Section */}
+        <Grid item xs={12}>
+          <Typography variant="subtitle2" sx={{ color: '#633394', fontWeight: 'bold', borderBottom: '1px solid #eee', pb: 1, mb: 1 }}>
+            Basic Information
+          </Typography>
+        </Grid>
+
+        {/* Manual Referrer Info - Only for primary contact when no referral code exists */}
+
+
+        {/* Email - High Priority Field */}
+        <Grid item xs={12}>
           <TextField
             fullWidth
             label="Email ID"
@@ -507,10 +606,25 @@ const ContactReferralPage = () => {
             value={contact.email}
             onChange={(e) => onChange(isReferral ? referralId : 'email', isReferral ? 'email' : e.target.value, isReferral ? e.target.value : null)}
             required
-            size="small"
+            helperText="Entering email checks for existing records"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: '#f8f4fc', // Very light purple to highlight
+                '& fieldset': {
+                  borderColor: '#d1c4e9',
+                },
+                '&:hover fieldset': {
+                  borderColor: '#633394',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#633394',
+                },
+              }
+            }}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={2}>
+
+        <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
             label="First Name"
@@ -520,7 +634,7 @@ const ContactReferralPage = () => {
             size="small"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={2}>
+        <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
             label="Last Name"
@@ -530,35 +644,14 @@ const ContactReferralPage = () => {
             size="small"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={2}>
-          <TextField
-            fullWidth
-            label="Country Code"
-            value={countryCode}
-            onChange={(e) => setCountryCode(e.target.value)}
-            size="small"
-            placeholder="+254"
-          />
+
+        {/* Contact Details Section */}
+        <Grid item xs={12}>
+          <Typography variant="subtitle2" sx={{ color: '#633394', fontWeight: 'bold', borderBottom: '1px solid #eee', pb: 1, mb: 1, mt: 1 }}>
+            Contact Details
+          </Typography>
         </Grid>
-        <Grid item xs={12} sm={6} md={2}>
-          <TextField
-            fullWidth
-            label="Full Phone"
-            value={contact.fullPhone}
-            onChange={(e) => onChange(isReferral ? referralId : 'fullPhone', isReferral ? 'fullPhone' : e.target.value, isReferral ? e.target.value : null)}
-            size="small"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={2}>
-          <TextField
-            fullWidth
-            label="WhatsApp"
-            value={contact.whatsapp}
-            onChange={(e) => onChange(isReferral ? referralId : 'whatsapp', isReferral ? 'whatsapp' : e.target.value, isReferral ? e.target.value : null)}
-            size="small"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={2}>
+        <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
             select
@@ -572,13 +665,46 @@ const ContactReferralPage = () => {
             ))}
           </TextField>
         </Grid>
+        <Grid item xs={12} sm={3}>
+          <TextField
+            fullWidth
+            label="Country Code"
+            value={countryCode}
+            onChange={(e) => setCountryCode(e.target.value)}
+            size="small"
+            placeholder="+254"
+          />
+        </Grid>
+        <Grid item xs={12} sm={5}>
+          <TextField
+            fullWidth
+            label="Full Phone"
+            value={contact.fullPhone}
+            onChange={(e) => onChange(isReferral ? referralId : 'fullPhone', isReferral ? 'fullPhone' : e.target.value, isReferral ? e.target.value : null)}
+            size="small"
+          />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <TextField
+            fullWidth
+            label="WhatsApp"
+            value={contact.whatsapp}
+            onChange={(e) => onChange(isReferral ? referralId : 'whatsapp', isReferral ? 'whatsapp' : e.target.value, isReferral ? e.target.value : null)}
+            size="small"
+          />
+        </Grid>
 
-        {/* Row 2 */}
-        <Grid item xs={12} sm={6} md={2}>
+        {/* Organization & Location Section */}
+        <Grid item xs={12}>
+          <Typography variant="subtitle2" sx={{ color: '#633394', fontWeight: 'bold', borderBottom: '1px solid #eee', pb: 1, mb: 1, mt: 1 }}>
+            Organization & Location
+          </Typography>
+        </Grid>
+        <Grid item xs={12} sm={6} md={4}>
           <TextField
             fullWidth
             select
-            label="Type of Institution"
+            label="Type of Organization"
             value={contact.typeOfInstitution}
             onChange={(e) => onChange(isReferral ? referralId : 'typeOfInstitution', isReferral ? 'typeOfInstitution' : e.target.value, isReferral ? e.target.value : null)}
             size="small"
@@ -588,16 +714,16 @@ const ContactReferralPage = () => {
             ))}
           </TextField>
         </Grid>
-        <Grid item xs={12} sm={6} md={2}>
+        <Grid item xs={12} sm={6} md={4}>
           <TextField
             fullWidth
-            label="Institution Name"
+            label="Organization Name"
             value={contact.institutionName}
             onChange={(e) => onChange(isReferral ? referralId : 'institutionName', isReferral ? 'institutionName' : e.target.value, isReferral ? e.target.value : null)}
             size="small"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={2}>
+        <Grid item xs={12} sm={12} md={4}>
           <Autocomplete
             multiple
             freeSolo
@@ -623,7 +749,7 @@ const ContactReferralPage = () => {
             )}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={8}>
           <TextField
             fullWidth
             label="Physical Address"
@@ -632,7 +758,7 @@ const ContactReferralPage = () => {
             size="small"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={2}>
+        <Grid item xs={12} sm={4}>
           <TextField
             fullWidth
             label="Country"
@@ -641,19 +767,24 @@ const ContactReferralPage = () => {
             size="small"
           />
         </Grid>
+
+
+
         {isReferral && (
-          <Grid item xs={12} sm={6} md={1} sx={{ display: 'flex', alignItems: 'center' }}>
-            <IconButton
+          <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+            <Button
               color="error"
               onClick={() => removeReferral(referralId)}
+              startIcon={<DeleteIcon />}
+              variant="outlined"
               size="small"
             >
-              <DeleteIcon />
-            </IconButton>
+              Remove Referral
+            </Button>
           </Grid>
         )}
       </Grid>
-    </Box>
+    </Box >
   );
 
   return (
@@ -836,9 +967,25 @@ const ContactReferralPage = () => {
                 </Button>
 
                 {existingRecordId ? (
-                  <Alert severity="info" sx={{ flex: 1, mx: 2 }}>
-                    Viewing existing records. Modify fields and click UPDATE to save changes. You can add new sub-referrals using "Add Another".
-                  </Alert>
+                  <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 2, mx: 2 }}>
+                    <Alert severity="info" sx={{ flex: 1 }}>
+                      Viewing existing records.
+                    </Alert>
+                    {referrals.some(ref => !existingSubReferralIds.has(ref.id)) && (
+                      <Button
+                        variant="contained"
+                        onClick={handleSubmitAll}
+                        disabled={loading}
+                        sx={{
+                          backgroundColor: '#633394',
+                          '&:hover': { backgroundColor: '#4a2570' },
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        Save New Referrals
+                      </Button>
+                    )}
+                  </Box>
                 ) : (
                   <Button
                     variant="contained"

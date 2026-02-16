@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
     Container, Typography, Box, Paper, TextField, InputAdornment,
     Tabs, Tab, Table, TableBody, TableCell, TableContainer, TableHead,
@@ -7,7 +7,7 @@ import {
     Tooltip, Menu, MenuItem, ListItemIcon, ListItemText,
     TableRow, IconButton, Button, Grid, Chip, Avatar, Drawer, Divider,
     Dialog, DialogTitle, DialogContent, DialogActions, FormControl, InputLabel, Select, TableSortLabel,
-    DialogContentText, Checkbox, Autocomplete
+    DialogContentText, Checkbox, Autocomplete, Breadcrumbs, Link
 } from '@mui/material';
 import InternalHeader from '../../shared/Headers/InternalHeader';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -23,6 +23,9 @@ import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import StarIcon from '@mui/icons-material/Star';
+import WarningIcon from '@mui/icons-material/Warning';
+import HomeIcon from '@mui/icons-material/Home';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import EmailIcon from '@mui/icons-material/Email';
@@ -93,6 +96,13 @@ const getAvailableRoles = () => {
 function OrganizationDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
+    
+    // Get navigation context from location state
+    const fromAssociation = location.state?.fromAssociation;
+    const associationId = location.state?.associationId;
+    const associationName = location.state?.associationName;
+    const fromAssociationOrganizations = location.state?.fromAssociationOrganizations;
 
     const [organization, setOrganization] = useState(null);
     const [users, setUsers] = useState([]);
@@ -281,18 +291,52 @@ function OrganizationDetailPage() {
                 });
             }
 
+            // Fetch survey responses to determine survey status
+            let responsesData = [];
+            try {
+                const responsesResponse = await fetch(`${process.env.REACT_APP_API_URL}/responses`);
+                if (responsesResponse.ok) {
+                    responsesData = await responsesResponse.json();
+                    console.log('📊 Survey Responses Data:', responsesData);
+                } else {
+                    console.error('Failed to fetch survey responses:', responsesResponse.status);
+                }
+            } catch (error) {
+                console.error('Error fetching survey responses:', error);
+            }
+
             // Merge detailed user info (address) from allUsersData into usersData
+            // AND add survey status information
             const enrichedUsers = usersData.map(orgUser => {
                 const fullUser = allUsersData.find(u => u.id === orgUser.id);
+                console.log(responsesData);
+                // Find survey response for this user
+                const surveyResponse = responsesData.find(response => response.user_id === orgUser.id);
+                const hasSurveyAssigned = !!surveyResponse;
+                const hasCompletedSurvey = surveyResponse?.status === 'completed';
+                
+                console.log(`👤 User ${orgUser.id} (${orgUser.firstname} ${orgUser.lastname}):`, {
+                    surveyResponse: surveyResponse ? { id: surveyResponse.id, status: surveyResponse.status } : 'none',
+                    hasSurveyAssigned,
+                    hasCompletedSurvey
+                });
+                
+                let enrichedUser = {
+                    ...orgUser,
+                    has_survey_assigned: hasSurveyAssigned,
+                    has_completed_survey: hasCompletedSurvey,
+                    survey_status: surveyResponse?.status || null,
+                    response_id: surveyResponse?.id || null
+                };
+                
                 if (fullUser && fullUser.geo_location) {
-                    return {
-                        ...orgUser,
-                        geo_location: fullUser.geo_location
-                    };
+                    enrichedUser.geo_location = fullUser.geo_location;
                 }
-                return orgUser;
+                
+                return enrichedUser;
             });
 
+            console.log('✅ Enriched Users with Survey Status:', enrichedUsers);
             setUsers(enrichedUsers);
             setRoles(rolesData);
             setTitles(titlesData);
@@ -305,7 +349,16 @@ function OrganizationDetailPage() {
     };
 
     const handleBack = () => {
-        navigate('/organization-management');
+        if (fromAssociationOrganizations) {
+            // Navigate back to association organizations list
+            navigate('/association-organizations');
+        } else if (fromAssociation && associationId) {
+            // Navigate back to the association detail page
+            navigate(`/association-management/${associationId}`);
+        } else {
+            // Navigate to organizations list
+            navigate('/organization-management');
+        }
     };
 
     const handleTabChange = (event, newValue) => {
@@ -313,7 +366,8 @@ function OrganizationDetailPage() {
     };
 
     const handleEditClick = () => {
-        setEditDrawerOpen(true);
+        // Navigate to edit page (similar to Add Organization page)
+        navigate(`/organizations/edit/${id}`);
     };
 
     const handleEditClose = () => {
@@ -980,14 +1034,20 @@ function OrganizationDetailPage() {
                     if (!currentRoles.includes('manager')) currentRoles.push('manager');
                     // Ensure 'user' role is kept if desired, or let backend handle it
                     if (!currentRoles.includes('user')) currentRoles.push('user');
-                    updates.push(updateUserRoles(user.id, currentRoles));
+                    updates.push(updateUserRoles(user.id, {
+                        roles: currentRoles,
+                        organization_id: parseInt(id)
+                    }));
                 } else if (!isSelected && isManager) {
                     // Remove manager role
                     // If user is deselected, we remove 'manager' role
                     const newRoles = currentRoles.filter(r => r !== 'manager');
                     // Ensure at least 'user' role remains if it was the only one
                     if (newRoles.length === 0) newRoles.push('user');
-                    updates.push(updateUserRoles(user.id, newRoles));
+                    updates.push(updateUserRoles(user.id, {
+                        roles: newRoles,
+                        organization_id: parseInt(id)
+                    }));
                 }
             }
 
@@ -1044,7 +1104,7 @@ function OrganizationDetailPage() {
                         startIcon={<ArrowBackIcon />}
                         onClick={handleBack}
                     >
-                        Organizations
+                        {fromAssociationOrganizations ? 'Organizations' : fromAssociation ? `Back to ${associationName}` : 'Organizations'}
                     </Button>
                 }
                 rightActions={
@@ -1059,7 +1119,51 @@ function OrganizationDetailPage() {
                 }
             />
             <Container maxWidth="xl" sx={{ py: 4, backgroundColor: colors.background, minHeight: '100vh' }}>
-
+                {/* Breadcrumb navigation - only show when coming from association */}
+                {fromAssociation && associationName && (
+                    <Box sx={{ mb: 3 }}>
+                        <Breadcrumbs 
+                            separator={<NavigateNextIcon fontSize="small" />}
+                            sx={{
+                                '& .MuiBreadcrumbs-separator': {
+                                    mx: 1
+                                }
+                            }}
+                        >
+                            <Link
+                                component="button"
+                                variant="body2"
+                                onClick={() => navigate('/associations')}
+                                sx={{ 
+                                    display: 'inline-flex', 
+                                    alignItems: 'center',
+                                    color: colors.textSecondary,
+                                    textDecoration: 'none',
+                                    '&:hover': { color: colors.primary }
+                                }}
+                            >
+                                <HomeIcon sx={{ mr: 0.5, fontSize: 18 }} />
+                                Associations
+                            </Link>
+                            <Link
+                                component="button"
+                                variant="body2"
+                                onClick={() => navigate(`/association-management/${associationId}`)}
+                                sx={{ 
+                                    display: 'inline-block',
+                                    color: colors.textSecondary,
+                                    textDecoration: 'none',
+                                    '&:hover': { color: colors.primary }
+                                }}
+                            >
+                                {associationName}
+                            </Link>
+                            <Typography variant="body2" color="text.primary" fontWeight="500">
+                                {organization.name}
+                            </Typography>
+                        </Breadcrumbs>
+                    </Box>
+                )}
 
 
                 {/* Info Cards */}
@@ -1327,21 +1431,6 @@ function OrganizationDetailPage() {
                                                         </TableSortLabel>
                                                     </TableCell>
                                                     <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Address</TableCell>
-                                                    <TableCell sortDirection={orderBy === 'is_active' ? order : false} sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>
-                                                        <TableSortLabel
-                                                            active={orderBy === 'is_active'}
-                                                            direction={orderBy === 'is_active' ? order : 'asc'}
-                                                            onClick={() => handleRequestSort('is_active')}
-                                                            sx={{
-                                                                color: '#000000 !important',
-                                                                '& .MuiTableSortLabel-icon': {
-                                                                    color: '#000000 !important',
-                                                                },
-                                                            }}
-                                                        >
-                                                            Status
-                                                        </TableSortLabel>
-                                                    </TableCell>
                                                     <TableCell sx={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Survey Status</TableCell>
                                                     <TableCell sx={{ color: '#000000', fontWeight: 'bold', textAlign: 'right', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.75rem' }}>Actions</TableCell>
                                                 </TableRow>
@@ -1356,7 +1445,9 @@ function OrganizationDetailPage() {
                                                         return (
                                                             <TableRow
                                                                 hover
-                                                                onClick={() => navigate(`/organization-management/${id}/users/${user.id}`)}
+                                                                onClick={() => navigate(`/organization-management/${id}/users/${user.id}`, {
+                                                                    state: { fromAssociationOrganizations }
+                                                                })}
                                                                 role="checkbox"
                                                                 aria-checked={isUserSelected}
                                                                 tabIndex={-1}
@@ -1464,26 +1555,29 @@ function OrganizationDetailPage() {
                                                                     </Typography>
                                                                 </TableCell>
                                                                 <TableCell>
-                                                                    <Chip
-                                                                        label="Active"
-                                                                        size="small"
-                                                                        sx={{
-                                                                            bgcolor: '#e8f5e9',
-                                                                            color: '#2e7d32',
-                                                                            fontWeight: 500
-                                                                        }}
-                                                                    />
-                                                                </TableCell>
-                                                                <TableCell>
-                                                                    <Chip
-                                                                        label={user.has_completed_survey ? 'Completed' : 'Pending'}
-                                                                        size="small"
-                                                                        sx={{
-                                                                            bgcolor: user.has_completed_survey ? '#e8f5e9' : '#fff3e0',
-                                                                            color: user.has_completed_survey ? '#2e7d32' : '#e65100',
-                                                                            fontWeight: 500
-                                                                        }}
-                                                                    />
+                                                                    {!user.has_survey_assigned ? (
+                                                                        <Chip
+                                                                            icon={<WarningIcon style={{ color: '#ed6c02' }} />}
+                                                                            label="Not Assigned"
+                                                                            size="small"
+                                                                            variant="outlined"
+                                                                            sx={{
+                                                                                borderColor: '#ed6c02',
+                                                                                color: '#ed6c02',
+                                                                                fontWeight: 500
+                                                                            }}
+                                                                        />
+                                                                    ) : (
+                                                                        <Chip
+                                                                            label={user.has_completed_survey ? 'Completed' : 'Pending'}
+                                                                            size="small"
+                                                                            sx={{
+                                                                                bgcolor: user.has_completed_survey ? '#e8f5e9' : '#fff3e0',
+                                                                                color: user.has_completed_survey ? '#2e7d32' : '#e65100',
+                                                                                fontWeight: 500
+                                                                            }}
+                                                                        />
+                                                                    )}
                                                                 </TableCell>
                                                                 <TableCell align="right" onClick={(e) => e.stopPropagation()}>
                                                                     <Stack direction="row" spacing={1} justifyContent="flex-end">
@@ -1502,7 +1596,9 @@ function OrganizationDetailPage() {
                                                                             <IconButton
                                                                                 size="small"
                                                                                 sx={{ color: colors.primary }}
-                                                                                onClick={() => navigate(`/organization-management/${id}/users/${user.id}`)}
+                                                                                onClick={() => navigate(`/organization-management/${id}/users/${user.id}`, {
+                                                                                    state: { fromAssociationOrganizations }
+                                                                                })}
                                                                             >
                                                                                 <VisibilityIcon fontSize="small" />
                                                                             </IconButton>

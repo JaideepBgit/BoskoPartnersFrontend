@@ -152,10 +152,20 @@ export const uploadUserFile = async (formData) => {
     }
 };
 
-// Update user roles (list)
-export const updateUserRoles = async (userId, roles) => {
+// Update user roles (list) for a specific organization
+export const updateUserRoles = async (userId, rolesData) => {
     try {
-        const response = await axios.put(`${BASE_URL}/users/${userId}/roles`, { roles });
+        // rolesData should be { roles: ['user', 'manager'], organization_id: 123 }
+        // or just ['user', 'manager'] for backward compatibility (will fail if org_id required)
+        let payload;
+        if (Array.isArray(rolesData)) {
+            // Legacy format - just roles array
+            payload = { roles: rolesData };
+        } else {
+            // New format - object with roles and organization_id
+            payload = rolesData;
+        }
+        const response = await axios.put(`${BASE_URL}/users/${userId}/roles`, payload);
         return response.data;
     } catch (error) {
         console.error('Failed to update user roles:', error);
@@ -335,6 +345,17 @@ export const fetchTemplatesByOrganization = async (organizationId) => {
         return response.data;
     } catch (error) {
         console.error(`Failed to fetch templates for organization ${organizationId}:`, error);
+        throw error;
+    }
+};
+
+// Fetch all templates (for bulk operations)
+export const fetchTemplates = async () => {
+    try {
+        const response = await axios.get(`${BASE_URL}/templates`);
+        return response.data;
+    } catch (error) {
+        console.error('Failed to fetch templates:', error);
         throw error;
     }
 };

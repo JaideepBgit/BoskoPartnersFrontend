@@ -146,6 +146,9 @@ const RoleSelectionPage = ({ onLogin }) => {
       case 'manager':
         navigate('/manager-dashboard');
         break;
+      case 'association':
+        navigate('/association-dashboard');
+        break;
       default:
         navigate('/');
     }
@@ -158,33 +161,22 @@ const RoleSelectionPage = ({ onLogin }) => {
   return (
     <Box
       sx={{
-        background: 'linear-gradient(135deg, #3B1C55 0%, #633394 25%, #61328E 50%, #967CB2 75%, #FBFAFA 100%)',
+        backgroundColor: '#ffffff',
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         py: 4,
-        position: 'relative',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'radial-gradient(ellipse at top left, rgba(59, 28, 85, 0.1) 0%, transparent 50%), radial-gradient(ellipse at bottom right, rgba(150, 124, 178, 0.1) 0%, transparent 50%)',
-          pointerEvents: 'none'
-        }
       }}
     >
-      <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1 }}>
+      <Container maxWidth="md">
         {/* Logo and Header */}
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <img src={logoImage} alt="Saurara Logo" style={{ maxWidth: '200px', height: 'auto', marginBottom: '16px' }} />
-          <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}>
+          <Typography variant="h4" sx={{ color: '#333', fontWeight: 'bold', mb: 1 }}>
             Welcome, {pendingUserData?.firstname || pendingUserData?.username}!
           </Typography>
-          <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.9)' }}>
+          <Typography variant="body1" sx={{ color: '#666' }}>
             You have multiple roles. Please select how you want to continue:
           </Typography>
         </Box>

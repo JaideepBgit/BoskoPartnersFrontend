@@ -11,6 +11,7 @@ import UserDashboard from './components/Dashboard/UserDashboard';
 import AdminDashboard from './components/Dashboard/AdminDashboard';
 import RootDashboard from './components/Dashboard/RootDashboard';
 import ManagerDashboard from './components/Dashboard/ManagerDashboard';
+import AssociationDashboard from './components/Dashboard/AssociationDashboard';
 import InventoryPage from './components/Admin/Inventory/InventoryPage';
 import BlankSurveyBuilderPage from './components/Admin/Inventory/BlankSurveyBuilderPage';
 import UseTemplateSurveyBuilderPage from './components/Admin/Inventory/UseTemplateSurveyBuilderPage';
@@ -34,6 +35,7 @@ import AdminProfilePage from './components/Settings/AdminProfilePage';
 import OrganizationManagementPage from './components/Admin/OrganizationManagement/OrganizationManagementPage';
 import AssociationsPage from './components/Admin/OrganizationManagement/AssociationsPage';
 import OrganizationDetailPage from './components/Admin/OrganizationManagement/OrganizationDetailPage';
+import AssociationDetailPage from './components/Admin/OrganizationManagement/AssociationDetailPage';
 import SurveyDetailPage from './components/Admin/OrganizationManagement/SurveyDetailPage';
 import UserDetailPage from './components/Admin/OrganizationManagement/UserDetailPage';
 import AddUserPage from './components/UserManagement/Users/AddUserPage';
@@ -42,6 +44,11 @@ import AddOrganizationPage from './components/UserManagement/Organizations/AddOr
 import AddAssociationPage from './components/Admin/OrganizationManagement/AddAssociationPage';
 import EmailTemplatesPage from './components/Admin/Inventory/EmailTemplatesPage';
 import AudienceManagement from './components/Admin/Audience/AudienceManagement';
+import CreateAudiencePage from './components/Admin/Audience/CreateAudiencePage';
+import AssociationOrganizationsPage from './components/Association/AssociationOrganizationsPage';
+import AssociationUsersPage from './components/Association/AssociationUsersPage';
+import AssociationSurveysPage from './components/Association/AssociationSurveysPage';
+import AssociationUserReports from './components/Association/AssociationUserReports';
 
 import './App.css';
 import './styles/form.css';
@@ -59,6 +66,10 @@ function RoleBasedDashboard() {
 
   if (userRole === 'manager') {
     return <Navigate to="/manager-dashboard" replace />;
+  }
+
+  if (userRole === 'association') {
+    return <Navigate to="/association-dashboard" replace />;
   }
 
   // For regular users on /dashboard, redirect to their profile
@@ -162,6 +173,27 @@ function Main({ isAuthenticated, userRole, login, logout }) {
           </ProtectedRoute>
         } />
 
+        {/* Association Dashboard Route */}
+        <Route path="/association-dashboard" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <AssociationDashboard onLogout={logout} />
+          </ProtectedRoute>
+        } />
+
+        {/* Association Organizations Route */}
+        <Route path="/association-organizations" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <AssociationOrganizationsPage onLogout={logout} />
+          </ProtectedRoute>
+        } />
+
+        {/* Association Users Route */}
+        <Route path="/association-users" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <AssociationUsersPage onLogout={logout} />
+          </ProtectedRoute>
+        } />
+
         {/* Protect the landing pages */}
         <Route path="/user" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
@@ -180,9 +212,18 @@ function Main({ isAuthenticated, userRole, login, logout }) {
             <UserDashboard onLogout={logout} />
           </ProtectedRoute>
         } />
+        
+        {/* Inventory Route - Admin/Root/Manager */}
         <Route path="/inventory" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <InventoryPage />
+          </ProtectedRoute>
+        } />
+
+        {/* Association Inventory Route */}
+        <Route path="/association-inventory" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <AssociationSurveysPage onLogout={logout} />
           </ProtectedRoute>
         } />
         <Route path="/inventory/blank-survey" element={
@@ -247,6 +288,20 @@ function Main({ isAuthenticated, userRole, login, logout }) {
         <Route path="/audiences" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <AudienceManagement />
+          </ProtectedRoute>
+        } />
+        
+        {/* Create Audience Route */}
+        <Route path="/audiences/create" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <CreateAudiencePage />
+          </ProtectedRoute>
+        } />
+        
+        {/* Edit Audience Route */}
+        <Route path="/audiences/edit/:id" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <CreateAudiencePage />
           </ProtectedRoute>
         } />
 
@@ -321,6 +376,13 @@ function Main({ isAuthenticated, userRole, login, logout }) {
           </ProtectedRoute>
         } />
 
+        {/* Association User Reports Route */}
+        <Route path="/association-user-reports" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <AssociationUserReports onLogout={logout} />
+          </ProtectedRoute>
+        } />
+
         {/* Organization Management Routes */}
         <Route path="/organization-management" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
@@ -331,6 +393,12 @@ function Main({ isAuthenticated, userRole, login, logout }) {
         <Route path="/associations" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <AssociationsPage />
+          </ProtectedRoute>
+        } />
+        {/* Association Detail Page */}
+        <Route path="/association-management/:id" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <AssociationDetailPage onLogout={logout} />
           </ProtectedRoute>
         } />
         <Route path="/organization-management/:id" element={
@@ -358,6 +426,13 @@ function Main({ isAuthenticated, userRole, login, logout }) {
 
         {/* Add Organization Page Route */}
         <Route path="/organizations/add" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <AddOrganizationPage />
+          </ProtectedRoute>
+        } />
+
+        {/* Edit Organization Page Route */}
+        <Route path="/organizations/edit/:id" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <AddOrganizationPage />
           </ProtectedRoute>

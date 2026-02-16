@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import Navbar from '../shared/Navbar/Navbar';
 import PasswordSettings from './PasswordSettings';
+import NotificationSettings from './NotificationSettings';
 import LockIcon from '@mui/icons-material/Lock';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 
@@ -35,12 +36,14 @@ const SettingsPage = ({ onLogout }) => {
     <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5' }}>
       <Navbar onLogout={onLogout} />
       
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Typography variant="h4" gutterBottom sx={{ mb: 3, fontWeight: 600 }}>
-          Settings
-        </Typography>
-
-        <Paper elevation={2}>
+      <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
+        <Paper elevation={2} sx={{ maxWidth: 600, mx: 'auto' }}>
+          <Box sx={{ p: 3, textAlign: 'center', borderBottom: 1, borderColor: 'divider' }}>
+            <Typography variant="h4" sx={{ fontWeight: 600 }}>
+              Settings
+            </Typography>
+          </Box>
+          
           <Tabs
             value={tabValue}
             onChange={handleTabChange}
@@ -71,14 +74,7 @@ const SettingsPage = ({ onLogout }) => {
           </TabPanel>
 
           <TabPanel value={tabValue} index={1}>
-            <Box sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Notification Settings
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Notification settings coming soon...
-              </Typography>
-            </Box>
+            <NotificationSettings />
           </TabPanel>
         </Paper>
       </Container>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
     Container, Typography, Box, Paper, Button, Grid, Card, CardContent,
     CircularProgress, Alert, Chip, Avatar, Tabs, Tab, Divider,
@@ -70,6 +70,11 @@ const formatStatus = (status) => {
 function UserDetailPage() {
     const { orgId, userId } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // Get navigation context from location state
+    const fromAssociationOrganizations = location.state?.fromAssociationOrganizations;
+    const fromAssociationUsers = location.state?.fromAssociationUsers;
 
     // Determine navigation context: from org detail page or from users page
     const isFromOrganization = Boolean(orgId);
@@ -301,8 +306,17 @@ function UserDetailPage() {
     }, [user]);
 
     const handleBack = () => {
+        // Check if coming from association users page
+        if (fromAssociationUsers) {
+            navigate('/association-users');
+            return;
+        }
+        
         if (isFromOrganization) {
-            navigate(`/organization-management/${orgId}`);
+            // Pass the state back to organization detail page
+            navigate(`/organization-management/${orgId}`, {
+                state: { fromAssociationOrganizations }
+            });
         } else {
             navigate('/users');
         }
@@ -591,7 +605,12 @@ function UserDetailPage() {
                 {/* Breadcrumb Navigation */}
                 <Breadcrumbs
                     separator={<NavigateNextIcon fontSize="small" />}
-                    sx={{ mb: 3 }}
+                    sx={{ 
+                        mb: 3,
+                        '& .MuiBreadcrumbs-separator': {
+                            mx: 1
+                        }
+                    }}
                 >
                     {isFromOrganization ? (
                         <>
@@ -601,7 +620,7 @@ function UserDetailPage() {
                                 underline="hover"
                                 color="text.secondary"
                                 onClick={() => navigate('/organization-management')}
-                                sx={{ cursor: 'pointer' }}
+                                sx={{ cursor: 'pointer', display: 'inline-block' }}
                             >
                                 Organizations
                             </Link>
@@ -611,7 +630,7 @@ function UserDetailPage() {
                                 underline="hover"
                                 color="text.secondary"
                                 onClick={handleBack}
-                                sx={{ cursor: 'pointer' }}
+                                sx={{ cursor: 'pointer', display: 'inline-block' }}
                             >
                                 {organization?.name || 'Organization'}
                             </Link>
@@ -623,7 +642,7 @@ function UserDetailPage() {
                             underline="hover"
                             color="text.secondary"
                             onClick={() => navigate('/users')}
-                            sx={{ cursor: 'pointer' }}
+                            sx={{ cursor: 'pointer', display: 'inline-block' }}
                         >
                             Users
                         </Link>

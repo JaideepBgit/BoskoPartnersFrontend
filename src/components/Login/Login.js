@@ -118,6 +118,9 @@ const LoginPage = ({ onLogin }) => {
       case 'manager':
         navigate('/manager-dashboard'); // Managers go to their specific dashboard
         break;
+      case 'association':
+        navigate('/association-dashboard'); // Association managers go to their dashboard
+        break;
       default:
         console.warn('Unknown role, defaulting to /');
         navigate('/');

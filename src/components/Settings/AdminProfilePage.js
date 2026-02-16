@@ -15,15 +15,13 @@ import {
   useTheme,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import Navbar from '../shared/Navbar/Navbar';
+import InternalHeader from '../shared/Headers/InternalHeader';
 import EmailIcon from '@mui/icons-material/Email';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PersonIcon from '@mui/icons-material/Person';
 import BadgeIcon from '@mui/icons-material/Badge';
 import BusinessIcon from '@mui/icons-material/Business';
 import SecurityIcon from '@mui/icons-material/Security';
-import SettingsIcon from '@mui/icons-material/Settings';
-import LockIcon from '@mui/icons-material/Lock';
-import DashboardIcon from '@mui/icons-material/Dashboard';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 
 const AdminProfilePage = () => {
@@ -117,8 +115,20 @@ const AdminProfilePage = () => {
   ];
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5' }}>
-      <Navbar />
+    <>
+      <InternalHeader
+        title="My Profile"
+        leftActions={
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate(getDashboardPath())}
+          >
+            Dashboard
+          </Button>
+        }
+      />
+      <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5', pt: 2 }}>
 
       <Container maxWidth="md" sx={{ mt: 4, mb: 4, px: isMobile ? 2 : 3 }}>
         {/* Profile Header Card */}
@@ -275,94 +285,10 @@ const AdminProfilePage = () => {
           </CardContent>
         </Card>
 
-        {/* Quick Actions Card */}
-        <Card
-          sx={{
-            borderRadius: '16px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-          }}
-        >
-          <CardContent sx={{ p: isMobile ? 2 : 3 }}>
-            <Typography
-              variant="h6"
-              sx={{ fontWeight: 600, color: '#333', mb: 2 }}
-            >
-              Quick Actions
-            </Typography>
-            <Divider sx={{ mb: 2 }} />
 
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={4}>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<DashboardIcon />}
-                  onClick={() => navigate(getDashboardPath())}
-                  sx={{
-                    py: 1.5,
-                    borderRadius: '10px',
-                    borderColor: '#633394',
-                    color: '#633394',
-                    textTransform: 'none',
-                    fontWeight: 500,
-                    '&:hover': {
-                      borderColor: '#633394',
-                      backgroundColor: '#f5f0fa',
-                    },
-                  }}
-                >
-                  Go to Dashboard
-                </Button>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<LockIcon />}
-                  onClick={() => navigate('/settings')}
-                  sx={{
-                    py: 1.5,
-                    borderRadius: '10px',
-                    borderColor: '#633394',
-                    color: '#633394',
-                    textTransform: 'none',
-                    fontWeight: 500,
-                    '&:hover': {
-                      borderColor: '#633394',
-                      backgroundColor: '#f5f0fa',
-                    },
-                  }}
-                >
-                  Change Password
-                </Button>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<SettingsIcon />}
-                  onClick={() => navigate('/settings')}
-                  sx={{
-                    py: 1.5,
-                    borderRadius: '10px',
-                    borderColor: '#633394',
-                    color: '#633394',
-                    textTransform: 'none',
-                    fontWeight: 500,
-                    '&:hover': {
-                      borderColor: '#633394',
-                      backgroundColor: '#f5f0fa',
-                    },
-                  }}
-                >
-                  Settings
-                </Button>
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
       </Container>
     </Box>
+    </>
   );
 };
 

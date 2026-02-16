@@ -129,7 +129,7 @@ function AssociationsPage() {
     }, [organizations, searchQuery, filterType]);
 
     const handleOrganizationClick = (org) => {
-        navigate(`/organization-management/${org.id}`);
+        navigate(`/association-management/${org.id}`);
     };
 
     const handleOpenAddPage = () => {
