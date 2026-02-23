@@ -41,7 +41,10 @@ const InventoryService = {
   updateTemplateSections: (templateId, sections) => axios.put(`${BASE_URL}/templates/${templateId}/sections`, { sections }),
 
   // Responses
-  getResponses: () => axios.get(`${BASE_URL}/responses`).then(res => res.data),
+  getResponses: (templateId = null) => {
+    const url = templateId ? `${BASE_URL}/responses?template_id=${templateId}` : `${BASE_URL}/responses`;
+    return axios.get(url).then(res => res.data);
+  },
   getResponse: (responseId) => axios.get(`${BASE_URL}/responses/${responseId}`).then(res => res.data),
   addResponse: (templateId, payload) => axios.post(`${BASE_URL}/templates/${templateId}/responses`, payload),
   updateResponse: (responseId, payload) => axios.put(`${BASE_URL}/responses/${responseId}`, payload),
@@ -195,6 +198,18 @@ const InventoryService = {
       }
     }).then(res => res.data);
   },
+
+  // Reminder Settings
+  getReminderSettings: (templateId) =>
+    axios.get(`${BASE_URL}/templates/${templateId}/reminder-settings`).then(res => res.data),
+  saveReminderSettings: (templateId, payload) =>
+    axios.post(`${BASE_URL}/templates/${templateId}/reminder-settings`, payload).then(res => res.data),
+  deleteReminderSettings: (templateId) =>
+    axios.delete(`${BASE_URL}/templates/${templateId}/reminder-settings`).then(res => res.data),
+  getReminderLogs: (templateId) =>
+    axios.get(`${BASE_URL}/templates/${templateId}/reminder-logs`).then(res => res.data),
+  sendRemindersNow: (templateId) =>
+    axios.post(`${BASE_URL}/templates/${templateId}/send-reminders`).then(res => res.data),
 
   // Legacy methods for backward compatibility
   getVersions: (surveyId) => axios.get(`${BASE_URL}/surveys/${surveyId}/versions`).then(res => res.data),

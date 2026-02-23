@@ -15,6 +15,30 @@ const theme = createTheme({
         }
     },
     components: {
+        MuiInputBase: {
+            styleOverrides: {
+                root: {
+                    fontSize: '0.875rem',
+                },
+                input: {
+                    fontSize: '0.875rem',
+                },
+            },
+        },
+        MuiInputLabel: {
+            styleOverrides: {
+                root: {
+                    fontSize: '0.875rem',
+                },
+            },
+        },
+        MuiMenuItem: {
+            styleOverrides: {
+                root: {
+                    fontSize: '0.875rem',
+                },
+            },
+        },
         MuiButton: {
             styleOverrides: {
                 root: {

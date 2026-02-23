@@ -29,7 +29,7 @@ import {
 
 // Metric configuration for Organizations
 const ORGANIZATION_METRICS = {
-    user_count: { label: 'Users', description: 'Total number of users in the organization', max: 100 },
+    user_count: { label: 'Members', description: 'Total number of members in the organization', max: 100 },
     survey_completion: { label: 'Survey Completion', description: 'Percentage of completed surveys', max: 100 },
     active_engagement: { label: 'Active Engagement', description: 'Active user participation rate', max: 100 },
     geographic_reach: { label: 'Geographic Reach', description: 'Coverage across different regions', max: 100 },

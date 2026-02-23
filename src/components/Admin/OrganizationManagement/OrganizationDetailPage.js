@@ -15,7 +15,6 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import SearchIcon from '@mui/icons-material/Search';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import ArchiveIcon from '@mui/icons-material/Archive';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import PersonIcon from '@mui/icons-material/Person';
 import BusinessIcon from '@mui/icons-material/Business';
@@ -97,7 +96,7 @@ function OrganizationDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
-    
+
     // Get navigation context from location state
     const fromAssociation = location.state?.fromAssociation;
     const associationId = location.state?.associationId;
@@ -314,13 +313,13 @@ function OrganizationDetailPage() {
                 const surveyResponse = responsesData.find(response => response.user_id === orgUser.id);
                 const hasSurveyAssigned = !!surveyResponse;
                 const hasCompletedSurvey = surveyResponse?.status === 'completed';
-                
+
                 console.log(`👤 User ${orgUser.id} (${orgUser.firstname} ${orgUser.lastname}):`, {
                     surveyResponse: surveyResponse ? { id: surveyResponse.id, status: surveyResponse.status } : 'none',
                     hasSurveyAssigned,
                     hasCompletedSurvey
                 });
-                
+
                 let enrichedUser = {
                     ...orgUser,
                     has_survey_assigned: hasSurveyAssigned,
@@ -328,11 +327,11 @@ function OrganizationDetailPage() {
                     survey_status: surveyResponse?.status || null,
                     response_id: surveyResponse?.id || null
                 };
-                
+
                 if (fullUser && fullUser.geo_location) {
                     enrichedUser.geo_location = fullUser.geo_location;
                 }
-                
+
                 return enrichedUser;
             });
 
@@ -1110,11 +1109,10 @@ function OrganizationDetailPage() {
                 rightActions={
                     <Button
                         variant="contained"
-                        color="secondary"
-                        startIcon={<ArchiveIcon />}
-                        onClick={() => { console.log('Archive clicked'); }}
+                        startIcon={<EditIcon />}
+                        onClick={handleEditClick}
                     >
-                        Archive
+                        Edit Organization
                     </Button>
                 }
             />
@@ -1122,7 +1120,7 @@ function OrganizationDetailPage() {
                 {/* Breadcrumb navigation - only show when coming from association */}
                 {fromAssociation && associationName && (
                     <Box sx={{ mb: 3 }}>
-                        <Breadcrumbs 
+                        <Breadcrumbs
                             separator={<NavigateNextIcon fontSize="small" />}
                             sx={{
                                 '& .MuiBreadcrumbs-separator': {
@@ -1133,9 +1131,9 @@ function OrganizationDetailPage() {
                             <Link
                                 component="button"
                                 variant="body2"
-                                onClick={() => navigate('/associations')}
-                                sx={{ 
-                                    display: 'inline-flex', 
+                                onClick={() => navigate('/denominations')}
+                                sx={{
+                                    display: 'inline-flex',
                                     alignItems: 'center',
                                     color: colors.textSecondary,
                                     textDecoration: 'none',
@@ -1149,7 +1147,7 @@ function OrganizationDetailPage() {
                                 component="button"
                                 variant="body2"
                                 onClick={() => navigate(`/association-management/${associationId}`)}
-                                sx={{ 
+                                sx={{
                                     display: 'inline-block',
                                     color: colors.textSecondary,
                                     textDecoration: 'none',
@@ -1259,7 +1257,7 @@ function OrganizationDetailPage() {
                                         </Typography>
                                     </Grid>
                                     <Grid item xs={12} sm={6}>
-                                        <Typography variant="caption" color="text.secondary">Users</Typography>
+                                        <Typography variant="caption" color="text.secondary">Members</Typography>
                                         <Typography variant="body2">{users.length}</Typography>
                                     </Grid>
                                 </Grid>
@@ -1283,7 +1281,7 @@ function OrganizationDetailPage() {
                             '& .MuiTabs-indicator': { backgroundColor: colors.primary }
                         }}
                     >
-                        <Tab label="Users" />
+                        <Tab label="Members" />
                         <Tab label="Surveys" />
                     </Tabs>
                 </Box>
@@ -1302,7 +1300,7 @@ function OrganizationDetailPage() {
                         <Box sx={{ p: 3 }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                                 <TextField
-                                    placeholder="Search users..."
+                                    placeholder="Search members..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     size="small"
@@ -1338,7 +1336,7 @@ function OrganizationDetailPage() {
                                             borderRadius: 2
                                         }}
                                     >
-                                        Add User
+                                        Add Member
                                     </Button>
                                     <Button
                                         variant="outlined"
@@ -1347,9 +1345,9 @@ function OrganizationDetailPage() {
                                         sx={{
                                             ml: 2,
                                             color: colors.primary,
-                                            borderColor: colors.primary,
+                                            borderColor: '#e5e5e5',
                                             '&:hover': {
-                                                borderColor: colors.secondary,
+                                                borderColor: '#e5e5e5',
                                                 backgroundColor: 'rgba(99, 51, 148, 0.04)'
                                             },
                                             textTransform: 'none',
@@ -1364,7 +1362,7 @@ function OrganizationDetailPage() {
                             {filteredUsers.length === 0 ? (
                                 <Box sx={{ textAlign: 'center', py: 4 }}>
                                     <Typography color="text.secondary">
-                                        No users found in this organization
+                                        No members found in this organization
                                     </Typography>
                                 </Box>
                             ) : (
@@ -1381,7 +1379,7 @@ function OrganizationDetailPage() {
                                                             checked={filteredUsers.length > 0 && selectedUsers.length === filteredUsers.filter(u => !u.has_completed_survey).length}
                                                             onChange={handleSelectAllClick}
                                                             inputProps={{
-                                                                'aria-label': 'select all users',
+                                                                'aria-label': 'select all members',
                                                             }}
                                                         />
                                                     </TableCell>
@@ -2515,10 +2513,10 @@ function OrganizationDetailPage() {
                 <DialogTitle>Assign Account Managers</DialogTitle>
                 <DialogContent dividers>
                     <DialogContentText sx={{ mb: 2 }}>
-                        Select users to assign as Account Managers for this organization.
+                        Select members to assign as Account Managers for this organization.
                     </DialogContentText>
                     {users.length === 0 ? (
-                        <Typography color="text.secondary">No users found in this organization.</Typography>
+                        <Typography color="text.secondary">No members found in this organization.</Typography>
                     ) : (
                         <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 400 }}>
                             <Table stickyHeader size="small">

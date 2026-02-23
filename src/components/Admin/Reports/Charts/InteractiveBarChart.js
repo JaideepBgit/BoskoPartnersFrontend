@@ -92,8 +92,8 @@ const InteractiveBarChart = ({
     };
 
     return (
-        <Paper sx={{ p: 2, borderRadius: 2, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
-            {title && <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: adminColors.primary }}>{title}</Typography>}
+        <Paper sx={{ p: 3, borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+            {title && <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, color: '#633394' }}>{title}</Typography>}
             <Box sx={{ width: '100%', height: height }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart
@@ -130,14 +130,14 @@ const InteractiveBarChart = ({
                                     {chartData.map((entry, index) => (
                                         <Cell
                                             key={`cell-ind-${index}`}
-                                            fill={entry.individual >= entry.average ? '#4caf50' : '#ff9800'}
+                                            fill={entry.individual >= entry.average ? '#633394' : '#967CB2'}
                                         />
                                     ))}
                                 </Bar>
                                 <Bar
                                     name="Group Average"
                                     dataKey="average"
-                                    fill="#1976d2"
+                                    fill="#7b4fa3"
                                     radius={[0, 4, 4, 0]}
                                     barSize={20}
                                 />
@@ -146,7 +146,7 @@ const InteractiveBarChart = ({
                             <Bar
                                 name="Score"
                                 dataKey="average"
-                                fill={adminColors.primary || '#633394'}
+                                fill="#633394"
                                 radius={[0, 4, 4, 0]}
                                 barSize={30}
                             />

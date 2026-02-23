@@ -23,12 +23,12 @@ export default function RefreshButton({
       size={size}
       sx={{
         color,
-        borderColor: color,
+        borderColor: '#e5e5e5',
         borderRadius: 2,
         textTransform: 'none',
         px: 2.5,
         '&:hover': {
-          borderColor: hoverColor,
+          borderColor: '#e5e5e5',
           backgroundColor: 'rgba(99, 51, 148, 0.04)',
         },
         ...sx,

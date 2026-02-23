@@ -104,26 +104,10 @@ const LoginPage = ({ onLogin }) => {
     if (onLogin) onLogin();
 
     // 4️⃣ navigate based on role
-    switch (userData.role) {
-      case 'admin':
-        navigate('/admin');
-        break;
-      case 'root':
-        navigate('/root-dashboard');
-        break;
-      case 'user':
-        // Always redirect users to survey code validation page
-        navigate('/user');
-        break;
-      case 'manager':
-        navigate('/manager-dashboard'); // Managers go to their specific dashboard
-        break;
-      case 'association':
-        navigate('/association-dashboard'); // Association managers go to their dashboard
-        break;
-      default:
-        console.warn('Unknown role, defaulting to /');
-        navigate('/');
+    if (userData.role === 'user') {
+      navigate('/user');
+    } else {
+      navigate('/dashboard');
     }
   };
 
@@ -228,6 +212,13 @@ const LoginPage = ({ onLogin }) => {
               Forgot your password?{' '}
               <Link href="/forgot-password" underline="hover">
                 Click here
+              </Link>
+            </Typography>
+
+            <Typography variant="body2" align="center" sx={{ mt: 1 }}>
+              Don't have an account?{' '}
+              <Link href="/signup" underline="hover" sx={{ color: '#633394', fontWeight: 500 }}>
+                Sign Up
               </Link>
             </Typography>
           </Box>

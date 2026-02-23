@@ -45,16 +45,16 @@ const AudienceManagement = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Selection state
   const [selectedAudienceIds, setSelectedAudienceIds] = useState([]);
-  
+
   // Dialog states
   const [membersDialogOpen, setMembersDialogOpen] = useState(false);
   const [remindersDialogOpen, setRemindersDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
-  
+
   const [selectedAudience, setSelectedAudience] = useState(null);
 
   useEffect(() => {
@@ -77,9 +77,9 @@ const AudienceManagement = () => {
   // Filter audiences based on search query
   const filteredAudiences = useMemo(() => {
     if (!searchQuery) return audiences;
-    
+
     const term = searchQuery.toLowerCase();
-    return audiences.filter(audience => 
+    return audiences.filter(audience =>
       audience.name.toLowerCase().includes(term) ||
       (audience.description && audience.description.toLowerCase().includes(term)) ||
       (audience.audience_type && audience.audience_type.toLowerCase().includes(term)) ||
@@ -139,13 +139,13 @@ const AudienceManagement = () => {
 
       setBulkDeleteDialogOpen(false);
       setSelectedAudienceIds([]);
-      
+
       if (failCount > 0) {
         setSuccess(`Deleted ${successCount} audience(s). ${failCount} failed.`);
       } else {
         setSuccess(`Successfully deleted ${successCount} audience(s).`);
       }
-      
+
       loadAudiences();
     } catch (err) {
       setError(err.message);
@@ -298,7 +298,7 @@ const AudienceManagement = () => {
         {/* Header */}
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
           <Typography variant="h4" component="h1" sx={{ color: '#212121', fontWeight: 'bold' }}>
-            Audience Management
+            Audiences
           </Typography>
           <Button
             variant="contained"
@@ -316,142 +316,142 @@ const AudienceManagement = () => {
           </Button>
         </Box>
 
-      {/* Alerts */}
-      {error && (
-        <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-      {success && (
-        <Alert severity="success" onClose={() => setSuccess(null)} sx={{ mb: 2 }}>
-          {success}
-        </Alert>
-      )}
-
-      {/* Search Bar and Bulk Actions */}
-      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-        <TextField
-          placeholder="Search by name, description, type, or creator..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          size="small"
-          sx={{
-            flex: 1,
-            minWidth: 250,
-            maxWidth: 400,
-            '& .MuiOutlinedInput-root': {
-              backgroundColor: 'white',
-              borderRadius: 2
-            }
-          }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon color="action" />
-              </InputAdornment>
-            ),
-          }}
-        />
-        
-        {/* Bulk Actions */}
-        {selectedAudienceIds.length > 0 && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Chip
-              label={`${selectedAudienceIds.length} selected`}
-              color="primary"
-              sx={{ backgroundColor: '#633394' }}
-            />
-            <Button
-              variant="contained"
-              color="error"
-              startIcon={<DeleteIcon />}
-              onClick={() => setBulkDeleteDialogOpen(true)}
-              size="small"
-            >
-              Delete ({selectedAudienceIds.length})
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => setSelectedAudienceIds([])}
-              sx={{ borderColor: '#967CB2', color: '#967CB2' }}
-            >
-              Clear
-            </Button>
-          </Box>
+        {/* Alerts */}
+        {error && (
+          <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2 }}>
+            {error}
+          </Alert>
         )}
-      </Box>
+        {success && (
+          <Alert severity="success" onClose={() => setSuccess(null)} sx={{ mb: 2 }}>
+            {success}
+          </Alert>
+        )}
 
-      {/* Audiences Table */}
-      <DataTable
-        columns={audienceColumns}
-        data={filteredAudiences}
-        selectable
-        selectedIds={selectedAudienceIds}
-        onSelectionChange={setSelectedAudienceIds}
-        getRowId={(audience) => audience.id}
-        defaultSortColumn="created_at"
-        defaultSortDirection="desc"
-        pagination
-        defaultRowsPerPage={10}
-        rowsPerPageOptions={[5, 10, 25, 50]}
-        emptyMessage="No audiences found. Create your first audience to get started."
-        emptyIcon={<GroupWorkIcon sx={{ fontSize: 48, color: '#967CB2', opacity: 0.5 }} />}
-        paperSx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
-      />
+        {/* Search Bar and Bulk Actions */}
+        <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+          <TextField
+            placeholder="Search by name, description, type, or creator..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            size="small"
+            sx={{
+              flex: 1,
+              minWidth: 250,
+              maxWidth: 400,
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: 'white',
+                borderRadius: 2
+              }
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="action" />
+                </InputAdornment>
+              ),
+            }}
+          />
 
-      {/* View Members Dialog */}
-      {membersDialogOpen && selectedAudience && (
-        <AudienceMembersDialog
-          open={membersDialogOpen}
-          onClose={() => setMembersDialogOpen(false)}
-          audience={selectedAudience}
+          {/* Bulk Actions */}
+          {selectedAudienceIds.length > 0 && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Chip
+                label={`${selectedAudienceIds.length} selected`}
+                color="primary"
+                sx={{ backgroundColor: '#633394' }}
+              />
+              <Button
+                variant="contained"
+                color="error"
+                startIcon={<DeleteIcon />}
+                onClick={() => setBulkDeleteDialogOpen(true)}
+                size="small"
+              >
+                Delete ({selectedAudienceIds.length})
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => setSelectedAudienceIds([])}
+                sx={{ color: '#967CB2' }}
+              >
+                Clear
+              </Button>
+            </Box>
+          )}
+        </Box>
+
+        {/* Audiences Table */}
+        <DataTable
+          columns={audienceColumns}
+          data={filteredAudiences}
+          selectable
+          selectedIds={selectedAudienceIds}
+          onSelectionChange={setSelectedAudienceIds}
+          getRowId={(audience) => audience.id}
+          defaultSortColumn="created_at"
+          defaultSortDirection="desc"
+          pagination
+          defaultRowsPerPage={10}
+          rowsPerPageOptions={[5, 10, 25, 50]}
+          emptyMessage="No audiences found. Create your first audience to get started."
+          emptyIcon={<GroupWorkIcon sx={{ fontSize: 48, color: '#967CB2', opacity: 0.5 }} />}
+          paperSx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
         />
-      )}
 
-      {/* Send Reminders Dialog */}
-      {remindersDialogOpen && selectedAudience && (
-        <SendRemindersDialog
-          open={remindersDialogOpen}
-          onClose={() => setRemindersDialogOpen(false)}
-          audience={selectedAudience}
-          onSuccess={handleRemindersSent}
-        />
-      )}
+        {/* View Members Dialog */}
+        {membersDialogOpen && selectedAudience && (
+          <AudienceMembersDialog
+            open={membersDialogOpen}
+            onClose={() => setMembersDialogOpen(false)}
+            audience={selectedAudience}
+          />
+        )}
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Confirm Delete</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete the audience "{selectedAudience?.name}"?
-            This action cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={confirmDelete} color="error" variant="contained">
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+        {/* Send Reminders Dialog */}
+        {remindersDialogOpen && selectedAudience && (
+          <SendRemindersDialog
+            open={remindersDialogOpen}
+            onClose={() => setRemindersDialogOpen(false)}
+            audience={selectedAudience}
+            onSuccess={handleRemindersSent}
+          />
+        )}
 
-      {/* Bulk Delete Confirmation Dialog */}
-      <Dialog open={bulkDeleteDialogOpen} onClose={() => setBulkDeleteDialogOpen(false)}>
-        <DialogTitle>Confirm Bulk Delete</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete {selectedAudienceIds.length} audience(s)?
-            This action cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setBulkDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleBulkDelete} color="error" variant="contained">
-            Delete {selectedAudienceIds.length} Audience(s)
-          </Button>
-        </DialogActions>
-      </Dialog>
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+          <DialogTitle>Confirm Delete</DialogTitle>
+          <DialogContent>
+            <Typography>
+              Are you sure you want to delete the audience "{selectedAudience?.name}"?
+              This action cannot be undone.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+            <Button onClick={confirmDelete} color="error" variant="contained">
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Bulk Delete Confirmation Dialog */}
+        <Dialog open={bulkDeleteDialogOpen} onClose={() => setBulkDeleteDialogOpen(false)}>
+          <DialogTitle>Confirm Bulk Delete</DialogTitle>
+          <DialogContent>
+            <Typography>
+              Are you sure you want to delete {selectedAudienceIds.length} audience(s)?
+              This action cannot be undone.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setBulkDeleteDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleBulkDelete} color="error" variant="contained">
+              Delete {selectedAudienceIds.length} Audience(s)
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Container>
     </>
   );

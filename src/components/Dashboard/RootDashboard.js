@@ -601,7 +601,7 @@ function RootDashboard() {
                             variant="outlined"
                             startIcon={<RefreshIcon />}
                             onClick={loadData}
-                            sx={{ borderColor: rootColors.primary, color: rootColors.primary }}
+                            sx={{ borderColor: '#e5e5e5', color: rootColors.primary }}
                         >
                             Refresh
                         </Button>

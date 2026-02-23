@@ -133,24 +133,10 @@ const RoleSelectionPage = ({ onLogin }) => {
     if (onLogin) onLogin();
 
     // Navigate based on role
-    switch (userData.role) {
-      case 'admin':
-        navigate('/admin');
-        break;
-      case 'root':
-        navigate('/root-dashboard');
-        break;
-      case 'user':
-        navigate('/user');
-        break;
-      case 'manager':
-        navigate('/manager-dashboard');
-        break;
-      case 'association':
-        navigate('/association-dashboard');
-        break;
-      default:
-        navigate('/');
+    if (userData.role === 'user') {
+      navigate('/user');
+    } else {
+      navigate('/dashboard');
     }
   };
 

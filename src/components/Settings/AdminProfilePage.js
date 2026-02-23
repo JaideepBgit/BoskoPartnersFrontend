@@ -78,12 +78,7 @@ const AdminProfilePage = () => {
   };
 
   const getDashboardPath = () => {
-    switch (user.role) {
-      case 'admin': return '/admin';
-      case 'root': return '/root-dashboard';
-      case 'manager': return '/manager-dashboard';
-      default: return '/dashboard';
-    }
+    return '/dashboard';
   };
 
   const profileFields = [

@@ -50,6 +50,8 @@ import MailIcon from '@mui/icons-material/Mail';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CloseIcon from '@mui/icons-material/Close';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import FactCheckIcon from '@mui/icons-material/FactCheck';
+import TableChartIcon from '@mui/icons-material/TableChart';
 import { generateReferralLink } from '../../../services/UserManagement/ContactReferralService';
 import UserService from '../../../services/Login/UserService';
 
@@ -85,7 +87,7 @@ const Navbar = () => {
     try {
       const result = await generateReferralLink(user.id);
       const baseUrl = window.location.origin;
-      setInviteLink(`${baseUrl}/contact-referral/v2/${result.referral_code}`);
+      setInviteLink(`${baseUrl}/referral/v2/${result.referral_code}`);
     } catch (error) {
       console.error('Error generating invite link:', error);
       setInviteSnackbar({
@@ -223,16 +225,19 @@ const Navbar = () => {
     if (user?.role === 'admin' || user?.role === 'root' || user?.role === 'manager' || user?.role === 'association') {
       const p = location.pathname.toLowerCase();
       // Simplified menu matching
-      if (p.includes('/dashboard') || p.includes('/manager-dashboard') || p.includes('/association-dashboard')) setTabValue(1);           // 1. Dashboard
+      if (p.includes('/management') || p.includes('/manager-management') || p.includes('/association-management')) setTabValue(13); // 13. Management
+      else if (p === '/dashboard') setTabValue(0);             // 0. KPI Dashboard
+      else if (p.includes('/surveys-v2')) setTabValue(11);     // 11. Surveys V2
       else if (p.includes('/inventory') || p.includes('/association-inventory')) setTabValue(2);      // 2. Surveys
       else if (p.includes('/organization') || p.includes('/association-organizations')) setTabValue(3);   // 3. Organizations
-      else if (p.includes('/associations')) setTabValue(7);   // 7. Associations
+      else if (p.includes('/denominations')) setTabValue(7);   // 7. Denominations
       else if (p.includes('/users')) setTabValue(4);          // 4. Users
       else if (p.includes('/contact-referrals')) setTabValue(8); // 8. Contact Referrals
       else if (p.includes('/email-templates')) setTabValue(9);   // 9. Email Templates
       else if (p.includes('/audiences')) setTabValue(10);         // 10. Audiences
+      else if (p.includes('/approvals')) setTabValue(12);         // 12. Approvals
       else if (p.includes('/reports') || p.includes('/user-reports') || p.includes('/association-user-reports')) setTabValue(5); // 5. Reports
-      else setTabValue(1); // Default to Dashboard
+      else setTabValue(0); // Default to KPI Dashboard
     } else {
       // For regular users
       const p = location.pathname.toLowerCase();
@@ -293,24 +298,10 @@ const Navbar = () => {
       });
 
       // Navigate based on new role
-      switch (userData.role) {
-        case 'admin':
-          navigate('/dashboard');
-          break;
-        case 'root':
-          navigate('/root-dashboard');
-          break;
-        case 'user':
-          navigate('/profile');
-          break;
-        case 'manager':
-          navigate('/manager-dashboard');
-          break;
-        case 'association':
-          navigate('/association-dashboard');
-          break;
-        default:
-          navigate('/dashboard');
+      if (userData.role === 'user') {
+        navigate('/profile');
+      } else {
+        navigate('/dashboard');
       }
 
       // Reload page to refresh all components with new role
@@ -349,14 +340,10 @@ const Navbar = () => {
       </Box>
       {(user?.role === 'admin' || user?.role === 'root' || user?.role === 'manager' || user?.role === 'association') ? (
         <List sx={{ pt: 2 }}>
-          {/* 1. Dashboard */}
+          {/* 0. Dashboard (KPI) */}
           <ListItem
-            onClick={() => handleNavigation(
-              user?.role === 'manager' ? '/manager-dashboard' : 
-              user?.role === 'association' ? '/association-dashboard' : 
-              '/dashboard'
-            )}
-            selected={tabValue === 1}
+            onClick={() => handleNavigation('/dashboard')}
+            selected={tabValue === 0}
             sx={{
               '&.Mui-selected': {
                 backgroundColor: '#633394',
@@ -379,6 +366,38 @@ const Navbar = () => {
             <ListItemIcon><DashboardIcon /></ListItemIcon>
             <ListItemText primary="Dashboard" />
           </ListItem>
+
+          {/* 13. Management (legacy dashboards) — HIDDEN: uncomment to restore
+          <ListItem
+            onClick={() => handleNavigation(
+              user?.role === 'manager' ? '/manager-management' :
+              user?.role === 'association' ? '/association-management' :
+              '/management'
+            )}
+            selected={tabValue === 13}
+            sx={{
+              '&.Mui-selected': {
+                backgroundColor: '#633394',
+                color: 'white',
+                '& .MuiListItemIcon-root': {
+                  color: 'white',
+                },
+                '&:hover': {
+                  backgroundColor: '#533082',
+                },
+              },
+              '&:hover': {
+                backgroundColor: '#f5f5f5',
+              },
+              borderRadius: '8px',
+              mx: 1,
+              mb: 0.5,
+            }}
+          >
+            <ListItemIcon><TableChartIcon /></ListItemIcon>
+            <ListItemText primary="Management" />
+          </ListItem>
+          */}
 
           {/* 3. Organizations - For Admin/Root/Association */}
           {(user?.role === 'admin' || user?.role === 'root') && (
@@ -438,10 +457,10 @@ const Navbar = () => {
             </ListItem>
           )}
 
-          {/* 7. Associations - Only for Admin/Root */}
+          {/* 7. Denominations - Only for Admin/Root */}
           {(user?.role === 'admin' || user?.role === 'root') && (
             <ListItem
-              onClick={() => handleNavigation('/associations')}
+              onClick={() => handleNavigation('/denominations')}
               selected={tabValue === 7}
               sx={{
                 '&.Mui-selected': {
@@ -463,7 +482,7 @@ const Navbar = () => {
               }}
             >
               <ListItemIcon><GroupWorkIcon /></ListItemIcon>
-              <ListItemText primary="Associations" />
+              <ListItemText primary="Denominations" />
             </ListItem>
           )}
 
@@ -525,7 +544,7 @@ const Navbar = () => {
             </ListItem>
           )}
 
-          {/* 2. Surveys - Different URL for Association */}
+          {/* 2. Surveys (Legacy) - Different URL for Association — HIDDEN: uncomment to restore
           <ListItem
             onClick={() => handleNavigation(user?.role === 'association' ? '/association-inventory' : '/inventory')}
             selected={tabValue === 2}
@@ -549,6 +568,34 @@ const Navbar = () => {
             }}
           >
             <ListItemIcon><Inventory2Icon /></ListItemIcon>
+            <ListItemText primary="Surveys (Legacy)" />
+          </ListItem>
+          */}
+
+          {/* 11. Surveys - New survey management UI */}
+          <ListItem
+            onClick={() => handleNavigation('/surveys-v2')}
+            selected={tabValue === 11}
+            sx={{
+              '&.Mui-selected': {
+                backgroundColor: '#633394',
+                color: 'white',
+                '& .MuiListItemIcon-root': {
+                  color: 'white',
+                },
+                '&:hover': {
+                  backgroundColor: '#533082',
+                },
+              },
+              '&:hover': {
+                backgroundColor: '#f5f5f5',
+              },
+              borderRadius: '8px',
+              mx: 1,
+              mb: 0.5,
+            }}
+          >
+            <ListItemIcon><AssignmentIcon /></ListItemIcon>
             <ListItemText primary="Surveys" />
           </ListItem>
 
@@ -661,6 +708,35 @@ const Navbar = () => {
             >
               <ListItemIcon><PeopleIcon /></ListItemIcon>
               <ListItemText primary="Audiences" />
+            </ListItem>
+          )}
+
+          {/* 12. Approvals - Only for Admin/Root */}
+          {(user?.role === 'admin' || user?.role === 'root') && (
+            <ListItem
+              onClick={() => handleNavigation('/approvals')}
+              selected={tabValue === 12}
+              sx={{
+                '&.Mui-selected': {
+                  backgroundColor: '#633394',
+                  color: 'white',
+                  '& .MuiListItemIcon-root': {
+                    color: 'white',
+                  },
+                  '&:hover': {
+                    backgroundColor: '#533082',
+                  },
+                },
+                '&:hover': {
+                  backgroundColor: '#f5f5f5',
+                },
+                borderRadius: '8px',
+                mx: 1,
+                mb: 0.5,
+              }}
+            >
+              <ListItemIcon><FactCheckIcon /></ListItemIcon>
+              <ListItemText primary="Approvals" />
             </ListItem>
           )}
         </List>
@@ -868,7 +944,14 @@ const Navbar = () => {
             >
               ACCOUNT
             </Typography>
-            <IconButton size="small" sx={{ color: '#bbb', p: 0.5 }}>
+            <IconButton
+              size="small"
+              sx={{ color: '#bbb', p: 0.5 }}
+              onClick={() => {
+                handleAccountClose();
+                navigate('/request-role');
+              }}
+            >
               <AddCircleOutlineIcon sx={{ fontSize: 18 }} />
             </IconButton>
           </Box>

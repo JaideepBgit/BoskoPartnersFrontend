@@ -31,6 +31,8 @@ import ContactReferralPage from './components/LandingPages/ContactReferralPage';
 import ContactReferralPageV2 from './components/LandingPages/ContactReferralPageV2';
 import ForgotPassword from './components/Login/ForgotPassword';
 import ResetPassword from './components/Login/ResetPassword';
+import SignUpPage from './components/Login/SignUpPage';
+import OnboardingFlow from './components/Onboarding/OnboardingFlow';
 import SettingsPage from './components/Settings/SettingsPage';
 import AdminProfilePage from './components/Settings/AdminProfilePage';
 import OrganizationManagementPage from './components/Admin/OrganizationManagement/OrganizationManagementPage';
@@ -51,35 +53,35 @@ import AssociationUsersPage from './components/Association/AssociationUsersPage'
 import AssociationSurveysPage from './components/Association/AssociationSurveysPage';
 import AssociationUserReports from './components/Association/AssociationUserReports';
 
+// KPI Dashboard
+import KpiDashboard from './components/KpiDashboard/KpiDashboard';
+import DashboardManagementPage from './components/KpiDashboard/DashboardManagementPage';
+
+// Surveys V2
+import SurveysV2ListPage from './components/Admin/SurveysV2/SurveysListPage';
+import SurveyV2DetailPage from './components/Admin/SurveysV2/SurveyDetailPage';
+import SurveyGroupsPage from './components/Admin/SurveysV2/SurveyGroupsPage';
+import CreateSurveyGroupPage from './components/Admin/SurveysV2/CreateSurveyGroupPage';
+import EditQuestionsPage from './components/Admin/SurveysV2/EditQuestionsPage';
+import SurveyInvitePage from './components/Admin/SurveysV2/SurveyInvitePage';
+
+// Role Request & Approvals
+import RoleRequestPage from './components/RoleRequest/RoleRequestPage';
+import ApprovalsPage from './components/Admin/Approvals/ApprovalsPage';
+
 import './App.css';
 import './styles/form.css';
 
-// Role-based dashboard component
-function RoleBasedDashboard() {
+// Role-based KPI dashboard — redirects regular users to their profile
+function RoleBasedKpiDashboard() {
   const userRole = localStorage.getItem('userRole');
-  const location = useLocation();
 
-  // Root and Admin users: Show AdminDashboard for both /home and /dashboard
-  // This consolidates the redundant routes into a single dashboard experience
-  if (userRole === 'root' || userRole === 'admin') {
-    return <AdminDashboard />;
-  }
-
-  if (userRole === 'manager') {
-    return <Navigate to="/manager-dashboard" replace />;
-  }
-
-  if (userRole === 'association') {
-    return <Navigate to="/association-dashboard" replace />;
-  }
-
-  // For regular users on /dashboard, redirect to their profile
-  if (userRole === 'user' && location.pathname === '/dashboard') {
+  if (userRole === 'user') {
     return <Navigate to="/profile" replace />;
   }
 
-  // For regular users, show UserDashboard on /home or /profile
-  return <UserDashboard />;
+  // Admin, root, manager, association all see the unified KPI dashboard
+  return <KpiDashboard />;
 }
 
 function App() {
@@ -136,17 +138,23 @@ function Main({ isAuthenticated, userRole, login, logout }) {
         <Route path="/select-role" element={<RoleSelectionPage onLogin={login} />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/onboarding" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <OnboardingFlow />
+          </ProtectedRoute>
+        } />
 
-        {/* V2 Contact Referral Page - must be before v1 routes */}
-        <Route path="/contact-referral/v2/:referralCode" element={<ContactReferralPageV2 />} />
-        {/* Public Contact Referral Page - No authentication required */}
-        <Route path="/contact-referral" element={
+        {/* V2 Referral Page - must be before v1 routes */}
+        <Route path="/referral/v2/:referralCode" element={<ContactReferralPageV2 />} />
+        {/* Public Referral Page - No authentication required */}
+        <Route path="/referral" element={
           <div style={{ padding: '20px' }}>
             <ContactReferralPage />
           </div>
         } />
-        {/* Public Contact Referral Page with referral code */}
-        <Route path="/contact-referral/:referralCode" element={
+        {/* Public Referral Page with referral code */}
+        <Route path="/referral/:referralCode" element={
           <div style={{ padding: '20px' }}>
             <ContactReferralPage />
           </div>
@@ -156,32 +164,33 @@ function Main({ isAuthenticated, userRole, login, logout }) {
             <FormContainer onLogout={logout} />
           </ProtectedRoute>
         } />
-        {/* /home route commented out - using /dashboard only
-        <Route path="/home" element={
-          <ProtectedRoute isAuthenticated={isAuthenticated}>
-            <RoleBasedDashboard />
-          </ProtectedRoute>
-        } />
-        */}
+        {/* KPI Dashboard — executive view */}
         <Route path="/dashboard" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
-            <RoleBasedDashboard />
+            <RoleBasedKpiDashboard />
           </ProtectedRoute>
         } />
 
-        {/* Manager Dashboard Route */}
-        <Route path="/manager-dashboard" element={
+        {/* Management Console — accessible from dashboard */}
+        <Route path="/dashboard/management" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <DashboardManagementPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/manager-management" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <ManagerDashboard onLogout={logout} />
           </ProtectedRoute>
         } />
-
-        {/* Association Dashboard Route */}
-        <Route path="/association-dashboard" element={
+        <Route path="/association-management" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <AssociationDashboard onLogout={logout} />
           </ProtectedRoute>
         } />
+
+        {/* Backward-compat redirects for old dashboard URLs */}
+        <Route path="/manager-dashboard" element={<Navigate to="/manager-management" replace />} />
+        <Route path="/association-dashboard" element={<Navigate to="/association-management" replace />} />
 
         {/* Association Organizations Route */}
         <Route path="/association-organizations" element={
@@ -245,12 +254,14 @@ function Main({ isAuthenticated, userRole, login, logout }) {
           </ProtectedRoute>
         } />
 
-        {/* Root Dashboard Route */}
-        <Route path="/root-dashboard" element={
+        {/* Root Management Console (renamed from root-dashboard) */}
+        <Route path="/root-management" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <RootDashboard onLogout={logout} />
           </ProtectedRoute>
         } />
+        {/* Backward-compat redirect */}
+        <Route path="/root-dashboard" element={<Navigate to="/root-management" replace />} />
 
         {/* User Management Route */}
         <Route path="/users" element={
@@ -392,8 +403,8 @@ function Main({ isAuthenticated, userRole, login, logout }) {
             <OrganizationManagementPage onLogout={logout} />
           </ProtectedRoute>
         } />
-        {/* Associations Management Page */}
-        <Route path="/associations" element={
+        {/* Denominations Management Page */}
+        <Route path="/denominations" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <AssociationsPage />
           </ProtectedRoute>
@@ -442,9 +453,46 @@ function Main({ isAuthenticated, userRole, login, logout }) {
         } />
 
         {/* Add Association Page Route */}
-        <Route path="/associations/add" element={
+        <Route path="/denominations/add" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <AddAssociationPage />
+          </ProtectedRoute>
+        } />
+
+        {/* ========== Surveys V2 Routes ========== */}
+        <Route path="/surveys-v2" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <SurveysV2ListPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/surveys-v2/:surveyId" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <SurveyV2DetailPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/surveys-v2/:surveyId/edit-questions" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <EditQuestionsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/surveys-v2/:surveyId/invite" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <SurveyInvitePage />
+          </ProtectedRoute>
+        } />
+        <Route path="/surveys-v2/groups" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <SurveyGroupsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/surveys-v2/groups/create" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <CreateSurveyGroupPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/surveys-v2/groups/:groupId" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <CreateSurveyGroupPage />
           </ProtectedRoute>
         } />
 
@@ -452,6 +500,20 @@ function Main({ isAuthenticated, userRole, login, logout }) {
         <Route path="/admin-profile" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <AdminProfilePage />
+          </ProtectedRoute>
+        } />
+
+        {/* Request Role Page */}
+        <Route path="/request-role" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <RoleRequestPage />
+          </ProtectedRoute>
+        } />
+
+        {/* Approvals Page - Admin/Root */}
+        <Route path="/approvals" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <ApprovalsPage />
           </ProtectedRoute>
         } />
 

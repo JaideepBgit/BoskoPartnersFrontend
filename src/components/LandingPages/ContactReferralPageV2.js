@@ -252,12 +252,10 @@ const ContactReferralPageV2 = () => {
 
       // Navigate based on role
       setTimeout(() => {
-        switch (userData.role) {
-          case 'admin': navigate('/admin'); break;
-          case 'root': navigate('/root-dashboard'); break;
-          case 'manager': navigate('/manager-dashboard'); break;
-          case 'association': navigate('/association-dashboard'); break;
-          default: navigate('/user');
+        if (userData.role === 'user') {
+          navigate('/user');
+        } else {
+          navigate('/dashboard');
         }
       }, 1000);
     } catch (error) {

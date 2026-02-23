@@ -1188,7 +1188,7 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
                     {user.roles.map((role, idx) => (
                         <Chip
                             key={`role-${idx}`}
-                            label={role}
+                            label={role === 'user' ? 'Member' : role}
                             size="small"
                             sx={{
                                 bgcolor: role === 'admin' ? '#e3f2fd' : '#f5f5f5',
@@ -1199,7 +1199,7 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
                         />
                     ))}
                 </Box>
-            ) : (user.ui_role || 'User')
+            ) : (user.ui_role || 'Member')
         },
         {
             id: 'has_survey_assigned',
@@ -1963,10 +1963,10 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
                             }}
                             sx={{
                                 color: '#633394',
-                                borderColor: '#633394',
+                                borderColor: '#e5e5e5',
                                 borderRadius: 2,
                                 textTransform: 'none',
-                                '&:hover': { borderColor: '#7c52a5', backgroundColor: 'rgba(99, 51, 148, 0.04)' }
+                                '&:hover': { borderColor: '#e5e5e5', backgroundColor: 'rgba(99, 51, 148, 0.04)' }
                             }}
                         >
                             Clear
@@ -2005,7 +2005,7 @@ function UsersManagement({ openUploadDialog: openUploadDialogProp, setOpenUpload
                         variant="outlined"
                         size="small"
                         onClick={() => setSelectedUserIds([])}
-                        sx={{ ml: 'auto', borderColor: '#967CB2', color: '#967CB2' }}
+                        sx={{ ml: 'auto', color: '#967CB2' }}
                     >
                         Clear Selection
                     </Button>

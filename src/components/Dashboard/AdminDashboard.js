@@ -27,20 +27,20 @@ import { EmailService } from '../../services/EmailService';
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend, RadialLinearScale, PointElement, LineElement, Filler, CategoryScale, LinearScale, BarElement, Title);
 
-// Update the admin color theme based on the AdminLandingPage colors
+// Update the admin color theme to use platform palette only
 const adminColors = {
-    primary: '#633394',         // Primary purple color from AdminLandingPage
-    secondary: '#967CB2',       // Secondary color (lighter purple) from AdminLandingPage hover
-    background: '#FFFFFF',      // Background color from AdminLandingPage cards
-    text: '#212121',            // Text color
+    primary: '#633394',         // Primary purple from platform theme
+    secondary: '#967CB2',       // Lighter purple for accents
+    background: '#FFFFFF',      // White background
+    text: '#212121',            // Standard text color
     headerBg: '#FAFAFA',        // Light gray for table header
     filledColor: '#633394',     // Primary purple for filled status
-    notFilledColor: '#967CB2',  // Secondary purple for not filled status
+    notFilledColor: '#9e9e9e',  // Neutral gray for not filled status
     borderColor: '#e0e0e0',     // Border color
-    highlightBg: '#f3e5f5'      // Light purple highlight background
+    highlightBg: '#f5f5f5'      // Light gray highlight background
 };
 
-function AdminDashboard({ onLogout }) {
+function AdminDashboard({ onLogout, backButton }) {
     const tabs = [
         { label: 'Home', path: '/home' },
         { label: 'Dashboard', path: '/dashboard' },
@@ -1110,31 +1110,15 @@ function AdminDashboard({ onLogout }) {
                 {
                     label: 'Filled',
                     data: filledData,
-                    backgroundColor: chartLabels.map((_, index) =>
-                        index === chartLabels.length - 1 && chartLabels[index].includes('Others')
-                            ? '#B39DDB' // Different shade for "Others"
-                            : adminColors.filledColor
-                    ),
-                    borderColor: chartLabels.map((_, index) =>
-                        index === chartLabels.length - 1 && chartLabels[index].includes('Others')
-                            ? '#B39DDB'
-                            : adminColors.filledColor
-                    ),
+                    backgroundColor: '#633394',  // Platform primary purple
+                    borderColor: '#633394',
                     borderWidth: 1,
                 },
                 {
                     label: 'Not Filled',
                     data: notFilledData,
-                    backgroundColor: chartLabels.map((_, index) =>
-                        index === chartLabels.length - 1 && chartLabels[index].includes('Others')
-                            ? '#D1C4E9' // Different shade for "Others"
-                            : adminColors.notFilledColor
-                    ),
-                    borderColor: chartLabels.map((_, index) =>
-                        index === chartLabels.length - 1 && chartLabels[index].includes('Others')
-                            ? '#D1C4E9'
-                            : adminColors.notFilledColor
-                    ),
+                    backgroundColor: '#e0e0e0',  // Neutral gray
+                    borderColor: '#e0e0e0',
                     borderWidth: 1,
                 }
             ]
@@ -1313,54 +1297,58 @@ function AdminDashboard({ onLogout }) {
         return date.toLocaleDateString();
     };
 
+    const isManagementView = !!backButton;
+
     return (
         <>
-            <Navbar />
+            {!isManagementView && <Navbar />}
             <Container maxWidth="xl" sx={{ py: 4, minHeight: '100vh', backgroundColor: '#f5f5f5', flexGrow: 1, overflow: 'auto' }}>
-                {/* Header with Integrated Metrics */}
-                <Box sx={{ mb: 4, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, gap: 3 }}>
-                    <Box>
+                {isManagementView ? (
+                    <Box sx={{ mb: 3 }}>
+                        <Box sx={{ mb: 2 }}>{backButton}</Box>
                         <Typography variant="h4" component="h1" sx={{ color: adminColors.text, fontWeight: 'bold' }}>
-                            Dashboard
-                        </Typography>
-                        <Typography variant="body1" sx={{ color: 'text.secondary', mt: 0.5 }}>
-                            System Overview & Management
+                            Overview & Management
                         </Typography>
                     </Box>
-
-                    {/* Integrated Metrics Display using Chips/Boxes */}
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                        <Box sx={{ px: 2, py: 1, bgcolor: '#ffffff', borderRadius: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.05)', border: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                            <Box sx={{ p: 1, borderRadius: '50%', bgcolor: 'rgba(99, 51, 148, 0.1)', color: adminColors.primary, display: 'flex' }}>
-                                <PeopleIcon fontSize="small" />
-                            </Box>
-                            <Box>
-                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', lineHeight: 1 }}>Total Users</Typography>
-                                <Typography variant="h6" sx={{ fontWeight: 'bold', color: adminColors.text, lineHeight: 1.2 }}>{dashboardStats.total_users}</Typography>
-                            </Box>
+                ) : (
+                    <Box sx={{ mb: 3, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, gap: 2 }}>
+                        <Box>
+                            <Typography variant="h4" component="h1" sx={{ color: adminColors.text, fontWeight: 'bold' }}>
+                                Dashboard
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                                System Overview & Management
+                            </Typography>
                         </Box>
 
-                        <Box sx={{ px: 2, py: 1, bgcolor: '#ffffff', borderRadius: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.05)', border: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                            <Box sx={{ p: 1, borderRadius: '50%', bgcolor: 'rgba(46, 125, 50, 0.1)', color: 'success.main', display: 'flex' }}>
-                                <AssessmentIcon fontSize="small" />
+                        {/* Compact Metrics Display */}
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
+                            <Box sx={{ px: 1.5, py: 0.75, bgcolor: '#ffffff', borderRadius: 1, border: '1px solid #e0e0e0', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <PeopleIcon sx={{ fontSize: 18, color: adminColors.primary }} />
+                                <Box>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.7rem', display: 'block', lineHeight: 1 }}>Users</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, color: adminColors.text, lineHeight: 1.2 }}>{dashboardStats.total_users}</Typography>
+                                </Box>
                             </Box>
-                            <Box>
-                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', lineHeight: 1 }}>Avg. Completion</Typography>
-                                <Typography variant="h6" sx={{ fontWeight: 'bold', color: adminColors.text, lineHeight: 1.2 }}>{dashboardStats.completion_rate}%</Typography>
-                            </Box>
-                        </Box>
 
-                        <Box sx={{ px: 2, py: 1, bgcolor: '#ffffff', borderRadius: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.05)', border: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                            <Box sx={{ p: 1, borderRadius: '50%', bgcolor: 'rgba(150, 124, 178, 0.1)', color: adminColors.secondary, display: 'flex' }}>
-                                <BusinessIcon fontSize="small" />
+                            <Box sx={{ px: 1.5, py: 0.75, bgcolor: '#ffffff', borderRadius: 1, border: '1px solid #e0e0e0', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <AssessmentIcon sx={{ fontSize: 18, color: adminColors.primary }} />
+                                <Box>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.7rem', display: 'block', lineHeight: 1 }}>Completion</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, color: adminColors.text, lineHeight: 1.2 }}>{dashboardStats.completion_rate}%</Typography>
+                                </Box>
                             </Box>
-                            <Box>
-                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', lineHeight: 1 }}>Organizations</Typography>
-                                <Typography variant="h6" sx={{ fontWeight: 'bold', color: adminColors.text, lineHeight: 1.2 }}>{dashboardStats.total_organizations}</Typography>
+
+                            <Box sx={{ px: 1.5, py: 0.75, bgcolor: '#ffffff', borderRadius: 1, border: '1px solid #e0e0e0', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <BusinessIcon sx={{ fontSize: 18, color: adminColors.primary }} />
+                                <Box>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.7rem', display: 'block', lineHeight: 1 }}>Organizations</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, color: adminColors.text, lineHeight: 1.2 }}>{dashboardStats.total_organizations}</Typography>
+                                </Box>
                             </Box>
                         </Box>
                     </Box>
-                </Box>
+                )}
 
 
 
@@ -1522,14 +1510,17 @@ function AdminDashboard({ onLogout }) {
                                                         <TableCell
                                                             sx={{
                                                                 borderRight: `1px solid ${adminColors.borderColor}`,
-                                                                color: user.status === 'Filled' ? adminColors.filledColor : adminColors.notFilledColor,
                                                                 fontWeight: 'bold'
                                                             }}
                                                         >
                                                             <Chip
                                                                 label={user.status}
                                                                 size="small"
-                                                                color={user.status === 'Filled' ? 'success' : 'warning'}
+                                                                sx={{
+                                                                    bgcolor: user.status === 'Filled' ? 'rgba(99, 51, 148, 0.1)' : 'rgba(158, 158, 158, 0.1)',
+                                                                    color: user.status === 'Filled' ? adminColors.filledColor : adminColors.notFilledColor,
+                                                                    borderColor: user.status === 'Filled' ? adminColors.filledColor : adminColors.notFilledColor
+                                                                }}
                                                                 variant="outlined"
                                                             />
                                                         </TableCell>
@@ -1542,7 +1533,11 @@ function AdminDashboard({ onLogout }) {
                                                                     <Chip
                                                                         label="Overdue"
                                                                         size="small"
-                                                                        color="error"
+                                                                        sx={{
+                                                                            bgcolor: 'rgba(158, 158, 158, 0.1)',
+                                                                            color: '#757575',
+                                                                            borderColor: '#9e9e9e'
+                                                                        }}
                                                                         variant="outlined"
                                                                     />
                                                                 )}
@@ -1552,7 +1547,11 @@ function AdminDashboard({ onLogout }) {
                                                             <Chip
                                                                 label={progressLabel}
                                                                 size="small"
-                                                                color={progressColor}
+                                                                sx={{
+                                                                    bgcolor: progressColor === 'primary' ? 'rgba(99, 51, 148, 0.1)' : 'rgba(158, 158, 158, 0.1)',
+                                                                    color: progressColor === 'primary' ? adminColors.primary : '#757575',
+                                                                    borderColor: progressColor === 'primary' ? adminColors.primary : '#9e9e9e'
+                                                                }}
                                                                 variant="outlined"
                                                             />
                                                         </TableCell>
@@ -1565,7 +1564,11 @@ function AdminDashboard({ onLogout }) {
                                                                     <Chip
                                                                         label="Many"
                                                                         size="small"
-                                                                        color="warning"
+                                                                        sx={{
+                                                                            bgcolor: 'rgba(158, 158, 158, 0.1)',
+                                                                            color: '#757575',
+                                                                            borderColor: '#9e9e9e'
+                                                                        }}
                                                                         variant="outlined"
                                                                     />
                                                                 )}
@@ -2059,8 +2062,9 @@ function AdminDashboard({ onLogout }) {
                                             py: 1,
                                             px: 2,
                                             mb: 1,
-                                            bgcolor: result.success ? '#e8f5e8' : '#ffebee',
-                                            borderRadius: 1
+                                            bgcolor: result.success ? 'rgba(99, 51, 148, 0.05)' : 'rgba(158, 158, 158, 0.1)',
+                                            borderRadius: 1,
+                                            border: `1px solid ${result.success ? 'rgba(99, 51, 148, 0.2)' : 'rgba(158, 158, 158, 0.3)'}`
                                         }}
                                     >
                                         <Box>
@@ -2075,7 +2079,11 @@ function AdminDashboard({ onLogout }) {
                                             <Chip
                                                 label={result.success ? 'Sent' : 'Failed'}
                                                 size="small"
-                                                color={result.success ? 'success' : 'error'}
+                                                sx={{
+                                                    bgcolor: result.success ? 'rgba(99, 51, 148, 0.1)' : 'rgba(158, 158, 158, 0.1)',
+                                                    color: result.success ? adminColors.primary : '#757575',
+                                                    borderColor: result.success ? adminColors.primary : '#9e9e9e'
+                                                }}
                                                 variant="outlined"
                                             />
                                             {result.method && (
@@ -2084,7 +2092,7 @@ function AdminDashboard({ onLogout }) {
                                                 </Typography>
                                             )}
                                             {result.error && (
-                                                <Typography variant="caption" color="error" sx={{ display: 'block', mt: 0.5 }}>
+                                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
                                                     {result.error}
                                                 </Typography>
                                             )}

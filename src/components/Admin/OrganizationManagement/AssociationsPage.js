@@ -67,16 +67,6 @@ function AssociationsPage() {
         return [city, province, country].filter(Boolean).join(', ') || 'N/A';
     }, []);
 
-    // Sort value getter for DataTable
-    const sortValueGetter = useCallback((row, orderBy) => {
-        if (orderBy === 'organisation') {
-            return (row.name || '').toLowerCase();
-        } else if (orderBy === 'location') {
-            return getLocation(row).toLowerCase();
-        }
-        return row[orderBy];
-    }, [getLocation]);
-
     // Load data
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -133,7 +123,7 @@ function AssociationsPage() {
     };
 
     const handleOpenAddPage = () => {
-        navigate('/associations/add');
+        navigate('/denominations/add');
     };
 
     // Bulk delete associations
@@ -181,33 +171,80 @@ function AssociationsPage() {
         }
     };
 
+    // Compute linked organization counts per association
+    const linkedOrgCounts = useMemo(() => {
+        const counts = {};
+        const allOrgs = organizations;
+        // For each association, count how many orgs reference it by name
+        filteredOrganizations.forEach(assoc => {
+            counts[assoc.id] = allOrgs.filter(org => {
+                if (org.id === assoc.id) return false;
+                return (
+                    org.denomination_affiliation === assoc.name ||
+                    org.accreditation_status_or_body === assoc.name ||
+                    org.affiliation_validation === assoc.name ||
+                    org.umbrella_association_membership === assoc.name
+                );
+            }).length;
+        });
+        return counts;
+    }, [organizations, filteredOrganizations]);
+
+    // Sort value getter for DataTable
+    const sortValueGetter = useCallback((row, orderBy) => {
+        if (orderBy === 'organisation') {
+            return (row.name || '').toLowerCase();
+        } else if (orderBy === 'associationType') {
+            return (row.organization_type?.type || '').toLowerCase();
+        } else if (orderBy === 'orgCount') {
+            return linkedOrgCounts[row.id] || 0;
+        } else if (orderBy === 'location') {
+            return getLocation(row).toLowerCase();
+        }
+        return row[orderBy];
+    }, [getLocation, linkedOrgCounts]);
+
     // Column definitions for DataTable
     const tableColumns = useMemo(() => [
         {
             id: 'organisation',
-            label: 'Organization',
+            label: 'Denomination Name',
+            sortable: true,
+            render: (org) => (
+                <Typography variant="body1" fontWeight="600">
+                    {org.name}
+                </Typography>
+            )
+        },
+        {
+            id: 'associationType',
+            label: 'Association Type',
             sortable: true,
             render: (org) => {
                 const typeColors = getTypeChipColor(org.organization_type?.type);
                 return (
-                    <Box>
-                        <Typography variant="body1" fontWeight="600">
-                            {org.name}
-                        </Typography>
-                        <Chip
-                            label={getOrgTypeLabel(org.organization_type?.type)}
-                            size="small"
-                            sx={{
-                                mt: 0.5,
-                                backgroundColor: typeColors.bg,
-                                color: typeColors.color,
-                                fontSize: '0.7rem',
-                                height: 22
-                            }}
-                        />
-                    </Box>
+                    <Chip
+                        label={getOrgTypeLabel(org.organization_type?.type)}
+                        size="small"
+                        sx={{
+                            backgroundColor: typeColors.bg,
+                            color: typeColors.color,
+                            fontSize: '0.75rem',
+                            height: 24
+                        }}
+                    />
                 );
             }
+        },
+        {
+            id: 'orgCount',
+            label: 'Organizations',
+            sortable: true,
+            render: (org) => (
+                <Typography variant="body2" fontWeight="500">
+                    {linkedOrgCounts[org.id] || 0}
+                </Typography>
+            )
         },
         {
             id: 'location',
@@ -232,7 +269,7 @@ function AssociationsPage() {
                 </Box>
             )
         }
-    ], []);
+    ], [linkedOrgCounts]);
 
     return (
         <>
@@ -248,7 +285,7 @@ function AssociationsPage() {
                     gap: 2
                 }}>
                     <Typography variant="h4" fontWeight="bold" sx={{ color: colors.textPrimary }}>
-                        Associations ({filteredOrganizations.length})
+                        Denominations ({filteredOrganizations.length})
                     </Typography>
                     <Box sx={{ display: 'flex', gap: 1 }}>
                         <Button

@@ -247,7 +247,7 @@ function OrganizationManagementPage() {
         },
         {
             id: 'users',
-            label: 'Users',
+            label: 'Members',
             align: 'center',
             render: (org) => {
                 const userCount = usersByOrg[org.id]?.length || 0;

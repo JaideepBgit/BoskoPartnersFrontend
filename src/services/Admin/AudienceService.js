@@ -220,6 +220,36 @@ class AudienceService {
   }
 
   // ==========================================================================
+  // AUDIENCE SIZE ESTIMATION
+  // ==========================================================================
+
+  /**
+   * Estimate the number of users matching the given audience filters.
+   * When no filters are provided, returns the total user count.
+   */
+  static async estimateAudienceSize(filters = {}) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/audiences/estimate-size`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ filters }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to estimate audience size');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error estimating audience size:', error);
+      throw error;
+    }
+  }
+
+  // ==========================================================================
   // HELPER METHODS
   // ==========================================================================
 

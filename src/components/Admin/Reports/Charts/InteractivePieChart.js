@@ -17,9 +17,13 @@ const InteractivePieChart = ({
 }) => {
     const theme = useTheme();
 
+    // Use distinct platform purple shades for better differentiation
     const COLORS = [
-        '#633394', '#967CB2', '#4CAF50', '#FF9800', '#F44336',
-        '#2196F3', '#9C27B0', '#795548', '#607D8B', '#E91E63'
+        '#633394', // Primary purple - darkest
+        '#7b4fa3', // Medium purple
+        '#967CB2', // Light purple
+        '#b39ddb', // Lighter purple
+        '#d1c4e9', // Lightest purple
     ];
 
     // Prepare data for Recharts
@@ -32,7 +36,7 @@ const InteractivePieChart = ({
 
     if (chartData.length === 0) {
         return (
-            <Paper sx={{ p: 2, height, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Paper sx={{ p: 3, height, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
                 <Typography color="text.secondary">No data available</Typography>
             </Paper>
         );
@@ -41,14 +45,17 @@ const InteractivePieChart = ({
     const CustomTooltip = ({ active, payload }) => {
         if (active && payload && payload.length) {
             const data = payload[0];
+            const total = chartData.reduce((a, b) => a + b.value, 0);
+            const percentage = ((data.value / total) * 100).toFixed(1);
+            
             return (
                 <Paper sx={{ p: 1.5, boxShadow: 3, border: `1px solid ${theme.palette.divider}` }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{data.name}</Typography>
                     <Typography variant="body2" sx={{ color: data.payload.fill }}>
-                        Value: <strong>{data.value.toFixed(1)}</strong>
+                        Count: <strong>{data.value}</strong>
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                        Percentage: {((data.value / chartData.reduce((a, b) => a + b.value, 0)) * 100).toFixed(1)}%
+                        {percentage}% of total
                     </Typography>
                 </Paper>
             );
@@ -57,9 +64,9 @@ const InteractivePieChart = ({
     };
 
     return (
-        <Paper sx={{ p: 2, borderRadius: 2, boxShadow: '0 4px 20px rgba(0,0,0,0.05)', height: '100%', display: 'flex', flexDirection: 'column' }}>
-            {title && <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: adminColors.primary || '#633394' }}>{title}</Typography>}
-            <Box sx={{ width: '100%', flexGrow: 1, minHeight: height - 60 }}>
+        <Paper sx={{ p: 3, borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.05)', height: '100%', display: 'flex', flexDirection: 'column' }}>
+            {title && <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, color: '#633394' }}>{title}</Typography>}
+            <Box sx={{ width: '100%', flexGrow: 1, minHeight: height - 80 }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie
@@ -67,18 +74,22 @@ const InteractivePieChart = ({
                             cx="50%"
                             cy="50%"
                             labelLine={false}
-                            outerRadius="80%"
+                            outerRadius="75%"
                             fill="#8884d8"
                             dataKey="value"
                             animationBegin={0}
-                            animationDuration={1500}
+                            animationDuration={800}
                         >
                             {chartData.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                         </Pie>
                         <Tooltip content={<CustomTooltip />} />
-                        <Legend />
+                        <Legend 
+                            verticalAlign="bottom" 
+                            height={36}
+                            iconType="circle"
+                        />
                     </PieChart>
                 </ResponsiveContainer>
             </Box>

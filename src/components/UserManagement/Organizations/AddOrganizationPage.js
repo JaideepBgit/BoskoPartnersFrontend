@@ -21,11 +21,12 @@ function AddOrganizationPage() {
     const location = useLocation();
     const { id } = useParams(); // Get organization ID from URL for edit mode
     const isEditMode = Boolean(id);
-    
+
     // Get navigation context from location state
     const fromAssociation = location.state?.fromAssociation;
     const associationId = location.state?.associationId;
     const associationName = location.state?.associationName;
+    const returnUrl = location.state?.returnUrl;
 
     // State variables
     const [organizations, setOrganizations] = useState([]);
@@ -121,7 +122,7 @@ function AddOrganizationPage() {
         loadOrganizationTypes();
         loadUsers();
         loadRoles();
-        
+
         // Load organization data if in edit mode
         if (isEditMode && id) {
             loadOrganizationData();
@@ -134,7 +135,7 @@ function AddOrganizationPage() {
             setSaving(true);
             const orgsData = await fetchOrganizations();
             const currentOrg = orgsData.find(o => o.id === parseInt(id));
-            
+
             if (currentOrg) {
                 setFormData({
                     name: currentOrg.name || '',
@@ -517,7 +518,7 @@ function AddOrganizationPage() {
 
         // Build relationships array from affiliation fields
         const relationships = [];
-        
+
         // Map affiliation field names to relationship types
         const affiliationMapping = {
             'denomination_affiliation': 'denomination',
@@ -601,12 +602,12 @@ function AddOrganizationPage() {
         setSaving(true);
         try {
             const apiData = transformFormDataToApiFormat(formData);
-            
+
             if (isEditMode) {
                 // Update existing organization
                 await updateOrganization(id, apiData);
                 alert(`Organization "${formData.name}" updated successfully!`);
-                
+
                 // Navigate back to the appropriate detail page
                 if (fromAssociation && associationId) {
                     navigate(`/association-management/${associationId}`);
@@ -623,7 +624,7 @@ function AddOrganizationPage() {
                     alert(`Organization "${formData.name}" added successfully!`);
                 }
 
-                navigate('/organizations');
+                navigate(returnUrl || '/organizations');
             }
         } catch (error) {
             console.error(`Failed to ${isEditMode ? 'update' : 'add'} organization:`, error);
@@ -659,599 +660,536 @@ function AddOrganizationPage() {
                                 } else {
                                     navigate(`/organization-management/${id}`);
                                 }
+                            } else if (returnUrl) {
+                                navigate(returnUrl);
                             } else {
                                 navigate('/organizations');
                             }
                         }}
                     >
-                        {isEditMode ? (fromAssociation ? `Back to ${associationName}` : 'Back to Details') : 'Organizations'}
+                        {isEditMode ? (fromAssociation ? `Back to ${associationName}` : 'Back') : (returnUrl && associationName ? `Back to ${associationName}` : 'Organizations')}
                     </Button>
                 }
                 rightActions={
                     <Button
                         variant="contained"
-                        startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
                         onClick={handleAddOrganization}
                         disabled={saving}
                     >
-                        {saving ? 'Saving...' : (isEditMode ? 'Update Organization' : 'Save Organization')}
+                        {saving ? 'Saving...' : 'Save'}
                     </Button>
                 }
             />
             <Container maxWidth="lg" sx={{ py: 4 }}>
                 <Box sx={{ maxWidth: 600, mx: 'auto' }}>
 
-                {/* Tabs */}
-                <Paper sx={{ mb: 3, boxShadow: 3 }}>
-                    <Tabs
-                        value={activeTab}
-                        onChange={handleTabChange}
-                        sx={{
-                            '& .MuiTab-root': {
-                                color: '#633394',
-                                fontWeight: 500,
-                                '&.Mui-selected': { fontWeight: 700 },
-                            },
-                            '& .MuiTabs-indicator': {
-                                backgroundColor: '#633394',
-                            },
-                        }}
-                        variant="fullWidth"
-                    >
-                        <Tab label="Basic Information & Address" />
-                        <Tab label="Miscellaneous" />
-                    </Tabs>
-                </Paper>
+                    {/* Tabs */}
+                    <Paper sx={{ mb: 3, boxShadow: 3 }}>
+                        <Tabs
+                            value={activeTab}
+                            onChange={handleTabChange}
+                            sx={{
+                                '& .MuiTab-root': {
+                                    color: '#633394',
+                                    fontWeight: 500,
+                                    '&.Mui-selected': { fontWeight: 700 },
+                                },
+                                '& .MuiTabs-indicator': {
+                                    backgroundColor: '#633394',
+                                },
+                            }}
+                            variant="fullWidth"
+                        >
+                            <Tab label="Details" />
+                            <Tab label="Address" />
+                            <Tab label="Linked Organizations" />
+                        </Tabs>
+                    </Paper>
 
-                {/* Tab 0: Basic Information & Address */}
-                {activeTab === 0 && (
-                    <Box>
-                        {/* Basic Information Section */}
-                        <Paper sx={{ p: 3, mb: 3, boxShadow: 3 }}>
-                            <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold', mb: 3, textAlign: 'center' }}>
-                                Basic Information
-                            </Typography>
+                    {/* Tab 0: Details */}
+                    {activeTab === 0 && (
+                        <Box>
+                            {/* Details Section */}
+                            <Paper sx={{ p: 3, mb: 3, boxShadow: 3 }}>
+                                <Grid container spacing={3}>
+                                    <Grid item xs={12}>
+                                        <TextField
+                                            required
+                                            fullWidth
+                                            label="Organization Name"
+                                            name="name"
+                                            value={formData.name}
+                                            onChange={handleInputChange}
+                                            variant="outlined"
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <FormControl fullWidth variant="outlined">
+                                            <InputLabel>Organization Type</InputLabel>
+                                            <Select
+                                                name="type"
+                                                value={formData.type}
+                                                onChange={handleInputChange}
+                                                label="Organization Type"
+                                            >
+                                                {organizationTypes
+                                                    .filter(orgType => ['church', 'non_formal_organizations', 'institution'].includes(orgType.type.toLowerCase()))
+                                                    .map((orgType) => (
+                                                        <MenuItem key={orgType.id} value={orgType.type}>
+                                                            {getTypeLabel(orgType.type)}
+                                                        </MenuItem>
+                                                    ))}
+                                            </Select>
+                                        </FormControl>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <TextField
+                                            fullWidth
+                                            label="Website"
+                                            name="website"
+                                            value={formData.website}
+                                            onChange={handleInputChange}
+                                            variant="outlined"
+                                        />
+                                    </Grid>
+                                    {formData.type?.toLowerCase() === 'institution' && (
+                                        <Grid item xs={12}>
+                                            <TextField
+                                                fullWidth
+                                                label="Highest Level of Education"
+                                                name="highest_level_of_education"
+                                                value={formData.highest_level_of_education}
+                                                onChange={handleInputChange}
+                                                variant="outlined"
+                                            />
+                                        </Grid>
+                                    )}
+                                </Grid>
+                            </Paper>
+                        </Box>
+                    )}
 
-                            <Grid container spacing={3}>
+                    {/* Tab 1: Address */}
+                    {activeTab === 1 && (
+                        <Box>
+                            <Paper sx={{ p: 3, mb: 3, boxShadow: 3 }}>
+                                <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold', mb: 3, textAlign: 'center' }}>
+                                    Address Information
+                                </Typography>
+
+                                <Box sx={{ maxWidth: '800px', mx: 'auto' }}>
+                                    <EnhancedAddressInput
+                                        onPlaceSelect={handlePlaceSelect}
+                                        label="Organization Address Information"
+                                        fullWidth
+                                        initialValue={formData.geo_location}
+                                    />
+                                </Box>
+                            </Paper>
+                        </Box>
+                    )}
+
+                    {/* Tab 2: Linked Organizations */}
+                    {activeTab === 2 && (
+                        <Box>
+                            {['church', 'institution', 'non_formal_organizations'].includes(formData.type?.toLowerCase()) ? (
+                                <Paper sx={{ p: 3, mb: 3, boxShadow: 3 }}>
+                                    <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold', mb: 3, textAlign: 'center' }}>
+                                        Organizational Relationships & Affiliations
+                                    </Typography>
+
+                                    <Grid container spacing={3}>
+                                        {/* Denomination/Affiliation */}
+                                        <Grid item xs={12} md={6}>
+                                            <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
+                                                <Autocomplete
+                                                    fullWidth
+                                                    options={organizations}
+                                                    getOptionLabel={(option) => option.name || ''}
+                                                    value={organizations.find(org => org.name === formData.denomination_affiliation) || null}
+                                                    onChange={(event, newValue) => handleRelatedOrgSelection('denomination', newValue)}
+                                                    renderInput={(params) => (
+                                                        <TextField
+                                                            {...params}
+                                                            label="Denomination/Affiliation"
+                                                            name="denomination_affiliation"
+                                                            value={formData.denomination_affiliation}
+                                                            onChange={handleInputChange}
+                                                            variant="outlined"
+                                                            helperText="Search existing organizations or add new"
+                                                        />
+                                                    )}
+                                                    renderOption={(props, option) => {
+                                                        const { key, ...otherProps } = props;
+                                                        return (
+                                                            <li key={key} {...otherProps}>
+                                                                <Box>
+                                                                    <Typography variant="body2">
+                                                                        {option.name}
+                                                                    </Typography>
+                                                                    <Typography variant="caption" color="text.secondary">
+                                                                        {option.organization_type?.type || 'Unknown Type'} • {option.geo_location?.city || 'Unknown Location'}
+                                                                    </Typography>
+                                                                </Box>
+                                                            </li>
+                                                        );
+                                                    }}
+                                                    isOptionEqualToValue={(option, value) => option.id === value.id}
+                                                    freeSolo
+                                                />
+                                                <Tooltip title="Add New Organization">
+                                                    <IconButton
+                                                        color="primary"
+                                                        onClick={() => handleOpenAddRelatedOrgDialog('denomination')}
+                                                        sx={{ mb: 2.5 }}
+                                                    >
+                                                        <AddIcon />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </Box>
+                                        </Grid>
+
+                                        {/* Umbrella Association for Churches */}
+                                        {formData.type?.toLowerCase() === 'church' && (
+                                            <Grid item xs={12} md={6}>
+                                                <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
+                                                    <Autocomplete
+                                                        fullWidth
+                                                        options={organizations}
+                                                        getOptionLabel={(option) => option.name || ''}
+                                                        value={organizations.find(org => org.name === formData.umbrella_association_membership) || null}
+                                                        onChange={(event, newValue) => handleRelatedOrgSelection('umbrella', newValue)}
+                                                        renderInput={(params) => (
+                                                            <TextField
+                                                                {...params}
+                                                                label="Umbrella Association Membership"
+                                                                name="umbrella_association_membership"
+                                                                value={formData.umbrella_association_membership}
+                                                                onChange={handleInputChange}
+                                                                variant="outlined"
+                                                                helperText="Search existing organizations or add new"
+                                                            />
+                                                        )}
+                                                        renderOption={(props, option) => {
+                                                            const { key, ...otherProps } = props;
+                                                            return (
+                                                                <li key={key} {...otherProps}>
+                                                                    <Box>
+                                                                        <Typography variant="body2">
+                                                                            {option.name}
+                                                                        </Typography>
+                                                                        <Typography variant="caption" color="text.secondary">
+                                                                            {option.organization_type?.type || 'Unknown Type'} • {option.geo_location?.city || 'Unknown Location'}
+                                                                        </Typography>
+                                                                    </Box>
+                                                                </li>
+                                                            );
+                                                        }}
+                                                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                                                        freeSolo
+                                                    />
+                                                    <Tooltip title="Add New Organization">
+                                                        <IconButton
+                                                            color="primary"
+                                                            onClick={() => handleOpenAddRelatedOrgDialog('umbrella')}
+                                                            sx={{ mb: 2.5 }}
+                                                        >
+                                                            <AddIcon />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </Box>
+                                            </Grid>
+                                        )}
+
+                                        {/* Accreditation Status/Body for Institutions */}
+                                        {formData.type?.toLowerCase() === 'institution' && (
+                                            <Grid item xs={12} md={6}>
+                                                <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
+                                                    <Autocomplete
+                                                        fullWidth
+                                                        options={organizations}
+                                                        getOptionLabel={(option) => option.name || ''}
+                                                        value={organizations.find(org => org.name === formData.accreditation_status_or_body) || null}
+                                                        onChange={(event, newValue) => handleRelatedOrgSelection('accreditation', newValue)}
+                                                        renderInput={(params) => (
+                                                            <TextField
+                                                                {...params}
+                                                                label="Accreditation Status/Accrediting Body"
+                                                                name="accreditation_status_or_body"
+                                                                value={formData.accreditation_status_or_body}
+                                                                onChange={handleInputChange}
+                                                                variant="outlined"
+                                                                helperText="Search existing organizations or add new"
+                                                            />
+                                                        )}
+                                                        renderOption={(props, option) => {
+                                                            const { key, ...otherProps } = props;
+                                                            return (
+                                                                <li key={key} {...otherProps}>
+                                                                    <Box>
+                                                                        <Typography variant="body2">
+                                                                            {option.name}
+                                                                        </Typography>
+                                                                        <Typography variant="caption" color="text.secondary">
+                                                                            {option.organization_type?.type || 'Unknown Type'} • {option.geo_location?.city || 'Unknown Location'}
+                                                                        </Typography>
+                                                                    </Box>
+                                                                </li>
+                                                            );
+                                                        }}
+                                                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                                                        freeSolo
+                                                    />
+                                                    <Tooltip title="Add New Organization">
+                                                        <IconButton
+                                                            color="primary"
+                                                            onClick={() => handleOpenAddRelatedOrgDialog('accreditation')}
+                                                            sx={{ mb: 2.5 }}
+                                                        >
+                                                            <AddIcon />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </Box>
+                                            </Grid>
+                                        )}
+
+                                        {/* Affiliation/Validation for Non-formal Organizations */}
+                                        {formData.type?.toLowerCase() === 'non_formal_organizations' && (
+                                            <Grid item xs={12} md={6}>
+                                                <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
+                                                    <Autocomplete
+                                                        fullWidth
+                                                        options={organizations}
+                                                        getOptionLabel={(option) => option.name || ''}
+                                                        value={organizations.find(org => org.name === formData.affiliation_validation) || null}
+                                                        onChange={(event, newValue) => handleRelatedOrgSelection('affiliation', newValue)}
+                                                        renderInput={(params) => (
+                                                            <TextField
+                                                                {...params}
+                                                                label="Affiliation/Validation"
+                                                                name="affiliation_validation"
+                                                                value={formData.affiliation_validation}
+                                                                onChange={handleInputChange}
+                                                                variant="outlined"
+                                                                helperText="Search existing organizations or add new"
+                                                            />
+                                                        )}
+                                                        renderOption={(props, option) => {
+                                                            const { key, ...otherProps } = props;
+                                                            return (
+                                                                <li key={key} {...otherProps}>
+                                                                    <Box>
+                                                                        <Typography variant="body2">
+                                                                            {option.name}
+                                                                        </Typography>
+                                                                        <Typography variant="caption" color="text.secondary">
+                                                                            {option.organization_type?.type || 'Unknown Type'} • {option.geo_location?.city || 'Unknown Location'}
+                                                                        </Typography>
+                                                                    </Box>
+                                                                </li>
+                                                            );
+                                                        }}
+                                                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                                                        freeSolo
+                                                    />
+                                                    <Tooltip title="Add New Organization">
+                                                        <IconButton
+                                                            color="primary"
+                                                            onClick={() => handleOpenAddRelatedOrgDialog('affiliation')}
+                                                            sx={{ mb: 2.5 }}
+                                                        >
+                                                            <AddIcon />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </Box>
+                                            </Grid>
+                                        )}
+                                    </Grid>
+                                </Paper>
+                            ) : (
+                                <Paper sx={{ p: 3, mb: 3, boxShadow: 3 }}>
+                                    <Typography variant="body1" sx={{ textAlign: 'center', color: 'text.secondary' }}>
+                                        Select an organization type on the Details tab to manage linked organizations.
+                                    </Typography>
+                                </Paper>
+                            )}
+                        </Box>
+                    )}
+
+
+
+                    {/* Add User Dialog */}
+                    <Dialog open={openAddUserDialog} onClose={handleCloseAddUserDialog} maxWidth="sm" fullWidth>
+                        <DialogTitle sx={{ backgroundColor: '#633394', color: 'white' }}>
+                            Add New {contactType === 'head' ?
+                                (formData.type?.toLowerCase() === 'church' ? 'Pastor' :
+                                    formData.type?.toLowerCase() === 'institution' ? 'President' : 'Lead') :
+                                `${contactType.charAt(0).toUpperCase() + contactType.slice(1)} Contact`}
+                        </DialogTitle>
+                        <DialogContent dividers>
+                            <Grid container spacing={2} sx={{ mt: 1 }}>
                                 <Grid item xs={12} md={6}>
                                     <TextField
                                         required
                                         fullWidth
-                                        label={formData.type?.toLowerCase() === 'church' ? 'Name of Church' :
-                                            formData.type?.toLowerCase() === 'institution' ? 'Name of Institution' :
-                                                'Name of Organization'}
-                                        name="name"
-                                        value={formData.name}
-                                        onChange={handleInputChange}
+                                        label="Username"
+                                        name="username"
+                                        value={newUserData.username}
+                                        onChange={handleNewUserInputChange}
                                         variant="outlined"
                                     />
                                 </Grid>
                                 <Grid item xs={12} md={6}>
+                                    <TextField
+                                        required
+                                        fullWidth
+                                        label="Email"
+                                        name="email"
+                                        type="email"
+                                        value={newUserData.email}
+                                        onChange={handleNewUserInputChange}
+                                        variant="outlined"
+                                    />
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <TextField
+                                        required
+                                        fullWidth
+                                        label="First Name"
+                                        name="firstname"
+                                        value={newUserData.firstname}
+                                        onChange={handleNewUserInputChange}
+                                        variant="outlined"
+                                    />
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <TextField
+                                        required
+                                        fullWidth
+                                        label="Last Name"
+                                        name="lastname"
+                                        value={newUserData.lastname}
+                                        onChange={handleNewUserInputChange}
+                                        variant="outlined"
+                                    />
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <TextField
+                                        fullWidth
+                                        label="Phone"
+                                        name="phone"
+                                        value={newUserData.phone}
+                                        onChange={handleNewUserInputChange}
+                                        variant="outlined"
+                                    />
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <TextField
+                                        fullWidth
+                                        label="Password (auto-generated if empty)"
+                                        name="password"
+                                        type="password"
+                                        value={newUserData.password}
+                                        onChange={handleNewUserInputChange}
+                                        variant="outlined"
+                                        helperText="Leave empty for auto-generated password"
+                                    />
+                                </Grid>
+                            </Grid>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={handleCloseAddUserDialog} color="secondary">Cancel</Button>
+                            <Button
+                                onClick={handleAddNewUser}
+                                variant="contained"
+                                sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
+                            >
+                                Add User
+                            </Button>
+                        </DialogActions>
+                    </Dialog>
+
+                    {/* Add Related Organization Dialog */}
+                    <Dialog open={openAddRelatedOrgDialog} onClose={handleCloseAddRelatedOrgDialog} maxWidth="sm" fullWidth>
+                        <DialogTitle sx={{ backgroundColor: '#633394', color: 'white' }}>
+                            Add New {relationshipType === 'denomination' ? 'Denomination/Affiliation' :
+                                relationshipType === 'accreditation' ? 'Accrediting Body' :
+                                    relationshipType === 'affiliation' ? 'Affiliation' :
+                                        relationshipType === 'umbrella' ? 'Umbrella Association' : 'Organization'}
+                        </DialogTitle>
+                        <DialogContent dividers>
+                            <Grid container spacing={2} sx={{ mt: 1 }}>
+                                <Grid item xs={12}>
+                                    <TextField
+                                        required
+                                        fullWidth
+                                        label="Organization Name"
+                                        name="name"
+                                        value={newRelatedOrgData.name}
+                                        onChange={handleRelatedOrgInputChange}
+                                        variant="outlined"
+                                    />
+                                </Grid>
+                                <Grid item xs={12}>
                                     <FormControl fullWidth variant="outlined">
                                         <InputLabel>Type</InputLabel>
                                         <Select
                                             name="type"
-                                            value={formData.type}
-                                            onChange={handleInputChange}
+                                            value={newRelatedOrgData.type}
+                                            onChange={handleRelatedOrgInputChange}
                                             label="Type"
                                         >
-                                            {organizationTypes
-                                                .filter(orgType => ['church', 'non_formal_organizations', 'institution'].includes(orgType.type.toLowerCase()))
-                                                .map((orgType) => (
-                                                    <MenuItem key={orgType.id} value={orgType.type}>
-                                                        {getTypeLabel(orgType.type)}
-                                                    </MenuItem>
-                                                ))}
+                                            {organizationTypes.map((orgType) => (
+                                                <MenuItem key={orgType.id} value={orgType.type}>
+                                                    {getTypeLabel(orgType.type)}
+                                                </MenuItem>
+                                            ))}
                                         </Select>
                                     </FormControl>
                                 </Grid>
                                 <Grid item xs={12} md={6}>
                                     <TextField
                                         fullWidth
-                                        label="Website"
-                                        name="website"
-                                        value={formData.website}
-                                        onChange={handleInputChange}
+                                        label="City"
+                                        name="city"
+                                        value={newRelatedOrgData.city}
+                                        onChange={handleRelatedOrgInputChange}
                                         variant="outlined"
                                     />
                                 </Grid>
-                                {formData.type?.toLowerCase() === 'institution' && (
-                                    <Grid item xs={12} md={6}>
-                                        <TextField
-                                            fullWidth
-                                            label="Highest Level of Education"
-                                            name="highest_level_of_education"
-                                            value={formData.highest_level_of_education}
-                                            onChange={handleInputChange}
-                                            variant="outlined"
-                                        />
-                                    </Grid>
-                                )}
-                            </Grid>
-                        </Paper>
-
-                        {/* Address Information Section */}
-                        <Paper sx={{ p: 3, mb: 3, boxShadow: 3 }}>
-                            <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold', mb: 3, textAlign: 'center' }}>
-                                Address Information
-                            </Typography>
-
-                            <Box sx={{ maxWidth: '800px', mx: 'auto' }}>
-                                <EnhancedAddressInput
-                                    onPlaceSelect={handlePlaceSelect}
-                                    label="Organization Address Information"
-                                    fullWidth
-                                    initialValue={formData.geo_location}
-                                />
-                            </Box>
-                        </Paper>
-
-                        {/* Organizational Relationships Section - Only show for main organization types */}
-                        {['church', 'institution', 'non_formal_organizations'].includes(formData.type?.toLowerCase()) && (
-                            <Paper sx={{ p: 3, mb: 3, boxShadow: 3 }}>
-                                <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold', mb: 3, textAlign: 'center' }}>
-                                    Organizational Relationships & Affiliations
-                                </Typography>
-
-                            <Grid container spacing={3}>
-                                {/* Denomination/Affiliation */}
                                 <Grid item xs={12} md={6}>
-                                    <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
-                                        <Autocomplete
-                                            fullWidth
-                                            options={organizations}
-                                            getOptionLabel={(option) => option.name || ''}
-                                            value={organizations.find(org => org.name === formData.denomination_affiliation) || null}
-                                            onChange={(event, newValue) => handleRelatedOrgSelection('denomination', newValue)}
-                                            renderInput={(params) => (
-                                                <TextField
-                                                    {...params}
-                                                    label="Denomination/Affiliation"
-                                                    name="denomination_affiliation"
-                                                    value={formData.denomination_affiliation}
-                                                    onChange={handleInputChange}
-                                                    variant="outlined"
-                                                    helperText="Search existing organizations or add new"
-                                                />
-                                            )}
-                                            renderOption={(props, option) => {
-                                                const { key, ...otherProps } = props;
-                                                return (
-                                                    <li key={key} {...otherProps}>
-                                                        <Box>
-                                                            <Typography variant="body2">
-                                                                {option.name}
-                                                            </Typography>
-                                                            <Typography variant="caption" color="text.secondary">
-                                                                {option.organization_type?.type || 'Unknown Type'} • {option.geo_location?.city || 'Unknown Location'}
-                                                            </Typography>
-                                                        </Box>
-                                                    </li>
-                                                );
-                                            }}
-                                            isOptionEqualToValue={(option, value) => option.id === value.id}
-                                            freeSolo
-                                        />
-                                        <Tooltip title="Add New Organization">
-                                            <IconButton
-                                                color="primary"
-                                                onClick={() => handleOpenAddRelatedOrgDialog('denomination')}
-                                                sx={{ mb: 2.5 }}
-                                            >
-                                                <AddIcon />
-                                            </IconButton>
-                                        </Tooltip>
-                                    </Box>
-                                </Grid>
-
-                                {/* Umbrella Association for Churches */}
-                                {formData.type?.toLowerCase() === 'church' && (
-                                    <Grid item xs={12} md={6}>
-                                        <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
-                                            <Autocomplete
-                                                fullWidth
-                                                options={organizations}
-                                                getOptionLabel={(option) => option.name || ''}
-                                                value={organizations.find(org => org.name === formData.umbrella_association_membership) || null}
-                                                onChange={(event, newValue) => handleRelatedOrgSelection('umbrella', newValue)}
-                                                renderInput={(params) => (
-                                                    <TextField
-                                                        {...params}
-                                                        label="Umbrella Association Membership"
-                                                        name="umbrella_association_membership"
-                                                        value={formData.umbrella_association_membership}
-                                                        onChange={handleInputChange}
-                                                        variant="outlined"
-                                                        helperText="Search existing organizations or add new"
-                                                    />
-                                                )}
-                                                renderOption={(props, option) => {
-                                                    const { key, ...otherProps } = props;
-                                                    return (
-                                                        <li key={key} {...otherProps}>
-                                                            <Box>
-                                                                <Typography variant="body2">
-                                                                    {option.name}
-                                                                </Typography>
-                                                                <Typography variant="caption" color="text.secondary">
-                                                                    {option.organization_type?.type || 'Unknown Type'} • {option.geo_location?.city || 'Unknown Location'}
-                                                                </Typography>
-                                                            </Box>
-                                                        </li>
-                                                    );
-                                                }}
-                                                isOptionEqualToValue={(option, value) => option.id === value.id}
-                                                freeSolo
-                                            />
-                                            <Tooltip title="Add New Organization">
-                                                <IconButton
-                                                    color="primary"
-                                                    onClick={() => handleOpenAddRelatedOrgDialog('umbrella')}
-                                                    sx={{ mb: 2.5 }}
-                                                >
-                                                    <AddIcon />
-                                                </IconButton>
-                                            </Tooltip>
-                                        </Box>
-                                    </Grid>
-                                )}
-
-                                {/* Accreditation Status/Body for Institutions */}
-                                {formData.type?.toLowerCase() === 'institution' && (
-                                    <Grid item xs={12} md={6}>
-                                        <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
-                                            <Autocomplete
-                                                fullWidth
-                                                options={organizations}
-                                                getOptionLabel={(option) => option.name || ''}
-                                                value={organizations.find(org => org.name === formData.accreditation_status_or_body) || null}
-                                                onChange={(event, newValue) => handleRelatedOrgSelection('accreditation', newValue)}
-                                                renderInput={(params) => (
-                                                    <TextField
-                                                        {...params}
-                                                        label="Accreditation Status/Accrediting Body"
-                                                        name="accreditation_status_or_body"
-                                                        value={formData.accreditation_status_or_body}
-                                                        onChange={handleInputChange}
-                                                        variant="outlined"
-                                                        helperText="Search existing organizations or add new"
-                                                    />
-                                                )}
-                                                renderOption={(props, option) => {
-                                                    const { key, ...otherProps } = props;
-                                                    return (
-                                                        <li key={key} {...otherProps}>
-                                                            <Box>
-                                                                <Typography variant="body2">
-                                                                    {option.name}
-                                                                </Typography>
-                                                                <Typography variant="caption" color="text.secondary">
-                                                                    {option.organization_type?.type || 'Unknown Type'} • {option.geo_location?.city || 'Unknown Location'}
-                                                                </Typography>
-                                                            </Box>
-                                                        </li>
-                                                    );
-                                                }}
-                                                isOptionEqualToValue={(option, value) => option.id === value.id}
-                                                freeSolo
-                                            />
-                                            <Tooltip title="Add New Organization">
-                                                <IconButton
-                                                    color="primary"
-                                                    onClick={() => handleOpenAddRelatedOrgDialog('accreditation')}
-                                                    sx={{ mb: 2.5 }}
-                                                >
-                                                    <AddIcon />
-                                                </IconButton>
-                                            </Tooltip>
-                                        </Box>
-                                    </Grid>
-                                )}
-
-                                {/* Affiliation/Validation for Non-formal Organizations */}
-                                {formData.type?.toLowerCase() === 'non_formal_organizations' && (
-                                    <Grid item xs={12} md={6}>
-                                        <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
-                                            <Autocomplete
-                                                fullWidth
-                                                options={organizations}
-                                                getOptionLabel={(option) => option.name || ''}
-                                                value={organizations.find(org => org.name === formData.affiliation_validation) || null}
-                                                onChange={(event, newValue) => handleRelatedOrgSelection('affiliation', newValue)}
-                                                renderInput={(params) => (
-                                                    <TextField
-                                                        {...params}
-                                                        label="Affiliation/Validation"
-                                                        name="affiliation_validation"
-                                                        value={formData.affiliation_validation}
-                                                        onChange={handleInputChange}
-                                                        variant="outlined"
-                                                        helperText="Search existing organizations or add new"
-                                                    />
-                                                )}
-                                                renderOption={(props, option) => {
-                                                    const { key, ...otherProps } = props;
-                                                    return (
-                                                        <li key={key} {...otherProps}>
-                                                            <Box>
-                                                                <Typography variant="body2">
-                                                                    {option.name}
-                                                                </Typography>
-                                                                <Typography variant="caption" color="text.secondary">
-                                                                    {option.organization_type?.type || 'Unknown Type'} • {option.geo_location?.city || 'Unknown Location'}
-                                                                </Typography>
-                                                            </Box>
-                                                        </li>
-                                                    );
-                                                }}
-                                                isOptionEqualToValue={(option, value) => option.id === value.id}
-                                                freeSolo
-                                            />
-                                            <Tooltip title="Add New Organization">
-                                                <IconButton
-                                                    color="primary"
-                                                    onClick={() => handleOpenAddRelatedOrgDialog('affiliation')}
-                                                    sx={{ mb: 2.5 }}
-                                                >
-                                                    <AddIcon />
-                                                </IconButton>
-                                            </Tooltip>
-                                        </Box>
-                                    </Grid>
-                                )}
-                            </Grid>
-                        </Paper>
-                        )}
-                    </Box>
-                )}
-
-                {/* Tab 1: Miscellaneous */}
-                {activeTab === 1 && (
-                    <Box>
-                        <Paper sx={{ p: 3, mb: 3, boxShadow: 3 }}>
-                            <Typography variant="h6" sx={{ color: '#633394', fontWeight: 'bold', mb: 3, textAlign: 'center' }}>
-                                Additional Details
-                            </Typography>
-
-                            <Box sx={{ maxWidth: '900px', mx: 'auto' }}>
-                                {/* Key-Value Pairs */}
-                                {Object.entries(formData.details).map(([key, value], index) => (
-                                    <Box key={index} sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                                        <TextField
-                                            fullWidth
-                                            label="Key"
-                                            value={key}
-                                            onChange={(e) => {
-                                                const newDetails = { ...formData.details };
-                                                const oldValue = newDetails[key];
-                                                delete newDetails[key];
-                                                newDetails[e.target.value] = oldValue;
-                                                setFormData({ ...formData, details: newDetails });
-                                            }}
-                                            variant="outlined"
-                                        />
-                                        <TextField
-                                            fullWidth
-                                            label="Value"
-                                            value={value}
-                                            onChange={(e) => {
-                                                const newDetails = { ...formData.details };
-                                                newDetails[key] = e.target.value;
-                                                setFormData({ ...formData, details: newDetails });
-                                            }}
-                                            variant="outlined"
-                                        />
-                                        <IconButton
-                                            onClick={() => {
-                                                const newDetails = { ...formData.details };
-                                                delete newDetails[key];
-                                                setFormData({ ...formData, details: newDetails });
-                                            }}
-                                            color="error"
-                                        >
-                                            <DeleteIcon />
-                                        </IconButton>
-                                    </Box>
-                                ))}
-
-                                {/* Add New Key-Value Pair Button */}
-                                <Button
-                                    variant="outlined"
-                                    startIcon={<AddIcon />}
-                                    onClick={() => {
-                                        const newDetails = { ...formData.details };
-                                        newDetails[`key${Object.keys(newDetails).length + 1}`] = '';
-                                        setFormData({ ...formData, details: newDetails });
-                                    }}
-                                    sx={{
-                                        color: '#633394',
-                                        borderColor: '#633394',
-                                        '&:hover': {
-                                            borderColor: '#7c52a5',
-                                            color: '#7c52a5'
-                                        },
-                                        mt: 2
-                                    }}
-                                >
-                                    Add New Field
-                                </Button>
-                            </Box>
-                        </Paper>
-                    </Box>
-                )}
-
-                {/* Add User Dialog */}
-                <Dialog open={openAddUserDialog} onClose={handleCloseAddUserDialog} maxWidth="sm" fullWidth>
-                    <DialogTitle sx={{ backgroundColor: '#633394', color: 'white' }}>
-                        Add New {contactType === 'head' ?
-                            (formData.type?.toLowerCase() === 'church' ? 'Pastor' :
-                                formData.type?.toLowerCase() === 'institution' ? 'President' : 'Lead') :
-                            `${contactType.charAt(0).toUpperCase() + contactType.slice(1)} Contact`}
-                    </DialogTitle>
-                    <DialogContent dividers>
-                        <Grid container spacing={2} sx={{ mt: 1 }}>
-                            <Grid item xs={12} md={6}>
-                                <TextField
-                                    required
-                                    fullWidth
-                                    label="Username"
-                                    name="username"
-                                    value={newUserData.username}
-                                    onChange={handleNewUserInputChange}
-                                    variant="outlined"
-                                />
-                            </Grid>
-                            <Grid item xs={12} md={6}>
-                                <TextField
-                                    required
-                                    fullWidth
-                                    label="Email"
-                                    name="email"
-                                    type="email"
-                                    value={newUserData.email}
-                                    onChange={handleNewUserInputChange}
-                                    variant="outlined"
-                                />
-                            </Grid>
-                            <Grid item xs={12} md={6}>
-                                <TextField
-                                    required
-                                    fullWidth
-                                    label="First Name"
-                                    name="firstname"
-                                    value={newUserData.firstname}
-                                    onChange={handleNewUserInputChange}
-                                    variant="outlined"
-                                />
-                            </Grid>
-                            <Grid item xs={12} md={6}>
-                                <TextField
-                                    required
-                                    fullWidth
-                                    label="Last Name"
-                                    name="lastname"
-                                    value={newUserData.lastname}
-                                    onChange={handleNewUserInputChange}
-                                    variant="outlined"
-                                />
-                            </Grid>
-                            <Grid item xs={12} md={6}>
-                                <TextField
-                                    fullWidth
-                                    label="Phone"
-                                    name="phone"
-                                    value={newUserData.phone}
-                                    onChange={handleNewUserInputChange}
-                                    variant="outlined"
-                                />
-                            </Grid>
-                            <Grid item xs={12} md={6}>
-                                <TextField
-                                    fullWidth
-                                    label="Password (auto-generated if empty)"
-                                    name="password"
-                                    type="password"
-                                    value={newUserData.password}
-                                    onChange={handleNewUserInputChange}
-                                    variant="outlined"
-                                    helperText="Leave empty for auto-generated password"
-                                />
-                            </Grid>
-                        </Grid>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={handleCloseAddUserDialog} color="secondary">Cancel</Button>
-                        <Button
-                            onClick={handleAddNewUser}
-                            variant="contained"
-                            sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
-                        >
-                            Add User
-                        </Button>
-                    </DialogActions>
-                </Dialog>
-
-                {/* Add Related Organization Dialog */}
-                <Dialog open={openAddRelatedOrgDialog} onClose={handleCloseAddRelatedOrgDialog} maxWidth="sm" fullWidth>
-                    <DialogTitle sx={{ backgroundColor: '#633394', color: 'white' }}>
-                        Add New {relationshipType === 'denomination' ? 'Denomination/Affiliation' :
-                            relationshipType === 'accreditation' ? 'Accrediting Body' :
-                                relationshipType === 'affiliation' ? 'Affiliation' :
-                                    relationshipType === 'umbrella' ? 'Umbrella Association' : 'Organization'}
-                    </DialogTitle>
-                    <DialogContent dividers>
-                        <Grid container spacing={2} sx={{ mt: 1 }}>
-                            <Grid item xs={12}>
-                                <TextField
-                                    required
-                                    fullWidth
-                                    label="Organization Name"
-                                    name="name"
-                                    value={newRelatedOrgData.name}
-                                    onChange={handleRelatedOrgInputChange}
-                                    variant="outlined"
-                                />
-                            </Grid>
-                            <Grid item xs={12}>
-                                <FormControl fullWidth variant="outlined">
-                                    <InputLabel>Type</InputLabel>
-                                    <Select
-                                        name="type"
-                                        value={newRelatedOrgData.type}
+                                    <TextField
+                                        fullWidth
+                                        label="Country"
+                                        name="country"
+                                        value={newRelatedOrgData.country}
                                         onChange={handleRelatedOrgInputChange}
-                                        label="Type"
-                                    >
-                                        {organizationTypes.map((orgType) => (
-                                            <MenuItem key={orgType.id} value={orgType.type}>
-                                                {getTypeLabel(orgType.type)}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
+                                        variant="outlined"
+                                    />
+                                </Grid>
+                                <Grid item xs={12}>
+                                    <TextField
+                                        fullWidth
+                                        label="Website"
+                                        name="website"
+                                        value={newRelatedOrgData.website}
+                                        onChange={handleRelatedOrgInputChange}
+                                        variant="outlined"
+                                    />
+                                </Grid>
                             </Grid>
-                            <Grid item xs={12} md={6}>
-                                <TextField
-                                    fullWidth
-                                    label="City"
-                                    name="city"
-                                    value={newRelatedOrgData.city}
-                                    onChange={handleRelatedOrgInputChange}
-                                    variant="outlined"
-                                />
-                            </Grid>
-                            <Grid item xs={12} md={6}>
-                                <TextField
-                                    fullWidth
-                                    label="Country"
-                                    name="country"
-                                    value={newRelatedOrgData.country}
-                                    onChange={handleRelatedOrgInputChange}
-                                    variant="outlined"
-                                />
-                            </Grid>
-                            <Grid item xs={12}>
-                                <TextField
-                                    fullWidth
-                                    label="Website"
-                                    name="website"
-                                    value={newRelatedOrgData.website}
-                                    onChange={handleRelatedOrgInputChange}
-                                    variant="outlined"
-                                />
-                            </Grid>
-                        </Grid>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={handleCloseAddRelatedOrgDialog} color="secondary">Cancel</Button>
-                        <Button
-                            onClick={handleAddNewRelatedOrg}
-                            variant="contained"
-                            sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
-                        >
-                            Add Organization
-                        </Button>
-                    </DialogActions>
-                </Dialog>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={handleCloseAddRelatedOrgDialog} color="secondary">Cancel</Button>
+                            <Button
+                                onClick={handleAddNewRelatedOrg}
+                                variant="contained"
+                                sx={{ backgroundColor: '#633394', '&:hover': { backgroundColor: '#7c52a5' } }}
+                            >
+                                Add Organization
+                            </Button>
+                        </DialogActions>
+                    </Dialog>
                 </Box>
             </Container>
         </>

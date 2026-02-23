@@ -104,7 +104,7 @@ function AddAssociationPage() {
 
             // Navigate back to associations page after a short delay
             setTimeout(() => {
-                navigate('/associations');
+                navigate('/denominations');
             }, 1500);
         } catch (err) {
             console.error('Failed to add association:', err);
@@ -125,7 +125,7 @@ function AddAssociationPage() {
     };
 
     const handleBack = () => {
-        navigate('/associations');
+        navigate('/denominations');
     };
 
     return (

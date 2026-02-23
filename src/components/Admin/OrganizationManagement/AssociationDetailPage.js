@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     Container, Typography, Box, Paper,
     CircularProgress, Alert, Card, CardContent,
-    Tabs, Tab, Button, Grid, Chip, Stack, IconButton,
+    Tabs, Tab, Button, Grid, Chip, IconButton,
     Dialog, DialogTitle, DialogContent, DialogActions, Autocomplete, TextField
 } from '@mui/material';
 import InternalHeader from '../../shared/Headers/InternalHeader';
@@ -11,16 +11,14 @@ import DataTable from '../../shared/DataTable/DataTable';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
 import BusinessIcon from '@mui/icons-material/Business';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
-import ArchiveIcon from '@mui/icons-material/Archive';
 import StarIcon from '@mui/icons-material/Star';
 import PersonIcon from '@mui/icons-material/Person';
 import Avatar from '@mui/material/Avatar';
 import {
     fetchOrganizations,
-    deleteOrganization,
     fetchUsersByOrganization,
     fetchUsers,
     updateUserRoles,
@@ -181,7 +179,7 @@ function AssociationDetailPage() {
     };
 
     const handleBack = () => {
-        navigate('/associations');
+        navigate('/denominations');
     };
 
     const handleTabChange = (event, newValue) => {
@@ -197,18 +195,6 @@ function AssociationDetailPage() {
                 associationName: association?.name
             }
         });
-    };
-
-    const handleDelete = async () => {
-        if (window.confirm(`Are you sure you want to delete "${association?.name}"? This action cannot be undone.`)) {
-            try {
-                await deleteOrganization(id);
-                navigate('/associations');
-            } catch (error) {
-                console.error('Failed to delete association:', error);
-                alert(`Failed to delete: ${error.message}`);
-            }
-        }
     };
 
     const handleOrganizationClick = (org) => {
@@ -353,15 +339,15 @@ function AssociationDetailPage() {
     if (!association) {
         return (
             <>
-                <InternalHeader title="Association Not Found" />
+                <InternalHeader title="Denomination Not Found" />
                 <Container maxWidth="xl" sx={{ py: 4 }}>
-                    <Alert severity="error">Association not found</Alert>
+                    <Alert severity="error">Denomination not found</Alert>
                     <Button
                         startIcon={<ArrowBackIcon />}
                         onClick={handleBack}
                         sx={{ mt: 2 }}
                     >
-                        Back to Associations
+                        Back to Denominations
                     </Button>
                 </Container>
             </>
@@ -378,75 +364,42 @@ function AssociationDetailPage() {
                         startIcon={<ArrowBackIcon />}
                         onClick={handleBack}
                     >
-                        Associations
+                        Denominations
                     </Button>
                 }
                 rightActions={
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Button
-                            variant="outlined"
-                            startIcon={<EditIcon />}
-                            onClick={handleEditClick}
-                            sx={{
-                                borderColor: colors.primary,
-                                color: colors.primary,
-                                '&:hover': {
-                                    borderColor: colors.secondary,
-                                    backgroundColor: colors.accentBg
-                                }
-                            }}
-                        >
-                            Edit
-                        </Button>
-                        <Button
-                            variant="outlined"
-                            startIcon={<DeleteIcon />}
-                            onClick={handleDelete}
-                            sx={{
-                                borderColor: '#d32f2f',
-                                color: '#d32f2f',
-                                '&:hover': {
-                                    borderColor: '#b71c1c',
-                                    backgroundColor: '#ffebee'
-                                }
-                            }}
-                        >
-                            Delete
-                        </Button>
-                    </Box>
+                    <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        onClick={() => navigate('/organizations/add', {
+                            state: {
+                                returnUrl: `/association-management/${id}`,
+                                associationId: parseInt(id),
+                                associationName: association?.name
+                            }
+                        })}
+                        sx={{
+                            backgroundColor: colors.primary,
+                            '&:hover': { backgroundColor: colors.secondary },
+                            textTransform: 'none',
+                            borderRadius: 2
+                        }}
+                    >
+                        Add Organization
+                    </Button>
                 }
             />
             <Container maxWidth="xl" sx={{ py: 4, backgroundColor: colors.background, minHeight: '100vh' }}>
-                {/* Association Info Header */}
-                <Box sx={{ mb: 3 }}>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                        <Chip
-                            label={getOrgTypeLabel(association.organization_type?.type)}
-                            size="small"
-                            sx={{
-                                ...getTypeChipColor(association.organization_type?.type),
-                                fontWeight: 600
-                            }}
-                        />
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <LocationOnIcon sx={{ fontSize: 16, color: colors.textSecondary }} />
-                            <Typography variant="body2" color="text.secondary">
-                                {getLocation(association)}
-                            </Typography>
-                        </Box>
-                    </Stack>
-                </Box>
-
                 {/* Info Cards Grid - 30:70 ratio */}
                 <Grid container spacing={3} sx={{ mb: 3 }}>
-                    {/* Association Manager/Head Card - 30% */}
+                    {/* Account Holder Card - 30% */}
                     <Grid item xs={12} md={4}>
                         <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', height: '100%' }}>
                             <CardContent>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <Typography variant="subtitle1" fontWeight="bold" color="text.primary">
-                                            Association Manager/Head
+                                            Account Holder
                                         </Typography>
                                         <IconButton size="small" onClick={handleOpenManagerDialog}>
                                             <EditIcon fontSize="small" />
@@ -488,13 +441,22 @@ function AssociationDetailPage() {
                         </Card>
                     </Grid>
 
-                    {/* Association Details Card - 70% */}
+                    {/* Denomination Details Card - 70% */}
                     <Grid item xs={12} md={8}>
                         <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', height: '100%' }}>
                             <CardContent>
-                                <Typography variant="h6" fontWeight="600" sx={{ mb: 2, color: colors.primary }}>
-                                    Association Details
-                                </Typography>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                    <Typography variant="h6" fontWeight="600" sx={{ color: colors.primary }}>
+                                        Denomination Details
+                                    </Typography>
+                                    <Button
+                                        size="small"
+                                        onClick={handleEditClick}
+                                        sx={{ color: colors.primary, textTransform: 'none' }}
+                                    >
+                                        Edit
+                                    </Button>
+                                </Box>
                                 <Grid container spacing={2}>
                                     <Grid item xs={12} md={6}>
                                         <Typography variant="body2" color="text.secondary">Name</Typography>
@@ -529,7 +491,7 @@ function AssociationDetailPage() {
                 {/* Manager Assignment Dialog */}
                 <Dialog open={openManagerDialog} onClose={handleCloseManagerDialog} maxWidth="sm" fullWidth>
                     <DialogTitle sx={{ backgroundColor: colors.primary, color: 'white' }}>
-                        Assign Association Managers
+                        Account Holder
                     </DialogTitle>
                     <DialogContent sx={{ mt: 2 }}>
                         <Autocomplete
@@ -544,7 +506,7 @@ function AssociationDetailPage() {
                                 <TextField
                                     {...params}
                                     label="Select Managers"
-                                    placeholder="Search users..."
+                                    placeholder="Search members..."
                                     variant="outlined"
                                 />
                             )}
@@ -597,7 +559,7 @@ function AssociationDetailPage() {
                         }}
                     >
                         <Tab
-                            label={`Linked Organizations (${linkedOrganizations.length})`}
+                            label={`Organizations (${linkedOrganizations.length})`}
                             icon={<BusinessIcon />}
                             iconPosition="start"
                         />
@@ -609,7 +571,7 @@ function AssociationDetailPage() {
                     linkedOrganizations.length === 0 ? (
                         <Paper sx={{ p: 3, borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
                             <Alert severity="info">
-                                No organizations are currently linked to this association.
+                                No organizations are currently linked to this denomination.
                             </Alert>
                         </Paper>
                     ) : (
