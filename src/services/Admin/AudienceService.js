@@ -4,7 +4,7 @@
 // Service for managing audiences and sending targeted reminders
 // ============================================================================
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 class AudienceService {
   // ==========================================================================
@@ -16,7 +16,7 @@ class AudienceService {
    */
   static async getAllAudiences() {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/audiences`, {
+      const response = await fetch(`${API_BASE_URL}/audiences`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -40,7 +40,7 @@ class AudienceService {
    */
   static async getAudience(audienceId) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/audiences/${audienceId}`, {
+      const response = await fetch(`${API_BASE_URL}/audiences/${audienceId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -64,7 +64,7 @@ class AudienceService {
    */
   static async createAudience(audienceData) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/audiences`, {
+      const response = await fetch(`${API_BASE_URL}/audiences`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,7 +89,7 @@ class AudienceService {
    */
   static async updateAudience(audienceId, audienceData) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/audiences/${audienceId}`, {
+      const response = await fetch(`${API_BASE_URL}/audiences/${audienceId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -114,7 +114,7 @@ class AudienceService {
    */
   static async deleteAudience(audienceId) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/audiences/${audienceId}`, {
+      const response = await fetch(`${API_BASE_URL}/audiences/${audienceId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -142,7 +142,7 @@ class AudienceService {
    */
   static async getAudienceMembers(audienceId) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/audiences/${audienceId}/members`, {
+      const response = await fetch(`${API_BASE_URL}/audiences/${audienceId}/members`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -170,7 +170,7 @@ class AudienceService {
    */
   static async getUsersFromSurveyResponses(filters) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/audiences/survey-responses`, {
+      const response = await fetch(`${API_BASE_URL}/audiences/survey-responses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -199,7 +199,7 @@ class AudienceService {
    */
   static async sendAudienceReminders(audienceId, reminderData = {}) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/audiences/${audienceId}/send-reminders`, {
+      const response = await fetch(`${API_BASE_URL}/audiences/${audienceId}/send-reminders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -229,7 +229,7 @@ class AudienceService {
    */
   static async estimateAudienceSize(filters = {}) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/audiences/estimate-size`, {
+      const response = await fetch(`${API_BASE_URL}/audiences/estimate-size`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -258,7 +258,7 @@ class AudienceService {
    */
   static async getAllUsers() {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/users`, {
+      const response = await fetch(`${API_BASE_URL}/users`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -282,7 +282,7 @@ class AudienceService {
    */
   static async getAllOrganizations() {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/organizations`, {
+      const response = await fetch(`${API_BASE_URL}/organizations`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -306,7 +306,7 @@ class AudienceService {
    */
   static async getOrganizationTypes() {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/organization-types`, {
+      const response = await fetch(`${API_BASE_URL}/organization-types`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -330,7 +330,7 @@ class AudienceService {
    */
   static async getSurveyTemplates() {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/templates`, {
+      const response = await fetch(`${API_BASE_URL}/templates`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
