@@ -99,12 +99,29 @@ const SurveyTaking = () => {
     }
   }, [responses, surveyData]);
 
+  const isV2 = Boolean(survey?.survey_id);
+
   const fetchSurveyData = async () => {
     console.log('🔄 fetchSurveyData called, isInitialized:', isInitialized);
     try {
       setLoading(true);
 
-      if (survey && survey.template_id) {
+      if (isV2) {
+        // V2 survey flow
+        const response = await fetch(`${API_BASE_URL}/v2/surveys/${survey.survey_id}`);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch survey: ${response.status} ${response.statusText}`);
+        }
+
+        const v2Data = await response.json();
+        setSurveyData(v2Data);
+
+        if (!isInitialized) {
+          await getOrCreateSurveyResponse();
+          setIsInitialized(true);
+        }
+      } else if (survey && survey.template_id) {
         const response = await fetch(`${API_BASE_URL}/templates/${survey.template_id}`);
 
         if (!response.ok) {
@@ -120,7 +137,7 @@ const SurveyTaking = () => {
           setIsInitialized(true);
         }
       } else {
-        setError('Survey template ID not available.');
+        setError('Survey data not available.');
       }
 
       setLoading(false);
@@ -335,6 +352,23 @@ const SurveyTaking = () => {
         return;
       }
 
+      if (isV2) {
+        // V2 flow — the join endpoint already created the response
+        // Just look it up by the response id we already have
+        console.log(`V2: Looking up existing response ${survey.id}`);
+        const existingResponse = await fetch(`${API_BASE_URL}/v2/responses/${survey.id}`);
+
+        if (existingResponse.ok) {
+          const responseData = await existingResponse.json();
+          setSurveyResponseId(responseData.id);
+          setResponses(responseData.answers || {});
+          console.log('✅ Found V2 survey response:', responseData.id);
+        } else {
+          throw new Error('Could not load survey response.');
+        }
+        return;
+      }
+
       console.log(`Checking for existing response for user ${userId} and template ${survey.template_id}`);
 
       // First, try to find existing survey response for this user and template
@@ -408,7 +442,11 @@ const SurveyTaking = () => {
       console.log('Saving draft for response ID:', surveyResponseId);
       console.log('Current responses:', responses);
 
-      const response = await fetch(`${API_BASE_URL}/responses/${surveyResponseId}`, {
+      const saveUrl = isV2
+        ? `${API_BASE_URL}/v2/responses/${surveyResponseId}`
+        : `${API_BASE_URL}/responses/${surveyResponseId}`;
+
+      const response = await fetch(saveUrl, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -451,7 +489,10 @@ const SurveyTaking = () => {
       }
 
       // Submit all responses to the backend
-      const response = await fetch(`${API_BASE_URL}/responses/${surveyResponseId}`, {
+      const submitUrl = isV2
+        ? `${API_BASE_URL}/v2/responses/${surveyResponseId}`
+        : `${API_BASE_URL}/responses/${surveyResponseId}`;
+      const response = await fetch(submitUrl, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

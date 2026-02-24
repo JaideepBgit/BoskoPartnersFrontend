@@ -11,7 +11,7 @@ import {
   Alert,
   CircularProgress
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import UserService from '../../services/Login/UserService';
 
 const LoginPage = ({ onLogin }) => {
@@ -22,6 +22,7 @@ const LoginPage = ({ onLogin }) => {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   const logoImage = process.env.PUBLIC_URL + '/assets/saurara-high-resolution-logo-transparent.png';
 
@@ -103,7 +104,26 @@ const LoginPage = ({ onLogin }) => {
     // notify parent (so Navbar can re-check user)
     if (onLogin) onLogin();
 
-    // 4️⃣ navigate based on role
+    // 4️⃣ check for pending survey join (QR code flow)
+    const pendingJoin = localStorage.getItem('pendingSurveyJoin');
+    if (pendingJoin) {
+      try {
+        const { surveyId } = JSON.parse(pendingJoin);
+        navigate(`/survey/join/${surveyId}`, { replace: true });
+        return;
+      } catch (e) {
+        localStorage.removeItem('pendingSurveyJoin');
+      }
+    }
+
+    // 5️⃣ check for redirect from ProtectedRoute
+    const from = location.state?.from?.pathname;
+    if (from && from !== '/login' && from !== '/') {
+      navigate(from, { replace: true });
+      return;
+    }
+
+    // 6️⃣ navigate based on role
     if (userData.role === 'user') {
       navigate('/user');
     } else {

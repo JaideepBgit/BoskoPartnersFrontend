@@ -19,6 +19,7 @@ import UploadSurveyDocumentPage from './components/Admin/Inventory/UploadSurveyD
 import UserManagementMain from './components/UserManagement/UserManagementMain';
 import SurveysPage from './components/Surveys/SurveysPage';
 import SurveyIntro from './components/Survey/SurveyIntro';
+import SurveyJoinPage from './components/Survey/SurveyJoinPage';
 import SurveyOverview from './components/Survey/SurveyOverview';
 import SurveyTaking from './components/Survey/SurveyTaking';
 import ReportBuilder from './components/Admin/Reports/ReportBuilder';
@@ -159,6 +160,8 @@ function Main({ isAuthenticated, userRole, login, logout }) {
             <ContactReferralPage />
           </div>
         } />
+        {/* Survey QR Join - Public route that handles auth redirect */}
+        <Route path="/survey/join/:surveyId" element={<SurveyJoinPage />} />
         <Route path="/form" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <FormContainer onLogout={logout} />
@@ -532,8 +535,9 @@ function Main({ isAuthenticated, userRole, login, logout }) {
 }
 
 function ProtectedRoute({ isAuthenticated, children }) {
+  const location = useLocation();
   console.log('🔒 ProtectedRoute - isAuthenticated:', isAuthenticated);
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  return isAuthenticated ? children : <Navigate to="/login" state={{ from: location }} replace />;
 }
 
 export default App;

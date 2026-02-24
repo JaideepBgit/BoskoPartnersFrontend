@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Paper, Switch, FormControlLabel, Select, MenuItem,
-  FormControl, InputLabel, CircularProgress, Button, Divider
+  FormControl, InputLabel, CircularProgress, Button, Divider,
+  IconButton, Snackbar
 } from '@mui/material';
 import LockIcon from '@mui/icons-material/Lock';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import PublicIcon from '@mui/icons-material/Public';
 import SaveIcon from '@mui/icons-material/Save';
+import QrCode2Icon from '@mui/icons-material/QrCode2';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import DownloadIcon from '@mui/icons-material/Download';
+import { QRCodeSVG } from 'qrcode.react';
 
 const colors = {
   primary: '#633394',
@@ -26,6 +31,9 @@ const SurveyDetailSettings = ({ surveyId, survey }) => {
   });
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  const surveyJoinUrl = `${window.location.origin}/survey/join/${surveyId}`;
 
   useEffect(() => {
     if (survey?.settings) {
@@ -208,6 +216,109 @@ const SurveyDetailSettings = ({ surveyId, survey }) => {
             </Box>
           }
           sx={{ alignItems: 'flex-start', ml: 0 }}
+        />
+
+        {settings.shareEnabled && (
+          <>
+            <Divider sx={{ my: 2 }} />
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+              <QrCode2Icon sx={{ color: colors.primary, fontSize: 22 }} />
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, color: colors.textPrimary }}>
+                QR Code
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: 'flex', gap: 3, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+              {/* QR Code Image */}
+              <Box
+                id="survey-qr-code"
+                sx={{
+                  p: 2,
+                  backgroundColor: '#fff',
+                  borderRadius: 2,
+                  border: '1px solid #e0e0e0',
+                  display: 'inline-flex',
+                }}
+              >
+                <QRCodeSVG
+                  value={surveyJoinUrl}
+                  size={180}
+                  level="M"
+                  fgColor="#212121"
+                />
+              </Box>
+
+              {/* URL + Actions */}
+              <Box sx={{ flex: 1, minWidth: 200 }}>
+                <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 1 }}>
+                  Share this QR code or link to let users join the survey:
+                </Typography>
+
+                <Box sx={{
+                  display: 'flex', alignItems: 'center', gap: 1,
+                  p: 1.5, backgroundColor: '#f5f5f5', borderRadius: 1,
+                  border: '1px solid #e0e0e0', mb: 2,
+                }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ flex: 1, wordBreak: 'break-all', fontFamily: 'monospace', fontSize: '0.8rem' }}
+                  >
+                    {surveyJoinUrl}
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      navigator.clipboard.writeText(surveyJoinUrl);
+                      setCopySuccess(true);
+                    }}
+                  >
+                    <ContentCopyIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<DownloadIcon />}
+                  onClick={() => {
+                    const svg = document.querySelector('#survey-qr-code svg');
+                    if (!svg) return;
+                    const svgData = new XMLSerializer().serializeToString(svg);
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const img = new Image();
+                    img.onload = () => {
+                      canvas.width = img.width * 2;
+                      canvas.height = img.height * 2;
+                      ctx.fillStyle = '#ffffff';
+                      ctx.fillRect(0, 0, canvas.width, canvas.height);
+                      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                      const link = document.createElement('a');
+                      link.download = `survey-${surveyId}-qr.png`;
+                      link.href = canvas.toDataURL('image/png');
+                      link.click();
+                    };
+                    img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+                  }}
+                  sx={{
+                    textTransform: 'none',
+                    color: colors.primary,
+                    borderColor: colors.primary,
+                  }}
+                >
+                  Download QR
+                </Button>
+              </Box>
+            </Box>
+          </>
+        )}
+
+        <Snackbar
+          open={copySuccess}
+          autoHideDuration={2000}
+          onClose={() => setCopySuccess(false)}
+          message="Link copied to clipboard"
         />
       </Paper>
     </Box>

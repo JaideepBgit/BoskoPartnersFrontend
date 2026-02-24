@@ -132,6 +132,18 @@ const RoleSelectionPage = ({ onLogin }) => {
     // Notify parent
     if (onLogin) onLogin();
 
+    // Check for pending survey join (QR code flow)
+    const pendingJoin = localStorage.getItem('pendingSurveyJoin');
+    if (pendingJoin) {
+      try {
+        const { surveyId } = JSON.parse(pendingJoin);
+        navigate(`/survey/join/${surveyId}`, { replace: true });
+        return;
+      } catch (e) {
+        localStorage.removeItem('pendingSurveyJoin');
+      }
+    }
+
     // Navigate based on role
     if (userData.role === 'user') {
       navigate('/user');

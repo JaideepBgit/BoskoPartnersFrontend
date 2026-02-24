@@ -17,6 +17,7 @@ import SurveyDetailResponses from './tabs/SurveyDetailResponses';
 import SurveyDetailInvitations from './tabs/SurveyDetailInvitations';
 import SurveyDetailQuestions from './tabs/SurveyDetailQuestions';
 import SurveyDetailOrganizations from './tabs/SurveyDetailOrganizations';
+import SurveyDetailSettings from './tabs/SurveyDetailSettings';
 
 const colors = {
   primary: '#633394',
@@ -27,7 +28,7 @@ const colors = {
   textSecondary: '#757575',
 };
 
-const TAB_LABELS = ['Responses', 'Invitations', 'Questions', 'Organizations'];
+const TAB_LABELS = ['Responses', 'Invitations', 'Questions', 'Organizations', 'Settings'];
 
 const SurveyDetailPage = () => {
   const { surveyId } = useParams();
@@ -232,6 +233,7 @@ const SurveyDetailPage = () => {
           {activeTab === 1 && <SurveyDetailInvitations surveyId={surveyId} />}
           {activeTab === 2 && <SurveyDetailQuestions surveyId={surveyId} survey={survey} onRefresh={loadSurvey} />}
           {activeTab === 3 && <SurveyDetailOrganizations surveyId={surveyId} survey={survey} onRefresh={loadSurvey} />}
+          {activeTab === 4 && <SurveyDetailSettings surveyId={surveyId} survey={survey} />}
         </Paper>
       </Container>
 

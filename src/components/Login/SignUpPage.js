@@ -260,6 +260,19 @@ function SignInStep({ email, onBack }) {
       if (result.role) localStorage.setItem('userRole', result.role);
       if (result.organization_id) localStorage.setItem('organizationId', result.organization_id);
       if (result.survey_code) localStorage.setItem('surveyCode', result.survey_code);
+
+      // Check for pending survey join (QR code / share link flow)
+      const pendingJoin = localStorage.getItem('pendingSurveyJoin');
+      if (pendingJoin) {
+        try {
+          const { surveyId } = JSON.parse(pendingJoin);
+          navigate(`/survey/join/${surveyId}`, { replace: true });
+          return;
+        } catch (e) {
+          localStorage.removeItem('pendingSurveyJoin');
+        }
+      }
+
       navigate(result.role === 'user' ? '/user' : '/dashboard');
     } catch (err) {
       setError('Invalid email or password');
@@ -350,12 +363,25 @@ const SignUpPage = () => {
   };
 
   const handleAccountCreated = (userData) => {
-    // Store auth then redirect to onboarding
+    // Store auth then redirect
     localStorage.setItem('isAuthenticated', 'true');
     localStorage.setItem('user', JSON.stringify(userData));
     if (userData.id) localStorage.setItem('userId', userData.id);
     if (userData.role) localStorage.setItem('userRole', userData.role);
     if (userData.survey_code) localStorage.setItem('surveyCode', userData.survey_code);
+
+    // Check for pending survey join (QR code / share link flow)
+    const pendingJoin = localStorage.getItem('pendingSurveyJoin');
+    if (pendingJoin) {
+      try {
+        const { surveyId } = JSON.parse(pendingJoin);
+        navigate(`/survey/join/${surveyId}`, { replace: true });
+        return;
+      } catch (e) {
+        localStorage.removeItem('pendingSurveyJoin');
+      }
+    }
+
     navigate('/onboarding');
   };
 

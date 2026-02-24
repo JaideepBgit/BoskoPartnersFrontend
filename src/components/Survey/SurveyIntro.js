@@ -7,18 +7,14 @@ import {
   CircularProgress,
   Alert,
   Paper,
-  Grid,
-  Card,
-  CardContent,
-  Chip
+  IconButton
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../shared/Navbar/Navbar';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import PersonIcon from '@mui/icons-material/Person';
 import InfoIcon from '@mui/icons-material/Info';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CloseIcon from '@mui/icons-material/Close';
 import axios from 'axios';
 
 // API Base URL from environment variable
@@ -34,7 +30,6 @@ const SurveyIntro = () => {
 
   // Get survey data from navigation state
   const survey = location.state?.survey;
-  const userId = parseInt(localStorage.getItem('userId') || '0', 10);
 
   useEffect(() => {
     if (!survey) {
@@ -50,7 +45,21 @@ const SurveyIntro = () => {
     try {
       setLoading(true);
 
-      if (survey && survey.template_id) {
+      if (survey && survey.survey_id) {
+        // V2 survey flow (from QR code / share link join)
+        const response = await fetch(`${API_BASE_URL}/v2/surveys/${survey.survey_id}`);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch survey: ${response.status} ${response.statusText}`);
+        }
+
+        const v2Data = await response.json();
+        setSurveyData(v2Data);
+
+        // Fetch existing V2 responses
+        await fetchExistingResponses(survey.id, true);
+      } else if (survey && survey.template_id) {
+        // Legacy template flow
         const response = await fetch(`${API_BASE_URL}/templates/${survey.template_id}`);
 
         if (!response.ok) {
@@ -61,9 +70,9 @@ const SurveyIntro = () => {
         setSurveyData(templateData);
 
         // Fetch existing responses
-        await fetchExistingResponses(survey.id);
+        await fetchExistingResponses(survey.id, false);
       } else {
-        setError('Survey template ID not available.');
+        setError('Survey data not available.');
       }
 
       setLoading(false);
@@ -74,9 +83,12 @@ const SurveyIntro = () => {
     }
   };
 
-  const fetchExistingResponses = async (assignmentId) => {
+  const fetchExistingResponses = async (assignmentId, isV2 = false) => {
     try {
-      const responseRes = await axios.get(`${API_BASE_URL}/responses/${assignmentId}`);
+      const url = isV2
+        ? `${API_BASE_URL}/v2/responses/${assignmentId}`
+        : `${API_BASE_URL}/responses/${assignmentId}`;
+      const responseRes = await axios.get(url);
       const answers = responseRes.data?.answers || {};
       setResponses(answers);
     } catch (err) {
@@ -119,12 +131,6 @@ const SurveyIntro = () => {
     const total = questions.length;
     const percentage = total > 0 ? Math.round((answered / total) * 100) : 0;
     return { answered, total, percentage };
-  };
-
-  const calculateEstimatedTime = () => {
-    if (!surveyData || !surveyData.questions) return 0;
-    const questionCount = surveyData.questions.length;
-    return Math.ceil(questionCount * 1.5); // 1.5 minutes per question
   };
 
   const handleGetStarted = () => {
@@ -215,9 +221,24 @@ const SurveyIntro = () => {
           elevation={3}
           sx={{
             p: 4,
-            borderRadius: 3
+            borderRadius: 3,
+            position: 'relative'
           }}
         >
+          {/* Close Button */}
+          <IconButton
+            onClick={() => navigate('/surveys')}
+            sx={{
+              position: 'absolute',
+              top: 12,
+              right: 12,
+              color: '#999',
+              '&:hover': { color: '#333', backgroundColor: '#f0f0f0' }
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+
           {/* Header Section */}
           <Box sx={{ textAlign: 'center', mb: 4 }}>
             {/* Survey Icon */}
@@ -271,64 +292,6 @@ const SurveyIntro = () => {
                 </Box>
               </Box>
             </Box>
-          </Box>
-
-          {/* Survey Sections */}
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="subtitle1" sx={{ mb: 2, color: '#333', fontWeight: 600 }}>
-              Survey Sections:
-            </Typography>
-
-            <Grid container spacing={1.5}>
-              {Object.entries(sections).map(([sectionName, questions]) => {
-                const progress = getSectionProgress(questions);
-                const isCompleted = progress.percentage === 100;
-
-                return (
-                  <Grid item xs={6} sm={4} md={3} key={sectionName}>
-                    <Card
-                      sx={{
-                        height: '100%',
-                        border: isCompleted ? '1.5px solid #4caf50' : '1px solid #e0e0e0',
-                        backgroundColor: isCompleted ? '#f8fff8' : '#fff',
-                        transition: 'all 0.2s',
-                        '&:hover': {
-                          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-                          transform: 'translateY(-1px)'
-                        }
-                      }}
-                    >
-                      <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
-                          <Typography variant="caption" sx={{ fontWeight: 600, color: '#333', fontSize: '0.75rem', lineHeight: 1.2 }}>
-                            {sectionName}
-                          </Typography>
-                          {isCompleted && (
-                            <CheckCircleIcon sx={{ color: '#4caf50', fontSize: '1rem' }} />
-                          )}
-                        </Box>
-
-                        <Typography variant="caption" sx={{ color: '#666', fontSize: '0.7rem', display: 'block', mb: 0.5 }}>
-                          {questions.length} questions
-                        </Typography>
-
-                        <Chip
-                          label={`${progress.percentage}%`}
-                          size="small"
-                          sx={{
-                            height: '18px',
-                            fontSize: '0.65rem',
-                            backgroundColor: isCompleted ? '#4caf50' : '#633394',
-                            color: 'white',
-                            fontWeight: 600
-                          }}
-                        />
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                );
-              })}
-            </Grid>
           </Box>
 
           {/* Get Started Button */}
