@@ -388,36 +388,38 @@ const SignUpPage = () => {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        height: '100vh',
         display: 'flex',
         bgcolor: '#f5f5f7',
+        overflow: 'hidden',
       }}
     >
-      {/* Left panel – illustration placeholder */}
+      {/* Left panel – video */}
       <Box
         sx={{
           flex: 1,
           display: { xs: 'none', md: 'flex' },
-          alignItems: 'center',
-          justifyContent: 'center',
+          position: 'relative',
           bgcolor: '#e8e8ef',
+          overflow: 'hidden',
         }}
       >
-        <Box
-          sx={{
-            width: 220,
-            height: 180,
-            bgcolor: '#b0b8c9',
-            borderRadius: 4,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
           }}
         >
-          <Typography variant="body2" sx={{ color: '#fff' }}>
-            Illustration
-          </Typography>
-        </Box>
+          <source src="/invitation_video.webm" type="video/webm" />
+        </video>
       </Box>
 
       {/* Right panel – form */}
@@ -429,6 +431,7 @@ const SignUpPage = () => {
           justifyContent: 'center',
           p: 3,
           bgcolor: '#fff',
+          overflowY: 'auto',
         }}
       >
         <Container maxWidth="xs">
