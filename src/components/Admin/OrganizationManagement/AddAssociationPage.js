@@ -78,12 +78,12 @@ function AddAssociationPage() {
 
         // Validation
         if (!formData.name.trim()) {
-            setError('Association name is required');
+            setError('Denomination name is required');
             return;
         }
 
         if (!formData.organization_type) {
-            setError('Association type is required');
+            setError('Denomination type is required');
             return;
         }
 
@@ -100,7 +100,7 @@ function AddAssociationPage() {
             };
 
             await addOrganization(submitData);
-            setSuccess('Association added successfully!');
+            setSuccess('Denomination added successfully!');
 
             // Navigate back to associations page after a short delay
             setTimeout(() => {
@@ -131,14 +131,14 @@ function AddAssociationPage() {
     return (
         <>
             <InternalHeader
-                title="Add New Association"
+                title="Add New Denomination"
                 leftActions={
                     <Button
                         variant="outlined"
                         startIcon={<ArrowBackIcon />}
                         onClick={handleBack}
                     >
-                        Associations
+                        Denominations
                     </Button>
                 }
                 rightActions={
@@ -156,7 +156,7 @@ function AddAssociationPage() {
                             disabled={loading}
                             startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
                         >
-                            {loading ? 'Saving...' : 'Save Association'}
+                            {loading ? 'Saving...' : 'Save Denomination'}
                         </Button>
                     </Box>
                 }
@@ -187,21 +187,21 @@ function AddAssociationPage() {
                                 <TextField
                                     fullWidth
                                     required
-                                    label="Association Name"
+                                    label="Denomination Name"
                                     name="name"
                                     value={formData.name}
                                     onChange={handleChange}
-                                    placeholder="Enter association name"
+                                    placeholder="Enter denomination name"
                                 />
                             </Grid>
                             <Grid item xs={12} md={6}>
                                 <FormControl fullWidth required>
-                                    <InputLabel>Association Type</InputLabel>
+                                    <InputLabel>Denomination Type</InputLabel>
                                     <Select
                                         name="organization_type"
                                         value={formData.organization_type}
                                         onChange={handleChange}
-                                        label="Association Type"
+                                        label="Denomination Type"
                                     >
                                         {associationTypes.map(type => (
                                             <MenuItem key={type.value} value={type.value}>

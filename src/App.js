@@ -413,8 +413,8 @@ function Main({ isAuthenticated, userRole, login, logout }) {
             <AssociationsPage />
           </ProtectedRoute>
         } />
-        {/* Association Detail Page */}
-        <Route path="/association-management/:id" element={
+        {/* Denomination Detail Page */}
+        <Route path="/denomination-management/:id" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <AssociationDetailPage onLogout={logout} />
           </ProtectedRoute>

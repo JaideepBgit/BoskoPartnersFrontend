@@ -119,7 +119,7 @@ function AssociationsPage() {
     }, [organizations, searchQuery, filterType]);
 
     const handleOrganizationClick = (org) => {
-        navigate(`/association-management/${org.id}`);
+        navigate(`/denomination-management/${org.id}`);
     };
 
     const handleOpenAddPage = () => {
@@ -218,7 +218,7 @@ function AssociationsPage() {
         },
         {
             id: 'associationType',
-            label: 'Association Type',
+            label: 'Denomination Type',
             sortable: true,
             render: (org) => {
                 const typeColors = getTypeChipColor(org.organization_type?.type);
@@ -300,7 +300,7 @@ function AssociationsPage() {
                                 '&:hover': { backgroundColor: colors.secondary }
                             }}
                         >
-                            Add Association
+                            Add Denomination
                         </Button>
                         <RefreshButton
                             onClick={loadData}
@@ -354,7 +354,7 @@ function AssociationsPage() {
                                 }}
                                 startAdornment={<FilterListIcon sx={{ mr: 1, color: colors.textSecondary }} />}
                             >
-                                <MenuItem value="">All Association Types</MenuItem>
+                                <MenuItem value="">All Denomination Types</MenuItem>
                                 {associationTypeOptions.map((opt) => (
                                     <MenuItem key={opt.value} value={opt.value}>
                                         {opt.label}
@@ -408,7 +408,7 @@ function AssociationsPage() {
                             defaultSortDirection="asc"
                             sortValueGetter={sortValueGetter}
                             onRowClick={(org) => handleOrganizationClick(org)}
-                            emptyMessage="No associations found"
+                            emptyMessage="No denominations found"
                             paperSx={{ mb: 4 }}
                         />
                     </Box>
@@ -417,14 +417,14 @@ function AssociationsPage() {
                 {/* Bulk Delete Dialog */}
                 <Dialog open={openBulkDeleteDialog} onClose={() => !bulkDeleteLoading && setOpenBulkDeleteDialog(false)} maxWidth="sm" fullWidth>
                     <DialogTitle sx={{ backgroundColor: '#d32f2f', color: 'white' }}>
-                        Delete {selectedAssocIds.length} Association(s)
+                        Delete {selectedAssocIds.length} Denomination(s)
                     </DialogTitle>
                     <DialogContent sx={{ mt: 2 }}>
                         <Typography>
-                            Are you sure you want to delete <strong>{selectedAssocIds.length}</strong> association(s)?
+                            Are you sure you want to delete <strong>{selectedAssocIds.length}</strong> denomination(s)?
                         </Typography>
                         <Alert severity="error" sx={{ mt: 2 }}>
-                            This will permanently delete all selected associations along with their associated data. This action cannot be undone!
+                            This will permanently delete all selected denominations along with their associated data. This action cannot be undone!
                         </Alert>
                         <Box sx={{ mt: 2, maxHeight: 200, overflowY: 'auto' }}>
                             {filteredOrganizations

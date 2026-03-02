@@ -610,7 +610,7 @@ function AddOrganizationPage() {
 
                 // Navigate back to the appropriate detail page
                 if (fromAssociation && associationId) {
-                    navigate(`/association-management/${associationId}`);
+                    navigate(`/denomination-management/${associationId}`);
                 } else {
                     navigate(`/organization-management/${id}`);
                 }
@@ -656,7 +656,7 @@ function AddOrganizationPage() {
                             if (isEditMode) {
                                 // If editing and came from association, go back to association
                                 if (fromAssociation && associationId) {
-                                    navigate(`/association-management/${associationId}`);
+                                    navigate(`/denomination-management/${associationId}`);
                                 } else {
                                     navigate(`/organization-management/${id}`);
                                 }

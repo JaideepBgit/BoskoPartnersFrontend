@@ -353,7 +353,7 @@ function OrganizationDetailPage() {
             navigate('/association-organizations');
         } else if (fromAssociation && associationId) {
             // Navigate back to the association detail page
-            navigate(`/association-management/${associationId}`);
+            navigate(`/denomination-management/${associationId}`);
         } else {
             // Navigate to organizations list
             navigate('/organization-management');
@@ -1141,12 +1141,12 @@ function OrganizationDetailPage() {
                                 }}
                             >
                                 <HomeIcon sx={{ mr: 0.5, fontSize: 18 }} />
-                                Associations
+                                Denominations
                             </Link>
                             <Link
                                 component="button"
                                 variant="body2"
-                                onClick={() => navigate(`/association-management/${associationId}`)}
+                                onClick={() => navigate(`/denomination-management/${associationId}`)}
                                 sx={{
                                     display: 'inline-block',
                                     color: colors.textSecondary,

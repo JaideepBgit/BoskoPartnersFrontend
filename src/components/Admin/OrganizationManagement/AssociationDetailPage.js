@@ -373,7 +373,7 @@ function AssociationDetailPage() {
                         startIcon={<AddIcon />}
                         onClick={() => navigate('/organizations/add', {
                             state: {
-                                returnUrl: `/association-management/${id}`,
+                                returnUrl: `/denomination-management/${id}`,
                                 associationId: parseInt(id),
                                 associationName: association?.name
                             }

@@ -220,7 +220,8 @@ const Navbar = () => {
     if (user?.role === 'admin' || user?.role === 'root' || user?.role === 'manager' || user?.role === 'association') {
       const p = location.pathname.toLowerCase();
       // Simplified menu matching
-      if (p.includes('/management') || p.includes('/manager-management') || p.includes('/association-management')) setTabValue(13); // 13. Management
+      if (p.includes('/denomination-management')) setTabValue(7); // 7. Denominations (detail page)
+      else if (p.includes('/management') || p.includes('/manager-management') || p.includes('/association-management')) setTabValue(13); // 13. Management
       else if (p === '/dashboard') setTabValue(0);             // 0. KPI Dashboard
       else if (p.includes('/surveys-v2')) setTabValue(11);     // 11. Surveys V2
       else if (p.includes('/inventory') || p.includes('/association-inventory')) setTabValue(2);      // 2. Surveys
