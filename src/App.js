@@ -28,6 +28,7 @@ import VisualReportBuilder from './components/Admin/Reports/VisualReportBuilder'
 import ReportDocumentEditor from './components/Admin/Reports/ReportDocumentEditor';
 import AdminUserReports from './components/Admin/Reports/UserReports';
 import RoleBasedReports from './components/Reports/RoleBasedReports';
+import LandingPage from './components/LandingPages/LandingPage';
 import ContactReferralPage from './components/LandingPages/ContactReferralPage';
 import ContactReferralPageV2 from './components/LandingPages/ContactReferralPageV2';
 import ForgotPassword from './components/Login/ForgotPassword';
@@ -134,7 +135,7 @@ function Main({ isAuthenticated, userRole, login, logout }) {
   return (
     <div>
       <Routes>
-        <Route path="/" element={<LoginPage onLogin={login} />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage onLogin={login} />} />
         <Route path="/select-role" element={<RoleSelectionPage onLogin={login} />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
