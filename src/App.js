@@ -222,10 +222,10 @@ function Main({ isAuthenticated, userRole, login, logout }) {
           </ProtectedRoute>
         } />
 
-        {/* Redirect /profile to /surveys */}
+        {/* Profile Page - all roles */}
         <Route path="/profile" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
-            <Navigate to="/surveys" replace />
+            <AdminProfilePage />
           </ProtectedRoute>
         } />
         

@@ -75,5 +75,15 @@ const uploadAvatar = async (userId, file) => {
     }
 };
 
-const UserService = { loginUser, selectRole, fetchUser, updateProfile, uploadAvatar };
+const fetchUserOrganizations = async (userId) => {
+    try {
+        const response = await axios.get(`${BASE_URL}/users/${userId}/organizations`);
+        return response.data;
+    } catch (error) {
+        console.error("Failed to fetch user organizations: ", error.response || error.message);
+        throw error;
+    }
+};
+
+const UserService = { loginUser, selectRole, fetchUser, updateProfile, uploadAvatar, fetchUserOrganizations };
 export default UserService;

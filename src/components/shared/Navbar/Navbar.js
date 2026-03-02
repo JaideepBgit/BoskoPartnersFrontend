@@ -145,11 +145,7 @@ const Navbar = () => {
 
   // Get the correct profile route based on user role
   const getProfileRoute = () => {
-    if (!user?.role) return '/surveys';
-    if (user.role === 'admin' || user.role === 'root' || user.role === 'manager') {
-      return '/admin-profile';
-    }
-    return '/surveys';
+    return '/profile';
   };
 
   const getUserInitials = () => {

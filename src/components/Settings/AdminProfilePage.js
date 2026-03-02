@@ -23,7 +23,6 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import SaveIcon from '@mui/icons-material/Save';
 import UserService from '../../services/Login/UserService';
-import { fetchUserOrganizationalTitles } from '../../services/UserManagement/UserManagementService';
 
 const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 const SERVER_URL = BASE_URL.replace(/\/api$/, '');
@@ -42,6 +41,10 @@ const AdminProfilePage = () => {
   const [organizations, setOrganizations] = useState([]);
   const [saving, setSaving] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+
+  const isAdminRole = user?.role === 'admin' || user?.role === 'root' || user?.role === 'manager';
+  const backRoute = isAdminRole ? '/dashboard' : '/surveys';
+  const backLabel = isAdminRole ? 'Dashboard' : 'Surveys';
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
@@ -64,10 +67,10 @@ const AdminProfilePage = () => {
       // Use localStorage data as fallback
     });
 
-    // Fetch organizations
+    // Fetch organizations from user_roles
     const userId = parsed.id || parsed.user_id;
-    fetchUserOrganizationalTitles(userId).then((orgs) => {
-      setOrganizations(orgs || []);
+    UserService.fetchUserOrganizations(userId).then((orgs) => {
+      setOrganizations(Array.isArray(orgs) ? orgs : []);
     }).catch(() => {
       setOrganizations([]);
     });
@@ -186,9 +189,9 @@ const AdminProfilePage = () => {
           <Button
             variant="outlined"
             startIcon={<ArrowBackIcon />}
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate(backRoute)}
           >
-            Dashboard
+            {backLabel}
           </Button>
         }
         rightActions={
@@ -334,7 +337,7 @@ const AdminProfilePage = () => {
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                   {organizations.map((org) => (
                     <Box
-                      key={org.id}
+                      key={org.organization_id}
                       sx={{
                         display: 'flex',
                         justifyContent: 'space-between',
@@ -348,9 +351,9 @@ const AdminProfilePage = () => {
                         <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>
                           {org.organization_name || `Organization #${org.organization_id}`}
                         </Typography>
-                        {org.title_name && (
+                        {org.roles && org.roles.length > 0 && (
                           <Typography variant="caption" sx={{ color: '#888' }}>
-                            {org.title_name}
+                            {org.roles.map((r) => r.charAt(0).toUpperCase() + r.slice(1)).join(', ')}
                           </Typography>
                         )}
                       </Box>
