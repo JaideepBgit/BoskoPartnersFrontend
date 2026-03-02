@@ -150,7 +150,7 @@ const KpiDashboard = () => {
           <Grid item xs={12} md={5} sx={{ display: 'flex' }}>
             <Paper sx={{ p: 2.5, borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.05)', width: '100%' }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 700, color: '#633394' }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: '#000000' }}>
                   Survey Lifecycle Metrics
                 </Typography>
                 {(userRole === 'admin' || userRole === 'root') && (
@@ -205,7 +205,7 @@ const KpiDashboard = () => {
         <Grid container spacing={3} sx={{ mb: 3 }} alignItems="stretch">
           <Grid item xs={12} md={5} sx={{ display: 'flex' }}>
             <Paper sx={{ p: 2.5, borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.05)', width: '100%' }}>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, color: '#633394', mb: 2 }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, color: '#000000', mb: 2 }}>
                 Completion Status
               </Typography>
               <Box sx={{ width: '100%', height: 200 }}>
@@ -240,7 +240,7 @@ const KpiDashboard = () => {
         {showOrgBreakdown && data.organization_breakdown && data.organization_breakdown.length > 0 && (
           <Paper sx={{ p: 3, borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, mb: 2 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, color: adminColors.primary }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: '#000000' }}>
                 Organization Breakdown
               </Typography>
               <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>

@@ -32,7 +32,7 @@ const adminColors = {
     primary: '#633394',         // Primary purple from platform theme
     secondary: '#967CB2',       // Lighter purple for accents
     background: '#FFFFFF',      // White background
-    text: '#212121',            // Standard text color
+    text: '#000000',            // Black text color for headings
     headerBg: '#FAFAFA',        // Light gray for table header
     filledColor: '#633394',     // Primary purple for filled status
     notFilledColor: '#9e9e9e',  // Neutral gray for not filled status

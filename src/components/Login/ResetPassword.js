@@ -10,7 +10,7 @@ import {
   InputAdornment,
   IconButton
 } from '@mui/material';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link as RouterLink } from 'react-router-dom';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
@@ -168,7 +168,9 @@ const ResetPassword = () => {
           }}
         >
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
-            <img src={logoImage} alt="Saurara Logo" style={{ maxWidth: '180px', height: 'auto' }} />
+            <RouterLink to="/">
+              <img src={logoImage} alt="Saurara Logo" style={{ maxWidth: '180px', height: 'auto' }} />
+            </RouterLink>
           </Box>
 
           <Typography variant="h5" align="center" gutterBottom sx={{ color: '#212121', fontWeight: 'bold' }}>

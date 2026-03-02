@@ -17,7 +17,7 @@ import BlankSurveyBuilderPage from './components/Admin/Inventory/BlankSurveyBuil
 import UseTemplateSurveyBuilderPage from './components/Admin/Inventory/UseTemplateSurveyBuilderPage';
 import UploadSurveyDocumentPage from './components/Admin/Inventory/UploadSurveyDocumentPage';
 import UserManagementMain from './components/UserManagement/UserManagementMain';
-import SurveysPage from './components/Surveys/SurveysPage';
+
 import SurveyIntro from './components/Survey/SurveyIntro';
 import SurveyJoinPage from './components/Survey/SurveyJoinPage';
 import SurveyOverview from './components/Survey/SurveyOverview';
@@ -79,7 +79,7 @@ function RoleBasedKpiDashboard() {
   const userRole = localStorage.getItem('userRole');
 
   if (userRole === 'user') {
-    return <Navigate to="/profile" replace />;
+    return <Navigate to="/surveys" replace />;
   }
 
   // Admin, root, manager, association all see the unified KPI dashboard
@@ -222,10 +222,10 @@ function Main({ isAuthenticated, userRole, login, logout }) {
           </ProtectedRoute>
         } />
 
-        {/* User Profile Route - for user details management */}
+        {/* Redirect /profile to /surveys */}
         <Route path="/profile" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
-            <UserDashboard onLogout={logout} />
+            <Navigate to="/surveys" replace />
           </ProtectedRoute>
         } />
         
@@ -324,10 +324,10 @@ function Main({ isAuthenticated, userRole, login, logout }) {
         } />
 
 
-        {/* Surveys Route */}
+        {/* Surveys Route - Main landing page for respondents */}
         <Route path="/surveys" element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
-            <SurveysPage onLogout={logout} />
+            <UserDashboard onLogout={logout} />
           </ProtectedRoute>
         } />
 

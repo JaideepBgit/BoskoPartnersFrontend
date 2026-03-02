@@ -50,7 +50,7 @@ const SurveyCompletionGuidance = ({
     if (onNavigateToProfile) {
       onNavigateToProfile();
     } else {
-      navigate('/profile');
+      navigate('/surveys');
     }
   };
 

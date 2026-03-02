@@ -9,7 +9,7 @@ import {
   Alert,
   CircularProgress
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const ForgotPassword = () => {
@@ -96,7 +96,9 @@ const ForgotPassword = () => {
           }}
         >
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
-            <img src={logoImage} alt="Saurara Logo" style={{ maxWidth: '180px', height: 'auto' }} />
+            <RouterLink to="/">
+              <img src={logoImage} alt="Saurara Logo" style={{ maxWidth: '180px', height: 'auto' }} />
+            </RouterLink>
           </Box>
 
           <Typography variant="h5" align="center" gutterBottom sx={{ color: '#212121', fontWeight: 'bold' }}>

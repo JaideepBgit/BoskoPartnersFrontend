@@ -281,7 +281,7 @@ const SurveyTaking = () => {
 
   const handleNavigateToProfile = () => {
     setShowCompletionGuidance(false);
-    navigate('/profile', { state: { fromSurveyCompletion: true } });
+    navigate('/surveys', { state: { fromSurveyCompletion: true } });
   };
 
   const handlePreviousQuestion = () => {

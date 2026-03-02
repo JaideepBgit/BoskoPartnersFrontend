@@ -212,9 +212,9 @@ const FormContainer = () => {
         action: 'exit'
       });
       
-      alert('Form data saved successfully! Redirecting to your profile...');
-      // Redirect to user profile
-      navigate('/profile');
+      alert('Form data saved successfully! Redirecting to your surveys...');
+      // Redirect to surveys
+      navigate('/surveys');
     } catch (error) {
       console.error('Error saving form data:', error);
       alert('Failed to save form data. Your data has been saved locally.');
@@ -240,9 +240,9 @@ const FormContainer = () => {
           form_data: formData
         });
         
-        alert('Form submitted successfully! Redirecting to your profile...');
-        // Redirect to user profile after successful submission
-        navigate('/profile');
+        alert('Form submitted successfully! Redirecting to your surveys...');
+        // Redirect to surveys after successful submission
+        navigate('/surveys');
       } catch (error) {
         console.error('Error submitting form:', error);
         alert('Failed to submit form. Please try again.');

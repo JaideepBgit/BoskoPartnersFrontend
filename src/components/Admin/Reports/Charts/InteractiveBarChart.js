@@ -93,7 +93,7 @@ const InteractiveBarChart = ({
 
     return (
         <Paper sx={{ p: 3, borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
-            {title && <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, color: '#633394' }}>{title}</Typography>}
+            {title && <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, color: '#000000' }}>{title}</Typography>}
             <Box sx={{ width: '100%', height: height }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart

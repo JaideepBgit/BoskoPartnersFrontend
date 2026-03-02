@@ -33,7 +33,7 @@ const managerColors = {
     headerBg: '#FAFAFA', // Light gray for users table
     borderColor: '#e0e0e0',
     highlightBg: '#f3e5f5',
-    text: '#212121'
+    text: '#000000'
 };
 
 function ManagerDashboard({ onLogout }) {
@@ -554,7 +554,7 @@ function ManagerDashboard({ onLogout }) {
                     <Grid item xs={12}>
                         <Card sx={{ boxShadow: '0 4px 20px rgba(0,0,0,0.05)', borderRadius: 2 }}>
                             <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${managerColors.borderColor} ` }}>
-                                <Typography variant="h6" sx={{ fontWeight: 'bold', color: managerColors.primary }}>
+                                <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#000000' }}>
                                     Organization Users
                                 </Typography>
                                 <Button

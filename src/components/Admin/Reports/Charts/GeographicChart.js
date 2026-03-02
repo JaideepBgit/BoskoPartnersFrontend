@@ -10,7 +10,7 @@ const GeographicChart = ({ title, data, height = 300 }) => {
   if (!data || Object.keys(data).length === 0) {
     return (
       <Paper sx={{ p: 3, height: height, borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, color: '#633394' }}>{title}</Typography>
+        <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, color: '#000000' }}>{title}</Typography>
         <Typography color="text.secondary">No data available</Typography>
       </Paper>
     );
@@ -26,7 +26,7 @@ const GeographicChart = ({ title, data, height = 300 }) => {
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <PublicIcon sx={{ color: '#633394' }} />
-          <Typography variant="h6" sx={{ fontWeight: 700, color: '#633394' }}>{title}</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: '#000000' }}>{title}</Typography>
         </Box>
         <Tooltip title="View on map">
           <IconButton

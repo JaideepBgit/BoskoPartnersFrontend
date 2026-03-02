@@ -20,7 +20,7 @@ import {
   Security as RootIcon,
   Badge as OtherIcon
 } from '@mui/icons-material';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import UserService from '../../services/Login/UserService';
 
 const RoleSelectionPage = ({ onLogin }) => {
@@ -170,7 +170,9 @@ const RoleSelectionPage = ({ onLogin }) => {
       <Container maxWidth="md">
         {/* Logo and Header */}
         <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <img src={logoImage} alt="Saurara Logo" style={{ maxWidth: '200px', height: 'auto', marginBottom: '16px' }} />
+          <RouterLink to="/">
+            <img src={logoImage} alt="Saurara Logo" style={{ maxWidth: '200px', height: 'auto', marginBottom: '16px' }} />
+          </RouterLink>
           <Typography variant="h4" sx={{ color: '#333', fontWeight: 'bold', mb: 1 }}>
             Welcome, {pendingUserData?.firstname || pendingUserData?.username}!
           </Typography>

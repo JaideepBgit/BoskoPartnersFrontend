@@ -41,5 +41,39 @@ const selectRole = async (userId, selectedRole, organizationId = null) => {
     }
 };
 
-const UserService = { loginUser, selectRole };
+const fetchUser = async (userId) => {
+    try {
+        const response = await axios.get(`${BASE_URL}/users/${userId}`);
+        return response.data;
+    } catch (error) {
+        console.error("Failed to fetch user: ", error.response || error.message);
+        throw error;
+    }
+};
+
+const updateProfile = async (userId, profileData) => {
+    try {
+        const response = await axios.put(`${BASE_URL}/users/${userId}`, profileData);
+        return response.data;
+    } catch (error) {
+        console.error("Failed to update profile: ", error.response || error.message);
+        throw error;
+    }
+};
+
+const uploadAvatar = async (userId, file) => {
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await axios.post(`${BASE_URL}/users/${userId}/avatar`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Failed to upload avatar: ", error.response || error.message);
+        throw error;
+    }
+};
+
+const UserService = { loginUser, selectRole, fetchUser, updateProfile, uploadAvatar };
 export default UserService;

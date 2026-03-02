@@ -6,7 +6,7 @@ const UserLandingPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    navigate('/profile', { replace: true });
+    navigate('/surveys', { replace: true });
   }, [navigate]);
 
   return null;

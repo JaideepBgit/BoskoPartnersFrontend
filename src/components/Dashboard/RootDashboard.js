@@ -36,7 +36,7 @@ const rootColors = {
     warning: '#967CB2',       // Using secondary purple for warnings
     error: '#633394',         // Using primary purple for destructive actions  
     background: '#FFFFFF',    // Background from platform
-    text: '#212121',          // Text color
+    text: '#000000',          // Black text color for headings
     headerBg: '#FAFAFA',      // Light purple for table header (from platform)
     cardBg: '#ffffff',        // Card background
     borderColor: '#e0e0e0',   // Border color
@@ -694,7 +694,7 @@ function RootDashboard() {
 
                 {/* Quick Actions */}
                 <Paper sx={{ p: 3, mb: 4, boxShadow: 2 }}>
-                    <Typography variant="h6" sx={{ mb: 2, color: rootColors.primary, fontWeight: 600 }}>
+                    <Typography variant="h6" sx={{ mb: 2, color: '#000000', fontWeight: 600 }}>
                         Quick Actions
                     </Typography>
                     <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>

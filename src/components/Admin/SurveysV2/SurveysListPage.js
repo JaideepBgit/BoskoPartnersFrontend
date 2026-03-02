@@ -85,11 +85,11 @@ const SurveysListPage = () => {
       status: t.status || 'draft',
       startDate: t.created_at,
       endDate: null,
-      responses: 0,
-      invitations: 0,
+      responses: t.response_count || 0,
+      invitations: t.invitation_count || 0,
       organization: t.organization_name || (t.organization_names || []).join(', ') || '-',
       organizationId: (t.organization_ids || [])[0] || null,
-      association: '-',
+      association: t.denomination || '-',
       createdAt: t.created_at,
       description: t.description || '',
     }));
@@ -104,8 +104,7 @@ const SurveysListPage = () => {
         const term = searchTerm.toLowerCase();
         const match = row.name.toLowerCase().includes(term) ||
           row.organization.toLowerCase().includes(term) ||
-          row.association.toLowerCase().includes(term) ||
-          row.surveyCode.toLowerCase().includes(term);
+          row.association.toLowerCase().includes(term);
         if (!match) return false;
       }
       if (filterOrganization && row.organization !== filterOrganization) return false;
@@ -238,7 +237,7 @@ const SurveysListPage = () => {
         {/* Search & Filters */}
         <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
           <TextField
-            placeholder="Search by survey name, organization, or association"
+            placeholder="Search by survey name, organization, or denomination"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             size="small"
@@ -251,10 +250,10 @@ const SurveysListPage = () => {
             }}
           />
           <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>Association</InputLabel>
+            <InputLabel>Denomination</InputLabel>
             <Select
               value={filterAssociation}
-              label="Association"
+              label="Denomination"
               onChange={(e) => setFilterAssociation(e.target.value)}
               sx={{ backgroundColor: 'white', borderRadius: 2 }}
             >
@@ -318,7 +317,7 @@ const SurveysListPage = () => {
                     </TableSortLabel>
                   </TableCell>
                   <TableCell sx={{ fontWeight: 600, color: '#555', textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                    Association
+                    Denomination
                   </TableCell>
                   <TableCell sx={{ fontWeight: 600, color: '#555', textTransform: 'uppercase', fontSize: '0.75rem' }}>
                     <TableSortLabel active={orderBy === 'createdAt'} direction={orderBy === 'createdAt' ? order : 'asc'} onClick={() => handleSort('createdAt')}>

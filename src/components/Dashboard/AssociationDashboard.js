@@ -20,7 +20,7 @@ const colors = {
     secondary: '#967CB2',
     background: '#f5f5f5',
     cardBg: '#ffffff',
-    text: '#212121',
+    text: '#000000',
     textSecondary: '#757575',
     headerBg: '#FAFAFA',
     borderColor: '#e0e0e0',

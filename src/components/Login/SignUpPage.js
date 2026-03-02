@@ -12,7 +12,7 @@ import {
   IconButton,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import SignUpService from '../../services/Login/SignUpService';
 
 const logoImage = process.env.PUBLIC_URL + '/assets/saurara-high-resolution-logo-transparent.png';
@@ -55,7 +55,9 @@ function EmailStep({ onNext }) {
   return (
     <Box component="form" onSubmit={handleContinue}>
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-        <img src={logoImage} alt="Saurara Logo" style={{ maxWidth: '160px', height: 'auto' }} />
+        <RouterLink to="/">
+          <img src={logoImage} alt="Saurara Logo" style={{ maxWidth: '160px', height: 'auto' }} />
+        </RouterLink>
       </Box>
 
       <Typography variant="h5" align="center" gutterBottom sx={{ fontWeight: 'bold', color: '#212121' }}>
@@ -104,11 +106,9 @@ function EmailStep({ onNext }) {
       <Typography variant="body2" align="center" sx={{ mt: 3 }}>
         Already have an account?{' '}
         <Link
-          component="button"
-          type="button"
+          href="/login"
           underline="hover"
           sx={{ color: '#633394', fontWeight: 500 }}
-          onClick={() => onNext('signin', { email })}
         >
           Sign In
         </Link>
@@ -283,6 +283,12 @@ function SignInStep({ email, onBack }) {
 
   return (
     <Box component="form" onSubmit={handleSignIn}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+        <RouterLink to="/">
+          <img src={logoImage} alt="Saurara Logo" style={{ maxWidth: '160px', height: 'auto' }} />
+        </RouterLink>
+      </Box>
+
       <Typography variant="h5" align="center" gutterBottom sx={{ fontWeight: 'bold', color: '#212121' }}>
         Sign In
       </Typography>
@@ -345,6 +351,19 @@ function SignInStep({ email, onBack }) {
         <Link href="#" underline="hover">Terms of Service</Link>,{' '}
         <Link href="#" underline="hover">Privacy Policy</Link>, and{' '}
         <Link href="#" underline="hover">Cookie Use</Link>.
+      </Typography>
+
+      <Typography variant="body2" align="center" sx={{ mt: 3 }}>
+        Don't have an account?{' '}
+        <Link
+          component="button"
+          type="button"
+          underline="hover"
+          sx={{ color: '#633394', fontWeight: 500 }}
+          onClick={onBack}
+        >
+          Request one
+        </Link>
       </Typography>
     </Box>
   );

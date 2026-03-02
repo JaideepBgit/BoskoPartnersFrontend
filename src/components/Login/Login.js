@@ -9,22 +9,26 @@ import {
   Box,
   Link,
   Alert,
-  CircularProgress
+  CircularProgress,
+  InputAdornment,
+  IconButton,
 } from '@mui/material';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import UserService from '../../services/Login/UserService';
+
+const logoImage = process.env.PUBLIC_URL + '/assets/saurara-high-resolution-logo-transparent.png';
 
 const LoginPage = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
-
-  const logoImage = process.env.PUBLIC_URL + '/assets/saurara-high-resolution-logo-transparent.png';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -46,7 +50,6 @@ const LoginPage = ({ onLogin }) => {
       console.log('Available roles:', userData.available_roles);
       console.log('Requires role selection:', response.requires_role_selection);
 
-      // Check if user has multiple roles
       // Check if user has multiple roles (or same role in multiple contexts)
       if (response.requires_role_selection) {
         // Navigate to role selection page
@@ -132,49 +135,64 @@ const LoginPage = ({ onLogin }) => {
   };
 
   return (
-    <>
+    <Box
+      sx={{
+        height: '100vh',
+        display: 'flex',
+        bgcolor: '#f5f5f7',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Left panel – video */}
       <Box
         sx={{
-          background: 'linear-gradient(135deg, #3B1C55 0%, #633394 25%, #61328E 50%, #967CB2 75%, #FBFAFA 100%)',
-          height: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          flex: 1,
+          display: { xs: 'none', md: 'flex' },
           position: 'relative',
-          '&::before': {
-            content: '""',
+          bgcolor: '#e8e8ef',
+          overflow: 'hidden',
+        }}
+      >
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          style={{
             position: 'absolute',
             top: 0,
             left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'radial-gradient(ellipse at top left, rgba(59, 28, 85, 0.1) 0%, transparent 50%), radial-gradient(ellipse at bottom right, rgba(150, 124, 178, 0.1) 0%, transparent 50%)',
-            pointerEvents: 'none'
-          }
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+          }}
+        >
+          <source src="/invitation_video.webm" type="video/webm" />
+        </video>
+      </Box>
+
+      {/* Right panel – form */}
+      <Box
+        sx={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 3,
+          bgcolor: '#fff',
+          overflowY: 'auto',
         }}
       >
-        <Container maxWidth="xs" sx={{ display: 'flex', alignItems: 'center', height: '100vh' }}>
-          <Box
-            component="form"
-            onSubmit={handleSubmit}
-            sx={{
-              width: '100%',
-              bgcolor: 'rgba(255, 255, 255, 0.95)',
-              backdropFilter: 'blur(10px)',
-              p: 4,
-              boxShadow: '0 20px 40px rgba(59, 28, 85, 0.15)',
-              borderRadius: 3,
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              position: 'relative',
-              zIndex: 1
-            }}
-          >
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
-              <img src={logoImage} alt="Saurara Logo" style={{ maxWidth: '180px', height: 'auto' }} />
+        <Container maxWidth="xs">
+          <Box component="form" onSubmit={handleSubmit}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+              <RouterLink to="/">
+                <img src={logoImage} alt="Saurara Logo" style={{ maxWidth: '160px', height: 'auto' }} />
+              </RouterLink>
             </Box>
 
-            <Typography variant="h5" align="center" gutterBottom sx={{ color: '#212121', fontWeight: 'bold' }}>
-              Login
+            <Typography variant="h5" align="center" gutterBottom sx={{ fontWeight: 'bold', color: '#212121' }}>
+              Sign In
             </Typography>
 
             {error && (
@@ -190,26 +208,34 @@ const LoginPage = ({ onLogin }) => {
             )}
 
             <TextField
-              label="Username or Email"
+              label="Username or email address"
               variant="outlined"
               fullWidth
               margin="normal"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
+              autoFocus
               disabled={loading}
             />
 
             <TextField
-              label="Password"
-              type="password"
+              label="Your password"
               variant="outlined"
               fullWidth
               margin="normal"
+              type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
               disabled={loading}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowPassword((s) => !s)} edge="end">
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
 
             <Button
@@ -220,17 +246,26 @@ const LoginPage = ({ onLogin }) => {
               sx={{
                 mt: 2,
                 backgroundColor: '#633394',
-                '&:hover': { backgroundColor: '#967CB2' },
-                py: 1.25,
+                '&:hover': { backgroundColor: '#4e2474' },
+                py: 1.4,
                 fontSize: '1rem',
+                textTransform: 'none',
+                borderRadius: 2,
               }}
             >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Log In'}
+              {loading ? <CircularProgress size={22} color="inherit" /> : 'Sign In'}
             </Button>
+
+            <Typography variant="caption" display="block" align="center" sx={{ mt: 2, color: 'text.secondary' }}>
+              By continuing, you agree to our{' '}
+              <Link href="#" underline="hover">Terms of Service</Link>,{' '}
+              <Link href="#" underline="hover">Privacy Policy</Link>, and{' '}
+              <Link href="#" underline="hover">Cookie Use</Link>.
+            </Typography>
 
             <Typography variant="body2" align="center" sx={{ mt: 2 }}>
               Forgot your password?{' '}
-              <Link href="/forgot-password" underline="hover">
+              <Link href="/forgot-password" underline="hover" sx={{ color: '#633394', fontWeight: 500 }}>
                 Click here
               </Link>
             </Typography>
@@ -238,13 +273,13 @@ const LoginPage = ({ onLogin }) => {
             <Typography variant="body2" align="center" sx={{ mt: 1 }}>
               Don't have an account?{' '}
               <Link href="/signup" underline="hover" sx={{ color: '#633394', fontWeight: 500 }}>
-                Sign Up
+                Request one
               </Link>
             </Typography>
           </Box>
         </Container>
       </Box>
-    </>
+    </Box>
   );
 };
 

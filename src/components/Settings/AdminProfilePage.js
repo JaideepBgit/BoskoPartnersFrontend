@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Container,
@@ -7,282 +7,378 @@ import {
   CardContent,
   Grid,
   Avatar,
-  Chip,
-  Divider,
   Button,
-  Paper,
+  TextField,
+  CircularProgress,
+  Snackbar,
+  Alert,
+  Divider,
   useMediaQuery,
   useTheme,
+  IconButton,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import InternalHeader from '../shared/Headers/InternalHeader';
-import EmailIcon from '@mui/icons-material/Email';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import PersonIcon from '@mui/icons-material/Person';
-import BadgeIcon from '@mui/icons-material/Badge';
-import BusinessIcon from '@mui/icons-material/Business';
-import SecurityIcon from '@mui/icons-material/Security';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import SaveIcon from '@mui/icons-material/Save';
+import UserService from '../../services/Login/UserService';
+import { fetchUserOrganizationalTitles } from '../../services/UserManagement/UserManagementService';
+
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const SERVER_URL = BASE_URL.replace(/\/api$/, '');
 
 const AdminProfilePage = () => {
-  const [user, setUser] = useState(null);
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const fileInputRef = useRef(null);
+
+  const [user, setUser] = useState(null);
+  const [formData, setFormData] = useState({ firstname: '', lastname: '', title: '' });
+  const [originalData, setOriginalData] = useState({ firstname: '', lastname: '', title: '' });
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [organizations, setOrganizations] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
-    if (stored) {
-      setUser(JSON.parse(stored));
-    } else {
+    if (!stored) {
       navigate('/login');
+      return;
     }
+    const parsed = JSON.parse(stored);
+    setUser(parsed);
+    initForm(parsed);
+
+    // Fetch fresh user data from API
+    UserService.fetchUser(parsed.id || parsed.user_id).then((fresh) => {
+      setUser((prev) => ({ ...prev, ...fresh }));
+      initForm(fresh);
+      if (fresh.avatar_url) {
+        setAvatarPreview(`${SERVER_URL}${fresh.avatar_url}`);
+      }
+    }).catch(() => {
+      // Use localStorage data as fallback
+    });
+
+    // Fetch organizations
+    const userId = parsed.id || parsed.user_id;
+    fetchUserOrganizationalTitles(userId).then((orgs) => {
+      setOrganizations(orgs || []);
+    }).catch(() => {
+      setOrganizations([]);
+    });
   }, [navigate]);
 
-  if (!user) return null;
+  const initForm = (userData) => {
+    const data = {
+      firstname: userData.firstname || userData.firstName || userData.first_name || '',
+      lastname: userData.lastname || userData.lastName || userData.last_name || '',
+      title: userData.title || '',
+    };
+    setFormData(data);
+    setOriginalData(data);
+  };
+
+  const isDirty =
+    formData.firstname !== originalData.firstname ||
+    formData.lastname !== originalData.lastname ||
+    formData.title !== originalData.title ||
+    avatarFile !== null;
+
+  const getInitials = () => {
+    const first = formData.firstname || '';
+    const last = formData.lastname || '';
+    if (first && last) return (first[0] + last[0]).toUpperCase();
+    if (first) return first.substring(0, 2).toUpperCase();
+    if (user?.username) return user.username.substring(0, 2).toUpperCase();
+    return 'U';
+  };
 
   const getDisplayName = () => {
-    if (user.firstname && user.lastname) return `${user.firstname} ${user.lastname}`;
-    if (user.firstName && user.lastName) return `${user.firstName} ${user.lastName}`;
-    if (user.first_name && user.last_name) return `${user.first_name} ${user.last_name}`;
-    if (user.name) return user.name;
-    if (user.username) return user.username;
+    if (formData.firstname && formData.lastname) return `${formData.firstname} ${formData.lastname}`;
+    if (user?.username) return user.username;
     return 'User';
   };
 
-  const getInitials = () => {
-    const name = getDisplayName();
-    const parts = name.split(' ').filter(Boolean);
-    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    return name.substring(0, 2).toUpperCase();
+  const handleFieldChange = (field) => (e) => {
+    setFormData((prev) => ({ ...prev, [field]: e.target.value }));
   };
 
-  const getRoleLabel = () => {
-    if (!user.role) return 'Unknown';
-    const roleMap = {
-      admin: 'Administrator',
-      root: 'Root Administrator',
-      manager: 'Manager',
-      user: 'User',
-    };
-    return roleMap[user.role] || user.role.charAt(0).toUpperCase() + user.role.slice(1);
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
   };
 
-  const getRoleColor = () => {
-    switch (user.role) {
-      case 'root': return '#d32f2f';
-      case 'admin': return '#633394';
-      case 'manager': return '#1565c0';
-      default: return '#2e7d32';
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setSnackbar({ open: true, message: 'Please select a PNG, JPG, GIF, or WebP image.', severity: 'error' });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setSnackbar({ open: true, message: 'Image must be smaller than 5MB.', severity: 'error' });
+      return;
+    }
+
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  };
+
+  const handleSave = async () => {
+    if (!user) return;
+    setSaving(true);
+    const userId = user.id || user.user_id;
+
+    try {
+      // Upload avatar if changed
+      let newAvatarUrl = user.avatar_url;
+      if (avatarFile) {
+        const avatarRes = await UserService.uploadAvatar(userId, avatarFile);
+        newAvatarUrl = avatarRes.avatar_url;
+      }
+
+      // Update profile fields
+      await UserService.updateProfile(userId, {
+        firstname: formData.firstname,
+        lastname: formData.lastname,
+        title: formData.title,
+      });
+
+      // Update localStorage
+      const updatedUser = {
+        ...user,
+        firstname: formData.firstname,
+        lastname: formData.lastname,
+        title: formData.title,
+        avatar_url: newAvatarUrl,
+      };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+
+      setOriginalData({ ...formData });
+      setAvatarFile(null);
+      if (newAvatarUrl) {
+        setAvatarPreview(`${SERVER_URL}${newAvatarUrl}`);
+      }
+
+      setSnackbar({ open: true, message: 'Profile updated successfully.', severity: 'success' });
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Failed to update profile.';
+      setSnackbar({ open: true, message: msg, severity: 'error' });
+    } finally {
+      setSaving(false);
     }
   };
 
-  const getDashboardPath = () => {
-    return '/dashboard';
-  };
-
-  const profileFields = [
-    {
-      label: 'Full Name',
-      value: getDisplayName(),
-      icon: <PersonIcon sx={{ color: '#633394' }} />,
-    },
-    {
-      label: 'Username',
-      value: user.username || 'Not set',
-      icon: <BadgeIcon sx={{ color: '#633394' }} />,
-    },
-    {
-      label: 'Email',
-      value: user.email || 'Not set',
-      icon: <EmailIcon sx={{ color: '#633394' }} />,
-    },
-    {
-      label: 'Title',
-      value: user.title || 'Not set',
-      icon: <AdminPanelSettingsIcon sx={{ color: '#633394' }} />,
-    },
-    {
-      label: 'Organization ID',
-      value: user.organization_id ? `#${user.organization_id}` : 'Not assigned',
-      icon: <BusinessIcon sx={{ color: '#633394' }} />,
-    },
-  ];
+  if (!user) return null;
 
   return (
     <>
       <InternalHeader
-        title="My Profile"
+        title="Profile"
         leftActions={
           <Button
             variant="outlined"
             startIcon={<ArrowBackIcon />}
-            onClick={() => navigate(getDashboardPath())}
+            onClick={() => navigate('/dashboard')}
           >
             Dashboard
           </Button>
         }
+        rightActions={
+          <Button
+            variant="contained"
+            startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+            onClick={handleSave}
+            disabled={!isDirty || saving}
+          >
+            Save
+          </Button>
+        }
       />
+
       <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5', pt: 2 }}>
+        <Container maxWidth="sm" sx={{ mt: 4, mb: 4, px: isMobile ? 2 : 3 }}>
 
-      <Container maxWidth="md" sx={{ mt: 4, mb: 4, px: isMobile ? 2 : 3 }}>
-        {/* Profile Header Card */}
-        <Card
-          sx={{
-            mb: 3,
-            borderRadius: '16px',
-            overflow: 'visible',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-          }}
-        >
-          <Box
+          {/* Account Information Card */}
+          <Card
             sx={{
-              background: 'linear-gradient(135deg, #633394 0%, #8e5cc5 100%)',
-              height: 120,
-              borderRadius: '16px 16px 0 0',
-              position: 'relative',
+              mb: 3,
+              borderRadius: '16px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
             }}
-          />
-          <CardContent sx={{ pt: 0, px: isMobile ? 2 : 4, pb: 3, position: 'relative' }}>
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: isMobile ? 'column' : 'row',
-                alignItems: isMobile ? 'center' : 'flex-end',
-                gap: 2,
-                mt: '-50px',
-              }}
-            >
-              <Avatar
-                sx={{
-                  width: 100,
-                  height: 100,
-                  bgcolor: '#e8dff0',
-                  color: '#633394',
-                  fontSize: '2rem',
-                  fontWeight: 700,
-                  border: '4px solid #fff',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                }}
-              >
-                {getInitials()}
-              </Avatar>
-              <Box sx={{ flex: 1, textAlign: isMobile ? 'center' : 'left', mb: 1 }}>
-                <Typography variant="h5" sx={{ fontWeight: 700, color: '#333' }}>
-                  {getDisplayName()}
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: isMobile ? 'center' : 'flex-start', mt: 0.5 }}>
-                  <Chip
-                    icon={<SecurityIcon sx={{ fontSize: 16 }} />}
-                    label={getRoleLabel()}
-                    size="small"
+          >
+            <CardContent sx={{ p: isMobile ? 2 : 4 }}>
+              {/* Centered Avatar */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
+                <Box sx={{ position: 'relative', mb: 1.5 }}>
+                  <Avatar
+                    src={avatarPreview || undefined}
                     sx={{
-                      bgcolor: getRoleColor(),
-                      color: '#fff',
-                      fontWeight: 600,
-                      '& .MuiChip-icon': { color: '#fff' },
+                      width: 100,
+                      height: 100,
+                      bgcolor: '#e8dff0',
+                      color: '#633394',
+                      fontSize: '2rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      border: '3px solid #e8dff0',
                     }}
-                  />
-                  {user.available_roles && user.available_roles.length > 1 && (
-                    <Chip
-                      label={`${user.available_roles.length} roles`}
-                      size="small"
-                      variant="outlined"
-                      sx={{ color: '#888', borderColor: '#ccc' }}
-                    />
-                  )}
-                </Box>
-              </Box>
-            </Box>
-          </CardContent>
-        </Card>
-
-        {/* Profile Details Card */}
-        <Card
-          sx={{
-            mb: 3,
-            borderRadius: '16px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-          }}
-        >
-          <CardContent sx={{ p: isMobile ? 2 : 3 }}>
-            <Typography
-              variant="h6"
-              sx={{ fontWeight: 600, color: '#333', mb: 2 }}
-            >
-              Account Information
-            </Typography>
-            <Divider sx={{ mb: 2 }} />
-
-            <Grid container spacing={2}>
-              {profileFields.map((field, index) => (
-                <Grid item xs={12} sm={6} key={index}>
-                  <Box
+                    onClick={handleAvatarClick}
+                  >
+                    {!avatarPreview && getInitials()}
+                  </Avatar>
+                  <IconButton
+                    size="small"
+                    onClick={handleAvatarClick}
                     sx={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: 1.5,
-                      p: 1.5,
-                      borderRadius: '10px',
-                      backgroundColor: '#fafafa',
+                      position: 'absolute',
+                      bottom: 0,
+                      right: 0,
+                      bgcolor: '#633394',
+                      color: '#fff',
+                      width: 30,
+                      height: 30,
+                      '&:hover': { bgcolor: '#7b4db5' },
                     }}
                   >
-                    <Box sx={{ mt: 0.3 }}>{field.icon}</Box>
-                    <Box>
-                      <Typography
-                        variant="caption"
-                        sx={{ color: '#999', fontWeight: 500, display: 'block' }}
-                      >
-                        {field.label}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: '#333',
-                          fontWeight: 500,
-                          wordBreak: 'break-word',
-                        }}
-                      >
-                        {field.value}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Grid>
-              ))}
-            </Grid>
-
-            {/* Available Roles */}
-            {user.available_roles && user.available_roles.length > 0 && (
-              <Box sx={{ mt: 3 }}>
-                <Typography
-                  variant="body2"
-                  sx={{ color: '#999', fontWeight: 500, mb: 1 }}
-                >
-                  Available Roles
+                    <CameraAltIcon sx={{ fontSize: 16 }} />
+                  </IconButton>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleAvatarChange}
+                    accept="image/png,image/jpeg,image/gif,image/webp"
+                    style={{ display: 'none' }}
+                  />
+                </Box>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: '#333' }}>
+                  {getDisplayName()}
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                  {user.available_roles.map((role) => (
-                    <Chip
-                      key={role}
-                      label={role.charAt(0).toUpperCase() + role.slice(1)}
-                      size="small"
-                      variant={role === user.role ? 'filled' : 'outlined'}
+              </Box>
+
+              <Divider sx={{ mb: 3 }} />
+
+              {/* Editable Fields */}
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="First Name"
+                    value={formData.firstname}
+                    onChange={handleFieldChange('firstname')}
+                    fullWidth
+                    variant="outlined"
+                    size="small"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Last Name"
+                    value={formData.lastname}
+                    onChange={handleFieldChange('lastname')}
+                    fullWidth
+                    variant="outlined"
+                    size="small"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Title"
+                    value={formData.title}
+                    onChange={handleFieldChange('title')}
+                    fullWidth
+                    variant="outlined"
+                    size="small"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Email"
+                    value={user.email || ''}
+                    fullWidth
+                    variant="outlined"
+                    size="small"
+                    disabled
+                    helperText="Email cannot be changed"
+                  />
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+
+          {/* Organizations Card */}
+          <Card
+            sx={{
+              mb: 3,
+              borderRadius: '16px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            }}
+          >
+            <CardContent sx={{ p: isMobile ? 2 : 4 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600, color: '#333', mb: 2 }}>
+                Organizations
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+
+              {organizations.length === 0 ? (
+                <Typography variant="body2" sx={{ color: '#999', textAlign: 'center', py: 2 }}>
+                  No organization affiliations
+                </Typography>
+              ) : (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                  {organizations.map((org) => (
+                    <Box
+                      key={org.id}
                       sx={{
-                        ...(role === user.role
-                          ? { bgcolor: '#633394', color: '#fff' }
-                          : { color: '#633394', borderColor: '#633394' }),
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        p: 1.5,
+                        borderRadius: '10px',
+                        backgroundColor: '#fafafa',
                       }}
-                    />
+                    >
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>
+                          {org.organization_name || `Organization #${org.organization_id}`}
+                        </Typography>
+                        {org.title_name && (
+                          <Typography variant="caption" sx={{ color: '#888' }}>
+                            {org.title_name}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
                   ))}
                 </Box>
-              </Box>
-            )}
-          </CardContent>
-        </Card>
+              )}
+            </CardContent>
+          </Card>
 
+        </Container>
+      </Box>
 
-      </Container>
-    </Box>
+      {/* Feedback Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 };

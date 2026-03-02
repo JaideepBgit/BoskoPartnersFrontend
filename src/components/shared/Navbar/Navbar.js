@@ -42,14 +42,13 @@ import GroupWorkIcon from '@mui/icons-material/GroupWork';
 import ContactMailIcon from '@mui/icons-material/ContactMail';
 import EmailIcon from '@mui/icons-material/Email';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CheckIcon from '@mui/icons-material/Check';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import MailIcon from '@mui/icons-material/Mail';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CloseIcon from '@mui/icons-material/Close';
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import { generateReferralLink } from '../../../services/UserManagement/ContactReferralService';
@@ -146,11 +145,11 @@ const Navbar = () => {
 
   // Get the correct profile route based on user role
   const getProfileRoute = () => {
-    if (!user?.role) return '/profile';
+    if (!user?.role) return '/surveys';
     if (user.role === 'admin' || user.role === 'root' || user.role === 'manager') {
       return '/admin-profile';
     }
-    return '/profile';
+    return '/surveys';
   };
 
   const getUserInitials = () => {
@@ -239,12 +238,8 @@ const Navbar = () => {
       else if (p.includes('/reports') || p.includes('/user-reports') || p.includes('/association-user-reports')) setTabValue(5); // 5. Reports
       else setTabValue(0); // Default to KPI Dashboard
     } else {
-      // For regular users
-      const p = location.pathname.toLowerCase();
-      if (p.includes('/profile') || p.includes('/home')) setUserTabValue(0);
-      else if (p.includes('/survey')) setUserTabValue(1); // This covers both /surveys and /survey
-      else if (p.includes('/reports')) setUserTabValue(2);
-      else setUserTabValue(0);
+      // For regular users - single "Surveys" tab
+      setUserTabValue(0);
     }
   }, [location, user]);
 
@@ -299,7 +294,7 @@ const Navbar = () => {
 
       // Navigate based on new role
       if (userData.role === 'user') {
-        navigate('/profile');
+        navigate('/surveys');
       } else {
         navigate('/dashboard');
       }
@@ -743,33 +738,8 @@ const Navbar = () => {
       ) : (
         <List sx={{ pt: 2 }}>
           <ListItem
-            onClick={() => handleNavigation('/profile')}
-            selected={userTabValue === 0}
-            sx={{
-              '&.Mui-selected': {
-                backgroundColor: '#633394',
-                color: 'white',
-                '& .MuiListItemIcon-root': {
-                  color: 'white',
-                },
-                '&:hover': {
-                  backgroundColor: '#533082',
-                },
-              },
-              '&:hover': {
-                backgroundColor: '#f5f5f5',
-              },
-              borderRadius: '8px',
-              mx: 1,
-              mb: 0.5,
-            }}
-          >
-            <ListItemIcon><HomeIcon /></ListItemIcon>
-            <ListItemText primary="Profile" />
-          </ListItem>
-          <ListItem
             onClick={() => handleNavigation('/surveys')}
-            selected={userTabValue === 1}
+            selected={userTabValue === 0}
             sx={{
               '&.Mui-selected': {
                 backgroundColor: '#633394',
@@ -856,9 +826,7 @@ const Navbar = () => {
               alignItems: 'center',
               flexGrow: 1,
               justifyContent: 'center',
-              cursor: 'pointer'
             }}
-            onClick={() => navigate('/')}
           >
             <img
               src={logoImage}
@@ -937,125 +905,116 @@ const Navbar = () => {
       >
         <Box sx={{ p: 2 }}>
           {/* ACCOUNT header */}
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
             <Typography
               variant="caption"
               sx={{ fontWeight: 600, color: '#999', letterSpacing: '0.5px' }}
             >
               ACCOUNT
             </Typography>
-            <IconButton
-              size="small"
-              sx={{ color: '#bbb', p: 0.5 }}
-              onClick={() => {
-                handleAccountClose();
-                navigate('/request-role');
-              }}
-            >
-              <AddCircleOutlineIcon sx={{ fontSize: 18 }} />
-            </IconButton>
           </Box>
 
-          {/* Current account card */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.5,
-              p: 1.5,
-              borderRadius: '12px',
-              backgroundColor: '#fafafa',
-              mb: 1,
-            }}
-          >
-            <Avatar
+          {/* Role cards - current role highlighted, others switchable */}
+          {hasMultipleRoles ? (
+            availableRoles.map((roleObj) => {
+              const roleName = typeof roleObj === 'string' ? roleObj : roleObj.role;
+              const orgName = roleObj.org_name;
+              const orgId = roleObj.org_id;
+              const uniqueKey = orgId ? `${roleName}-${orgId}` : roleName;
+              const isCurrentRole = user?.role === roleName && (!orgId || user?.organization_id === orgId);
+              const displayRole = roleName.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+              return (
+                <Box
+                  key={uniqueKey}
+                  onClick={() => !isCurrentRole && !switchingRole && handleSwitchRole(roleObj)}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    p: 1.5,
+                    borderRadius: '12px',
+                    backgroundColor: isCurrentRole ? '#fafafa' : 'transparent',
+                    border: isCurrentRole ? '1px solid #e8dff0' : '1px solid transparent',
+                    mb: 0.75,
+                    cursor: isCurrentRole ? 'default' : 'pointer',
+                    transition: 'all 0.15s ease',
+                    '&:hover': isCurrentRole ? {} : { backgroundColor: '#f9f5fc', border: '1px solid #e8dff0' },
+                  }}
+                >
+                  <Avatar
+                    sx={{
+                      width: 36,
+                      height: 36,
+                      bgcolor: isCurrentRole ? '#e8dff0' : '#f0f0f0',
+                      color: isCurrentRole ? '#633394' : '#888',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {getUserInitials()}
+                  </Avatar>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>
+                      {getUserDisplayName()}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#888' }}>
+                      {displayRole}{orgName ? ` @ ${orgName}` : ''}
+                    </Typography>
+                  </Box>
+                  {isCurrentRole ? (
+                    <CheckIcon sx={{ fontSize: 18, color: '#633394' }} />
+                  ) : switchingRole ? (
+                    <CircularProgress size={16} sx={{ color: '#633394' }} />
+                  ) : (
+                    <Typography
+                      variant="caption"
+                      sx={{ color: '#633394', fontWeight: 600, cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                    >
+                      Switch
+                    </Typography>
+                  )}
+                </Box>
+              );
+            })
+          ) : (
+            /* Single role - just show the current account card */
+            <Box
               sx={{
-                width: 40,
-                height: 40,
-                bgcolor: '#e8dff0',
-                color: '#633394',
-                fontSize: '0.9rem',
-                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+                p: 1.5,
+                borderRadius: '12px',
+                backgroundColor: '#fafafa',
+                mb: 1,
               }}
             >
-              {getUserInitials()}
-            </Avatar>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>
-                {getUserDisplayName()}
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#888' }}>
-                {getRoleLabel()}
-              </Typography>
-            </Box>
-            <CheckIcon sx={{ fontSize: 18, color: '#633394' }} />
-          </Box>
-
-          <Divider sx={{ my: 1 }} />
-
-          {/* Switch Role - Only show if user has multiple roles */}
-          {hasMultipleRoles && (
-            <>
-              <Box
+              <Avatar
                 sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5,
-                  p: 1,
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  '&:hover': { backgroundColor: '#f5f5f5' },
+                  width: 40,
+                  height: 40,
+                  bgcolor: '#e8dff0',
+                  color: '#633394',
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
                 }}
               >
-                <SwapHorizIcon sx={{ fontSize: 20, color: '#555' }} />
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="body2" sx={{ color: '#333', fontWeight: 600 }}>
-                    Switch Role
-                  </Typography>
-                </Box>
+                {getUserInitials()}
+              </Avatar>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>
+                  {getUserDisplayName()}
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#888' }}>
+                  {getRoleLabel()}
+                </Typography>
               </Box>
-              
-              {/* Available Roles List */}
-              <Box sx={{ pl: 4.5, pr: 1, pb: 1 }}>
-                {availableRoles.map((roleObj) => {
-                  const roleName = typeof roleObj === 'string' ? roleObj : roleObj.role;
-                  const orgName = roleObj.org_name;
-                  const orgId = roleObj.org_id;
-                  const uniqueKey = orgId ? `${roleName}-${orgId}` : roleName;
-                  const isCurrentRole = user?.role === roleName && (!orgId || user?.organization_id === orgId);
-
-                  return (
-                    <Box
-                      key={uniqueKey}
-                      onClick={() => !isCurrentRole && !switchingRole && handleSwitchRole(roleObj)}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                        p: 0.75,
-                        pl: 1,
-                        borderRadius: '6px',
-                        cursor: isCurrentRole ? 'default' : 'pointer',
-                        backgroundColor: isCurrentRole ? '#f0e7f7' : 'transparent',
-                        opacity: isCurrentRole ? 0.7 : 1,
-                        '&:hover': isCurrentRole ? {} : { backgroundColor: '#f5f5f5' },
-                        mb: 0.5
-                      }}
-                    >
-                      <Typography variant="caption" sx={{ color: '#333', textTransform: 'capitalize', flex: 1 }}>
-                        {roleName.replace('_', ' ')}
-                        {orgName && ` @ ${orgName}`}
-                      </Typography>
-                      {isCurrentRole && <CheckIcon sx={{ fontSize: 14, color: '#633394' }} />}
-                      {switchingRole && !isCurrentRole && <CircularProgress size={12} />}
-                    </Box>
-                  );
-                })}
-              </Box>
-
-              <Divider sx={{ my: 1 }} />
-            </>
+              <CheckIcon sx={{ fontSize: 18, color: '#633394' }} />
+            </Box>
           )}
+
+          <Divider sx={{ my: 1 }} />
 
           {/* Profile */}
           <Box
