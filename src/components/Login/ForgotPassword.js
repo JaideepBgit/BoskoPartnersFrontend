@@ -61,108 +61,124 @@ const ForgotPassword = () => {
   return (
     <Box
       sx={{
-        background: 'linear-gradient(135deg, #3B1C55 0%, #633394 25%, #61328E 50%, #967CB2 75%, #FBFAFA 100%)',
         height: '100vh',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'radial-gradient(ellipse at top left, rgba(59, 28, 85, 0.1) 0%, transparent 50%), radial-gradient(ellipse at bottom right, rgba(150, 124, 178, 0.1) 0%, transparent 50%)',
-          pointerEvents: 'none'
-        }
+        bgcolor: '#f5f5f7',
+        overflow: 'hidden',
       }}
     >
-      <Container maxWidth="xs" sx={{ display: 'flex', alignItems: 'center', height: '100vh' }}>
-        <Box
-          component="form"
-          onSubmit={handleSubmit}
-          sx={{
+      {/* Left panel – video */}
+      <Box
+        sx={{
+          flex: 1,
+          display: { xs: 'none', md: 'flex' },
+          position: 'relative',
+          bgcolor: '#e8e8ef',
+          overflow: 'hidden',
+        }}
+      >
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
             width: '100%',
-            bgcolor: 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(10px)',
-            p: 4,
-            boxShadow: '0 20px 40px rgba(59, 28, 85, 0.15)',
-            borderRadius: 3,
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            position: 'relative',
-            zIndex: 1
+            height: '100%',
+            objectFit: 'cover',
           }}
         >
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
-            <RouterLink to="/">
-              <img src={logoImage} alt="Saurara Logo" style={{ maxWidth: '180px', height: 'auto' }} />
-            </RouterLink>
+          <source src="/invitation_video.webm" type="video/webm" />
+        </video>
+      </Box>
+
+      {/* Right panel – form */}
+      <Box
+        sx={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 3,
+          bgcolor: '#fff',
+          overflowY: 'auto',
+        }}
+      >
+        <Container maxWidth="xs">
+          <Box component="form" onSubmit={handleSubmit}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+              <RouterLink to="/">
+                <img src={logoImage} alt="Saurara Logo" style={{ maxWidth: '160px', height: 'auto' }} />
+              </RouterLink>
+            </Box>
+
+            <Typography variant="h5" align="center" gutterBottom sx={{ fontWeight: 'bold', color: '#212121' }}>
+              Forgot Password
+            </Typography>
+
+            <Typography variant="body2" align="center" color="text.secondary" sx={{ mb: 3 }}>
+              Enter your email address and we'll send you a link to reset your password.
+            </Typography>
+
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
+
+            {success && (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                {success}
+              </Alert>
+            )}
+
+            <TextField
+              label="Email Address"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              type="email"
+              disabled={loading}
+            />
+
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              disabled={loading}
+              sx={{
+                mt: 2,
+                backgroundColor: '#633394',
+                '&:hover': { backgroundColor: '#4e2474' },
+                py: 1.4,
+                fontSize: '1rem',
+                textTransform: 'none',
+                borderRadius: 2,
+              }}
+            >
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Send Reset Link'}
+            </Button>
+
+            <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+              <Link
+                component="button"
+                type="button"
+                onClick={() => navigate('/login')}
+                underline="hover"
+                sx={{ color: '#633394', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
+              >
+                <ArrowBackIcon sx={{ fontSize: 16 }} /> Back to Login
+              </Link>
+            </Typography>
           </Box>
-
-          <Typography variant="h5" align="center" gutterBottom sx={{ color: '#212121', fontWeight: 'bold' }}>
-            Forgot Password
-          </Typography>
-
-          <Typography variant="body2" align="center" color="text.secondary" sx={{ mb: 3 }}>
-            Enter your email address and we'll send you a link to reset your password.
-          </Typography>
-
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-
-          {success && (
-            <Alert severity="success" sx={{ mb: 2 }}>
-              {success}
-            </Alert>
-          )}
-
-          <TextField
-            label="Email Address"
-            variant="outlined"
-            fullWidth
-            margin="normal"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            type="email"
-            disabled={loading}
-          />
-
-          <Button
-            type="submit"
-            variant="contained"
-            fullWidth
-            disabled={loading}
-            sx={{
-              mt: 2,
-              backgroundColor: '#633394',
-              '&:hover': { backgroundColor: '#967CB2' },
-              py: 1.25,
-              fontSize: '1rem',
-            }}
-          >
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'Send Reset Link'}
-          </Button>
-
-          <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate('/login')}
-            fullWidth
-            sx={{
-              mt: 2,
-              color: '#633394',
-              '&:hover': { backgroundColor: 'rgba(99, 51, 148, 0.1)' },
-            }}
-          >
-            Back to Login
-          </Button>
-        </Box>
-      </Container>
+        </Container>
+      </Box>
     </Box>
   );
 };

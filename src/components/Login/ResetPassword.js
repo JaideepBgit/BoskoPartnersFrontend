@@ -5,6 +5,7 @@ import {
   Button,
   Typography,
   Box,
+  Link,
   Alert,
   CircularProgress,
   InputAdornment,
@@ -118,14 +119,14 @@ const ResetPassword = () => {
     return (
       <Box
         sx={{
-          background: 'linear-gradient(135deg, #3B1C55 0%, #633394 25%, #61328E 50%, #967CB2 75%, #FBFAFA 100%)',
           height: '100vh',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          bgcolor: '#f5f5f7',
         }}
       >
-        <CircularProgress size={60} sx={{ color: 'white' }} />
+        <CircularProgress size={60} sx={{ color: '#633394' }} />
       </Box>
     );
   }
@@ -133,165 +134,185 @@ const ResetPassword = () => {
   return (
     <Box
       sx={{
-        background: 'linear-gradient(135deg, #3B1C55 0%, #633394 25%, #61328E 50%, #967CB2 75%, #FBFAFA 100%)',
         height: '100vh',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'radial-gradient(ellipse at top left, rgba(59, 28, 85, 0.1) 0%, transparent 50%), radial-gradient(ellipse at bottom right, rgba(150, 124, 178, 0.1) 0%, transparent 50%)',
-          pointerEvents: 'none'
-        }
+        bgcolor: '#f5f5f7',
+        overflow: 'hidden',
       }}
     >
-      <Container maxWidth="xs" sx={{ display: 'flex', alignItems: 'center', height: '100vh' }}>
-        <Box
-          component="form"
-          onSubmit={handleSubmit}
-          sx={{
+      {/* Left panel – video */}
+      <Box
+        sx={{
+          flex: 1,
+          display: { xs: 'none', md: 'flex' },
+          position: 'relative',
+          bgcolor: '#e8e8ef',
+          overflow: 'hidden',
+        }}
+      >
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
             width: '100%',
-            bgcolor: 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(10px)',
-            p: 4,
-            boxShadow: '0 20px 40px rgba(59, 28, 85, 0.15)',
-            borderRadius: 3,
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            position: 'relative',
-            zIndex: 1
+            height: '100%',
+            objectFit: 'cover',
           }}
         >
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
-            <RouterLink to="/">
-              <img src={logoImage} alt="Saurara Logo" style={{ maxWidth: '180px', height: 'auto' }} />
-            </RouterLink>
-          </Box>
+          <source src="/invitation_video.webm" type="video/webm" />
+        </video>
+      </Box>
 
-          <Typography variant="h5" align="center" gutterBottom sx={{ color: '#212121', fontWeight: 'bold' }}>
-            Reset Password
-          </Typography>
+      {/* Right panel – form */}
+      <Box
+        sx={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 3,
+          bgcolor: '#fff',
+          overflowY: 'auto',
+        }}
+      >
+        <Container maxWidth="xs">
+          <Box component="form" onSubmit={handleSubmit}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+              <RouterLink to="/">
+                <img src={logoImage} alt="Saurara Logo" style={{ maxWidth: '160px', height: 'auto' }} />
+              </RouterLink>
+            </Box>
 
-          {!tokenValid ? (
-            <>
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {error || 'Invalid or expired reset link'}
-              </Alert>
-              <Button
-                variant="contained"
-                fullWidth
-                onClick={() => navigate('/forgot-password')}
-                sx={{
-                  backgroundColor: '#633394',
-                  '&:hover': { backgroundColor: '#967CB2' },
-                  py: 1.25,
-                }}
-              >
-                Request New Reset Link
-              </Button>
-            </>
-          ) : (
-            <>
-              <Typography variant="body2" align="center" color="text.secondary" sx={{ mb: 3 }}>
-                Enter your new password below.
-              </Typography>
+            <Typography variant="h5" align="center" gutterBottom sx={{ fontWeight: 'bold', color: '#212121' }}>
+              Reset Password
+            </Typography>
 
-              {error && (
+            {!tokenValid ? (
+              <>
                 <Alert severity="error" sx={{ mb: 2 }}>
-                  {error}
+                  {error || 'Invalid or expired reset link'}
                 </Alert>
-              )}
+                <Button
+                  variant="contained"
+                  fullWidth
+                  onClick={() => navigate('/forgot-password')}
+                  sx={{
+                    backgroundColor: '#633394',
+                    '&:hover': { backgroundColor: '#4e2474' },
+                    py: 1.4,
+                    fontSize: '1rem',
+                    textTransform: 'none',
+                    borderRadius: 2,
+                  }}
+                >
+                  Request New Reset Link
+                </Button>
+              </>
+            ) : (
+              <>
+                <Typography variant="body2" align="center" color="text.secondary" sx={{ mb: 3 }}>
+                  Enter your new password below.
+                </Typography>
 
-              {success && (
-                <Alert severity="success" sx={{ mb: 2 }}>
-                  {success}
-                </Alert>
-              )}
+                {error && (
+                  <Alert severity="error" sx={{ mb: 2 }}>
+                    {error}
+                  </Alert>
+                )}
 
-              <TextField
-                label="New Password"
-                type={showPassword ? 'text' : 'password'}
-                variant="outlined"
-                fullWidth
-                margin="normal"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={loading}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword(!showPassword)}
-                        edge="end"
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
+                {success && (
+                  <Alert severity="success" sx={{ mb: 2 }}>
+                    {success}
+                  </Alert>
+                )}
 
-              <TextField
-                label="Confirm New Password"
-                type={showConfirmPassword ? 'text' : 'password'}
-                variant="outlined"
-                fullWidth
-                margin="normal"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                disabled={loading}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        edge="end"
-                      >
-                        {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
+                <TextField
+                  label="New Password"
+                  type={showPassword ? 'text' : 'password'}
+                  variant="outlined"
+                  fullWidth
+                  margin="normal"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword(!showPassword)}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
 
-              <Button
-                type="submit"
-                variant="contained"
-                fullWidth
-                disabled={loading}
-                sx={{
-                  mt: 2,
-                  backgroundColor: '#633394',
-                  '&:hover': { backgroundColor: '#967CB2' },
-                  py: 1.25,
-                  fontSize: '1rem',
-                }}
-              >
-                {loading ? <CircularProgress size={24} color="inherit" /> : 'Reset Password'}
-              </Button>
+                <TextField
+                  label="Confirm New Password"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  variant="outlined"
+                  fullWidth
+                  margin="normal"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          edge="end"
+                        >
+                          {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
 
-              <Button
-                onClick={() => navigate('/login')}
-                fullWidth
-                sx={{
-                  mt: 2,
-                  color: '#633394',
-                  '&:hover': { backgroundColor: 'rgba(99, 51, 148, 0.1)' },
-                }}
-              >
-                Back to Login
-              </Button>
-            </>
-          )}
-        </Box>
-      </Container>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  fullWidth
+                  disabled={loading}
+                  sx={{
+                    mt: 2,
+                    backgroundColor: '#633394',
+                    '&:hover': { backgroundColor: '#4e2474' },
+                    py: 1.4,
+                    fontSize: '1rem',
+                    textTransform: 'none',
+                    borderRadius: 2,
+                  }}
+                >
+                  {loading ? <CircularProgress size={24} color="inherit" /> : 'Reset Password'}
+                </Button>
+
+                <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+                  <Link
+                    component="button"
+                    type="button"
+                    onClick={() => navigate('/login')}
+                    underline="hover"
+                    sx={{ color: '#633394', fontWeight: 500 }}
+                  >
+                    Back to Login
+                  </Link>
+                </Typography>
+              </>
+            )}
+          </Box>
+        </Container>
+      </Box>
     </Box>
   );
 };
