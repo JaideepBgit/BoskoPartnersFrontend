@@ -170,7 +170,7 @@ export default function LandingPage() {
       <section className="lp-container lp-hero">
         <div className="lp-hero__text">
           <h1 className="lp-hero__title">
-            Listen. Learn. <span>Lead.</span>
+            Listen. Learn. <span>Share.</span>
           </h1>
           <p className="lp-hero__subtitle">
             A research and institutional intelligence platform designed for theological education and church leadership. Move beyond disconnected surveys and spreadsheets — and build structured insight that reveals impact, tracks growth, and informs mission-driven decisions.
